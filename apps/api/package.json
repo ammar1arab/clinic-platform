@@ -1,11 +1,12 @@
 {
-  "name": "api",
+  "name": "@clinic/api",
   "version": "0.0.1",
-  "description": "",
+  "description": "Clinic platform NestJS API",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "postinstall": "prisma generate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
