@@ -1,0 +1,363 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== Enums ====================
+
+enum Role {
+  owner
+  admin
+  practitioner
+  financial
+}
+
+enum SessionType {
+  in_person
+  online
+}
+
+enum AppointmentStatus {
+  unconfirmed
+  confirmed
+  checked_in
+  waiting
+  in_progress
+  completed
+  no_show
+  cancelled
+}
+
+enum CalendarView {
+  day
+  week
+}
+
+enum ReferralType {
+  referral
+  consultation
+}
+
+enum ReferralUrgency {
+  normal
+  high
+  urgent
+}
+
+enum DiscountType {
+  fixed
+  percentage
+}
+
+enum ReferralStatus {
+  pending
+  accepted
+  rejected
+}
+
+// ==================== Tables ====================
+
+model Clinic {
+  id                   String       @id @default(uuid())
+  name                 String
+  nameAr               String?
+  email                String?
+  phone                String?
+  address              String?
+  logoUrl              String?
+  letterheadFooter     String?
+  workingHoursStart    String       @default("08:00")
+  workingHoursEnd      String       @default("20:00")
+  defaultCalendarView  CalendarView @default(week)
+  defaultSessionType   SessionType  @default(in_person)
+  defaultDepartmentId  String?
+  timezone             String       @default("UTC")
+  isActive             Boolean      @default(true)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  users           ClinicUser[]
+  departments     Department[]
+  rooms           Room[]
+  services        Service[]
+  patients        Patient[]
+  appointments    Appointment[]
+  referrals       Referral[]
+  paymentMethods  PaymentMethod[]
+  packages        Package[]
+  discountCodes   DiscountCode[]
+  notifications   Notification[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  clinicUsers ClinicUser[]
+}
+
+model ClinicUser {
+  id        String   @id @default(uuid())
+  userId    String
+  clinicId  String
+  role      Role
+  name      String
+  nameAr    String?
+  phone     String?
+  initials  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user              User                 @relation(fields: [userId], references: [id])
+  clinic            Clinic               @relation(fields: [clinicId], references: [id])
+  appointments      Appointment[]        @relation("DoctorAppointments")
+  referralsSent     Referral[]           @relation("ReferralFrom")
+  referralsReceived Referral[]           @relation("ReferralTo")
+  primaryPatients   Patient[]            @relation("PrimaryDoctorPatients")
+  availabilities    DoctorAvailability[]
+  timeOffs          DoctorTimeOff[]
+  notifications     Notification[]
+  appointmentsPaid  Appointment[]        @relation("PaidByStaff")
+
+  @@unique([userId, clinicId])
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  clinicId  String
+  name      String
+  nameAr    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  rooms        Room[]
+  services     Service[]
+  appointments Appointment[]
+}
+
+model Room {
+  id           String   @id @default(uuid())
+  clinicId     String
+  departmentId String?
+  name         String
+  nameAr       String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  department   Department?   @relation(fields: [departmentId], references: [id])
+  appointments Appointment[]
+}
+
+model Service {
+  id             String        @id @default(uuid())
+  clinicId       String
+  departmentId   String?
+  name           String
+  nameAr         String?
+  durationMins   Int           @default(45)
+  fee            Decimal       @db.Decimal(10, 3)
+  supportedModes SessionType[] @default([in_person, online])
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  department   Department?   @relation(fields: [departmentId], references: [id])
+  appointments Appointment[]
+}
+
+model Patient {
+  id       String @id @default(uuid())
+  clinicId String
+
+  firstNameEn           String
+  lastNameEn            String
+  firstNameAr           String?
+  lastNameAr            String?
+  nationalId            String?
+  phone                 String?
+  email                 String?
+  dob                   DateTime?
+  gender                String?
+  bloodType             String?
+  allergies             String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  address               String?
+
+  primaryDoctorId String?
+  packageId       String?
+  discountCodeId  String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  clinic        Clinic        @relation(fields: [clinicId], references: [id])
+  primaryDoctor ClinicUser?   @relation("PrimaryDoctorPatients", fields: [primaryDoctorId], references: [id])
+  package       Package?      @relation(fields: [packageId], references: [id])
+  discountCode  DiscountCode? @relation(fields: [discountCodeId], references: [id])
+  appointments  Appointment[]
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  clinicId        String
+  patientId       String
+  doctorId        String
+  departmentId    String?
+  roomId          String?
+  serviceId       String?
+  scheduledAt     DateTime
+  durationMins    Int               @default(45)
+  sessionType     SessionType       @default(in_person)
+  status          AppointmentStatus @default(unconfirmed)
+  statusReason    String?
+  statusUpdatedBy String?
+  statusUpdatedAt DateTime?
+  cancelReason    String?
+  notes           String?
+  fee              Decimal?          @db.Decimal(10, 3)
+  discount         Decimal?          @db.Decimal(10, 3)
+  discountType     DiscountType?
+  discountReason   String?
+  discountCodeId   String?
+  isPaid           Boolean           @default(false)
+  paidAt           DateTime?
+  paidById         String?
+  paymentMethod    String?
+  paymentMethodId  String?
+  meetingUrl       String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  clinic             Clinic         @relation(fields: [clinicId], references: [id])
+  patient            Patient        @relation(fields: [patientId], references: [id])
+  doctor             ClinicUser     @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  department         Department?    @relation(fields: [departmentId], references: [id])
+  room               Room?          @relation(fields: [roomId], references: [id])
+  service            Service?       @relation(fields: [serviceId], references: [id])
+  paymentMethodRef   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  discountCode       DiscountCode?  @relation(fields: [discountCodeId], references: [id])
+  paidBy             ClinicUser?    @relation("PaidByStaff", fields: [paidById], references: [id])
+  referrals          Referral[]
+}
+
+model Referral {
+  id            String          @id @default(uuid())
+  clinicId      String
+  appointmentId String
+  fromDoctorId  String
+  toDoctorId    String
+  type          ReferralType    @default(referral)
+  urgency       ReferralUrgency @default(normal)
+  reason        String
+  opinion       String?
+  status        ReferralStatus  @default(pending)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  clinic      Clinic      @relation(fields: [clinicId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  fromDoctor  ClinicUser  @relation("ReferralFrom", fields: [fromDoctorId], references: [id])
+  toDoctor    ClinicUser  @relation("ReferralTo", fields: [toDoctorId], references: [id])
+}
+
+model DoctorAvailability {
+  id        String  @id @default(uuid())
+  doctorId  String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isActive  Boolean @default(true)
+
+  doctor ClinicUser @relation(fields: [doctorId], references: [id])
+}
+
+model DoctorTimeOff {
+  id        String   @id @default(uuid())
+  doctorId  String
+  startDate DateTime
+  endDate   DateTime
+  reason    String?
+
+  doctor ClinicUser @relation(fields: [doctorId], references: [id])
+}
+
+model PaymentMethod {
+  id        String   @id @default(uuid())
+  clinicId  String
+  name      String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  appointments Appointment[]
+}
+
+model Package {
+  id            String        @id @default(uuid())
+  clinicId      String
+  name          String
+  description   String?
+  sessionCount  Int?
+  price         Decimal?      @db.Decimal(10, 3)
+  discountType  DiscountType?
+  discountValue Decimal?      @db.Decimal(10, 3)
+  sortOrder     Int           @default(0)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  clinic   Clinic    @relation(fields: [clinicId], references: [id])
+  patients Patient[]
+}
+
+model DiscountCode {
+  id            String       @id @default(uuid())
+  clinicId      String
+  code          String
+  discountType  DiscountType
+  discountValue Decimal      @db.Decimal(10, 3)
+  maxUses       Int?
+  usedCount     Int          @default(0)
+  validFrom     DateTime?
+  validTo       DateTime?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  appointments Appointment[]
+  patients     Patient[]
+
+  @@unique([clinicId, code])
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  clinicId  String
+  userId    String
+  type      String
+  title     String
+  body      String?
+  payload   Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  clinic Clinic     @relation(fields: [clinicId], references: [id])
+  user   ClinicUser @relation(fields: [userId], references: [id])
+
+  @@index([clinicId, userId, readAt])
+}

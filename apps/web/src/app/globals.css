@@ -1,0 +1,867 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Two-layer token system so dark mode can cascade:
+ *  - raw values live on :root / .dark
+ *  - @theme inline maps them to Tailwind color utilities via var()
+ */
+:root {
+  color-scheme: light;
+  --radius: 8px;
+
+  /* Brand colors — clinic blue + teal accent */
+  --brand: oklch(0.55 0.18 240);
+  --brand-foreground: oklch(0.98 0 0);
+  --accent-teal: oklch(0.6 0.14 185);
+  --accent-teal-foreground: oklch(0.98 0 0);
+
+  /* Status colors */
+  --success: oklch(0.6 0.16 145);
+  --warning: oklch(0.75 0.18 75);
+  --error: oklch(0.58 0.22 25);
+
+  /* Base */
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.13 0.01 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.13 0.01 260);
+  --muted: oklch(0.96 0.005 260);
+  --muted-foreground: oklch(0.52 0.01 260);
+  --border: oklch(0.91 0.005 260);
+  --input: oklch(0.91 0.005 260);
+  --ring: oklch(0.55 0.18 240);
+  --primary: oklch(0.55 0.18 240);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.96 0.005 260);
+  --secondary-foreground: oklch(0.2 0.01 260);
+  --destructive: oklch(0.58 0.22 25);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.13 0.01 260);
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* Brand colors — lifted for contrast on dark surfaces */
+  --brand: oklch(0.62 0.17 240);
+  --brand-foreground: oklch(0.98 0 0);
+  --accent-teal: oklch(0.65 0.13 185);
+  --accent-teal-foreground: oklch(0.15 0.01 260);
+
+  /* Status colors */
+  --success: oklch(0.65 0.15 145);
+  --warning: oklch(0.78 0.16 75);
+  --error: oklch(0.65 0.2 25);
+
+  /* Base */
+  --background: oklch(0.15 0.012 260);
+  --foreground: oklch(0.96 0.005 260);
+  --card: oklch(0.18 0.014 260);
+  --card-foreground: oklch(0.96 0.005 260);
+  --muted: oklch(0.25 0.014 260);
+  --muted-foreground: oklch(0.68 0.012 260);
+  --border: oklch(0.28 0.014 260);
+  --input: oklch(0.28 0.014 260);
+  --ring: oklch(0.62 0.17 240);
+  --primary: oklch(0.62 0.17 240);
+  --primary-foreground: oklch(0.15 0.01 260);
+  --secondary: oklch(0.25 0.014 260);
+  --secondary-foreground: oklch(0.96 0.005 260);
+  --destructive: oklch(0.65 0.2 25);
+  --popover: oklch(0.18 0.014 260);
+  --popover-foreground: oklch(0.96 0.005 260);
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-accent-teal: var(--accent-teal);
+  --color-accent-teal-foreground: var(--accent-teal-foreground);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    border-color: var(--color-border);
+  }
+
+  html {
+    font-size: 14px;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 16px;
+    }
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Smooth scrolling everywhere */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Interactive cursor + hover affordance system-wide */
+  button,
+  [role="button"],
+  [role="menuitem"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="tab"],
+  [role="combobox"],
+  a[href],
+  label[for],
+  summary,
+  select,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"],
+  [data-disabled] {
+    cursor: not-allowed;
+  }
+
+  /* Hide scrollbars everywhere, keep scroll functional */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  /* Subtle fade-in for page content */
+  .fade-in {
+    animation: fadeIn 0.25s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Truncate with ellipsis, common in tables */
+  .text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* —— Clinical loading motions —— */
+  .animate-clinic-rise {
+    animation: clinicRise 0.28s ease-out both;
+  }
+
+  .animate-clinic-dot {
+    animation: clinicDot 0.72s ease-in-out infinite;
+  }
+
+  .animate-clinic-orbit {
+    animation: clinicOrbit 1.15s linear infinite;
+  }
+
+  .animate-clinic-breathe {
+    animation: clinicBreathe 1.4s ease-in-out infinite;
+  }
+
+  .animate-clinic-ripple {
+    animation: clinicRipple 1.8s ease-out infinite;
+  }
+
+  .animate-clinic-spark {
+    transform-origin: 50% 2rem;
+    animation: clinicSpark 1.15s linear infinite;
+  }
+
+  .animate-clinic-status {
+    animation: clinicStatus 1.6s ease-in-out infinite;
+  }
+
+  .animate-clinic-progress-shimmer {
+    animation: clinicProgressShimmer 0.9s linear infinite;
+  }
+
+  @keyframes clinicRise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes clinicDot {
+    0%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.35;
+    }
+    50% {
+      transform: translateY(-3px);
+      opacity: 1;
+    }
+  }
+
+  @keyframes clinicOrbit {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes clinicBreathe {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(0.94);
+    }
+  }
+
+  @keyframes clinicRipple {
+    0% {
+      transform: scale(0.82);
+      opacity: 0.5;
+    }
+    75%,
+    100% {
+      transform: scale(1.35);
+      opacity: 0;
+    }
+  }
+
+  @keyframes clinicSpark {
+    from {
+      transform: translateX(-50%) rotate(0deg);
+    }
+    to {
+      transform: translateX(-50%) rotate(360deg);
+    }
+  }
+
+  @keyframes clinicStatus {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(0.72);
+      opacity: 0.55;
+    }
+  }
+
+  @keyframes clinicProgressShimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==================== FullCalendar Theme ==================== */
+
+.fc {
+  --fc-border-color: var(--color-border);
+  --fc-today-bg-color: color-mix(in oklch, var(--color-primary) 5%, transparent);
+  --fc-neutral-bg-color: var(--color-muted);
+  --fc-page-bg-color: transparent;
+  --fc-small-font-size: 0.75rem;
+  font-family: inherit;
+}
+
+.fc .fc-toolbar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 0.75rem !important;
+}
+
+.fc .fc-toolbar-chunk {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+/* Spread: left nav | centered title | view tabs */
+.fc .fc-toolbar-chunk:nth-child(1) {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+}
+
+.fc .fc-toolbar-chunk:nth-child(2) {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.fc .fc-toolbar-chunk:nth-child(3) {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.fc .fc-button {
+  background: var(--color-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-secondary-foreground);
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  text-transform: capitalize;
+  box-shadow: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.fc .fc-button:hover:not(:disabled) {
+  background: color-mix(in oklch, var(--color-primary) 12%, var(--color-secondary));
+  border-color: color-mix(in oklch, var(--color-primary) 35%, var(--color-border));
+  color: var(--color-foreground);
+}
+
+.fc .fc-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.fc .fc-button:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 1px;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active:hover {
+  background: color-mix(in oklch, var(--color-primary) 88%, black);
+  border-color: color-mix(in oklch, var(--color-primary) 88%, black);
+  color: var(--color-primary-foreground);
+}
+
+.fc .fc-button-group {
+  display: inline-flex;
+  gap: 0;
+  flex-wrap: nowrap;
+}
+
+.fc .fc-button-group > .fc-button {
+  border-radius: 0;
+}
+
+.fc .fc-button-group > .fc-button:first-child {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.fc .fc-button-group > .fc-button:last-child {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.fc .fc-button-group > .fc-button:not(:first-child) {
+  margin-left: -1px;
+}
+
+.fc-col-header-cell {
+  background: var(--color-muted);
+  padding: 8px 0;
+  border-color: var(--color-border) !important;
+}
+
+.fc-col-header-cell-cushion {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.fc-timegrid-slot {
+  height: 3rem;
+}
+
+/* Week view: enough lane height for stacked badges */
+.fc-timeGridWeek-view .fc-timegrid-slot {
+  height: 3.25rem;
+}
+
+.fc-timeGridWeek-view .fc-event {
+  min-height: 2.5rem;
+}
+
+/* Day view: taller slots so event badges read clearly */
+.fc-timeGridDay-view .fc-timegrid-slot {
+  height: 4.5rem;
+}
+
+.fc-timeGridDay-view .fc-event {
+  min-height: 3.5rem;
+}
+
+.fc-timegrid-slot-label-cushion,
+.fc-timegrid-axis-cushion {
+  font-size: 0.6875rem;
+  color: var(--color-muted-foreground);
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: var(--color-border);
+}
+
+.fc-event {
+  border-radius: 6px !important;
+  border: none !important;
+  padding: 0 !important;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #fff !important;
+  box-shadow: 0 1px 2px color-mix(in oklch, black 10%, transparent);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  overflow: hidden;
+}
+
+.fc-event .fc-event-main {
+  padding: 0;
+  color: #fff !important;
+}
+
+/* Month + time-grid chips share the same solid status fill + white text */
+.fc-daygrid-event,
+.fc-daygrid-block-event,
+.fc-daygrid-dot-event {
+  color: #fff !important;
+  background-image: none !important;
+  opacity: 1 !important;
+}
+
+.fc-daygrid-event .fc-event-main,
+.fc-daygrid-block-event .fc-event-main,
+.fc-daygrid-dot-event .fc-event-main {
+  color: #fff !important;
+  background: transparent !important;
+}
+
+.fc-daygrid-event .fc-event-inner,
+.fc-event-month {
+  color: #fff !important;
+  width: 100%;
+}
+
+/* Kill FC list-item / pale defaults in month view — solid chips only */
+.fc-daygrid-month-view .fc-daygrid-event,
+.fc-dayGridMonth-view .fc-daygrid-event {
+  border: none !important;
+  border-radius: 6px !important;
+  margin: 1px 2px !important;
+  overflow: hidden;
+}
+
+.fc-daygrid-month-view .fc-daygrid-dot-event,
+.fc-dayGridMonth-view .fc-daygrid-dot-event {
+  background: inherit;
+  display: block;
+}
+
+.fc-daygrid-month-view .fc-daygrid-event-dot,
+.fc-dayGridMonth-view .fc-daygrid-event-dot {
+  display: none !important;
+}
+
+.fc-event:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 3px 8px color-mix(in oklch, black 14%, transparent);
+  z-index: 2;
+}
+
+.fc-event:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 1px;
+}
+
+.fc-daygrid-event {
+  margin: 1px 2px !important;
+}
+
+.fc-daygrid-block-event .fc-event-main,
+.fc-daygrid-dot-event {
+  padding: 0;
+}
+
+/* Cancelled appointments read as de-emphasised, struck through. */
+.fc-event-cancelled {
+  opacity: 0.55;
+  filter: grayscale(0.35);
+}
+
+.fc-event-cancelled .fc-event-inner {
+  text-decoration: line-through;
+}
+
+/* ---- Month day cells + create affordance ---- */
+
+.fc .fc-daygrid-day-frame {
+  position: relative;
+  min-height: 8.25rem;
+  transition: background-color 0.12s ease;
+}
+
+.fc .fc-daygrid-day-events {
+  margin-top: 2px;
+  min-height: 5.5rem;
+  position: relative;
+  z-index: 3;
+}
+
+.fc .fc-daygrid-event-harness {
+  margin-bottom: 2px;
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame {
+  background: color-mix(in oklch, var(--color-primary) 7%, transparent);
+}
+
+/* Centered + to create appointment (month view) */
+.fc .fc-day-add {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: color-mix(in oklch, var(--color-primary) 55%, var(--color-muted-foreground));
+  opacity: 0.35;
+  cursor: pointer;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  pointer-events: auto;
+}
+
+.fc .fc-daygrid-day:hover .fc-day-add,
+.fc .fc-daygrid-day:focus-within .fc-day-add {
+  opacity: 1;
+}
+
+.fc .fc-day-add:hover {
+  color: var(--color-primary);
+  transform: scale(1.08);
+}
+
+.fc .fc-day-add:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  outline: 2px solid var(--color-ring);
+  outline-offset: -4px;
+  border-radius: var(--radius-md);
+}
+
+/* Time-grid lanes (day / week views) */
+.fc .fc-timegrid-col-bg,
+.fc .fc-timegrid-col-frame {
+  transition: background-color 0.1s ease;
+}
+
+.fc .fc-timegrid-col:not(.fc-timegrid-col-mirror):hover .fc-timegrid-col-frame {
+  background: color-mix(in oklch, var(--color-primary) 6%, transparent);
+  cursor: pointer;
+}
+
+.fc .fc-timegrid-col.fc-day-today {
+  background: color-mix(in oklch, var(--color-primary) 4%, transparent) !important;
+}
+
+/* Day number chip in month view */
+.fc .fc-daygrid-day-number {
+  position: relative;
+  z-index: 4;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  color: var(--color-muted-foreground);
+  border-radius: var(--radius-sm);
+  transition: color 0.1s ease;
+}
+
+.fc .fc-daygrid-day:hover .fc-daygrid-day-number {
+  color: var(--color-foreground);
+  font-weight: 600;
+}
+
+/* Space + distinct style for "+N more" so it doesn't look like an appointment */
+.fc .fc-daygrid-day-bottom {
+  position: relative;
+  z-index: 3;
+  margin: 6px 2px 2px;
+  padding-top: 4px;
+  border-top: 1px dashed color-mix(in oklch, var(--color-primary) 22%, transparent);
+}
+
+.fc .fc-daygrid-more-link,
+.fc .fc-timegrid-more-link {
+  display: flex !important;
+  width: 100% !important;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  font-weight: inherit;
+  background: transparent;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.fc .fc-daygrid-more-link .fc-more-badge,
+.fc .fc-timegrid-more-link .fc-more-badge {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fc .fc-timegrid-more-link {
+  margin: 4px 0 2px;
+  width: 100% !important;
+}
+
+.fc .fc-daygrid-more-link:hover {
+  text-decoration: none;
+}
+
+.fc .fc-daygrid-more-link:hover .fc-more-badge,
+.fc .fc-timegrid-more-link:hover .fc-more-badge {
+  background: color-mix(in oklch, var(--color-primary) 16%, transparent);
+  border-color: color-mix(in oklch, var(--color-primary) 50%, transparent);
+}
+
+.fc-timegrid-now-indicator-line {
+  border-color: var(--color-error);
+  border-width: 1.5px;
+}
+
+.fc-timegrid-now-indicator-arrow {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.fc-day-today .fc-daygrid-day-number {
+  color: var(--color-primary-foreground);
+  background: var(--color-primary);
+  font-weight: 600;
+}
+
+.fc-highlight {
+  background: color-mix(in oklch, var(--color-primary) 16%, transparent) !important;
+}
+
+@media (max-width: 768px) {
+  /* Keep arrows, Today, date, and Day/Week/Month on one spaced row */
+  .fc .fc-toolbar {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .fc .fc-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .fc .fc-toolbar-chunk {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .fc .fc-toolbar-chunk:nth-child(1),
+  .fc .fc-toolbar-chunk:nth-child(3) {
+    flex-shrink: 0;
+  }
+
+  .fc .fc-toolbar-chunk:nth-child(2) {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 0.75rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .fc .fc-button {
+    padding: 0.3rem 0.45rem;
+    font-size: 0.6875rem;
+    min-height: 1.75rem;
+  }
+
+  .fc .fc-prev-button,
+  .fc .fc-next-button {
+    padding-inline: 0.4rem;
+  }
+
+  .fc-col-header-cell-cushion {
+    font-size: 0.65rem;
+  }
+
+  .fc .fc-timegrid-slot {
+    height: 2.75rem;
+  }
+
+  .fc-timeGridWeek-view .fc-timegrid-slot {
+    height: 2.85rem;
+  }
+
+  .fc-timeGridDay-view .fc-timegrid-slot {
+    height: 3.75rem;
+  }
+
+  .fc .fc-daygrid-day-frame {
+    min-height: 6.5rem;
+  }
+
+  .fc .fc-daygrid-day-events {
+    min-height: 4.25rem;
+  }
+
+  .fc-daygrid-event {
+    margin: 1px 1px !important;
+  }
+
+  .fc-event-month {
+    min-height: 1.25rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .fc .fc-toolbar {
+    gap: 0.4rem;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 0.8125rem;
+  }
+
+  .fc .fc-button {
+    padding: 0.32rem 0.55rem;
+    font-size: 0.7rem;
+  }
+}
+
+/*
+ * iOS Safari/Chrome zoom the page when a focused control is under 16px.
+ * Root rem on mobile is 14px, so text-base (1rem) is NOT enough — use 16px.
+ */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 767px) {
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),
+    select,
+    textarea,
+    [contenteditable='true'],
+    [role='combobox'],
+    [data-slot='input'],
+    [data-slot='textarea'],
+    [data-slot='select-trigger'] {
+      font-size: 16px !important;
+    }
+  }
+}

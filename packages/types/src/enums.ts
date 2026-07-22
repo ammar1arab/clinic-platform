@@ -1,0 +1,37 @@
+/** Shared enums — single source for web + api HTTP contracts. */
+
+export type Role = 'owner' | 'admin' | 'practitioner' | 'financial';
+
+export type SessionType = 'in_person' | 'online';
+
+export type DiscountType = 'fixed' | 'percentage';
+
+export type AppointmentStatus =
+  | 'unconfirmed'
+  | 'confirmed'
+  | 'checked_in'
+  | 'waiting'
+  | 'in_progress'
+  | 'completed'
+  | 'no_show'
+  | 'cancelled';
+
+export type CalendarView = 'day' | 'week';
+
+export type ReportFormat = 'pdf' | 'xlsx' | 'csv';
+
+export type ReferralType = 'referral' | 'consultation';
+export type ReferralUrgency = 'normal' | 'high' | 'urgent';
+export type ReferralStatus = 'pending' | 'accepted' | 'rejected';
+
+export type SortOrder = 'asc' | 'desc';
+
+export type PatientSortBy =
+  | 'createdAt'
+  | 'updatedAt'
+  | 'firstNameEn'
+  | 'lastNameEn'
+  | 'dob'
+  | 'appointments';
+
+export type ServiceSessionMode = SessionType;

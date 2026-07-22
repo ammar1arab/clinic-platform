@@ -1,0 +1,31 @@
+/**
+ * Canonical lucide icons for the clinic UI — import from here so the same
+ * concept always uses the same glyph.
+ */
+export {
+  LayoutDashboard as IconDashboard,
+  Calendar as IconSchedule,
+  CalendarCheck as IconTodaysAppointments,
+  CalendarDays as IconVisit,
+  Users as IconPatients,
+  UserRound as IconPerson,
+  UserPlus as IconNewPatient,
+  FileBarChart as IconReports,
+  FileDown as IconExport,
+  Settings as IconSettings,
+  Building2 as IconDepartment,
+  DoorOpen as IconRoom,
+  Stethoscope as IconService,
+  Wallet as IconPayment,
+  Package as IconPackage,
+  Percent as IconDiscount,
+  GitBranch as IconReferral,
+  MapPin as IconInPerson,
+  Video as IconOnline,
+  Clock as IconTime,
+  Phone as IconPhone,
+  Plus as IconAdd,
+  Pencil as IconEdit,
+  Trash2 as IconDelete,
+  Star as IconLoyal,
+} from 'lucide-react';
