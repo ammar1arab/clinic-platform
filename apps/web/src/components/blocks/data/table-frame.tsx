@@ -12,7 +12,7 @@ export function TableFrame({
   className?: string;
 }) {
   return (
-    <div className={cn('card-aura border rounded-lg overflow-hidden bg-card', className)}>
+    <div className={cn('card-aura overflow-hidden rounded-xl border-0 bg-card', className)}>
       {children}
     </div>
   );

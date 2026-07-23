@@ -222,7 +222,7 @@ export function AppointmentCalendar({
   };
 
   return (
-    <div className="card-aura relative rounded-xl border bg-card p-2 sm:p-3 lg:p-4 [&_.fc]:text-sm">
+    <div className="card-aura relative rounded-xl bg-card p-2 sm:p-3 lg:p-4 [&_.fc]:text-sm">
       {isFetching && (
         <div className="pointer-events-none absolute right-3 top-3 z-10 size-2 rounded-full bg-primary/70" />
       )}

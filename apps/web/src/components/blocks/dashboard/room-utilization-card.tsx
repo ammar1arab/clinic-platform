@@ -36,10 +36,10 @@ export function RoomUtilizationCardBlock({ rooms, isLoading }: Props) {
               <span className="font-medium">{room.roomName}</span>
               <span className="text-muted-foreground text-xs">{room.utilisationPercent}%</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-2.5 overflow-hidden rounded-full bg-muted/80">
               <div
                 className={cn(
-                  'h-full rounded-full transition-all duration-500',
+                  'h-full rounded-full shadow-[0_0_12px_-2px_currentColor] transition-all duration-700 ease-out',
                   barColor(room.utilisationPercent),
                 )}
                 style={{ width: `${Math.min(room.utilisationPercent, 100)}%` }}

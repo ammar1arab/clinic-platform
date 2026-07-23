@@ -1,17 +1,22 @@
 ﻿'use client';
 
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/providers';
 import { ROUTES } from '@/constants/routes';
 import { useSidebar } from '@/providers/sidebar-provider';
+import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ThemeToggle } from '@/components/blocks/layout/theme-toggle';
 import { LogOut, Menu } from 'lucide-react';
 
@@ -41,66 +46,74 @@ function resolveTitle(pathname: string): string {
 
 export function TopbarBlock() {
   const pathname = usePathname();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const router = useRouter();
   const { setMobileOpen } = useSidebar();
+  const [signOutOpen, setSignOutOpen] = useState(false);
   const title = resolveTitle(pathname);
-  const initials = (user?.name ?? 'U')
-    .split(/\s+/)
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+
+  const handleSignOut = () => {
+    logout();
+    router.push(ROUTES.LOGIN);
+  };
 
   return (
-    <header className="relative flex h-12 shrink-0 items-center justify-between border-b bg-background/95 px-3 backdrop-blur-sm md:h-13 md:px-5">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <button
-          aria-label="Open menu"
-          className="grid size-8 shrink-0 place-items-center rounded-md border bg-background hover:bg-muted md:hidden"
-          onClick={() => setMobileOpen(true)}
-        >
-          <Menu className="size-4" />
-        </button>
+    <>
+      <header className="relative z-10 flex h-13 shrink-0 items-center justify-between border-b border-border/70 bg-background/80 px-3 shadow-[0_1px_0_0_color-mix(in_oklch,var(--brand)_12%,transparent)] backdrop-blur-md md:h-14 md:px-5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <button
+            aria-label="Open menu"
+            className="grid size-8 shrink-0 place-items-center rounded-lg border border-border/80 bg-card/80 text-foreground shadow-sm transition-colors hover:bg-muted md:hidden"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="size-4" />
+          </button>
 
-        <div className="flex min-w-0 items-center gap-2">
-          <span
-            className="hidden h-3.5 w-0.5 shrink-0 rounded-full bg-primary sm:block"
-            aria-hidden
-          />
-          <h1 className="truncate font-heading text-sm font-semibold tracking-tight text-foreground md:text-[0.9375rem]">
-            {title}
-          </h1>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span
+              className="hidden h-4 w-1 shrink-0 rounded-full bg-linear-to-b from-brand to-accent-teal sm:block"
+              aria-hidden
+            />
+            <h1 className="truncate font-heading text-[0.9375rem] font-semibold tracking-tight text-foreground md:text-base">
+              {title}
+            </h1>
+          </div>
         </div>
-      </div>
 
-      <div className="flex shrink-0 items-center gap-0.5">
-        <ThemeToggle />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="outline-none" aria-label="Account menu">
-              <Avatar className="size-7 cursor-pointer md:size-8">
-                <AvatarFallback className="bg-primary text-[10px] text-primary-foreground md:text-xs">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                logout();
-                router.push(ROUTES.LOGIN);
-              }}
-              className="cursor-pointer text-destructive focus:text-destructive"
-            >
-              <LogOut className="mr-2 size-4" />
+        <div className="flex shrink-0 items-center gap-1">
+          <ThemeToggle />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Sign out"
+            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => setSignOutOpen(true)}
+          >
+            <LogOut className="size-4" />
+          </Button>
+        </div>
+      </header>
+
+      <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
+        <AlertDialogContent size="default">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-destructive/10 text-destructive">
+              <LogOut />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Sign out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You’ll need to sign in again to access the clinic dashboard.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleSignOut}>
               Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

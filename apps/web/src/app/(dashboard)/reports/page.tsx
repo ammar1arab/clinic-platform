@@ -141,10 +141,10 @@ function ReportBlock({
   children: React.ReactNode;
 }) {
   return (
-    <section className="card-aura flex flex-col gap-4 rounded-xl border bg-card p-4 sm:p-5">
+    <section className="card-aura flex flex-col gap-4 rounded-xl bg-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <div className="grid size-9 shrink-0 place-items-center rounded-md bg-muted">
-          <Icon className="size-4 text-foreground" />
+        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-linear-to-br from-brand/15 to-accent-teal/20 text-primary">
+          <Icon className="size-4" />
         </div>
         <div className="min-w-0 pt-0.5">
           <h2 className="text-sm font-semibold leading-none">{title}</h2>
