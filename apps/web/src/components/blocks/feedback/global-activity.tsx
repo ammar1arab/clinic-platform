@@ -2,6 +2,7 @@
 
 import { useIsMutating } from '@tanstack/react-query';
 import { LoadingDots } from './brand-mark';
+import { FluidWave } from '@/components/ui/fluid';
 import { cn } from '@/lib/utils';
 
 /**
@@ -22,9 +23,10 @@ export function GlobalActivity() {
         role="status"
         aria-live="polite"
       >
-        <span className="absolute inset-y-0 left-0 w-1 bg-linear-to-b from-primary via-accent-teal to-warning" />
+        <FluidWave className="opacity-[0.12] dark:opacity-[0.22]" />
+        <span className="absolute inset-y-0 left-0 z-1 w-1 bg-linear-to-b from-primary via-accent-teal to-warning" />
         <LoadingDots />
-        <span>Saving changes</span>
+        <span className="relative z-1">Saving changes</span>
       </div>
     </div>
   );

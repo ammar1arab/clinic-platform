@@ -26,7 +26,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { SectionLoader, EmptyState } from '@/components/primitives/spinner';
+import { EmptyState } from '@/components/primitives/spinner';
+import { FluidSkeletonStack } from '@/components/ui/fluid';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import { usePatient, useTogglePatientStatus, useDeletePatient } from '@/hooks/use-patients';
 import { useDownloadPatientReport } from '@/hooks/use-reports';
@@ -81,7 +82,16 @@ export default function PatientDetailPage({ params }: { params: Promise<{ id: st
     downloadReport.mutate({ patientId: id, format });
   };
 
-  if (isLoading) return <SectionLoader label="Loading patient…" />;
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-4xl space-y-4">
+        <FluidSkeletonStack
+          count={4}
+          itemClassName="h-24 first:h-36 last:h-48 rounded-xl"
+        />
+      </div>
+    );
+  }
   if (!patient) {
     return <EmptyState title="Patient not found" description="This record may have been removed." />;
   }

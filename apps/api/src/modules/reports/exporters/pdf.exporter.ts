@@ -136,9 +136,7 @@ export class PdfExporter implements ReportExporter {
       const drawHeader = () => {
         let x = pdf.page.margins.left;
         const headerH = 22;
-        pdf
-          .rect(x, y, pageWidth, headerH)
-          .fill(REPORT_THEME.headerBg);
+        pdf.rect(x, y, pageWidth, headerH).fill(REPORT_THEME.headerBg);
 
         pdf.fillColor(REPORT_THEME.headerFg).font("Helvetica-Bold").fontSize(8);
         for (let i = 0; i < colCount; i++) {
