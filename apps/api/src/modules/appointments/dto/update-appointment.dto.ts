@@ -1,15 +1,21 @@
-import { IsOptional, IsString, IsDateString, IsNumber, IsEnum } from 'class-validator';
-import { SessionTypeDto, DiscountTypeDto } from './create-appointment.dto';
+import {
+  IsOptional,
+  IsString,
+  IsDateString,
+  IsNumber,
+  IsEnum,
+} from "class-validator";
+import { SessionTypeDto, DiscountTypeDto } from "./create-appointment.dto";
 
 export enum AppointmentStatusDto {
-  unconfirmed = 'unconfirmed',
-  confirmed = 'confirmed',
-  checked_in = 'checked_in',
-  waiting = 'waiting',
-  in_progress = 'in_progress',
-  completed = 'completed',
-  no_show = 'no_show',
-  cancelled = 'cancelled',
+  unconfirmed = "unconfirmed",
+  confirmed = "confirmed",
+  checked_in = "checked_in",
+  waiting = "waiting",
+  in_progress = "in_progress",
+  completed = "completed",
+  no_show = "no_show",
+  cancelled = "cancelled",
 }
 
 export class UpdateAppointmentDto {

@@ -19,4 +19,4 @@ export type {
   PatientDetail,
   Appointment,
   ClinicStaffMember,
-} from '@clinic/types';
+} from "@clinic/types";

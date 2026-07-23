@@ -1,8 +1,9 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 const envSchema = z.object({
   NEXT_PUBLIC_API_URL: z.string().url({
-    message: 'NEXT_PUBLIC_API_URL must be a valid URL, e.g. http://192.168.8.108:4000',
+    message:
+      "NEXT_PUBLIC_API_URL must be a valid URL, e.g. http://192.168.8.116:4000",
   }),
 });
 
@@ -12,8 +13,8 @@ const parsed = envSchema.safeParse({
 
 if (!parsed.success) {
   const issues = parsed.error.issues
-    .map((i) => `  - ${i.path.join('.')}: ${i.message}`)
-    .join('\n');
+    .map((i) => `  - ${i.path.join(".")}: ${i.message}`)
+    .join("\n");
   throw new Error(
     `Invalid environment variables in apps/web/.env.local:\n${issues}\n\nCheck the file and restart the dev server.`,
   );

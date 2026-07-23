@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreateDiscountCodeDto, UpdateDiscountCodeDto } from './dto';
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import { PrismaService } from "@/prisma/prisma.service";
+import { CreateDiscountCodeDto, UpdateDiscountCodeDto } from "./dto";
 
 @Injectable()
 export class DiscountCodesRepository {
@@ -24,7 +25,7 @@ export class DiscountCodesRepository {
   findAllByClinic(clinicId: string) {
     return this.prisma.discountCode.findMany({
       where: { clinicId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -41,9 +42,19 @@ export class DiscountCodesRepository {
   }
 
   update(id: string, dto: UpdateDiscountCodeDto) {
-    const data: Record<string, unknown> = { ...dto };
-    if (typeof dto.code === 'string') {
+    const data: Prisma.DiscountCodeUpdateInput = {};
+
+    if (dto.code !== undefined) {
       data.code = dto.code.trim().toUpperCase();
+    }
+    if (dto.discountType !== undefined) {
+      data.discountType = dto.discountType;
+    }
+    if (dto.discountValue !== undefined) {
+      data.discountValue = dto.discountValue;
+    }
+    if (dto.maxUses !== undefined) {
+      data.maxUses = dto.maxUses;
     }
     if (dto.validFrom !== undefined) {
       data.validFrom = dto.validFrom ? new Date(dto.validFrom) : null;
@@ -51,7 +62,14 @@ export class DiscountCodesRepository {
     if (dto.validTo !== undefined) {
       data.validTo = dto.validTo ? new Date(dto.validTo) : null;
     }
-    return this.prisma.discountCode.update({ where: { id }, data: data as any });
+    if (dto.isActive !== undefined) {
+      data.isActive = dto.isActive;
+    }
+
+    return this.prisma.discountCode.update({
+      where: { id },
+      data,
+    });
   }
 
   deactivate(id: string) {

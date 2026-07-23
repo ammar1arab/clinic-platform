@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreateNotificationDto } from './dto';
-import { Prisma } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@/prisma/prisma.service";
+import { CreateNotificationDto } from "./dto";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class NotificationsRepository {
@@ -23,7 +23,7 @@ export class NotificationsRepository {
   findRecent(clinicId: string, userId: string, take = 50) {
     return this.prisma.notification.findMany({
       where: { clinicId, userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take,
     });
   }

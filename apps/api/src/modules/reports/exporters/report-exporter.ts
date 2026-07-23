@@ -1,4 +1,4 @@
-import { ReportDocument, ReportFormat } from '../types/report-document';
+import { ReportDocument, ReportFormat } from "../types/report-document";
 
 export interface ExportedReport {
   buffer: Buffer;

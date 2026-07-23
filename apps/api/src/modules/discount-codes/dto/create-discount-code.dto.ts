@@ -7,8 +7,8 @@ import {
   IsEnum,
   IsDateString,
   Min,
-} from 'class-validator';
-import { DiscountTypeDto } from '@/modules/appointments/dto/create-appointment.dto';
+} from "class-validator";
+import { DiscountTypeDto } from "@/modules/appointments/dto/create-appointment.dto";
 
 export class CreateDiscountCodeDto {
   @IsString()

@@ -13,11 +13,12 @@
   },
   "files": [
     "dist",
-    "src"
+    "*.ts"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepare": "npm run build"
   },
   "license": "UNLICENSED",
   "devDependencies": {

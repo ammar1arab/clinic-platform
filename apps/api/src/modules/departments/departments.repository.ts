@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreateDepartmentDto, UpdateDepartmentDto } from './dto';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@/prisma/prisma.service";
+import { CreateDepartmentDto, UpdateDepartmentDto } from "./dto";
 
 @Injectable()
 export class DepartmentsRepository {
@@ -13,7 +13,7 @@ export class DepartmentsRepository {
   findAllByClinic(clinicId: string) {
     return this.prisma.department.findMany({
       where: { clinicId },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
   }
 

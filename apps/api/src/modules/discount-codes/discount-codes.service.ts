@@ -3,13 +3,13 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
-} from '@nestjs/common';
-import { DiscountCodesRepository } from './discount-codes.repository';
+} from "@nestjs/common";
+import { DiscountCodesRepository } from "./discount-codes.repository";
 import {
   CreateDiscountCodeDto,
   UpdateDiscountCodeDto,
   ValidateDiscountCodeDto,
-} from './dto';
+} from "./dto";
 
 @Injectable()
 export class DiscountCodesService {
@@ -21,7 +21,7 @@ export class DiscountCodesService {
       dto.code,
     );
     if (existing) {
-      throw new ConflictException('Discount code already exists');
+      throw new ConflictException("Discount code already exists");
     }
     return this.discountCodesRepository.create(dto);
   }
@@ -32,7 +32,7 @@ export class DiscountCodesService {
 
   async findOne(id: string) {
     const code = await this.discountCodesRepository.findById(id);
-    if (!code) throw new NotFoundException('Discount code not found');
+    if (!code) throw new NotFoundException("Discount code not found");
     return code;
   }
 
@@ -43,7 +43,7 @@ export class DiscountCodesService {
         existing.clinicId,
         dto.code,
       );
-      if (clash) throw new ConflictException('Discount code already exists');
+      if (clash) throw new ConflictException("Discount code already exists");
     }
     return this.discountCodesRepository.update(id, dto);
   }
@@ -60,20 +60,25 @@ export class DiscountCodesService {
 
   /** Validate a code for checkout / appointment discount application. */
   async validate(dto: ValidateDiscountCodeDto) {
-    const row = await this.discountCodesRepository.findByCode(dto.clinicId, dto.code);
+    const row = await this.discountCodesRepository.findByCode(
+      dto.clinicId,
+      dto.code,
+    );
     if (!row || !row.isActive) {
-      throw new BadRequestException('Invalid or inactive discount code');
+      throw new BadRequestException("Invalid or inactive discount code");
     }
 
     const now = new Date();
     if (row.validFrom && row.validFrom > now) {
-      throw new BadRequestException('Discount code is not yet valid');
+      throw new BadRequestException("Discount code is not yet valid");
     }
     if (row.validTo && row.validTo < now) {
-      throw new BadRequestException('Discount code has expired');
+      throw new BadRequestException("Discount code has expired");
     }
     if (row.maxUses != null && row.usedCount >= row.maxUses) {
-      throw new BadRequestException('Discount code has reached its usage limit');
+      throw new BadRequestException(
+        "Discount code has reached its usage limit",
+      );
     }
 
     return {

@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreateReferralDto, ReferralFiltersDto } from './dto';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@/prisma/prisma.service";
+import { CreateReferralDto, ReferralFiltersDto } from "./dto";
 
 @Injectable()
 export class ReferralsRepository {
@@ -35,7 +35,7 @@ export class ReferralsRepository {
         fromDoctorId: data.fromDoctorId,
         toDoctorId: data.toDoctorId,
         type: data.type,
-        urgency: data.urgency ?? 'normal',
+        urgency: data.urgency ?? "normal",
         reason: data.reason,
       },
       include: this.include,
@@ -53,7 +53,7 @@ export class ReferralsRepository {
           : {}),
       },
       include: this.include,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -64,7 +64,7 @@ export class ReferralsRepository {
     });
   }
 
-  updateStatus(id: string, status: 'accepted' | 'rejected') {
+  updateStatus(id: string, status: "accepted" | "rejected") {
     return this.prisma.referral.update({
       where: { id },
       data: { status },
@@ -84,7 +84,7 @@ export class ReferralsRepository {
     return this.prisma.referral.findMany({
       where: { appointment: { patientId } },
       include: this.include,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 }

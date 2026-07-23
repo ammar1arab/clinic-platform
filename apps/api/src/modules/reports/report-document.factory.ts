@@ -1,9 +1,9 @@
-import { ReportDocument } from './types/report-document';
+import { ReportDocument } from "./types/report-document";
 import {
   formatDisplayDate,
   formatDisplayDateTime,
   slugFilename,
-} from './utils/report-format';
+} from "./utils/report-format";
 
 type ClinicLetterheadRow = {
   name: string;
@@ -80,7 +80,9 @@ type FinanceAppointmentRow = {
   paymentMethodRef: { name: string } | null;
 };
 
-function toNumber(value: { toString(): string } | number | null | undefined): number {
+function toNumber(
+  value: { toString(): string } | number | null | undefined,
+): number {
   if (value === null || value === undefined) return 0;
   return Number(value) || 0;
 }
@@ -96,7 +98,7 @@ function computePayable(
   let discountAmount = 0;
   if (rawDiscount > 0 && discountType) {
     discountAmount =
-      discountType === 'percentage'
+      discountType === "percentage"
         ? (baseFee * Math.min(rawDiscount, 100)) / 100
         : Math.min(rawDiscount, baseFee);
   }
@@ -118,13 +120,13 @@ export class ReportDocumentFactory {
     const nameEn = `${patient.firstNameEn} ${patient.lastNameEn}`.trim();
     const nameAr =
       patient.firstNameAr || patient.lastNameAr
-        ? `${patient.firstNameAr ?? ''} ${patient.lastNameAr ?? ''}`.trim()
+        ? `${patient.firstNameAr ?? ""} ${patient.lastNameAr ?? ""}`.trim()
         : null;
 
     return {
-      type: 'patient_medical',
+      type: "patient_medical",
       title: `Patient Medical Report — ${nameEn}`,
-      filenameBase: slugFilename(['patient', nameEn, patient.id.slice(0, 8)]),
+      filenameBase: slugFilename(["patient", nameEn, patient.id.slice(0, 8)]),
       generatedAt: new Date(),
       letterhead: {
         clinicName: clinic.name,
@@ -134,33 +136,33 @@ export class ReportDocumentFactory {
         footer: clinic.letterheadFooter,
       },
       summary: [
-        { label: 'Name (EN)', value: nameEn },
-        { label: 'Name (AR)', value: nameAr ?? '—' },
-        { label: 'National ID', value: patient.nationalId ?? '—' },
-        { label: 'Phone', value: patient.phone ?? '—' },
-        { label: 'Email', value: patient.email ?? '—' },
+        { label: "Name (EN)", value: nameEn },
+        { label: "Name (AR)", value: nameAr ?? "—" },
+        { label: "National ID", value: patient.nationalId ?? "—" },
+        { label: "Phone", value: patient.phone ?? "—" },
+        { label: "Email", value: patient.email ?? "—" },
         {
-          label: 'Date of Birth',
-          value: patient.dob ? formatDisplayDate(patient.dob) : '—',
+          label: "Date of Birth",
+          value: patient.dob ? formatDisplayDate(patient.dob) : "—",
         },
-        { label: 'Gender', value: patient.gender ?? '—' },
-        { label: 'Blood Type', value: patient.bloodType ?? '—' },
+        { label: "Gender", value: patient.gender ?? "—" },
+        { label: "Blood Type", value: patient.bloodType ?? "—" },
         {
-          label: 'Primary Doctor',
-          value: patient.primaryDoctor?.name ?? '—',
+          label: "Primary Doctor",
+          value: patient.primaryDoctor?.name ?? "—",
         },
-        { label: 'Allergies', value: patient.allergies ?? 'None recorded' },
-        { label: 'Address', value: patient.address ?? '—' },
-        { label: 'Total Visits', value: String(appointments.length) },
+        { label: "Allergies", value: patient.allergies ?? "None recorded" },
+        { label: "Address", value: patient.address ?? "—" },
+        { label: "Total Visits", value: String(appointments.length) },
       ],
       columns: [
-        { key: 'date', header: 'Date' },
-        { key: 'status', header: 'Status' },
-        { key: 'doctor', header: 'Doctor' },
-        { key: 'service', header: 'Service' },
-        { key: 'department', header: 'Department' },
-        { key: 'type', header: 'Type' },
-        { key: 'duration', header: 'Duration' },
+        { key: "date", header: "Date" },
+        { key: "status", header: "Status" },
+        { key: "doctor", header: "Doctor" },
+        { key: "service", header: "Service" },
+        { key: "department", header: "Department" },
+        { key: "type", header: "Type" },
+        { key: "duration", header: "Duration" },
       ],
       rows: appointments.map((a) => ({
         date: formatDisplayDateTime(a.scheduledAt),
@@ -182,9 +184,9 @@ export class ReportDocumentFactory {
     const { clinic, referrals, filtersLabel } = input;
 
     return {
-      type: 'referrals',
-      title: 'Referrals & Consultations Report',
-      filenameBase: slugFilename(['referrals', filtersLabel || 'all']),
+      type: "referrals",
+      title: "Referrals & Consultations Report",
+      filenameBase: slugFilename(["referrals", filtersLabel || "all"]),
       generatedAt: new Date(),
       letterhead: {
         clinicName: clinic.name,
@@ -194,21 +196,21 @@ export class ReportDocumentFactory {
         footer: clinic.letterheadFooter,
       },
       summary: [
-        { label: 'Filters', value: filtersLabel || 'All referrals' },
-        { label: 'Total records', value: String(referrals.length) },
+        { label: "Filters", value: filtersLabel || "All referrals" },
+        { label: "Total records", value: String(referrals.length) },
       ],
       columns: [
-        { key: 'createdAt', header: 'Created' },
-        { key: 'patient', header: 'Patient' },
-        { key: 'nationalId', header: 'National ID' },
-        { key: 'type', header: 'Type' },
-        { key: 'urgency', header: 'Urgency' },
-        { key: 'status', header: 'Status' },
-        { key: 'fromDoctor', header: 'From' },
-        { key: 'toDoctor', header: 'To' },
-        { key: 'reason', header: 'Reason' },
-        { key: 'opinion', header: 'Opinion' },
-        { key: 'appointmentAt', header: 'Appointment' },
+        { key: "createdAt", header: "Created" },
+        { key: "patient", header: "Patient" },
+        { key: "nationalId", header: "National ID" },
+        { key: "type", header: "Type" },
+        { key: "urgency", header: "Urgency" },
+        { key: "status", header: "Status" },
+        { key: "fromDoctor", header: "From" },
+        { key: "toDoctor", header: "To" },
+        { key: "reason", header: "Reason" },
+        { key: "opinion", header: "Opinion" },
+        { key: "appointmentAt", header: "Appointment" },
       ],
       rows: referrals.map((r) => {
         const p = r.appointment.patient;
@@ -246,12 +248,17 @@ export class ReportDocumentFactory {
     const rows = appointments.map((a) => {
       const pricing = computePayable(a.fee, a.discount, a.discountType);
       const methodName =
-        a.paymentMethodRef?.name ?? a.paymentMethod ?? (a.isPaid ? 'Unknown' : '—');
+        a.paymentMethodRef?.name ??
+        a.paymentMethod ??
+        (a.isPaid ? "Unknown" : "—");
 
       if (a.isPaid) {
         paidCount += 1;
         paidRevenue += pricing.payable;
-        byMethod.set(methodName, (byMethod.get(methodName) ?? 0) + pricing.payable);
+        byMethod.set(
+          methodName,
+          (byMethod.get(methodName) ?? 0) + pricing.payable,
+        );
         byDoctor.set(
           a.doctor.name,
           (byDoctor.get(a.doctor.name) ?? 0) + pricing.payable,
@@ -271,7 +278,7 @@ export class ReportDocumentFactory {
         fee: Number(pricing.fee.toFixed(3)),
         discount: Number(pricing.discountAmount.toFixed(3)),
         payable: Number(pricing.payable.toFixed(3)),
-        paid: a.isPaid ? 'Paid' : 'Unpaid',
+        paid: a.isPaid ? "Paid" : "Unpaid",
         paymentMethod: methodName,
         paidAt: a.paidAt ? formatDisplayDateTime(a.paidAt) : null,
       };
@@ -282,21 +289,21 @@ export class ReportDocumentFactory {
         ? [...byMethod.entries()]
             .sort((a, b) => b[1] - a[1])
             .map(([name, total]) => `${name}: ${formatMoney(total)}`)
-            .join(' · ')
-        : '—';
+            .join(" · ")
+        : "—";
 
     const doctorSummary =
       byDoctor.size > 0
         ? [...byDoctor.entries()]
             .sort((a, b) => b[1] - a[1])
             .map(([name, total]) => `${name}: ${formatMoney(total)}`)
-            .join(' · ')
-        : '—';
+            .join(" · ")
+        : "—";
 
     return {
-      type: 'finance_monthly',
-      title: 'Finance Report',
-      filenameBase: slugFilename(['finance', periodLabel || 'all']),
+      type: "finance_monthly",
+      title: "Finance Report",
+      filenameBase: slugFilename(["finance", periodLabel || "all"]),
       generatedAt: new Date(),
       letterhead: {
         clinicName: clinic.name,
@@ -306,28 +313,31 @@ export class ReportDocumentFactory {
         footer: clinic.letterheadFooter,
       },
       summary: [
-        { label: 'Period', value: periodLabel || 'All dates' },
-        { label: 'Appointments', value: String(appointments.length) },
-        { label: 'Paid', value: String(paidCount) },
-        { label: 'Unpaid', value: String(unpaidCount) },
-        { label: 'Revenue (paid)', value: formatMoney(paidRevenue) },
-        { label: 'Outstanding (unpaid)', value: formatMoney(unpaidOutstanding) },
-        { label: 'By payment method', value: methodSummary },
-        { label: 'By doctor', value: doctorSummary },
+        { label: "Period", value: periodLabel || "All dates" },
+        { label: "Appointments", value: String(appointments.length) },
+        { label: "Paid", value: String(paidCount) },
+        { label: "Unpaid", value: String(unpaidCount) },
+        { label: "Revenue (paid)", value: formatMoney(paidRevenue) },
+        {
+          label: "Outstanding (unpaid)",
+          value: formatMoney(unpaidOutstanding),
+        },
+        { label: "By payment method", value: methodSummary },
+        { label: "By doctor", value: doctorSummary },
       ],
       columns: [
-        { key: 'date', header: 'Date' },
-        { key: 'patient', header: 'Patient' },
-        { key: 'nationalId', header: 'National ID' },
-        { key: 'doctor', header: 'Doctor' },
-        { key: 'service', header: 'Service' },
-        { key: 'status', header: 'Status' },
-        { key: 'fee', header: 'Fee' },
-        { key: 'discount', header: 'Discount' },
-        { key: 'payable', header: 'Payable' },
-        { key: 'paid', header: 'Payment' },
-        { key: 'paymentMethod', header: 'Method' },
-        { key: 'paidAt', header: 'Paid at' },
+        { key: "date", header: "Date" },
+        { key: "patient", header: "Patient" },
+        { key: "nationalId", header: "National ID" },
+        { key: "doctor", header: "Doctor" },
+        { key: "service", header: "Service" },
+        { key: "status", header: "Status" },
+        { key: "fee", header: "Fee" },
+        { key: "discount", header: "Discount" },
+        { key: "payable", header: "Payable" },
+        { key: "paid", header: "Payment" },
+        { key: "paymentMethod", header: "Method" },
+        { key: "paidAt", header: "Paid at" },
       ],
       rows,
     };

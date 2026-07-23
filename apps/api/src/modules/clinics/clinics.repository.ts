@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreateClinicDto, UpdateClinicDto } from './dto';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@/prisma/prisma.service";
+import { CreateClinicDto, UpdateClinicDto } from "./dto";
 
 @Injectable()
 export class ClinicsRepository {
@@ -18,7 +18,7 @@ export class ClinicsRepository {
     return this.prisma.clinicUser.findMany({
       where: { clinicId, isActive: true },
       select: { id: true, name: true, role: true, initials: true },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
   }
 

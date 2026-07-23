@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PackagesRepository } from './packages.repository';
-import { CreatePackageDto, UpdatePackageDto } from './dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PackagesRepository } from "./packages.repository";
+import { CreatePackageDto, UpdatePackageDto } from "./dto";
 
 @Injectable()
 export class PackagesService {
@@ -16,7 +16,7 @@ export class PackagesService {
 
   async findOne(id: string) {
     const pkg = await this.packagesRepository.findById(id);
-    if (!pkg) throw new NotFoundException('Package not found');
+    if (!pkg) throw new NotFoundException("Package not found");
     return pkg;
   }
 

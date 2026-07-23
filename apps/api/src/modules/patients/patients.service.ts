@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PatientsRepository } from './patients.repository';
-import { CreatePatientDto, UpdatePatientDto, PatientFiltersDto } from './dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PatientsRepository } from "./patients.repository";
+import { CreatePatientDto, UpdatePatientDto, PatientFiltersDto } from "./dto";
 
 @Injectable()
 export class PatientsService {
@@ -18,7 +18,8 @@ export class PatientsService {
       const totalSessions = completedAppointments.length;
       const firstVisit = completedAppointments[0]?.scheduledAt ?? null;
       const lastVisit =
-        completedAppointments[completedAppointments.length - 1]?.scheduledAt ?? null;
+        completedAppointments[completedAppointments.length - 1]?.scheduledAt ??
+        null;
 
       return {
         id: patient.id,
@@ -56,10 +57,11 @@ export class PatientsService {
   async findOne(id: string) {
     const patient = await this.patientsRepository.findById(id);
     if (!patient) {
-      throw new NotFoundException('Patient not found');
+      throw new NotFoundException("Patient not found");
     }
 
-    const referrals = await this.patientsRepository.findReferralsByPatientId(id);
+    const referrals =
+      await this.patientsRepository.findReferralsByPatientId(id);
     return { ...patient, referrals };
   }
 

@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { ReportDocument } from '../types/report-document';
-import { ExportedReport, ReportExporter } from './report-exporter';
-import { escapeXml, formatDisplayDate } from '../utils/report-format';
+import { Injectable } from "@nestjs/common";
+import { ReportDocument } from "../types/report-document";
+import { ExportedReport, ReportExporter } from "./report-exporter";
+import { escapeXml, formatDisplayDate } from "../utils/report-format";
 
 /**
  * SpreadsheetML (.xlsx-compatible via Excel XML).
@@ -9,12 +9,15 @@ import { escapeXml, formatDisplayDate } from '../utils/report-format';
  */
 @Injectable()
 export class ExcelExporter implements ReportExporter {
-  readonly format = 'xlsx' as const;
+  readonly format = "xlsx" as const;
 
-  async export(doc: ReportDocument): Promise<ExportedReport> {
+  export(doc: ReportDocument): Promise<ExportedReport> {
     const headerCells = doc.columns
-      .map((c) => `<Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXml(c.header)}</Data></Cell>`)
-      .join('');
+      .map(
+        (c) =>
+          `<Cell ss:StyleID="Header"><Data ss:Type="String">${escapeXml(c.header)}</Data></Cell>`,
+      )
+      .join("");
 
     const dataRows =
       doc.rows.length === 0
@@ -24,17 +27,17 @@ export class ExcelExporter implements ReportExporter {
               const cells = doc.columns
                 .map((c) => {
                   const raw = row[c.key];
-                  if (typeof raw === 'number' && Number.isFinite(raw)) {
+                  if (typeof raw === "number" && Number.isFinite(raw)) {
                     return `<Cell><Data ss:Type="Number">${raw}</Data></Cell>`;
                   }
                   const text =
-                    raw === null || raw === undefined ? '' : String(raw);
+                    raw === null || raw === undefined ? "" : String(raw);
                   return `<Cell><Data ss:Type="String">${escapeXml(text)}</Data></Cell>`;
                 })
-                .join('');
+                .join("");
               return `<Row>${cells}</Row>`;
             })
-            .join('');
+            .join("");
 
     const summaryRows =
       doc.summary
@@ -42,7 +45,7 @@ export class ExcelExporter implements ReportExporter {
           (s) =>
             `<Row><Cell><Data ss:Type="String">${escapeXml(s.label)}</Data></Cell><Cell><Data ss:Type="String">${escapeXml(s.value)}</Data></Cell></Row>`,
         )
-        .join('') ?? '';
+        .join("") ?? "";
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
@@ -61,18 +64,18 @@ export class ExcelExporter implements ReportExporter {
       <Row><Cell><Data ss:Type="String">Generated ${escapeXml(formatDisplayDate(doc.generatedAt))}</Data></Cell></Row>
       <Row></Row>
       ${summaryRows}
-      ${summaryRows ? '<Row></Row>' : ''}
+      ${summaryRows ? "<Row></Row>" : ""}
       <Row>${headerCells}</Row>
       ${dataRows}
     </Table>
   </Worksheet>
 </Workbook>`;
 
-    return {
-      buffer: Buffer.from(xml, 'utf8'),
+    return Promise.resolve({
+      buffer: Buffer.from(xml, "utf8"),
       // Excel opens SpreadsheetML; .xls keeps widest compatibility without exceljs
-      contentType: 'application/vnd.ms-excel',
+      contentType: "application/vnd.ms-excel",
       filename: `${doc.filenameBase}.xls`,
-    };
+    });
   }
 }

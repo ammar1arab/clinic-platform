@@ -1,7 +1,6 @@
-import { IsString, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsDateString } from "class-validator";
 
 export class AppointmentFiltersDto {
-
   @IsOptional()
   @IsDateString()
   startDate?: string;

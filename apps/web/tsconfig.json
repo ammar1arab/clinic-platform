@@ -20,7 +20,7 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@clinic/types": ["../../packages/types/src/index.ts"]
+      "@clinic/types": ["../../packages/types/index.ts"]
     }
   },
   "include": [

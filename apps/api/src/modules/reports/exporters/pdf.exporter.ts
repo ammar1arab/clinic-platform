@@ -1,19 +1,19 @@
-import { Injectable } from '@nestjs/common';
-import puppeteer from 'puppeteer';
-import { ReportDocument } from '../types/report-document';
-import { ExportedReport, ReportExporter } from './report-exporter';
-import { escapeHtml, formatDisplayDate } from '../utils/report-format';
+import { Injectable } from "@nestjs/common";
+import puppeteer from "puppeteer";
+import { ReportDocument } from "../types/report-document";
+import { ExportedReport, ReportExporter } from "./report-exporter";
+import { escapeHtml, formatDisplayDate } from "../utils/report-format";
 
 @Injectable()
 export class PdfExporter implements ReportExporter {
-  readonly format = 'pdf' as const;
+  readonly format = "pdf" as const;
 
   async export(doc: ReportDocument): Promise<ExportedReport> {
     const html = this.buildHtml(doc);
     const buffer = await this.renderPdf(html);
     return {
       buffer,
-      contentType: 'application/pdf',
+      contentType: "application/pdf",
       filename: `${doc.filenameBase}.pdf`,
     };
   }
@@ -22,7 +22,7 @@ export class PdfExporter implements ReportExporter {
     const { letterhead } = doc;
     const logoHtml = letterhead.logoUrl
       ? `<img src="${escapeHtml(letterhead.logoUrl)}" alt="Clinic logo" class="logo" />`
-      : '';
+      : "";
 
     const summaryHtml =
       doc.summary && doc.summary.length > 0
@@ -37,14 +37,14 @@ export class PdfExporter implements ReportExporter {
                   <dd>${escapeHtml(item.value)}</dd>
                 </div>`,
                 )
-                .join('')}
+                .join("")}
             </dl>
           </section>`
-        : '';
+        : "";
 
     const head = doc.columns
       .map((c) => `<th>${escapeHtml(c.header)}</th>`)
-      .join('');
+      .join("");
 
     const body =
       doc.rows.length === 0
@@ -56,12 +56,12 @@ export class PdfExporter implements ReportExporter {
                   .map((c) => {
                     const raw = row[c.key];
                     const text =
-                      raw === null || raw === undefined ? '—' : String(raw);
+                      raw === null || raw === undefined ? "—" : String(raw);
                     return `<td>${escapeHtml(text)}</td>`;
                   })
-                  .join('')}</tr>`,
+                  .join("")}</tr>`,
             )
-            .join('');
+            .join("");
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -123,8 +123,8 @@ export class PdfExporter implements ReportExporter {
     ${logoHtml}
     <div class="clinic-meta">
       <h1>${escapeHtml(letterhead.clinicName)}</h1>
-      ${letterhead.address ? `<p>${escapeHtml(letterhead.address)}</p>` : ''}
-      ${letterhead.phone ? `<p>${escapeHtml(letterhead.phone)}</p>` : ''}
+      ${letterhead.address ? `<p>${escapeHtml(letterhead.address)}</p>` : ""}
+      ${letterhead.phone ? `<p>${escapeHtml(letterhead.phone)}</p>` : ""}
     </div>
   </header>
 
@@ -143,7 +143,7 @@ export class PdfExporter implements ReportExporter {
   ${
     letterhead.footer
       ? `<footer class="footer">${escapeHtml(letterhead.footer)}</footer>`
-      : ''
+      : ""
   }
 </body>
 </html>`;
@@ -152,13 +152,13 @@ export class PdfExporter implements ReportExporter {
   private async renderPdf(html: string): Promise<Buffer> {
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'load' });
-      const pdf = await page.pdf({ format: 'A4', printBackground: true });
+      await page.setContent(html, { waitUntil: "load" });
+      const pdf = await page.pdf({ format: "A4", printBackground: true });
       return Buffer.from(pdf);
     } finally {
       await browser.close();

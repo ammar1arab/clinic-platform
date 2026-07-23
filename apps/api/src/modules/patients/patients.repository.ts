@@ -1,20 +1,39 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreatePatientDto, UpdatePatientDto, PatientFiltersDto, PatientSortBy, SortOrder } from './dto';
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import { PrismaService } from "@/prisma/prisma.service";
+import {
+  CreatePatientDto,
+  UpdatePatientDto,
+  PatientFiltersDto,
+  PatientSortBy,
+  SortOrder,
+} from "./dto";
 
 @Injectable()
 export class PatientsRepository {
   constructor(private prisma: PrismaService) {}
 
   create(dto: CreatePatientDto) {
-    const data: any = { ...dto };
-    if (data.dob) {
-      data.dob = new Date(data.dob);
-    } else if (data.dob === null || data.dob === '') {
-      data.dob = null;
-    }
-    if (data.packageId === '') data.packageId = null;
-    if (data.discountCodeId === '') data.discountCodeId = null;
+    const data: Prisma.PatientUncheckedCreateInput = {
+      clinicId: dto.clinicId,
+      firstNameEn: dto.firstNameEn,
+      lastNameEn: dto.lastNameEn,
+      firstNameAr: dto.firstNameAr,
+      lastNameAr: dto.lastNameAr,
+      nationalId: dto.nationalId,
+      phone: dto.phone,
+      email: dto.email,
+      gender: dto.gender,
+      bloodType: dto.bloodType,
+      allergies: dto.allergies,
+      emergencyContactName: dto.emergencyContactName,
+      emergencyContactPhone: dto.emergencyContactPhone,
+      address: dto.address,
+      dob: dto.dob ? new Date(dto.dob) : null,
+      packageId: dto.packageId === "" ? null : (dto.packageId ?? null),
+      discountCodeId:
+        dto.discountCodeId === "" ? null : (dto.discountCodeId ?? null),
+    };
     return this.prisma.patient.create({ data });
   }
 
@@ -40,46 +59,52 @@ export class PatientsRepository {
     const skip = page && limit ? (page - 1) * limit : undefined;
     const take = limit ?? undefined;
 
-    const where: any = { clinicId };
+    const where: Prisma.PatientWhereInput = { clinicId };
 
     if (isActive !== undefined) {
-      where.isActive = isActive === true || String(isActive) === 'true';
+      where.isActive = isActive === true || String(isActive) === "true";
     }
 
-    if (gender) where.gender = { equals: gender, mode: 'insensitive' };
-    if (bloodType) where.bloodType = { equals: bloodType, mode: 'insensitive' };
+    if (gender) where.gender = { equals: gender, mode: "insensitive" };
+    if (bloodType) where.bloodType = { equals: bloodType, mode: "insensitive" };
     if (primaryDoctorId) where.primaryDoctorId = primaryDoctorId;
 
     if (dobFrom || dobTo) {
-      where.dob = {};
+      const dobFilter: Prisma.DateTimeNullableFilter = {};
       if (dobFrom) {
-        const dateStr = dobFrom.includes('T') ? dobFrom.split('T')[0] : dobFrom;
-        where.dob.gte = new Date(`${dateStr}T00:00:00.000Z`);
+        const dateStr = dobFrom.includes("T") ? dobFrom.split("T")[0] : dobFrom;
+        dobFilter.gte = new Date(`${dateStr}T00:00:00.000Z`);
       }
       if (dobTo) {
-        const dateStr = dobTo.includes('T') ? dobTo.split('T')[0] : dobTo;
-        where.dob.lte = new Date(`${dateStr}T23:59:59.999Z`);
+        const dateStr = dobTo.includes("T") ? dobTo.split("T")[0] : dobTo;
+        dobFilter.lte = new Date(`${dateStr}T23:59:59.999Z`);
       }
+      where.dob = dobFilter;
     }
 
     if (departmentId || visitFrom || visitTo) {
-      const appointmentSome: any = {};
+      const appointmentSome: Prisma.AppointmentWhereInput = {};
 
       if (departmentId) {
         appointmentSome.departmentId = departmentId;
       }
 
       if (visitFrom || visitTo) {
-        appointmentSome.status = 'completed';
-        appointmentSome.scheduledAt = {};
+        appointmentSome.status = "completed";
+        const scheduledAt: Prisma.DateTimeFilter = {};
         if (visitFrom) {
-          const dateStr = visitFrom.includes('T') ? visitFrom.split('T')[0] : visitFrom;
-          appointmentSome.scheduledAt.gte = new Date(`${dateStr}T00:00:00.000Z`);
+          const dateStr = visitFrom.includes("T")
+            ? visitFrom.split("T")[0]
+            : visitFrom;
+          scheduledAt.gte = new Date(`${dateStr}T00:00:00.000Z`);
         }
         if (visitTo) {
-          const dateStr = visitTo.includes('T') ? visitTo.split('T')[0] : visitTo;
-          appointmentSome.scheduledAt.lte = new Date(`${dateStr}T23:59:59.999Z`);
+          const dateStr = visitTo.includes("T")
+            ? visitTo.split("T")[0]
+            : visitTo;
+          scheduledAt.lte = new Date(`${dateStr}T23:59:59.999Z`);
         }
+        appointmentSome.scheduledAt = scheduledAt;
       }
 
       where.appointments = { some: appointmentSome };
@@ -87,18 +112,17 @@ export class PatientsRepository {
 
     if (search) {
       where.OR = [
-        { firstNameEn: { contains: search, mode: 'insensitive' } },
-        { lastNameEn:  { contains: search, mode: 'insensitive' } },
-        { firstNameAr: { contains: search, mode: 'insensitive' } },
-        { lastNameAr:  { contains: search, mode: 'insensitive' } },
-        { phone:       { contains: search } },
-        { nationalId:  { contains: search } },
-        { email:       { contains: search, mode: 'insensitive' } },
+        { firstNameEn: { contains: search, mode: "insensitive" } },
+        { lastNameEn: { contains: search, mode: "insensitive" } },
+        { firstNameAr: { contains: search, mode: "insensitive" } },
+        { lastNameAr: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search } },
+        { nationalId: { contains: search } },
+        { email: { contains: search, mode: "insensitive" } },
       ];
     }
 
-    // Sort by appointment count uses Prisma _count relation ordering
-    const orderBy =
+    const orderBy: Prisma.PatientOrderByWithRelationInput =
       sortBy === PatientSortBy.APPOINTMENTS
         ? { appointments: { _count: sortOrder } }
         : { [sortBy]: sortOrder };
@@ -126,8 +150,8 @@ export class PatientsRepository {
           },
         },
         appointments: {
-          where: { status: 'completed' },
-          orderBy: { scheduledAt: 'asc' },
+          where: { status: "completed" },
+          orderBy: { scheduledAt: "asc" },
         },
       },
       orderBy,
@@ -160,7 +184,7 @@ export class PatientsRepository {
           },
         },
         appointments: {
-          orderBy: { scheduledAt: 'desc' },
+          orderBy: { scheduledAt: "desc" },
           include: {
             doctor: true,
             service: true,
@@ -170,7 +194,7 @@ export class PatientsRepository {
                 fromDoctor: { select: { id: true, name: true } },
                 toDoctor: { select: { id: true, name: true } },
               },
-              orderBy: { createdAt: 'desc' },
+              orderBy: { createdAt: "desc" },
             },
           },
         },
@@ -192,20 +216,42 @@ export class PatientsRepository {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
   update(id: string, dto: UpdatePatientDto) {
-    const data: any = { ...dto };
-    delete data.clinicId;
-    if (data.dob) {
-      data.dob = new Date(data.dob);
-    } else if (data.dob === null || data.dob === '') {
-      data.dob = null;
+    const data: Prisma.PatientUncheckedUpdateInput = {};
+
+    if (dto.firstNameEn !== undefined) data.firstNameEn = dto.firstNameEn;
+    if (dto.lastNameEn !== undefined) data.lastNameEn = dto.lastNameEn;
+    if (dto.firstNameAr !== undefined) data.firstNameAr = dto.firstNameAr;
+    if (dto.lastNameAr !== undefined) data.lastNameAr = dto.lastNameAr;
+    if (dto.nationalId !== undefined) data.nationalId = dto.nationalId;
+    if (dto.phone !== undefined) data.phone = dto.phone;
+    if (dto.email !== undefined) data.email = dto.email;
+    if (dto.gender !== undefined) data.gender = dto.gender;
+    if (dto.bloodType !== undefined) data.bloodType = dto.bloodType;
+    if (dto.allergies !== undefined) data.allergies = dto.allergies;
+    if (dto.emergencyContactName !== undefined) {
+      data.emergencyContactName = dto.emergencyContactName;
     }
-    if (data.packageId === '') data.packageId = null;
-    if (data.discountCodeId === '') data.discountCodeId = null;
+    if (dto.emergencyContactPhone !== undefined) {
+      data.emergencyContactPhone = dto.emergencyContactPhone;
+    }
+    if (dto.address !== undefined) data.address = dto.address;
+
+    if (dto.dob !== undefined) {
+      data.dob = dto.dob ? new Date(dto.dob) : null;
+    }
+    if (dto.packageId !== undefined) {
+      data.packageId = dto.packageId === "" ? null : dto.packageId;
+    }
+    if (dto.discountCodeId !== undefined) {
+      data.discountCodeId =
+        dto.discountCodeId === "" ? null : dto.discountCodeId;
+    }
+
     return this.prisma.patient.update({ where: { id }, data });
   }
 

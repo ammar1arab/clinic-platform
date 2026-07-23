@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { RoomsRepository } from './rooms.repository';
-import { CreateRoomDto, UpdateRoomDto } from './dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { RoomsRepository } from "./rooms.repository";
+import { CreateRoomDto, UpdateRoomDto } from "./dto";
 
 @Injectable()
 export class RoomsService {
@@ -17,7 +17,7 @@ export class RoomsService {
   async findOne(id: string) {
     const room = await this.roomsRepository.findById(id);
     if (!room) {
-      throw new NotFoundException('Room not found');
+      throw new NotFoundException("Room not found");
     }
     return room;
   }

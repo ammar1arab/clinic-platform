@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreatePaymentMethodDto, UpdatePaymentMethodDto } from './dto';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@/prisma/prisma.service";
+import { CreatePaymentMethodDto, UpdatePaymentMethodDto } from "./dto";
 
 @Injectable()
 export class PaymentMethodsRepository {
@@ -13,7 +13,7 @@ export class PaymentMethodsRepository {
   findAllByClinic(clinicId: string) {
     return this.prisma.paymentMethod.findMany({
       where: { clinicId },
-      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
   }
 

@@ -1,9 +1,9 @@
-import { IsOptional, IsString, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsEnum } from "class-validator";
 
 export enum ReferralStatusDto {
-  pending = 'pending',
-  accepted = 'accepted',
-  rejected = 'rejected',
+  pending = "pending",
+  accepted = "accepted",
+  rejected = "rejected",
 }
 
 export class ReferralFiltersDto {

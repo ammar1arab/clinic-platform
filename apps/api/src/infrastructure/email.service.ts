@@ -1,5 +1,5 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Resend } from 'resend';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Resend } from "resend";
 
 export interface SendEmailInput {
   to: string | string[];
@@ -17,12 +17,12 @@ export interface SendEmailInput {
 export class EmailService implements OnModuleInit {
   private readonly logger = new Logger(EmailService.name);
   private client: Resend | null = null;
-  private fromAddress = 'Clinic Platform <onboarding@resend.dev>';
+  private fromAddress = "Clinic Platform <onboarding@resend.dev>";
 
   onModuleInit() {
     const key = process.env.RESEND_API_KEY;
     if (!key) {
-      this.logger.warn('Resend not configured — emails are no-ops');
+      this.logger.warn("Resend not configured — emails are no-ops");
       return;
     }
     this.client = new Resend(key);
@@ -37,7 +37,9 @@ export class EmailService implements OnModuleInit {
 
   async send(input: SendEmailInput) {
     if (!this.client) {
-      this.logger.debug(`Email skipped (no Resend key): ${input.subject} → ${input.to}`);
+      this.logger.debug(
+        `Email skipped (no Resend key): ${input.subject} → ${Array.isArray(input.to) ? input.to.join(", ") : input.to}`,
+      );
       return { id: null, skipped: true as const };
     }
 

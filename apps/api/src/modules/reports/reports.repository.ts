@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@/prisma/prisma.service";
 
 @Injectable()
 export class ReportsRepository {
@@ -25,7 +25,7 @@ export class ReportsRepository {
       include: {
         primaryDoctor: { select: { id: true, name: true } },
         appointments: {
-          orderBy: { scheduledAt: 'desc' },
+          orderBy: { scheduledAt: "desc" },
           include: {
             doctor: { select: { name: true } },
             service: { select: { name: true } },
@@ -59,7 +59,7 @@ export class ReportsRepository {
             }
           : {}),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         fromDoctor: { select: { name: true } },
         toDoctor: { select: { name: true } },
@@ -90,7 +90,7 @@ export class ReportsRepository {
     return this.prisma.appointment.findMany({
       where: {
         clinicId,
-        status: { not: 'cancelled' },
+        status: { not: "cancelled" },
         ...(from || to
           ? {
               scheduledAt: {
@@ -100,7 +100,7 @@ export class ReportsRepository {
             }
           : {}),
       },
-      orderBy: { scheduledAt: 'desc' },
+      orderBy: { scheduledAt: "desc" },
       include: {
         patient: {
           select: { firstNameEn: true, lastNameEn: true, nationalId: true },

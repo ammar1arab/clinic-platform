@@ -1,8 +1,15 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { PrismaService } from '@/prisma/prisma.service';
-import { RegisterDto, LoginDto } from './dto';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import * as bcrypt from "bcrypt";
+import { Role } from "@prisma/client";
+import { PrismaService } from "@/prisma/prisma.service";
+import { RegisterDto, LoginDto } from "./dto";
+import type { JwtPayload } from "./types";
 
 @Injectable()
 export class AuthService {
@@ -12,33 +19,51 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: dto.clinicId },
+    });
+    if (!clinic) {
+      throw new BadRequestException(
+        "Invalid clinicId — create a clinic first via POST /clinics",
+      );
+    }
+
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
 
     if (existing) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException("Email already registered");
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        passwordHash,
-      },
+    const { user, clinicUser } = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: dto.email,
+          passwordHash,
+        },
+      });
+
+      const clinicUser = await tx.clinicUser.create({
+        data: {
+          userId: user.id,
+          clinicId: dto.clinicId,
+          name: dto.name,
+          role: "owner",
+        },
+      });
+
+      return { user, clinicUser };
     });
 
-    const clinicUser = await this.prisma.clinicUser.create({
-      data: {
-        userId: user.id,
-        clinicId: dto.clinicId,
-        name: dto.name,
-        role: 'owner',
-      },
-    });
-
-    return this.generateToken(user.id, clinicUser.id, clinicUser.clinicId, clinicUser.role);
+    return this.generateToken(
+      user.id,
+      clinicUser.id,
+      clinicUser.clinicId,
+      clinicUser.role,
+    );
   }
 
   async login(dto: LoginDto) {
@@ -48,22 +73,27 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     const passwordValid = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!passwordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     const clinicUser = user.clinicUsers[0];
 
     if (!clinicUser) {
-      throw new UnauthorizedException('No clinic association found');
+      throw new UnauthorizedException("No clinic association found");
     }
 
-    return this.generateToken(user.id, clinicUser.id, clinicUser.clinicId, clinicUser.role);
+    return this.generateToken(
+      user.id,
+      clinicUser.id,
+      clinicUser.clinicId,
+      clinicUser.role,
+    );
   }
 
   async getMe(userId: string, clinicUserId: string) {
@@ -73,7 +103,7 @@ export class AuthService {
     });
 
     if (!clinicUser) {
-      throw new UnauthorizedException('Account not found');
+      throw new UnauthorizedException("Account not found");
     }
 
     return {
@@ -92,8 +122,13 @@ export class AuthService {
     };
   }
 
-  private generateToken(userId: string, clinicUserId: string, clinicId: string, role: string) {
-    const payload = { sub: userId, clinicUserId, clinicId, role };
+  private generateToken(
+    userId: string,
+    clinicUserId: string,
+    clinicId: string,
+    role: Role,
+  ) {
+    const payload: JwtPayload = { sub: userId, clinicUserId, clinicId, role };
     return {
       accessToken: this.jwtService.sign(payload),
     };

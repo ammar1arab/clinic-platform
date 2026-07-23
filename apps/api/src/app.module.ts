@@ -1,8 +1,8 @@
-﻿import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { PrismaModule } from '@/prisma/prisma.module';
-import { InfrastructureModule } from '@/infrastructure';
+﻿import { Module } from "@nestjs/common";
+import { AppController } from "./app.controller";
+import { AppService } from "./app.service";
+import { PrismaModule } from "@/prisma/prisma.module";
+import { InfrastructureModule } from "@/infrastructure";
 import {
   AuthModule,
   ClinicsModule,
@@ -18,7 +18,7 @@ import {
   DiscountCodesModule,
   ReferralsModule,
   NotificationsModule,
-} from '@/modules';
+} from "@/modules";
 
 @Module({
   imports: [

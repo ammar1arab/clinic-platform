@@ -3,16 +3,16 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
-} from '@nestjs/common';
-import { ReferralsRepository } from './referrals.repository';
-import { NotificationsService } from '@/modules/notifications/notifications.service';
-import { DashboardGateway } from '@/modules/dashboard/dashboard.gateway';
-import { PrismaService } from '@/prisma/prisma.service';
+} from "@nestjs/common";
+import { ReferralsRepository } from "./referrals.repository";
+import { NotificationsService } from "@/modules/notifications/notifications.service";
+import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
+import { PrismaService } from "@/prisma/prisma.service";
 import {
   CreateReferralDto,
   ReferralOpinionDto,
   ReferralFiltersDto,
-} from './dto';
+} from "./dto";
 
 @Injectable()
 export class ReferralsService {
@@ -28,18 +28,18 @@ export class ReferralsService {
       where: { id: dto.appointmentId, clinicId: dto.clinicId },
     });
     if (!appointment) {
-      throw new BadRequestException('Invalid appointment for this clinic');
+      throw new BadRequestException("Invalid appointment for this clinic");
     }
 
     const toDoctor = await this.prisma.clinicUser.findFirst({
       where: { id: dto.toDoctorId, clinicId: dto.clinicId, isActive: true },
     });
     if (!toDoctor) {
-      throw new BadRequestException('Invalid or inactive receiving doctor');
+      throw new BadRequestException("Invalid or inactive receiving doctor");
     }
 
     if (dto.toDoctorId === fromDoctorId) {
-      throw new BadRequestException('Cannot refer to yourself');
+      throw new BadRequestException("Cannot refer to yourself");
     }
 
     const referral = await this.referralsRepository.create({
@@ -50,7 +50,7 @@ export class ReferralsService {
     await this.notificationsService.create({
       clinicId: dto.clinicId,
       userId: dto.toDoctorId,
-      type: 'referral_created',
+      type: "referral_created",
       title: `New ${dto.type} request`,
       body: dto.reason,
       payload: { referralId: referral.id, appointmentId: dto.appointmentId },
@@ -67,7 +67,7 @@ export class ReferralsService {
   async findOne(id: string) {
     const referral = await this.referralsRepository.findById(id);
     if (!referral) {
-      throw new NotFoundException('Referral not found');
+      throw new NotFoundException("Referral not found");
     }
     return referral;
   }
@@ -75,19 +75,21 @@ export class ReferralsService {
   async accept(id: string, clinicUserId: string) {
     const referral = await this.findOne(id);
     if (referral.toDoctorId !== clinicUserId) {
-      throw new ForbiddenException('Only the receiving doctor can accept this referral');
+      throw new ForbiddenException(
+        "Only the receiving doctor can accept this referral",
+      );
     }
-    if (referral.status !== 'pending') {
-      throw new BadRequestException('Referral is not pending');
+    if (referral.status !== "pending") {
+      throw new BadRequestException("Referral is not pending");
     }
 
-    const updated = await this.referralsRepository.updateStatus(id, 'accepted');
+    const updated = await this.referralsRepository.updateStatus(id, "accepted");
 
     await this.notificationsService.create({
       clinicId: referral.clinicId,
       userId: referral.fromDoctorId,
-      type: 'referral_accepted',
-      title: 'Referral accepted',
+      type: "referral_accepted",
+      title: "Referral accepted",
       body: `Your ${referral.type} was accepted`,
       payload: { referralId: referral.id },
     });
@@ -99,19 +101,21 @@ export class ReferralsService {
   async reject(id: string, clinicUserId: string) {
     const referral = await this.findOne(id);
     if (referral.toDoctorId !== clinicUserId) {
-      throw new ForbiddenException('Only the receiving doctor can reject this referral');
+      throw new ForbiddenException(
+        "Only the receiving doctor can reject this referral",
+      );
     }
-    if (referral.status !== 'pending') {
-      throw new BadRequestException('Referral is not pending');
+    if (referral.status !== "pending") {
+      throw new BadRequestException("Referral is not pending");
     }
 
-    const updated = await this.referralsRepository.updateStatus(id, 'rejected');
+    const updated = await this.referralsRepository.updateStatus(id, "rejected");
 
     await this.notificationsService.create({
       clinicId: referral.clinicId,
       userId: referral.fromDoctorId,
-      type: 'referral_rejected',
-      title: 'Referral rejected',
+      type: "referral_rejected",
+      title: "Referral rejected",
       body: `Your ${referral.type} was rejected`,
       payload: { referralId: referral.id },
     });
@@ -123,13 +127,20 @@ export class ReferralsService {
   async setOpinion(id: string, clinicUserId: string, dto: ReferralOpinionDto) {
     const referral = await this.findOne(id);
     if (referral.toDoctorId !== clinicUserId) {
-      throw new ForbiddenException('Only the receiving doctor can provide an opinion');
+      throw new ForbiddenException(
+        "Only the receiving doctor can provide an opinion",
+      );
     }
-    if (referral.type !== 'consultation') {
-      throw new BadRequestException('Opinion is only allowed for consultations');
+    if (referral.type !== "consultation") {
+      throw new BadRequestException(
+        "Opinion is only allowed for consultations",
+      );
     }
 
-    const updated = await this.referralsRepository.updateOpinion(id, dto.opinion);
+    const updated = await this.referralsRepository.updateOpinion(
+      id,
+      dto.opinion,
+    );
     this.dashboardGateway.emitReferralChanged(referral.clinicId);
     return updated;
   }

@@ -1,14 +1,14 @@
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEnum } from "class-validator";
 
 export enum ReferralTypeDto {
-  referral = 'referral',
-  consultation = 'consultation',
+  referral = "referral",
+  consultation = "consultation",
 }
 
 export enum ReferralUrgencyDto {
-  normal = 'normal',
-  high = 'high',
-  urgent = 'urgent',
+  normal = "normal",
+  high = "high",
+  urgent = "urgent",
 }
 
 export class CreateReferralDto {

@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PaymentMethodsRepository } from './payment-methods.repository';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { PaymentMethodsRepository } from "./payment-methods.repository";
 import {
   CreatePaymentMethodDto,
   UpdatePaymentMethodDto,
   ReorderPaymentMethodsDto,
-} from './dto';
+} from "./dto";
 
 @Injectable()
 export class PaymentMethodsService {
@@ -21,7 +25,7 @@ export class PaymentMethodsService {
   async findOne(id: string) {
     const method = await this.paymentMethodsRepository.findById(id);
     if (!method) {
-      throw new NotFoundException('Payment method not found');
+      throw new NotFoundException("Payment method not found");
     }
     return method;
   }
@@ -43,14 +47,17 @@ export class PaymentMethodsService {
 
   async reorder(clinicId: string, dto: ReorderPaymentMethodsDto) {
     if (!clinicId) {
-      throw new BadRequestException('clinicId is required');
+      throw new BadRequestException("clinicId is required");
     }
 
-    const existing = await this.paymentMethodsRepository.findAllByClinic(clinicId);
+    const existing =
+      await this.paymentMethodsRepository.findAllByClinic(clinicId);
     const existingIds = new Set(existing.map((m) => m.id));
     for (const id of dto.orderedIds) {
       if (!existingIds.has(id)) {
-        throw new BadRequestException(`Payment method ${id} not found in clinic`);
+        throw new BadRequestException(
+          `Payment method ${id} not found in clinic`,
+        );
       }
     }
 

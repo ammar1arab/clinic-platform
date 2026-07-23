@@ -1,7 +1,7 @@
-import { Global, Module } from '@nestjs/common';
-import { RedisService } from './redis.service';
-import { EmailService } from './email.service';
-import { StorageService } from './storage.service';
+import { Global, Module } from "@nestjs/common";
+import { RedisService } from "./redis.service";
+import { EmailService } from "./email.service";
+import { StorageService } from "./storage.service";
 
 /**
  * Future-facing integrations. All services boot safely without env vars.

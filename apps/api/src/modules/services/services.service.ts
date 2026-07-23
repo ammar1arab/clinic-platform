@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { ServicesRepository } from './services.repository';
-import { CreateServiceDto, UpdateServiceDto } from './dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { ServicesRepository } from "./services.repository";
+import { CreateServiceDto, UpdateServiceDto } from "./dto";
 
 @Injectable()
 export class ServicesService {
@@ -17,7 +17,7 @@ export class ServicesService {
   async findOne(id: string) {
     const service = await this.servicesRepository.findById(id);
     if (!service) {
-      throw new NotFoundException('Service not found');
+      throw new NotFoundException("Service not found");
     }
     return service;
   }

@@ -1,17 +1,29 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreateAppointmentDto, UpdateAppointmentDto, AppointmentFiltersDto } from './dto';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "@/prisma/prisma.service";
+import {
+  CreateAppointmentDto,
+  UpdateAppointmentDto,
+  AppointmentFiltersDto,
+  DiscountTypeDto,
+  SessionTypeDto,
+} from "./dto";
 
 @Injectable()
 export class AppointmentsRepository {
   constructor(private prisma: PrismaService) {}
 
-  create(clinicId: string, dto: CreateAppointmentDto & {
-    fee?: any;
-    discount?: any;
-    discountType?: any;
-    meetingUrl?: string;
-  }) {
+  create(
+    clinicId: string,
+    dto: Omit<CreateAppointmentDto, "feeOverride" | "discountCodeId"> & {
+      fee?: number;
+      discount?: number;
+      discountType?: DiscountTypeDto | string;
+      durationMins: number;
+      sessionType: SessionTypeDto | string;
+      discountCodeId?: string;
+      meetingUrl?: string;
+    },
+  ) {
     return this.prisma.appointment.create({
       data: {
         ...dto,
@@ -27,15 +39,22 @@ export class AppointmentsRepository {
         clinicId,
         doctorId: filters.doctorId ?? undefined,
         departmentId: filters.departmentId ?? undefined,
-        ...(filters.startDate && filters.endDate && {
-          scheduledAt: {
-            gte: new Date(filters.startDate),
-            lte: new Date(filters.endDate),
-          },
-        }),
+        ...(filters.startDate &&
+          filters.endDate && {
+            scheduledAt: {
+              gte: new Date(filters.startDate),
+              lte: new Date(filters.endDate),
+            },
+          }),
       },
-      include: { patient: true, doctor: true, room: true, service: true, paymentMethodRef: { select: { id: true, name: true } } },
-      orderBy: { scheduledAt: 'asc' },
+      include: {
+        patient: true,
+        doctor: true,
+        room: true,
+        service: true,
+        paymentMethodRef: { select: { id: true, name: true } },
+      },
+      orderBy: { scheduledAt: "asc" },
     });
   }
 
@@ -53,10 +72,18 @@ export class AppointmentsRepository {
     });
   }
 
-  update(clinicId: string, id: string, dto: UpdateAppointmentDto & {
-    statusUpdatedBy?: string;
-    statusUpdatedAt?: Date;
-  }) {
+  update(
+    clinicId: string,
+    id: string,
+    dto: Omit<UpdateAppointmentDto, "feeOverride"> & {
+      fee?: number;
+      discount?: number;
+      discountType?: DiscountTypeDto | string;
+      discountReason?: string;
+      statusUpdatedBy?: string;
+      statusUpdatedAt?: Date;
+    },
+  ) {
     return this.prisma.appointment.update({
       where: { id, clinicId },
       data: dto,
@@ -117,7 +144,13 @@ export class AppointmentsRepository {
     });
   }
 
-  async findConflict(clinicId: string, roomId: string, scheduledAt: Date, durationMins: number, excludeId?: string) {
+  async findConflict(
+    clinicId: string,
+    roomId: string,
+    scheduledAt: Date,
+    durationMins: number,
+    excludeId?: string,
+  ) {
     const startTime = scheduledAt.getTime();
     const endTime = startTime + durationMins * 60000;
     const startOfDay = new Date(scheduledAt);
@@ -130,19 +163,25 @@ export class AppointmentsRepository {
         clinicId,
         roomId,
         id: excludeId ? { not: excludeId } : undefined,
-        status: { notIn: ['cancelled', 'no_show'] },
+        status: { notIn: ["cancelled", "no_show"] },
         scheduledAt: { gte: startOfDay, lte: endOfDay },
       },
     });
 
-    return appointments.find(a => {
+    return appointments.find((a) => {
       const aStart = a.scheduledAt.getTime();
       const aEnd = aStart + a.durationMins * 60000;
       return startTime < aEnd && endTime > aStart;
     });
   }
 
-  async findDoctorConflict(clinicId: string, doctorId: string, scheduledAt: Date, durationMins: number, excludeId?: string) {
+  async findDoctorConflict(
+    clinicId: string,
+    doctorId: string,
+    scheduledAt: Date,
+    durationMins: number,
+    excludeId?: string,
+  ) {
     const startTime = scheduledAt.getTime();
     const endTime = startTime + durationMins * 60000;
     const startOfDay = new Date(scheduledAt);
@@ -155,12 +194,12 @@ export class AppointmentsRepository {
         clinicId,
         doctorId,
         id: excludeId ? { not: excludeId } : undefined,
-        status: { notIn: ['cancelled', 'no_show'] },
+        status: { notIn: ["cancelled", "no_show"] },
         scheduledAt: { gte: startOfDay, lte: endOfDay },
       },
     });
 
-    return appointments.find(a => {
+    return appointments.find((a) => {
       const aStart = a.scheduledAt.getTime();
       const aEnd = aStart + a.durationMins * 60000;
       return startTime < aEnd && endTime > aStart;

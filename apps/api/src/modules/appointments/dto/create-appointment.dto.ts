@@ -1,17 +1,22 @@
-import { IsString, IsOptional, IsDateString, IsNumber, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsNumber,
+  IsEnum,
+} from "class-validator";
 
 export enum SessionTypeDto {
-  in_person = 'in_person',
-  online = 'online',
+  in_person = "in_person",
+  online = "online",
 }
 
 export enum DiscountTypeDto {
-  fixed = 'fixed',
-  percentage = 'percentage',
+  fixed = "fixed",
+  percentage = "percentage",
 }
 
 export class CreateAppointmentDto {
-
   @IsString()
   patientId: string;
 

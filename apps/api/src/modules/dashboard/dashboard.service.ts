@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { DashboardRepository } from './dashboard.repository';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { DashboardRepository } from "./dashboard.repository";
 
 @Injectable()
 export class DashboardService {
@@ -12,9 +12,15 @@ export class DashboardService {
     ]);
 
     const total = appointments.length;
-    const inProgress = appointments.filter((a) => a.status === 'in_progress').length;
-    const completed = appointments.filter((a) => a.status === 'completed').length;
-    const cancelled = appointments.filter((a) => a.status === 'cancelled').length;
+    const inProgress = appointments.filter(
+      (a) => a.status === "in_progress",
+    ).length;
+    const completed = appointments.filter(
+      (a) => a.status === "completed",
+    ).length;
+    const cancelled = appointments.filter(
+      (a) => a.status === "cancelled",
+    ).length;
 
     return { total, inProgress, completed, cancelled, roomCount };
   }
@@ -27,21 +33,28 @@ export class DashboardService {
     ]);
 
     if (!clinic) {
-      throw new NotFoundException('Clinic not found');
+      throw new NotFoundException("Clinic not found");
     }
 
-    const [startHour, startMin] = clinic.workingHoursStart.split(':').map(Number);
-    const [endHour, endMin] = clinic.workingHoursEnd.split(':').map(Number);
+    const [startHour, startMin] = clinic.workingHoursStart
+      .split(":")
+      .map(Number);
+    const [endHour, endMin] = clinic.workingHoursEnd.split(":").map(Number);
     const workingMinutes = endHour * 60 + endMin - (startHour * 60 + startMin);
 
     return rooms.map((room) => {
       const roomAppointments = appointments.filter(
-        (a) => a.roomId === room.id && a.status !== 'cancelled',
+        (a) => a.roomId === room.id && a.status !== "cancelled",
       );
 
-      const bookedMinutes = roomAppointments.reduce((sum, a) => sum + a.durationMins, 0);
+      const bookedMinutes = roomAppointments.reduce(
+        (sum, a) => sum + a.durationMins,
+        0,
+      );
 
-      const utilisationPercent = Math.round((bookedMinutes / workingMinutes) * 100);
+      const utilisationPercent = Math.round(
+        (bookedMinutes / workingMinutes) * 100,
+      );
 
       return {
         roomId: room.id,

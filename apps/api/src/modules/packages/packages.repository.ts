@@ -1,19 +1,31 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { CreatePackageDto, UpdatePackageDto } from './dto';
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import { PrismaService } from "@/prisma/prisma.service";
+import { CreatePackageDto, UpdatePackageDto } from "./dto";
 
 @Injectable()
 export class PackagesRepository {
   constructor(private prisma: PrismaService) {}
 
   create(dto: CreatePackageDto) {
-    return this.prisma.package.create({ data: dto as any });
+    const data: Prisma.PackageUncheckedCreateInput = {
+      clinicId: dto.clinicId,
+      name: dto.name,
+      description: dto.description,
+      sessionCount: dto.sessionCount,
+      price: dto.price,
+      discountType: dto.discountType,
+      discountValue: dto.discountValue,
+      sortOrder: dto.sortOrder,
+      isActive: dto.isActive,
+    };
+    return this.prisma.package.create({ data });
   }
 
   findAllByClinic(clinicId: string) {
     return this.prisma.package.findMany({
       where: { clinicId },
-      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
   }
 
@@ -22,7 +34,17 @@ export class PackagesRepository {
   }
 
   update(id: string, dto: UpdatePackageDto) {
-    return this.prisma.package.update({ where: { id }, data: dto as any });
+    const data: Prisma.PackageUncheckedUpdateInput = {
+      name: dto.name,
+      description: dto.description,
+      sessionCount: dto.sessionCount,
+      price: dto.price,
+      discountType: dto.discountType,
+      discountValue: dto.discountValue,
+      sortOrder: dto.sortOrder,
+      isActive: dto.isActive,
+    };
+    return this.prisma.package.update({ where: { id }, data });
   }
 
   deactivate(id: string) {

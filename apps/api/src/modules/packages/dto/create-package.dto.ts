@@ -1,5 +1,13 @@
-import { IsString, IsOptional, IsBoolean, IsInt, IsNumber, IsEnum, Min } from 'class-validator';
-import { DiscountTypeDto } from '@/modules/appointments/dto/create-appointment.dto';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsInt,
+  IsNumber,
+  IsEnum,
+  Min,
+} from "class-validator";
+import { DiscountTypeDto } from "@/modules/appointments/dto/create-appointment.dto";
 
 export class CreatePackageDto {
   @IsString()

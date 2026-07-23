@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { ClinicsRepository } from './clinics.repository';
-import { CreateClinicDto, UpdateClinicDto } from './dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { ClinicsRepository } from "./clinics.repository";
+import { CreateClinicDto, UpdateClinicDto } from "./dto";
 
 @Injectable()
 export class ClinicsService {
@@ -13,7 +13,7 @@ export class ClinicsService {
   async findOne(id: string) {
     const clinic = await this.clinicsRepository.findById(id);
     if (!clinic) {
-      throw new NotFoundException('Clinic not found');
+      throw new NotFoundException("Clinic not found");
     }
     return clinic;
   }

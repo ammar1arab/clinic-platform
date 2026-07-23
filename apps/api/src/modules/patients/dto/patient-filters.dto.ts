@@ -1,18 +1,25 @@
-import { IsOptional, IsString, IsBoolean, IsInt, IsEnum, IsDateString } from 'class-validator';
-import { Transform } from 'class-transformer';
+import {
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsInt,
+  IsEnum,
+  IsDateString,
+} from "class-validator";
+import { Transform } from "class-transformer";
 
 export enum PatientSortBy {
-  CREATED_AT = 'createdAt',      // newest registered
-  UPDATED_AT = 'updatedAt',      // recently modified
-  FIRST_NAME = 'firstNameEn',    // A-Z by first name
-  LAST_NAME = 'lastNameEn',      // A-Z by last name
-  DOB = 'dob',                   // age (youngest / oldest)
-  APPOINTMENTS = 'appointments', // most total sessions
+  CREATED_AT = "createdAt", // newest registered
+  UPDATED_AT = "updatedAt", // recently modified
+  FIRST_NAME = "firstNameEn", // A-Z by first name
+  LAST_NAME = "lastNameEn", // A-Z by last name
+  DOB = "dob", // age (youngest / oldest)
+  APPOINTMENTS = "appointments", // most total sessions
 }
 
 export enum SortOrder {
-  ASC = 'asc',
-  DESC = 'desc',
+  ASC = "asc",
+  DESC = "desc",
 }
 
 export class PatientFiltersDto {
@@ -24,11 +31,11 @@ export class PatientFiltersDto {
   search?: string;
 
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === undefined || value === null || value === '') return undefined;
-    if (value === true || value === 'true') return true;
-    if (value === false || value === 'false') return false;
-    return value;
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    if (value === true || value === "true") return true;
+    if (value === false || value === "false") return false;
+    return undefined;
   })
   @IsBoolean()
   isActive?: boolean;
@@ -63,7 +70,7 @@ export class PatientFiltersDto {
 
   @IsOptional()
   @IsDateString()
-  dobTo?: string;   // born BEFORE this date e.g. "2005-12-31"
+  dobTo?: string; // born BEFORE this date e.g. "2005-12-31"
 
   @IsOptional()
   @IsEnum(PatientSortBy)
@@ -74,12 +81,20 @@ export class PatientFiltersDto {
   sortOrder?: SortOrder;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === "string" || typeof value === "number"
+      ? parseInt(String(value), 10)
+      : undefined,
+  )
   @IsInt()
   page?: number;
 
   @IsOptional()
-  @Transform(({ value }) => (value ? parseInt(value, 10) : undefined))
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === "string" || typeof value === "number"
+      ? parseInt(String(value), 10)
+      : undefined,
+  )
   @IsInt()
   limit?: number;
 }

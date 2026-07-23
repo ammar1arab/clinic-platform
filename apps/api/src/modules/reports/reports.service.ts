@@ -1,10 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { ReportsRepository } from './reports.repository';
-import { ReportDocumentFactory } from './report-document.factory';
-import { ReportExporterFactory } from './exporters/report-exporter.factory';
-import { ExportedReport } from './exporters/report-exporter';
-import { ReportFormat } from './types/report-document';
-import { ReportFormatDto } from './dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { ReportsRepository } from "./reports.repository";
+import { ReportDocumentFactory } from "./report-document.factory";
+import { ReportExporterFactory } from "./exporters/report-exporter.factory";
+import { ExportedReport } from "./exporters/report-exporter";
+import { ReportFormatDto } from "./dto";
 
 @Injectable()
 export class ReportsService {
@@ -26,7 +25,7 @@ export class ReportsService {
       patientId,
     );
     if (!patient) {
-      throw new NotFoundException('Patient not found');
+      throw new NotFoundException("Patient not found");
     }
 
     const doc = this.documents.buildPatientMedical({
@@ -35,7 +34,7 @@ export class ReportsService {
       appointments: patient.appointments,
     });
 
-    return this.exporterFactory.export(doc, format as ReportFormat);
+    return this.exporterFactory.export(doc, format);
   }
 
   async exportReferrals(params: {
@@ -58,10 +57,12 @@ export class ReportsService {
     const clinic = await this.requireClinic(clinicId);
 
     const fromDate = from
-      ? new Date(`${from.includes('T') ? from.split('T')[0] : from}T00:00:00.000Z`)
+      ? new Date(
+          `${from.includes("T") ? from.split("T")[0] : from}T00:00:00.000Z`,
+        )
       : undefined;
     const toDate = to
-      ? new Date(`${to.includes('T') ? to.split('T')[0] : to}T23:59:59.999Z`)
+      ? new Date(`${to.includes("T") ? to.split("T")[0] : to}T23:59:59.999Z`)
       : undefined;
 
     const referrals = await this.reportsRepository.findReferralsForReport({
@@ -73,18 +74,18 @@ export class ReportsService {
     });
 
     const filterBits = [
-      patientId ? 'patient' : '',
-      toDoctorId ? 'inbox' : '',
-      from || to ? `${from ?? '…'}_${to ?? '…'}` : '',
+      patientId ? "patient" : "",
+      toDoctorId ? "inbox" : "",
+      from || to ? `${from ?? "…"}_${to ?? "…"}` : "",
     ].filter(Boolean);
 
     const doc = this.documents.buildReferrals({
       clinic,
       referrals,
-      filtersLabel: filterBits.join('-') || 'all',
+      filtersLabel: filterBits.join("-") || "all",
     });
 
-    return this.exporterFactory.export(doc, format as ReportFormat);
+    return this.exporterFactory.export(doc, format);
   }
 
   async exportFinance(params: {
@@ -93,20 +94,17 @@ export class ReportsService {
     from?: string;
     to?: string;
   }): Promise<ExportedReport> {
-    const {
-      clinicId,
-      format = ReportFormatDto.pdf,
-      from,
-      to,
-    } = params;
+    const { clinicId, format = ReportFormatDto.pdf, from, to } = params;
 
     const clinic = await this.requireClinic(clinicId);
 
     const fromDate = from
-      ? new Date(`${from.includes('T') ? from.split('T')[0] : from}T00:00:00.000Z`)
+      ? new Date(
+          `${from.includes("T") ? from.split("T")[0] : from}T00:00:00.000Z`,
+        )
       : undefined;
     const toDate = to
-      ? new Date(`${to.includes('T') ? to.split('T')[0] : to}T23:59:59.999Z`)
+      ? new Date(`${to.includes("T") ? to.split("T")[0] : to}T23:59:59.999Z`)
       : undefined;
 
     const appointments =
@@ -116,8 +114,7 @@ export class ReportsService {
         to: toDate,
       });
 
-    const periodLabel =
-      from || to ? `${from ?? '…'}_${to ?? '…'}` : 'all';
+    const periodLabel = from || to ? `${from ?? "…"}_${to ?? "…"}` : "all";
 
     const doc = this.documents.buildFinanceMonthly({
       clinic,
@@ -125,13 +122,13 @@ export class ReportsService {
       periodLabel,
     });
 
-    return this.exporterFactory.export(doc, format as ReportFormat);
+    return this.exporterFactory.export(doc, format);
   }
 
   private async requireClinic(clinicId: string) {
     const clinic = await this.reportsRepository.findClinicLetterhead(clinicId);
     if (!clinic) {
-      throw new NotFoundException('Clinic not found');
+      throw new NotFoundException("Clinic not found");
     }
     return clinic;
   }

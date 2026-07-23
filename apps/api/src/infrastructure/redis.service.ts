@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 
 /**
  * FUTURE: Upstash Redis for caching (sessions, hot queries, rate limits).
@@ -12,11 +12,11 @@ export class RedisService implements OnModuleInit {
   private enabled = false;
 
   onModuleInit() {
-    this.baseUrl = process.env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, '');
+    this.baseUrl = process.env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, "");
     this.token = process.env.UPSTASH_REDIS_REST_TOKEN;
     this.enabled = !!(this.baseUrl && this.token);
     if (!this.enabled) {
-      this.logger.warn('Redis not configured — cache calls are no-ops');
+      this.logger.warn("Redis not configured — cache calls are no-ops");
     }
   }
 
@@ -27,10 +27,10 @@ export class RedisService implements OnModuleInit {
   private async command<T>(...args: (string | number)[]): Promise<T | null> {
     if (!this.enabled || !this.baseUrl || !this.token) return null;
     const res = await fetch(`${this.baseUrl}`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(args),
     });
@@ -43,18 +43,18 @@ export class RedisService implements OnModuleInit {
   }
 
   async get(key: string): Promise<string | null> {
-    return this.command<string>('GET', key);
+    return this.command<string>("GET", key);
   }
 
   async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
     if (ttlSeconds && ttlSeconds > 0) {
-      await this.command('SET', key, value, 'EX', ttlSeconds);
+      await this.command("SET", key, value, "EX", ttlSeconds);
     } else {
-      await this.command('SET', key, value);
+      await this.command("SET", key, value);
     }
   }
 
   async del(key: string): Promise<void> {
-    await this.command('DEL', key);
+    await this.command("DEL", key);
   }
 }

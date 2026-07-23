@@ -1,13 +1,13 @@
-import { IsString, IsOptional, IsEmail, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEmail, IsEnum } from "class-validator";
 
 export enum CalendarViewDto {
-  day = 'day',
-  week = 'week',
+  day = "day",
+  week = "week",
 }
 
 export enum ClinicSessionTypeDto {
-  in_person = 'in_person',
-  online = 'online',
+  in_person = "in_person",
+  online = "online",
 }
 
 export class CreateClinicDto {
