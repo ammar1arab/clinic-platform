@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import puppeteer from "puppeteer";
+import type { Browser } from "puppeteer-core";
 import { ReportDocument } from "../types/report-document";
 import { ExportedReport, ReportExporter } from "./report-exporter";
 import { escapeHtml, formatDisplayDate } from "../utils/report-format";
@@ -150,10 +150,7 @@ export class PdfExporter implements ReportExporter {
   }
 
   private async renderPdf(html: string): Promise<Buffer> {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    const browser = await this.launchBrowser();
 
     try {
       const page = await browser.newPage();
@@ -163,5 +160,35 @@ export class PdfExporter implements ReportExporter {
     } finally {
       await browser.close();
     }
+  }
+
+  /**
+   * Render/Linux: @sparticuz/chromium ships a Linux Chrome binary.
+   * Local Windows/macOS: use installed Google Chrome via puppeteer-core channel.
+   */
+  private async launchBrowser(): Promise<Browser> {
+    const puppeteer = (await import("puppeteer-core")).default;
+    const useServerChromium =
+      process.env.RENDER === "true" ||
+      process.env.USE_SERVERLESS_CHROMIUM === "true" ||
+      process.platform === "linux";
+
+    if (useServerChromium) {
+      const chromium = (await import("@sparticuz/chromium")).default;
+      chromium.setGraphicsMode = false;
+
+      return puppeteer.launch({
+        args: [...chromium.args, "--disable-dev-shm-usage", "--no-zygote"],
+        defaultViewport: { width: 1280, height: 720 },
+        executablePath: await chromium.executablePath(),
+        headless: true,
+      });
+    }
+
+    return puppeteer.launch({
+      headless: true,
+      channel: "chrome",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
   }
 }
