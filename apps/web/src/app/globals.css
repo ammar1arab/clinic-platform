@@ -144,22 +144,6 @@
     letter-spacing: -0.02em;
   }
 
-  /* Soft clinic atmosphere behind dashboard content */
-  .app-canvas {
-    background:
-      radial-gradient(1200px 500px at 12% -8%, color-mix(in oklch, var(--brand) 14%, transparent), transparent 60%),
-      radial-gradient(900px 420px at 92% 0%, color-mix(in oklch, var(--accent-teal) 12%, transparent), transparent 55%),
-      radial-gradient(700px 380px at 50% 100%, color-mix(in oklch, var(--primary) 6%, transparent), transparent 50%),
-      var(--color-background);
-  }
-
-  .dark .app-canvas {
-    background:
-      radial-gradient(1100px 480px at 10% -10%, color-mix(in oklch, var(--brand) 22%, transparent), transparent 58%),
-      radial-gradient(850px 400px at 95% 0%, color-mix(in oklch, var(--accent-teal) 16%, transparent), transparent 52%),
-      var(--color-background);
-  }
-
   /* Smooth scrolling everywhere */
   html {
     scroll-behavior: smooth;

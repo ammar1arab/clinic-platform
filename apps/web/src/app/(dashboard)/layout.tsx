@@ -25,7 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <SidebarBlock />
-      <div className="app-canvas flex flex-1 flex-col overflow-hidden transition-all duration-300 ease-in-out">
+      <div className="flex flex-1 flex-col overflow-hidden bg-background transition-all duration-300 ease-in-out">
         <TopbarBlock />
         <main className="flex-1 overflow-y-auto p-3 md:p-5 lg:p-6">
           <PageTransition>{children}</PageTransition>

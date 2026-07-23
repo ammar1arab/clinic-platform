@@ -51,13 +51,19 @@ export function ScheduleToolbar({
           value={departmentId || ALL_DEPARTMENTS}
           onValueChange={(v) => onDepartmentChange(v === ALL_DEPARTMENTS ? '' : v)}
         >
-          <SelectTrigger className="h-9 w-38 shrink-0 sm:w-44">
+          <SelectTrigger size="sm" className="h-9 w-36 shrink-0 sm:w-44">
             <SelectValue placeholder="All departments" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
             <SelectItem value={ALL_DEPARTMENTS}>All departments</SelectItem>
             {departments?.map((d) => (
-              <SelectItem key={d.id} value={d.id}>
+              <SelectItem
+                key={d.id}
+                value={d.id}
+                textValue={d.name}
+                title={d.name}
+                className="items-center *:[span]:last:truncate *:[span]:last:whitespace-nowrap *:[span]:last:break-normal"
+              >
                 {d.name}
               </SelectItem>
             ))}
