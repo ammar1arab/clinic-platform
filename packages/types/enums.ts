@@ -18,7 +18,7 @@ export type AppointmentStatus =
 
 export type CalendarView = 'day' | 'week';
 
-export type ReportFormat = 'pdf' | 'xlsx' | 'csv';
+export type ReportFormat = 'pdf' | 'xlsx' | 'csv' | 'docx';
 
 export type ReferralType = 'referral' | 'consultation';
 export type ReferralUrgency = 'normal' | 'high' | 'urgent';

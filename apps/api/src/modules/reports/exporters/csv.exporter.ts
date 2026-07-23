@@ -1,13 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { ReportDocument } from "../types/report-document";
 import { ExportedReport, ReportExporter } from "./report-exporter";
+import { csvPreface } from "../utils/report-theme";
 
 @Injectable()
 export class CsvExporter implements ReportExporter {
   readonly format = "csv" as const;
 
   export(doc: ReportDocument): Promise<ExportedReport> {
-    const lines: string[] = [];
+    const lines: string[] = [...csvPreface(doc)];
 
     lines.push(this.row(doc.columns.map((c) => c.header)));
 
@@ -22,7 +23,6 @@ export class CsvExporter implements ReportExporter {
       );
     }
 
-    // BOM so Excel opens UTF-8 correctly
     const csv = `\uFEFF${lines.join("\r\n")}`;
     return Promise.resolve({
       buffer: Buffer.from(csv, "utf8"),

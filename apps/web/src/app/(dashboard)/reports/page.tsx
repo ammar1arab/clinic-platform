@@ -72,8 +72,9 @@ function FormatDownloadButton({
           {label}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40">
+      <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuItem onClick={() => onDownload('pdf')}>PDF</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onDownload('docx')}>Word</DropdownMenuItem>
         <DropdownMenuItem onClick={() => onDownload('xlsx')}>Excel</DropdownMenuItem>
         <DropdownMenuItem onClick={() => onDownload('csv')}>CSV</DropdownMenuItem>
       </DropdownMenuContent>
@@ -230,6 +231,7 @@ export default function ReportsPage() {
                   pdf: 'pdf',
                   xlsx: 'xlsx',
                   csv: 'csv',
+                  docx: 'docx',
                 };
                 exportPatients(
                   patients,

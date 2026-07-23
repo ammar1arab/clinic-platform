@@ -1,4 +1,4 @@
-export type ReportFormat = "pdf" | "xlsx" | "csv";
+export type ReportFormat = "pdf" | "xlsx" | "csv" | "docx";
 
 export type ReportType = "patient_medical" | "referrals" | "finance_monthly";
 

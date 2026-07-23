@@ -122,8 +122,9 @@ export default function PatientDetailPage({ params }: { params: Promise<{ id: st
                 Download report
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={() => handleDownload('pdf')}>PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownload('docx')}>Word</DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDownload('xlsx')}>Excel</DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleDownload('csv')}>CSV</DropdownMenuItem>
             </DropdownMenuContent>

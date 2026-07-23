@@ -29,10 +29,15 @@ export class ReportsController {
 
   /**
    * Patient medical report — visit history + profile.
-   * Formats: pdf | xlsx | csv
+   * Formats: pdf | xlsx | csv | docx
    */
   @Get("patients/:patientId")
-  @ApiProduces("application/pdf", "application/vnd.ms-excel", "text/csv")
+  @ApiProduces(
+    "application/pdf",
+    "application/vnd.ms-excel",
+    "text/csv",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  )
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   async patientMedical(
@@ -57,10 +62,15 @@ export class ReportsController {
 
   /**
    * Referrals & consultations report (no payment data).
-   * Formats: pdf | xlsx | csv
+   * Formats: pdf | xlsx | csv | docx
    */
   @Get("referrals")
-  @ApiProduces("application/pdf", "application/vnd.ms-excel", "text/csv")
+  @ApiProduces(
+    "application/pdf",
+    "application/vnd.ms-excel",
+    "text/csv",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  )
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   @ApiQuery({ name: "patientId", required: false })
@@ -91,12 +101,17 @@ export class ReportsController {
 
   /**
    * Monthly finance report — revenue, unpaid, by method / doctor.
-   * Formats: pdf | xlsx | csv
+   * Formats: pdf | xlsx | csv | docx
    */
   @Get("finance")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin, Role.financial)
-  @ApiProduces("application/pdf", "application/vnd.ms-excel", "text/csv")
+  @ApiProduces(
+    "application/pdf",
+    "application/vnd.ms-excel",
+    "text/csv",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  )
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   @ApiQuery({ name: "from", required: false })

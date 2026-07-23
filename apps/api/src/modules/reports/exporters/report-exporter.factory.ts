@@ -1,21 +1,26 @@
-import { Injectable } from "@nestjs/common";
-import { ReportFormat } from "../types/report-document";
+import { Injectable, BadRequestException } from "@nestjs/common";
+import { ReportFormat, ReportDocument } from "../types/report-document";
 import { ReportExporter, ExportedReport } from "./report-exporter";
 import { PdfExporter } from "./pdf.exporter";
 import { CsvExporter } from "./csv.exporter";
 import { ExcelExporter } from "./excel.exporter";
-import { ReportDocument } from "../types/report-document";
-import { BadRequestException } from "@nestjs/common";
+import { WordExporter } from "./word.exporter";
 
 @Injectable()
 export class ReportExporterFactory {
   private readonly exporters: Map<ReportFormat, ReportExporter>;
 
-  constructor(pdf: PdfExporter, csv: CsvExporter, excel: ExcelExporter) {
+  constructor(
+    pdf: PdfExporter,
+    csv: CsvExporter,
+    excel: ExcelExporter,
+    word: WordExporter,
+  ) {
     this.exporters = new Map<ReportFormat, ReportExporter>([
       [pdf.format, pdf],
       [csv.format, csv],
       [excel.format, excel],
+      [word.format, word],
     ]);
   }
 

@@ -1,16 +1,20 @@
 import { Injectable } from "@nestjs/common";
-import type { Browser } from "puppeteer-core";
+import PDFDocument from "pdfkit";
 import { ReportDocument } from "../types/report-document";
 import { ExportedReport, ReportExporter } from "./report-exporter";
-import { escapeHtml, formatDisplayDate } from "../utils/report-format";
+import {
+  REPORT_THEME,
+  cellText,
+  letterheadLines,
+  metaLine,
+} from "../utils/report-theme";
 
 @Injectable()
 export class PdfExporter implements ReportExporter {
   readonly format = "pdf" as const;
 
   async export(doc: ReportDocument): Promise<ExportedReport> {
-    const html = this.buildHtml(doc);
-    const buffer = await this.renderPdf(html);
+    const buffer = await this.render(doc);
     return {
       buffer,
       contentType: "application/pdf",
@@ -18,177 +22,247 @@ export class PdfExporter implements ReportExporter {
     };
   }
 
-  private buildHtml(doc: ReportDocument): string {
-    const { letterhead } = doc;
-    const logoHtml = letterhead.logoUrl
-      ? `<img src="${escapeHtml(letterhead.logoUrl)}" alt="Clinic logo" class="logo" />`
-      : "";
-
-    const summaryHtml =
-      doc.summary && doc.summary.length > 0
-        ? `<section class="section">
-            <h2>Summary</h2>
-            <dl class="summary-grid">
-              ${doc.summary
-                .map(
-                  (item) => `
-                <div>
-                  <dt>${escapeHtml(item.label)}</dt>
-                  <dd>${escapeHtml(item.value)}</dd>
-                </div>`,
-                )
-                .join("")}
-            </dl>
-          </section>`
-        : "";
-
-    const head = doc.columns
-      .map((c) => `<th>${escapeHtml(c.header)}</th>`)
-      .join("");
-
-    const body =
-      doc.rows.length === 0
-        ? `<tr><td colspan="${doc.columns.length}" class="empty">No records</td></tr>`
-        : doc.rows
-            .map(
-              (row) =>
-                `<tr>${doc.columns
-                  .map((c) => {
-                    const raw = row[c.key];
-                    const text =
-                      raw === null || raw === undefined ? "—" : String(raw);
-                    return `<td>${escapeHtml(text)}</td>`;
-                  })
-                  .join("")}</tr>`,
-            )
-            .join("");
-
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>${escapeHtml(doc.title)}</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      font-size: 12px;
-      color: #1a1a1a;
-      padding: 32px 40px;
-      line-height: 1.45;
-    }
-    .letterhead {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      border-bottom: 2px solid #1a1a1a;
-      padding-bottom: 16px;
-      margin-bottom: 20px;
-    }
-    .logo { max-height: 64px; max-width: 120px; object-fit: contain; }
-    .clinic-meta h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-    .clinic-meta p { color: #555; font-size: 11px; }
-    .meta { color: #666; font-size: 10px; margin-bottom: 20px; }
-    h2 { font-size: 15px; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
-    .section { margin-bottom: 24px; }
-    .summary-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 24px;
-    }
-    .summary-grid dt {
-      font-weight: 600;
-      color: #444;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    .summary-grid dd { margin-bottom: 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-    th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
-    th { background: #f5f5f5; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
-    td.empty { text-align: center; color: #888; font-style: italic; }
-    .footer {
-      margin-top: 36px;
-      padding-top: 12px;
-      border-top: 1px solid #ccc;
-      font-size: 10px;
-      color: #666;
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-  <header class="letterhead">
-    ${logoHtml}
-    <div class="clinic-meta">
-      <h1>${escapeHtml(letterhead.clinicName)}</h1>
-      ${letterhead.address ? `<p>${escapeHtml(letterhead.address)}</p>` : ""}
-      ${letterhead.phone ? `<p>${escapeHtml(letterhead.phone)}</p>` : ""}
-    </div>
-  </header>
-
-  <p class="meta">${escapeHtml(doc.title)} · Generated ${formatDisplayDate(doc.generatedAt)}</p>
-
-  ${summaryHtml}
-
-  <section class="section">
-    <h2>Records</h2>
-    <table>
-      <thead><tr>${head}</tr></thead>
-      <tbody>${body}</tbody>
-    </table>
-  </section>
-
-  ${
-    letterhead.footer
-      ? `<footer class="footer">${escapeHtml(letterhead.footer)}</footer>`
-      : ""
-  }
-</body>
-</html>`;
-  }
-
-  private async renderPdf(html: string): Promise<Buffer> {
-    const browser = await this.launchBrowser();
-
-    try {
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "load" });
-      const pdf = await page.pdf({ format: "A4", printBackground: true });
-      return Buffer.from(pdf);
-    } finally {
-      await browser.close();
-    }
-  }
-
-  /**
-   * Render/Linux: @sparticuz/chromium ships a Linux Chrome binary.
-   * Local Windows/macOS: use installed Google Chrome via puppeteer-core channel.
-   */
-  private async launchBrowser(): Promise<Browser> {
-    const puppeteer = (await import("puppeteer-core")).default;
-    const useServerChromium =
-      process.env.RENDER === "true" ||
-      process.env.USE_SERVERLESS_CHROMIUM === "true" ||
-      process.platform === "linux";
-
-    if (useServerChromium) {
-      const chromium = (await import("@sparticuz/chromium")).default;
-      chromium.setGraphicsMode = false;
-
-      return puppeteer.launch({
-        args: [...chromium.args, "--disable-dev-shm-usage", "--no-zygote"],
-        defaultViewport: { width: 1280, height: 720 },
-        executablePath: await chromium.executablePath(),
-        headless: true,
+  private render(doc: ReportDocument): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const pdf = new PDFDocument({
+        size: "A4",
+        margins: { top: 48, bottom: 56, left: 48, right: 48 },
+        info: {
+          Title: doc.title,
+          Author: doc.letterhead.clinicName,
+          Creator: "Cureva Clinic Platform",
+        },
       });
-    }
 
-    return puppeteer.launch({
-      headless: true,
-      channel: "chrome",
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      const chunks: Buffer[] = [];
+      pdf.on("data", (chunk: Buffer) => chunks.push(chunk));
+      pdf.on("end", () => resolve(Buffer.concat(chunks)));
+      pdf.on("error", reject);
+
+      const pageWidth =
+        pdf.page.width - pdf.page.margins.left - pdf.page.margins.right;
+      let y = pdf.page.margins.top;
+
+      // Letterhead
+      const head = letterheadLines(doc);
+      pdf
+        .fillColor(REPORT_THEME.ink)
+        .font("Helvetica-Bold")
+        .fontSize(18)
+        .text(head[0] ?? doc.letterhead.clinicName, pdf.page.margins.left, y, {
+          width: pageWidth,
+        });
+      y = pdf.y + 4;
+
+      if (head.length > 1) {
+        pdf
+          .fillColor(REPORT_THEME.muted)
+          .font("Helvetica")
+          .fontSize(9)
+          .text(head.slice(1).join("  ·  "), pdf.page.margins.left, y, {
+            width: pageWidth,
+          });
+        y = pdf.y + 10;
+      } else {
+        y += 8;
+      }
+
+      pdf
+        .strokeColor(REPORT_THEME.accent)
+        .lineWidth(2)
+        .moveTo(pdf.page.margins.left, y)
+        .lineTo(pdf.page.margins.left + pageWidth, y)
+        .stroke();
+      y += 14;
+
+      pdf
+        .fillColor(REPORT_THEME.ink)
+        .font("Helvetica-Bold")
+        .fontSize(13)
+        .text(doc.title, pdf.page.margins.left, y, { width: pageWidth });
+      y = pdf.y + 2;
+
+      pdf
+        .fillColor(REPORT_THEME.muted)
+        .font("Helvetica")
+        .fontSize(9)
+        .text(metaLine(doc), pdf.page.margins.left, y, { width: pageWidth });
+      y = pdf.y + 16;
+
+      // Summary
+      if (doc.summary?.length) {
+        pdf
+          .fillColor(REPORT_THEME.ink)
+          .font("Helvetica-Bold")
+          .fontSize(11)
+          .text("Summary", pdf.page.margins.left, y);
+        y = pdf.y + 8;
+
+        const colW = pageWidth / 2 - 8;
+        for (let i = 0; i < doc.summary.length; i += 2) {
+          const left = doc.summary[i];
+          const right = doc.summary[i + 1];
+          const rowY = y;
+
+          this.drawSummaryItem(pdf, left, pdf.page.margins.left, rowY, colW);
+          if (right) {
+            this.drawSummaryItem(
+              pdf,
+              right,
+              pdf.page.margins.left + colW + 16,
+              rowY,
+              colW,
+            );
+          }
+          y = Math.max(pdf.y, rowY + 28) + 4;
+          this.ensureSpace(pdf, y, 40);
+          y = Math.max(y, pdf.y);
+        }
+        y += 8;
+      }
+
+      // Table
+      pdf
+        .fillColor(REPORT_THEME.ink)
+        .font("Helvetica-Bold")
+        .fontSize(11)
+        .text("Records", pdf.page.margins.left, y);
+      y = pdf.y + 8;
+
+      const colCount = Math.max(doc.columns.length, 1);
+      const colWidths = this.columnWidths(doc, pageWidth);
+      const rowPad = 5;
+
+      const drawHeader = () => {
+        let x = pdf.page.margins.left;
+        const headerH = 22;
+        pdf
+          .rect(x, y, pageWidth, headerH)
+          .fill(REPORT_THEME.headerBg);
+
+        pdf.fillColor(REPORT_THEME.headerFg).font("Helvetica-Bold").fontSize(8);
+        for (let i = 0; i < colCount; i++) {
+          const col = doc.columns[i];
+          pdf.text(col?.header ?? "", x + rowPad, y + 7, {
+            width: colWidths[i] - rowPad * 2,
+            ellipsis: true,
+          });
+          x += colWidths[i];
+        }
+        y += headerH;
+      };
+
+      drawHeader();
+
+      if (doc.rows.length === 0) {
+        this.ensureSpace(pdf, y, 28);
+        pdf
+          .fillColor(REPORT_THEME.muted)
+          .font("Helvetica-Oblique")
+          .fontSize(9)
+          .text("No records", pdf.page.margins.left + rowPad, y + 8, {
+            width: pageWidth - rowPad * 2,
+          });
+        y += 28;
+      } else {
+        doc.rows.forEach((row, rowIndex) => {
+          const values = doc.columns.map((c) => cellText(row[c.key]));
+          const heights = values.map((text, i) =>
+            pdf.heightOfString(text, {
+              width: colWidths[i] - rowPad * 2,
+              align: "left",
+            }),
+          );
+          const rowH = Math.max(18, Math.max(...heights) + rowPad * 2);
+
+          if (y + rowH > pdf.page.height - pdf.page.margins.bottom - 40) {
+            this.drawFooter(pdf, doc);
+            pdf.addPage();
+            y = pdf.page.margins.top;
+            drawHeader();
+          }
+
+          if (rowIndex % 2 === 1) {
+            pdf
+              .rect(pdf.page.margins.left, y, pageWidth, rowH)
+              .fill(REPORT_THEME.stripe);
+          }
+
+          pdf
+            .strokeColor(REPORT_THEME.line)
+            .lineWidth(0.5)
+            .moveTo(pdf.page.margins.left, y + rowH)
+            .lineTo(pdf.page.margins.left + pageWidth, y + rowH)
+            .stroke();
+
+          let x = pdf.page.margins.left;
+          pdf.fillColor(REPORT_THEME.ink).font("Helvetica").fontSize(8);
+          values.forEach((text, i) => {
+            pdf.text(text, x + rowPad, y + rowPad, {
+              width: colWidths[i] - rowPad * 2,
+            });
+            x += colWidths[i];
+          });
+          y += rowH;
+        });
+      }
+
+      this.drawFooter(pdf, doc);
+      pdf.end();
     });
+  }
+
+  private drawSummaryItem(
+    pdf: PDFKit.PDFDocument,
+    item: { label: string; value: string },
+    x: number,
+    y: number,
+    width: number,
+  ) {
+    pdf
+      .fillColor(REPORT_THEME.muted)
+      .font("Helvetica")
+      .fontSize(8)
+      .text(item.label.toUpperCase(), x, y, { width });
+    pdf
+      .fillColor(REPORT_THEME.ink)
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .text(item.value || "—", x, y + 11, { width });
+  }
+
+  private columnWidths(doc: ReportDocument, pageWidth: number): number[] {
+    const n = Math.max(doc.columns.length, 1);
+    const base = pageWidth / n;
+    return doc.columns.map(() => base);
+  }
+
+  private ensureSpace(pdf: PDFKit.PDFDocument, y: number, needed: number) {
+    if (y + needed > pdf.page.height - pdf.page.margins.bottom) {
+      pdf.addPage();
+    }
+  }
+
+  private drawFooter(pdf: PDFKit.PDFDocument, doc: ReportDocument) {
+    const bottom = pdf.page.height - 36;
+    pdf
+      .strokeColor(REPORT_THEME.line)
+      .lineWidth(0.8)
+      .moveTo(pdf.page.margins.left, bottom - 10)
+      .lineTo(pdf.page.width - pdf.page.margins.right, bottom - 10)
+      .stroke();
+
+    const footer =
+      doc.letterhead.footer?.trim() ||
+      `${doc.letterhead.clinicName} · Confidential clinical report`;
+
+    pdf
+      .fillColor(REPORT_THEME.muted)
+      .font("Helvetica")
+      .fontSize(8)
+      .text(footer, pdf.page.margins.left, bottom - 4, {
+        width: pdf.page.width - pdf.page.margins.left - pdf.page.margins.right,
+        align: "center",
+      });
   }
 }

@@ -113,8 +113,9 @@ export default function PatientsPage() {
                   Export
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem onClick={() => handleExport('pdf')}>PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('docx')}>Word</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleExport('xlsx')}>Excel</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleExport('csv')}>CSV</DropdownMenuItem>
               </DropdownMenuContent>

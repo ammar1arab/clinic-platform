@@ -5,6 +5,7 @@ export enum ReportFormatDto {
   pdf = "pdf",
   xlsx = "xlsx",
   csv = "csv",
+  docx = "docx",
 }
 
 export class PatientReportQueryDto {

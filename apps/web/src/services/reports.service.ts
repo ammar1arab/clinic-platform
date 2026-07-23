@@ -46,11 +46,12 @@ async function downloadReport(path: string, fallbackName: string) {
 }
 
 function extFor(format: ReportFormat) {
-  return format === 'xlsx' ? 'xls' : format;
+  if (format === 'xlsx') return 'xls';
+  return format;
 }
 
 export const reportsService = {
-  /** Patient medical report â€” PDF / Excel / CSV */
+  /** Patient medical report — PDF / Excel / CSV / Word */
   downloadPatientMedical: (
     patientId: string,
     clinicId: string,
