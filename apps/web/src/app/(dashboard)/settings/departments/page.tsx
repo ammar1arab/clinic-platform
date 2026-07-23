@@ -19,8 +19,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ButtonSpinner, TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import { EmptyState } from '@/components/primitives/empty-state';
 import { TruncatedText } from '@/components/primitives/truncated-text';
@@ -48,6 +46,10 @@ import {
 import { useClinicId } from '@/hooks/use-clinic-id';
 import { useListFilter } from '@/hooks/use-list-filter';
 import { Department } from '@/services/departments.service';
+import {
+  BilingualNameFields,
+  optionalArabicName,
+} from '@/components/primitives/bilingual-name-fields';
 
 const searchFields = (d: Department) => [d.name];
 
@@ -74,6 +76,7 @@ export default function DepartmentsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Department | null>(null);
   const [name, setName] = useState('');
+  const [nameAr, setNameAr] = useState('');
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const isToggling = deactivateMutation.isPending || reactivateMutation.isPending;
@@ -81,24 +84,30 @@ export default function DepartmentsPage() {
   const openCreate = () => {
     setEditing(null);
     setName('');
+    setNameAr('');
     setOpen(true);
   };
 
   const openEdit = (dept: Department) => {
     setEditing(dept);
     setName(dept.name);
+    setNameAr(dept.nameAr ?? '');
     setOpen(true);
   };
 
   const handleSubmit = () => {
+    const payload = {
+      name: name.trim(),
+      nameAr: optionalArabicName(nameAr),
+    };
     if (editing) {
       updateMutation.mutate(
-        { id: editing.id, data: { name, nameAr: editing.nameAr ?? undefined } },
+        { id: editing.id, data: payload },
         { onSuccess: () => setOpen(false) },
       );
     } else {
       createMutation.mutate(
-        { clinicId, name },
+        { clinicId, ...payload },
         { onSuccess: () => setOpen(false) },
       );
     }
@@ -247,13 +256,12 @@ export default function DepartmentsPage() {
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit Department' : 'New Department'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              maxLength={60}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+          <div className="space-y-3">
+            <BilingualNameFields
+              name={name}
+              nameAr={nameAr}
+              onNameChange={setName}
+              onNameArChange={setNameAr}
             />
           </div>
           <DialogFooter>

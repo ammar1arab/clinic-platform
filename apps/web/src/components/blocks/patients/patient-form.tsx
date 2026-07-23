@@ -142,11 +142,31 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
           <CardTitle className="text-sm">Personal Information</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="First Name" required error={errors.firstNameEn?.message}>
-            <Input maxLength={50} {...register('firstNameEn')} />
+          <Field label="First Name (English)" required error={errors.firstNameEn?.message}>
+            <Input maxLength={50} {...register('firstNameEn')} placeholder="First name" />
           </Field>
-          <Field label="Last Name" required error={errors.lastNameEn?.message}>
-            <Input maxLength={50} {...register('lastNameEn')} />
+          <Field label="Last Name (English)" required error={errors.lastNameEn?.message}>
+            <Input maxLength={50} {...register('lastNameEn')} placeholder="Last name" />
+          </Field>
+          <Field label="First Name (Arabic)" error={errors.firstNameAr?.message}>
+            <Input
+              maxLength={50}
+              dir="rtl"
+              lang="ar"
+              className="text-right"
+              placeholder="الاسم الأول"
+              {...register('firstNameAr')}
+            />
+          </Field>
+          <Field label="Last Name (Arabic)" error={errors.lastNameAr?.message}>
+            <Input
+              maxLength={50}
+              dir="rtl"
+              lang="ar"
+              className="text-right"
+              placeholder="اسم العائلة"
+              {...register('lastNameAr')}
+            />
           </Field>
           <Field label="Date of Birth" error={errors.dob?.message}>
             <Controller

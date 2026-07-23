@@ -19,7 +19,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -56,6 +55,10 @@ import { useDepartments } from '@/hooks/use-departments';
 import { useClinicId } from '@/hooks/use-clinic-id';
 import { useListFilter } from '@/hooks/use-list-filter';
 import { Room } from '@/services/rooms.service';
+import {
+  BilingualNameFields,
+  optionalArabicName,
+} from '@/components/primitives/bilingual-name-fields';
 
 const searchFields = (r: Room) => [r.name];
 
@@ -83,6 +86,7 @@ export default function RoomsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Room | null>(null);
   const [name, setName] = useState('');
+  const [nameAr, setNameAr] = useState('');
   const [departmentId, setDepartmentId] = useState('');
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
@@ -94,6 +98,7 @@ export default function RoomsPage() {
   const openCreate = () => {
     setEditing(null);
     setName('');
+    setNameAr('');
     setDepartmentId('');
     setOpen(true);
   };
@@ -101,18 +106,20 @@ export default function RoomsPage() {
   const openEdit = (room: Room) => {
     setEditing(room);
     setName(room.name);
+    setNameAr(room.nameAr ?? '');
     setDepartmentId(room.departmentId ?? '');
     setOpen(true);
   };
 
   const handleSubmit = () => {
     const payload = {
-      name,
+      name: name.trim(),
+      nameAr: optionalArabicName(nameAr),
       departmentId: departmentId || undefined,
     };
     if (editing) {
       updateMutation.mutate(
-        { id: editing.id, data: { ...payload, nameAr: editing.nameAr ?? undefined } },
+        { id: editing.id, data: payload },
         { onSuccess: () => setOpen(false) },
       );
     } else {
@@ -280,10 +287,12 @@ export default function RoomsPage() {
             <DialogTitle>{editing ? 'Edit Room' : 'New Room'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
+            <BilingualNameFields
+              name={name}
+              nameAr={nameAr}
+              onNameChange={setName}
+              onNameArChange={setNameAr}
+            />
             <div className="space-y-1.5">
               <Label>Department</Label>
               <Select

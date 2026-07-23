@@ -56,6 +56,10 @@ import { useDepartments } from '@/hooks/use-departments';
 import { useClinicId } from '@/hooks/use-clinic-id';
 import { useListFilter } from '@/hooks/use-list-filter';
 import { ServiceItem } from '@/services/services.service';
+import {
+  BilingualNameFields,
+  optionalArabicName,
+} from '@/components/primitives/bilingual-name-fields';
 
 const searchFields = (s: ServiceItem) => [s.name];
 
@@ -83,6 +87,7 @@ export default function ServicesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ServiceItem | null>(null);
   const [name, setName] = useState('');
+  const [nameAr, setNameAr] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [durationMins, setDurationMins] = useState('45');
   const [fee, setFee] = useState('');
@@ -96,6 +101,7 @@ export default function ServicesPage() {
   const openCreate = () => {
     setEditing(null);
     setName('');
+    setNameAr('');
     setDepartmentId('');
     setDurationMins('45');
     setFee('');
@@ -105,6 +111,7 @@ export default function ServicesPage() {
   const openEdit = (svc: ServiceItem) => {
     setEditing(svc);
     setName(svc.name);
+    setNameAr(svc.nameAr ?? '');
     setDepartmentId(svc.departmentId ?? '');
     setDurationMins(String(svc.durationMins));
     setFee(svc.fee);
@@ -113,14 +120,15 @@ export default function ServicesPage() {
 
   const handleSubmit = () => {
     const payload = {
-      name,
+      name: name.trim(),
+      nameAr: optionalArabicName(nameAr),
       departmentId: departmentId || undefined,
       durationMins: Number(durationMins),
       fee: Number(fee),
     };
     if (editing) {
       updateMutation.mutate(
-        { id: editing.id, data: { ...payload, nameAr: editing.nameAr ?? undefined } },
+        { id: editing.id, data: payload },
         { onSuccess: () => setOpen(false) },
       );
     } else {
@@ -300,10 +308,12 @@ export default function ServicesPage() {
             <DialogTitle>{editing ? 'Edit Service' : 'New Service'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
+            <BilingualNameFields
+              name={name}
+              nameAr={nameAr}
+              onNameChange={setName}
+              onNameArChange={setNameAr}
+            />
             <div className="space-y-1.5">
               <Label>Department</Label>
               <Select
