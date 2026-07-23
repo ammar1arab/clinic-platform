@@ -28,8 +28,8 @@ export function PageTransition({
     <div
       key={pathname}
       className={cn(
-        'fade-in min-h-full transition-[opacity,transform] duration-300 ease-out',
-        entered ? 'translate-y-0 opacity-100' : 'translate-y-1 opacity-0',
+        'min-h-full will-change-transform transition-[opacity,transform] duration-300 ease-out',
+        entered ? 'translate-y-0 opacity-100' : 'translate-y-1.5 opacity-0',
         className,
       )}
     >

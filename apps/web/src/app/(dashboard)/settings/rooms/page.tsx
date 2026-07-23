@@ -19,7 +19,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -27,8 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ButtonSpinner, TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import { EmptyState } from '@/components/primitives/empty-state';
+import { FormField } from '@/components/primitives/form-field';
+import { FormActions } from '@/components/primitives/form-actions';
 import { TruncatedText } from '@/components/primitives/truncated-text';
 import { SearchInput } from '@/components/primitives/search-input';
 import { Pagination } from '@/components/primitives/pagination';
@@ -293,8 +294,7 @@ export default function RoomsPage() {
               onNameChange={setName}
               onNameArChange={setNameAr}
             />
-            <div className="space-y-1.5">
-              <Label>Department</Label>
+            <FormField label="Department">
               <Select
                 value={departmentId || '__none__'}
                 onValueChange={(v) => setDepartmentId(v === '__none__' ? '' : v)}
@@ -311,16 +311,17 @@ export default function RoomsPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={isSaving}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={!name.trim() || isSaving}>
-              {isSaving && <ButtonSpinner />}
-              {editing ? 'Save' : 'Create'}
-            </Button>
+            <FormActions
+              variant="dialog"
+              onCancel={() => setOpen(false)}
+              submitLabel={editing ? 'Save' : 'Create'}
+              pending={isSaving}
+              disabled={!name.trim()}
+              onSubmitClick={handleSubmit}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

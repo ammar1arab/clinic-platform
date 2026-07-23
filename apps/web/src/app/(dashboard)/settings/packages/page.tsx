@@ -20,7 +20,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -28,8 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ButtonSpinner, TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import { EmptyState } from '@/components/primitives/empty-state';
+import { FormField } from '@/components/primitives/form-field';
+import { FormActions } from '@/components/primitives/form-actions';
 import { TruncatedText } from '@/components/primitives/truncated-text';
 import { SearchInput } from '@/components/primitives/search-input';
 import { Pagination } from '@/components/primitives/pagination';
@@ -316,27 +317,24 @@ export default function PackagesPage() {
             <DialogTitle>{editing ? 'Edit package' : 'New package'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="pkg-name">Name</Label>
+            <FormField label="Name" htmlFor="pkg-name">
               <Input
                 id="pkg-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. 5-session physio pack"
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="pkg-desc">Description</Label>
+            </FormField>
+            <FormField label="Description" htmlFor="pkg-desc">
               <Input
                 id="pkg-desc"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional"
               />
-            </div>
+            </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="pkg-sessions">Sessions</Label>
+              <FormField label="Sessions" htmlFor="pkg-sessions">
                 <Input
                   id="pkg-sessions"
                   type="number"
@@ -344,9 +342,8 @@ export default function PackagesPage() {
                   value={sessionCount}
                   onChange={(e) => setSessionCount(e.target.value)}
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="pkg-price">Price</Label>
+              </FormField>
+              <FormField label="Price" htmlFor="pkg-price">
                 <Input
                   id="pkg-price"
                   type="number"
@@ -355,11 +352,10 @@ export default function PackagesPage() {
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                 />
-              </div>
+              </FormField>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Discount type</Label>
+              <FormField label="Discount type">
                 <Select
                   value={discountType || '__none__'}
                   onValueChange={(v) =>
@@ -375,9 +371,8 @@ export default function PackagesPage() {
                     <SelectItem value="percentage">Percentage</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="pkg-disc">Discount value</Label>
+              </FormField>
+              <FormField label="Discount value" htmlFor="pkg-disc">
                 <Input
                   id="pkg-disc"
                   type="number"
@@ -387,7 +382,7 @@ export default function PackagesPage() {
                   onChange={(e) => setDiscountValue(e.target.value)}
                   disabled={!discountType}
                 />
-              </div>
+              </FormField>
             </div>
             <p className="text-xs text-muted-foreground">
               Price and discount are applied as defaults when this package is linked to a patient
@@ -395,13 +390,14 @@ export default function PackagesPage() {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={isSaving}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={!name.trim() || isSaving}>
-              {isSaving && <ButtonSpinner />}
-              {editing ? 'Save' : 'Create'}
-            </Button>
+            <FormActions
+              variant="dialog"
+              onCancel={() => setOpen(false)}
+              submitLabel={editing ? 'Save' : 'Create'}
+              pending={isSaving}
+              disabled={!name.trim()}
+              onSubmitClick={handleSubmit}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

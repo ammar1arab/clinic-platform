@@ -12,13 +12,11 @@ import {
 import {
   FileDown,
   GitBranch,
-  Loader2,
   UserRound,
   Users,
   Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +24,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DatePicker } from '@/components/primitives/date-picker';
+import { FormField } from '@/components/primitives/form-field';
+import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
 import { PatientCombobox } from '@/components/blocks/appointments/patient-combobox';
 import { useClinicId } from '@/hooks/use-clinic-id';
 import { usePatients } from '@/hooks/use-patients';
@@ -65,7 +65,7 @@ function FormatDownloadButton({
       <DropdownMenuTrigger asChild>
         <Button size="sm" className={className} disabled={disabled || pending}>
           {pending ? (
-            <Loader2 className="size-4 mr-1.5 animate-spin" />
+            <ButtonSpinner />
           ) : (
             <FileDown className="size-4 mr-1.5" />
           )}
@@ -188,15 +188,14 @@ export default function ReportsPage() {
           title="Patient medical"
           description="Visit history and profile for one patient."
         >
-          <div className="space-y-1.5">
-            <Label className="text-xs">Patient</Label>
+          <FormField label="Patient" labelClassName="text-xs">
             <PatientCombobox
               patients={patients}
               value={patientReportId}
               onChange={setPatientReportId}
               placeholder="Select patient"
             />
-          </div>
+          </FormField>
           <div className="mt-auto pt-1">
             <FormatDownloadButton
               className="w-full sm:w-auto"
@@ -260,21 +259,18 @@ export default function ReportsPage() {
             }}
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs">From</Label>
+            <FormField label="From" labelClassName="text-xs">
               <DatePicker
                 value={referralsFrom}
                 onChange={setReferralsFrom}
                 placeholder="From"
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">To</Label>
+            </FormField>
+            <FormField label="To" labelClassName="text-xs">
               <DatePicker value={referralsTo} onChange={setReferralsTo} placeholder="To" />
-            </div>
+            </FormField>
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Patient (optional)</Label>
+          <FormField label="Patient (optional)" labelClassName="text-xs">
             <PatientCombobox
               patients={patients}
               value={referralsPatientId}
@@ -282,7 +278,7 @@ export default function ReportsPage() {
               placeholder="All patients"
               allowClear
             />
-          </div>
+          </FormField>
           <div className="mt-auto pt-1">
             <FormatDownloadButton
               className="w-full sm:w-auto"
@@ -312,18 +308,16 @@ export default function ReportsPage() {
               }}
             />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label className="text-xs">From</Label>
+              <FormField label="From" labelClassName="text-xs">
                 <DatePicker
                   value={financeFrom}
                   onChange={setFinanceFrom}
                   placeholder="From"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">To</Label>
+              </FormField>
+              <FormField label="To" labelClassName="text-xs">
                 <DatePicker value={financeTo} onChange={setFinanceTo} placeholder="To" />
-              </div>
+              </FormField>
             </div>
             <div className="mt-auto pt-1">
               <FormatDownloadButton

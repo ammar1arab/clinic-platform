@@ -8,8 +8,8 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { FormField } from '@/components/primitives/form-field';
 import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
 import { api } from '@/lib/api';
 import { useAuth } from '@/providers';
@@ -58,8 +58,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <FormField label="Email" htmlFor="email" error={errors.email?.message}>
               <Input
                 id="email"
                 type="email"
@@ -67,12 +66,8 @@ export default function LoginPage() {
                 autoComplete="email"
                 {...register('email')}
               />
-              {errors.email && (
-                <p className="text-xs text-destructive">{errors.email.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            </FormField>
+            <FormField label="Password" htmlFor="password" error={errors.password?.message}>
               <Input
                 id="password"
                 type="password"
@@ -80,10 +75,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 {...register('password')}
               />
-              {errors.password && (
-                <p className="text-xs text-destructive">{errors.password.message}</p>
-              )}
-            </div>
+            </FormField>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <ButtonSpinner />}
               {loading ? 'Signing in...' : 'Sign in'}

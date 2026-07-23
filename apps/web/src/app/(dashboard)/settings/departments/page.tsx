@@ -19,8 +19,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ButtonSpinner, TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import { EmptyState } from '@/components/primitives/empty-state';
+import { FormActions } from '@/components/primitives/form-actions';
 import { TruncatedText } from '@/components/primitives/truncated-text';
 import { SearchInput } from '@/components/primitives/search-input';
 import { Pagination } from '@/components/primitives/pagination';
@@ -265,13 +266,14 @@ export default function DepartmentsPage() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={isSaving}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={!name.trim() || isSaving}>
-              {isSaving && <ButtonSpinner />}
-              {editing ? 'Save' : 'Create'}
-            </Button>
+            <FormActions
+              variant="dialog"
+              onCancel={() => setOpen(false)}
+              submitLabel={editing ? 'Save' : 'Create'}
+              pending={isSaving}
+              disabled={!name.trim()}
+              onSubmitClick={handleSubmit}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

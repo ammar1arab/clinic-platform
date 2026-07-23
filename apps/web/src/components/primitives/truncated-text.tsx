@@ -8,12 +8,25 @@ type Props = {
 };
 
 /**
- * Single-line ellipsis for table cells and dense UI.
- * Parent cell should allow shrinking (`max-w-0` / table-fixed column).
+ * Ellipsis for table cells and dense UI.
+ * Use `lines={2}` for soft wrap + clamp (mobile-friendly).
+ * Parent should allow shrinking (`min-w-0` / table-fixed column).
  */
-export function TruncatedText({ children, className, title }: Props) {
+export function TruncatedText({
+  children,
+  className,
+  title,
+  lines = 1,
+}: Props & { lines?: 1 | 2 | 3 }) {
   return (
-    <span className={cn('block min-w-0 truncate', className)} title={title ?? children}>
+    <span
+      className={cn(
+        'block min-w-0 break-words',
+        lines === 1 ? 'truncate' : lines === 2 ? 'line-clamp-2' : 'line-clamp-3',
+        className,
+      )}
+      title={title ?? children}
+    >
       {children}
     </span>
   );

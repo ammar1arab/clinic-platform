@@ -11,10 +11,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
+import { FormField } from '@/components/primitives/form-field';
+import { FormActions } from '@/components/primitives/form-actions';
 import { PhoneInputField } from '@/components/primitives/phone-input';
 import { DatePicker } from '@/components/primitives/date-picker';
 import { GENDERS, BLOOD_TYPES } from '@/constants/patient';
@@ -142,13 +141,13 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
           <CardTitle className="text-sm">Personal Information</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="First Name (English)" required error={errors.firstNameEn?.message}>
+          <FormField label="First Name (English)" required error={errors.firstNameEn?.message}>
             <Input maxLength={50} {...register('firstNameEn')} placeholder="First name" />
-          </Field>
-          <Field label="Last Name (English)" required error={errors.lastNameEn?.message}>
+          </FormField>
+          <FormField label="Last Name (English)" required error={errors.lastNameEn?.message}>
             <Input maxLength={50} {...register('lastNameEn')} placeholder="Last name" />
-          </Field>
-          <Field label="First Name (Arabic)" error={errors.firstNameAr?.message}>
+          </FormField>
+          <FormField label="First Name (Arabic)" error={errors.firstNameAr?.message}>
             <Input
               maxLength={50}
               dir="rtl"
@@ -157,8 +156,8 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               placeholder="الاسم الأول"
               {...register('firstNameAr')}
             />
-          </Field>
-          <Field label="Last Name (Arabic)" error={errors.lastNameAr?.message}>
+          </FormField>
+          <FormField label="Last Name (Arabic)" error={errors.lastNameAr?.message}>
             <Input
               maxLength={50}
               dir="rtl"
@@ -167,8 +166,8 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               placeholder="اسم العائلة"
               {...register('lastNameAr')}
             />
-          </Field>
-          <Field label="Date of Birth" error={errors.dob?.message}>
+          </FormField>
+          <FormField label="Date of Birth" error={errors.dob?.message}>
             <Controller
               control={control}
               name="dob"
@@ -182,8 +181,8 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                 />
               )}
             />
-          </Field>
-          <Field label="Gender" error={errors.gender?.message}>
+          </FormField>
+          <FormField label="Gender" error={errors.gender?.message}>
             <Controller
               control={control}
               name="gender"
@@ -206,7 +205,7 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                 </Select>
               )}
             />
-          </Field>
+          </FormField>
         </CardContent>
       </Card>
 
@@ -215,7 +214,7 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
           <CardTitle className="text-sm">Contact</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Phone" error={errors.phone?.message} className="sm:col-span-2">
+          <FormField label="Phone" error={errors.phone?.message} className="sm:col-span-2">
             <Controller
               control={control}
               name="phone"
@@ -223,14 +222,14 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                 <PhoneInputField value={field.value ?? ''} onChange={field.onChange} />
               )}
             />
-          </Field>
-          <Field
+          </FormField>
+          <FormField
             label="Emergency Contact Name"
             error={errors.emergencyContactName?.message}
           >
             <Input maxLength={80} {...register('emergencyContactName')} />
-          </Field>
-          <Field
+          </FormField>
+          <FormField
             label="Emergency Contact Phone"
             error={errors.emergencyContactPhone?.message}
           >
@@ -241,16 +240,16 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                 <PhoneInputField value={field.value ?? ''} onChange={field.onChange} />
               )}
             />
-          </Field>
-          <Field label="Email" error={errors.email?.message}>
+          </FormField>
+          <FormField label="Email" error={errors.email?.message}>
             <Input type="email" maxLength={120} {...register('email')} />
-          </Field>
-          <Field label="National ID" error={errors.nationalId?.message}>
+          </FormField>
+          <FormField label="National ID" error={errors.nationalId?.message}>
             <Input maxLength={20} {...register('nationalId')} />
-          </Field>
-          <Field label="Address" error={errors.address?.message} className="sm:col-span-2">
+          </FormField>
+          <FormField label="Address" error={errors.address?.message} className="sm:col-span-2">
             <Textarea rows={2} maxLength={200} placeholder="Home address" {...register('address')} />
-          </Field>
+          </FormField>
         </CardContent>
       </Card>
 
@@ -259,7 +258,7 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
           <CardTitle className="text-sm">Medical</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Blood Type" error={errors.bloodType?.message}>
+          <FormField label="Blood Type" error={errors.bloodType?.message}>
             <Controller
               control={control}
               name="bloodType"
@@ -282,15 +281,15 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                 </Select>
               )}
             />
-          </Field>
-          <Field label="Allergies" error={errors.allergies?.message} className="sm:col-span-2">
+          </FormField>
+          <FormField label="Allergies" error={errors.allergies?.message} className="sm:col-span-2">
             <Textarea
               rows={2}
               maxLength={500}
               placeholder="Known allergies, if any"
               {...register('allergies')}
             />
-          </Field>
+          </FormField>
         </CardContent>
       </Card>
 
@@ -299,39 +298,37 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
           <CardTitle className="text-sm">Billing defaults</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field
-            label="Package"
-            error={errors.packageId?.message}
-            className="sm:col-span-2"
-          >
-            <Controller
-              control={control}
-              name="packageId"
-              render={({ field }) => (
-                <Select
-                  value={field.value || NONE}
-                  onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None — optional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>None</SelectItem>
-                    {activePackages.map((pkg) => (
-                      <SelectItem key={pkg.id} value={pkg.id}>
-                        {pkg.name}
-                        {pkg.price != null ? ` · ${Number(pkg.price).toFixed(3)}` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Applied automatically when booking an appointment for this patient.
-            </p>
-          </Field>
-          <Field
+            <FormField
+              label="Package"
+              error={errors.packageId?.message}
+              className="sm:col-span-2"
+              hint="Applied automatically when booking an appointment for this patient."
+            >
+              <Controller
+                control={control}
+                name="packageId"
+                render={({ field }) => (
+                  <Select
+                    value={field.value || NONE}
+                    onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="None — optional" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>None</SelectItem>
+                      {activePackages.map((pkg) => (
+                        <SelectItem key={pkg.id} value={pkg.id}>
+                          {pkg.name}
+                          {pkg.price != null ? ` · ${Number(pkg.price).toFixed(3)}` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </FormField>
+          <FormField
             label="Discount code"
             error={errors.discountCodeId?.message}
             className="sm:col-span-2"
@@ -361,46 +358,15 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                 </Select>
               )}
             />
-          </Field>
+          </FormField>
         </CardContent>
       </Card>
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending && <ButtonSpinner />}
-          {isEdit ? 'Save Changes' : 'Create Patient'}
-        </Button>
-      </div>
+      <FormActions
+        onCancel={onCancel}
+        pending={isPending}
+        submitLabel={isEdit ? 'Save Changes' : 'Create Patient'}
+      />
     </form>
-  );
-}
-
-function Field({
-  label,
-  error,
-  required,
-  className,
-  children,
-}: {
-  label: string;
-  error?: string;
-  required?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={className}>
-      <div className="space-y-1.5">
-        <Label>
-          {label}
-          {required && <span className="ml-0.5 text-destructive">*</span>}
-        </Label>
-        {children}
-        {error && <p className="text-xs text-destructive">{error}</p>}
-      </div>
-    </div>
   );
 }

@@ -46,16 +46,26 @@ export function PatientCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="h-9 w-full justify-between px-2.5 font-normal"
+          className="h-auto min-h-9 w-full min-w-0 justify-between gap-2 px-2.5 py-2 font-normal"
         >
-          <span className={cn('flex items-center gap-2 truncate', !selected && 'text-muted-foreground')}>
-            <UserRound className="size-4 shrink-0 opacity-70" />
-            {selected ? `${selected.firstNameEn} ${selected.lastNameEn}` : placeholder}
+          <span
+            className={cn(
+              'flex min-w-0 flex-1 items-start gap-2 text-left',
+              !selected && 'text-muted-foreground',
+            )}
+          >
+            <UserRound className="mt-0.5 size-4 shrink-0 opacity-70" />
+            <span className="min-w-0 break-words line-clamp-2">
+              {selected ? `${selected.firstNameEn} ${selected.lastNameEn}` : placeholder}
+            </span>
           </span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent
+        className="w-[min(100vw-1.5rem,var(--radix-popover-trigger-width))] max-w-[calc(100vw-1.5rem)] p-0"
+        align="start"
+      >
         <div className="flex items-center gap-2 border-b p-2">
           <Search className="size-4 shrink-0 text-muted-foreground" />
           <Input
@@ -99,7 +109,7 @@ export function PatientCombobox({
                 p.id === value && 'bg-muted',
               )}
             >
-              <span className="truncate">
+              <span className="min-w-0 flex-1 break-words line-clamp-2">
                 {p.firstNameEn} {p.lastNameEn}
               </span>
               {p.id === value && <Check className="size-4 shrink-0 text-primary" />}

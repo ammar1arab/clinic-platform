@@ -20,7 +20,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -28,8 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ButtonSpinner, TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import { EmptyState } from '@/components/primitives/empty-state';
+import { FormField } from '@/components/primitives/form-field';
+import { FormActions } from '@/components/primitives/form-actions';
 import { TruncatedText } from '@/components/primitives/truncated-text';
 import { SearchInput } from '@/components/primitives/search-input';
 import { Pagination } from '@/components/primitives/pagination';
@@ -314,8 +315,7 @@ export default function ServicesPage() {
               onNameChange={setName}
               onNameArChange={setNameAr}
             />
-            <div className="space-y-1.5">
-              <Label>Department</Label>
+            <FormField label="Department">
               <Select
                 value={departmentId || '__none__'}
                 onValueChange={(v) => setDepartmentId(v === '__none__' ? '' : v)}
@@ -332,10 +332,9 @@ export default function ServicesPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="duration">Duration (min)</Label>
+              <FormField label="Duration (min)" htmlFor="duration">
                 <Input
                   id="duration"
                   type="number"
@@ -344,9 +343,8 @@ export default function ServicesPage() {
                   value={durationMins}
                   onChange={(e) => setDurationMins(e.target.value)}
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="fee">Fee (JOD)</Label>
+              </FormField>
+              <FormField label="Fee (JOD)" htmlFor="fee">
                 <Input
                   id="fee"
                   type="number"
@@ -355,17 +353,18 @@ export default function ServicesPage() {
                   value={fee}
                   onChange={(e) => setFee(e.target.value)}
                 />
-              </div>
+              </FormField>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={isSaving}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={!name.trim() || !fee || isSaving}>
-              {isSaving && <ButtonSpinner />}
-              {editing ? 'Save' : 'Create'}
-            </Button>
+            <FormActions
+              variant="dialog"
+              onCancel={() => setOpen(false)}
+              submitLabel={editing ? 'Save' : 'Create'}
+              pending={isSaving}
+              disabled={!name.trim() || !fee}
+              onSubmitClick={handleSubmit}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

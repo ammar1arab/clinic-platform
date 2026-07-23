@@ -2,7 +2,6 @@
 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -13,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/primitives/date-picker';
+import { FormField } from '@/components/primitives/form-field';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { GENDERS, BLOOD_TYPES, PATIENT_SORTS } from '@/constants/patient';
 import type { ClinicStaffMember } from '@/services/clinics.service';
@@ -134,8 +134,7 @@ export function PatientFiltersBlock({
               )}
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">Status</Label>
+            <FormField label="Status" labelClassName="text-xs">
               <Select value={values.status} onValueChange={(v) => onChange({ status: v })}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -146,10 +145,9 @@ export function PatientFiltersBlock({
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">Practitioner</Label>
+            <FormField label="Practitioner" labelClassName="text-xs">
               <Select
                 value={values.primaryDoctorId || ANY}
                 onValueChange={(v) => onChange({ primaryDoctorId: v === ANY ? '' : v })}
@@ -166,10 +164,9 @@ export function PatientFiltersBlock({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs">Department</Label>
+            <FormField label="Department" labelClassName="text-xs">
               <Select
                 value={values.departmentId || ANY}
                 onValueChange={(v) => onChange({ departmentId: v === ANY ? '' : v })}
@@ -186,11 +183,10 @@ export function PatientFiltersBlock({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Gender</Label>
+              <FormField label="Gender" labelClassName="text-xs">
                 <Select
                   value={values.gender || ANY}
                   onValueChange={(v) => onChange({ gender: v === ANY ? '' : v })}
@@ -207,10 +203,9 @@ export function PatientFiltersBlock({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </FormField>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Blood Type</Label>
+              <FormField label="Blood Type" labelClassName="text-xs">
                 <Select
                   value={values.bloodType || ANY}
                   onValueChange={(v) => onChange({ bloodType: v === ANY ? '' : v })}
@@ -227,31 +222,28 @@ export function PatientFiltersBlock({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </FormField>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Visit from</Label>
+              <FormField label="Visit from" labelClassName="text-xs">
                 <DatePicker
                   value={values.visitFrom}
                   onChange={(v) => onChange({ visitFrom: v })}
                   placeholder="From"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Visit to</Label>
+              </FormField>
+              <FormField label="Visit to" labelClassName="text-xs">
                 <DatePicker
                   value={values.visitTo}
                   onChange={(v) => onChange({ visitTo: v })}
                   placeholder="To"
                 />
-              </div>
+              </FormField>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Born after</Label>
+              <FormField label="Born after" labelClassName="text-xs">
                 <DatePicker
                   value={values.dobFrom}
                   onChange={(v) => onChange({ dobFrom: v })}
@@ -259,9 +251,8 @@ export function PatientFiltersBlock({
                   withDropdown
                   toDate={new Date()}
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Born before</Label>
+              </FormField>
+              <FormField label="Born before" labelClassName="text-xs">
                 <DatePicker
                   value={values.dobTo}
                   onChange={(v) => onChange({ dobTo: v })}
@@ -269,7 +260,7 @@ export function PatientFiltersBlock({
                   withDropdown
                   toDate={new Date()}
                 />
-              </div>
+              </FormField>
             </div>
           </PopoverContent>
         </Popover>

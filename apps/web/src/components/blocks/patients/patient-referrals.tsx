@@ -13,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -22,7 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { EmptyState } from '@/components/primitives/spinner';
+import { EmptyState } from '@/components/primitives/empty-state';
+import { FormField } from '@/components/primitives/form-field';
+import { FormActions } from '@/components/primitives/form-actions';
 import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
 import { useAuth } from '@/providers';
 import { useClinicStaff } from '@/hooks/use-clinic-staff';
@@ -105,12 +106,13 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between gap-2">
-            <CardTitle className="text-sm">Referrals & consults</CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="min-w-0 text-sm">Referrals & consults</CardTitle>
             <Button
               type="button"
               variant="outline"
               size="sm"
+              className="shrink-0"
               onClick={openCreate}
               disabled={appointments.length === 0}
             >
@@ -134,9 +136,9 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
               isReceiver && ref.status === 'accepted' && ref.type === 'consultation';
 
             return (
-              <div key={ref.id} className="space-y-2 border-b py-3 text-sm last:border-0">
+              <div key={ref.id} className="min-w-0 space-y-2 border-b py-3 text-sm last:border-0">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 space-y-0.5">
+                  <div className="min-w-0 flex-1 space-y-0.5">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <p className="font-medium capitalize">{ref.type}</p>
                       <Badge variant={URGENCY_VARIANT[ref.urgency]} className="capitalize">
@@ -155,19 +157,20 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                         {ref.status}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(ref.createdAt), 'MMM d, yyyy · h:mm a')} ·{' '}
+                    <p className="text-xs text-muted-foreground break-words">
+                      {format(new Date(ref.createdAt), 'MMM d, yyyy · h:mm a')}
+                      <br />
                       {ref.fromDoctor?.name ?? 'Doctor'} → {ref.toDoctor?.name ?? 'Doctor'}
                     </p>
                     {ref.appointment?.scheduledAt && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground break-words">
                         Visit{' '}
                         {format(new Date(ref.appointment.scheduledAt), 'MMM d, yyyy · h:mm a')}
                       </p>
                     )}
                   </div>
                   {canAct && (
-                    <div className="flex gap-1.5">
+                    <div className="flex shrink-0 gap-1.5">
                       <Button
                         type="button"
                         size="sm"
@@ -191,9 +194,9 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                     </div>
                   )}
                 </div>
-                <p className="text-muted-foreground">{ref.reason}</p>
+                <p className="break-words text-muted-foreground whitespace-pre-wrap">{ref.reason}</p>
                 {ref.opinion && (
-                  <p className="rounded-md bg-muted/50 px-2.5 py-2 text-xs">
+                  <p className="rounded-md bg-muted/50 px-2.5 py-2 text-xs break-words whitespace-pre-wrap">
                     <span className="font-medium text-foreground">Opinion: </span>
                     {ref.opinion}
                   </p>
@@ -237,41 +240,44 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
           <DialogHeader>
             <DialogTitle>New referral / consult</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label>Appointment</Label>
+          <div className="min-w-0 space-y-3">
+            <FormField label="Appointment">
               <Select value={appointmentId} onValueChange={setAppointmentId}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select appointment" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
                   {appointments.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {format(new Date(a.scheduledAt), 'MMM d, yyyy · h:mm a')} ·{' '}
-                      {a.service?.name ?? 'Visit'} · Dr. {a.doctor.name}
+                    <SelectItem key={a.id} value={a.id} textValue={`${format(new Date(a.scheduledAt), 'MMM d, yyyy h:mm a')} ${a.service?.name ?? 'Visit'} ${a.doctor.name}`}>
+                      <span className="flex min-w-0 flex-col gap-0.5 text-left leading-snug">
+                        <span className="font-medium">
+                          {format(new Date(a.scheduledAt), 'MMM d, yyyy · h:mm a')}
+                        </span>
+                        <span className="text-xs text-muted-foreground break-words whitespace-normal">
+                          {a.service?.name ?? 'Visit'} · Dr. {a.doctor.name}
+                        </span>
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>To doctor</Label>
+            </FormField>
+            <FormField label="To doctor">
               <Select value={toDoctorId} onValueChange={setToDoctorId}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select doctor" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
                   {otherDoctors.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
-                      {d.name}
+                      <span className="break-words whitespace-normal">{d.name}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Type</Label>
+            </FormField>
+            <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
+              <FormField label="Type">
                 <Select value={type} onValueChange={(v) => setType(v as ReferralType)}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -281,9 +287,8 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                     <SelectItem value="consultation">Consultation</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Urgency</Label>
+              </FormField>
+              <FormField label="Urgency">
                 <Select value={urgency} onValueChange={(v) => setUrgency(v as ReferralUrgency)}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -294,35 +299,27 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                     <SelectItem value="urgent">Urgent</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </FormField>
             </div>
-            <div className="space-y-1.5">
-              <Label>Reason</Label>
+            <FormField label="Reason" required>
               <Textarea
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Why are you referring or requesting a consult?"
+                className="min-w-0 resize-y"
               />
-            </div>
+            </FormField>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              disabled={
-                createMutation.isPending ||
-                !appointmentId ||
-                !toDoctorId ||
-                !reason.trim()
-              }
-              onClick={handleCreate}
-            >
-              {createMutation.isPending && <ButtonSpinner />}
-              Send
-            </Button>
+            <FormActions
+              variant="dialog"
+              onCancel={() => setOpen(false)}
+              submitLabel="Send"
+              pending={createMutation.isPending}
+              disabled={!appointmentId || !toDoctorId || !reason.trim()}
+              onSubmitClick={handleCreate}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

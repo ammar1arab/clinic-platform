@@ -1,7 +1,7 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FormField } from '@/components/primitives/form-field';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -38,11 +38,7 @@ export function BilingualNameFields({
 }: Props) {
   return (
     <div className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2', className)}>
-      <div className="space-y-1.5">
-        <Label htmlFor={nameId}>
-          Name (English)
-          {required && <span className="ml-0.5 text-destructive">*</span>}
-        </Label>
+      <FormField label="Name (English)" htmlFor={nameId} required={required} error={englishError}>
         <Input
           id={nameId}
           maxLength={maxLength}
@@ -51,10 +47,8 @@ export function BilingualNameFields({
           placeholder="English name"
           autoComplete="off"
         />
-        {englishError && <p className="text-xs text-destructive">{englishError}</p>}
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor={nameArId}>Name (Arabic)</Label>
+      </FormField>
+      <FormField label="Name (Arabic)" htmlFor={nameArId} error={arabicError}>
         <Input
           id={nameArId}
           dir="rtl"
@@ -66,8 +60,7 @@ export function BilingualNameFields({
           autoComplete="off"
           className="text-right"
         />
-        {arabicError && <p className="text-xs text-destructive">{arabicError}</p>}
-      </div>
+      </FormField>
     </div>
   );
 }

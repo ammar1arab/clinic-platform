@@ -20,7 +20,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -28,8 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ButtonSpinner, TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import { EmptyState } from '@/components/primitives/empty-state';
+import { FormField } from '@/components/primitives/form-field';
+import { FormActions } from '@/components/primitives/form-actions';
 import { TruncatedText } from '@/components/primitives/truncated-text';
 import { SearchInput } from '@/components/primitives/search-input';
 import { Pagination } from '@/components/primitives/pagination';
@@ -339,8 +340,7 @@ export default function DiscountCodesPage() {
             <DialogTitle>{editing ? 'Edit discount code' : 'New discount code'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="dc-code">Code</Label>
+            <FormField label="Code" htmlFor="dc-code">
               <Input
                 id="dc-code"
                 value={code}
@@ -348,10 +348,9 @@ export default function DiscountCodesPage() {
                 placeholder="e.g. SUMMER10"
                 className="font-mono"
               />
-            </div>
+            </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Type</Label>
+              <FormField label="Type">
                 <Select
                   value={discountType}
                   onValueChange={(v) => setDiscountType(v as DiscountType)}
@@ -364,9 +363,8 @@ export default function DiscountCodesPage() {
                     <SelectItem value="fixed">Fixed</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="dc-value">Value</Label>
+              </FormField>
+              <FormField label="Value" htmlFor="dc-value">
                 <Input
                   id="dc-value"
                   type="number"
@@ -375,10 +373,9 @@ export default function DiscountCodesPage() {
                   value={discountValue}
                   onChange={(e) => setDiscountValue(e.target.value)}
                 />
-              </div>
+              </FormField>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="dc-max">Max uses (optional)</Label>
+            <FormField label="Max uses (optional)" htmlFor="dc-max">
               <Input
                 id="dc-max"
                 type="number"
@@ -387,16 +384,14 @@ export default function DiscountCodesPage() {
                 onChange={(e) => setMaxUses(e.target.value)}
                 placeholder="Unlimited if empty"
               />
-            </div>
+            </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Valid from</Label>
+              <FormField label="Valid from">
                 <DatePicker value={validFrom} onChange={setValidFrom} placeholder="Optional" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Valid to</Label>
+              </FormField>
+              <FormField label="Valid to">
                 <DatePicker value={validTo} onChange={setValidTo} placeholder="Optional" />
-              </div>
+              </FormField>
             </div>
             <p className="text-xs text-muted-foreground">
               Leave dates empty for no window. Validation rejects expired, upcoming, inactive, or
@@ -404,16 +399,14 @@ export default function DiscountCodesPage() {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={isSaving}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={!code.trim() || !discountValue || isSaving}
-            >
-              {isSaving && <ButtonSpinner />}
-              {editing ? 'Save' : 'Create'}
-            </Button>
+            <FormActions
+              variant="dialog"
+              onCancel={() => setOpen(false)}
+              submitLabel={editing ? 'Save' : 'Create'}
+              pending={isSaving}
+              disabled={!code.trim() || !discountValue}
+              onSubmitClick={handleSubmit}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

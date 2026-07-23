@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -13,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { TimePicker } from '@/components/primitives/time-picker';
+import { FormField } from '@/components/primitives/form-field';
 import { SectionLoader } from '@/components/primitives/spinner';
 import { ButtonSpinner } from '@/components/blocks/feedback';
 import { useClinic, useUpdateClinic } from '@/hooks/use-clinic';
@@ -84,8 +84,7 @@ export default function ClinicSettingsPage() {
           <CardTitle className="text-sm">Working hours</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="hours-start">Opens</Label>
+          <FormField label="Opens" htmlFor="hours-start">
             <TimePicker
               value={workingHoursStart}
               onChange={setWorkingHoursStart}
@@ -93,9 +92,8 @@ export default function ClinicSettingsPage() {
               className="h-10"
               step={15}
             />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="hours-end">Closes</Label>
+          </FormField>
+          <FormField label="Closes" htmlFor="hours-end">
             <TimePicker
               value={workingHoursEnd}
               onChange={setWorkingHoursEnd}
@@ -103,9 +101,8 @@ export default function ClinicSettingsPage() {
               className="h-10"
               step={15}
             />
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label>Timezone</Label>
+          </FormField>
+          <FormField label="Timezone" className="sm:col-span-2">
             <Select value={timezone} onValueChange={setTimezone}>
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -118,7 +115,7 @@ export default function ClinicSettingsPage() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </FormField>
         </CardContent>
       </Card>
 
@@ -127,8 +124,7 @@ export default function ClinicSettingsPage() {
           <CardTitle className="text-sm">Schedule defaults</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-1.5">
-            <Label>Default calendar view</Label>
+          <FormField label="Default calendar view">
             <Select
               value={defaultCalendarView}
               onValueChange={(v) => setDefaultCalendarView(v as 'day' | 'week')}
@@ -141,10 +137,9 @@ export default function ClinicSettingsPage() {
                 <SelectItem value="week">Week</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </FormField>
 
-          <div className="space-y-1.5">
-            <Label>Default session type</Label>
+          <FormField label="Default session type">
             <Select
               value={defaultSessionType}
               onValueChange={(v) => setDefaultSessionType(v as 'in_person' | 'online')}
@@ -157,10 +152,9 @@ export default function ClinicSettingsPage() {
                 <SelectItem value="online">Online</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </FormField>
 
-          <div className="space-y-1.5">
-            <Label>Default department</Label>
+          <FormField label="Default department">
             <Select
               value={defaultDepartmentId || NONE}
               onValueChange={(v) => setDefaultDepartmentId(v === NONE ? '' : v)}
@@ -177,7 +171,7 @@ export default function ClinicSettingsPage() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </FormField>
         </CardContent>
       </Card>
 
@@ -185,15 +179,16 @@ export default function ClinicSettingsPage() {
         <CardHeader>
           <CardTitle className="text-sm">Report letterhead</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-1.5">
-          <Label htmlFor="footer">Footer text</Label>
-          <Input
-            id="footer"
-            value={letterheadFooter}
-            onChange={(e) => setLetterheadFooter(e.target.value)}
-            placeholder="Optional line on patient PDF reports"
-            maxLength={200}
-          />
+        <CardContent>
+          <FormField label="Footer text" htmlFor="footer">
+            <Input
+              id="footer"
+              value={letterheadFooter}
+              onChange={(e) => setLetterheadFooter(e.target.value)}
+              placeholder="Optional line on patient PDF reports"
+              maxLength={200}
+            />
+          </FormField>
         </CardContent>
       </Card>
 

@@ -12,7 +12,6 @@ import {
   UserX,
   Star,
   FileDown,
-  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +25,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { SectionLoader, EmptyState } from '@/components/primitives/spinner';
+import { SectionLoader } from '@/components/primitives/spinner';
+import { EmptyState } from '@/components/primitives/empty-state';
+import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import { usePatient, useTogglePatientStatus, useDeletePatient } from '@/hooks/use-patients';
 import { useDownloadPatientReport } from '@/hooks/use-reports';
@@ -115,7 +116,7 @@ export default function PatientDetailPage({ params }: { params: Promise<{ id: st
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" disabled={downloadReport.isPending}>
                 {downloadReport.isPending ? (
-                  <Loader2 className="size-4 mr-1.5 animate-spin" />
+                  <ButtonSpinner />
                 ) : (
                   <FileDown className="size-4 mr-1.5" />
                 )}

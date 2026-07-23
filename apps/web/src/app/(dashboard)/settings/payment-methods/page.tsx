@@ -21,9 +21,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ButtonSpinner, TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import { EmptyState } from '@/components/primitives/empty-state';
+import { FormField } from '@/components/primitives/form-field';
+import { FormActions } from '@/components/primitives/form-actions';
 import { TruncatedText } from '@/components/primitives/truncated-text';
 import { SearchInput } from '@/components/primitives/search-input';
 import { Pagination } from '@/components/primitives/pagination';
@@ -305,8 +306,7 @@ export default function PaymentMethodsPage() {
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit payment method' : 'New payment method'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-1.5">
-            <Label htmlFor="pm-name">Name</Label>
+          <FormField label="Name" htmlFor="pm-name">
             <Input
               id="pm-name"
               maxLength={60}
@@ -314,15 +314,16 @@ export default function PaymentMethodsPage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Cash, Visa, CliQ"
             />
-          </div>
+          </FormField>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={isSaving}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={!name.trim() || isSaving}>
-              {isSaving && <ButtonSpinner />}
-              {editing ? 'Save' : 'Create'}
-            </Button>
+            <FormActions
+              variant="dialog"
+              onCancel={() => setOpen(false)}
+              submitLabel={editing ? 'Save' : 'Create'}
+              pending={isSaving}
+              disabled={!name.trim()}
+              onSubmitClick={handleSubmit}
+            />
           </DialogFooter>
         </DialogContent>
       </Dialog>

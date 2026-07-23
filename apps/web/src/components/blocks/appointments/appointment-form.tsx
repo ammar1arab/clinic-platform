@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Video, MapPin, Loader2 } from 'lucide-react';
+import { Video, MapPin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
@@ -13,11 +13,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
+import { FormField } from '@/components/primitives/form-field';
+import { FormActions } from '@/components/primitives/form-actions';
 import { DatePicker } from '@/components/primitives/date-picker';
 import { TimePicker } from '@/components/primitives/time-picker';
 import { StatusBadgeBlock, STATUS_CONFIG } from './status-badge';
@@ -374,8 +375,11 @@ export function AppointmentForm({
               </SelectContent>
             </Select>
             {status === 'cancelled' && (
-              <div className="space-y-1.5">
-                <Label className="text-destructive">Cancellation Reason *</Label>
+              <FormField
+                label="Cancellation Reason"
+                required
+                labelClassName="text-destructive"
+              >
                 <Textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
@@ -383,7 +387,7 @@ export function AppointmentForm({
                   rows={2}
                   className="resize-none border-destructive/40"
                 />
-              </div>
+              </FormField>
             )}
           </CardContent>
         </Card>
@@ -394,7 +398,7 @@ export function AppointmentForm({
           <CardTitle className="text-sm">Visit Details</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field
+          <FormField
             label="Patient"
             required
             error={errors.patientId?.message}
@@ -414,9 +418,9 @@ export function AppointmentForm({
                 />
               )}
             />
-          </Field>
+          </FormField>
 
-          <Field label="Doctor" required error={errors.doctorId?.message}>
+          <FormField label="Doctor" required error={errors.doctorId?.message}>
             <Controller
               control={control}
               name="doctorId"
@@ -442,9 +446,9 @@ export function AppointmentForm({
                 </Select>
               )}
             />
-          </Field>
+          </FormField>
 
-          <Field label="Department" error={errors.departmentId?.message}>
+          <FormField label="Department" error={errors.departmentId?.message}>
             <Controller
               control={control}
               name="departmentId"
@@ -467,9 +471,9 @@ export function AppointmentForm({
                 </Select>
               )}
             />
-          </Field>
+          </FormField>
 
-          <Field label="Service" error={errors.serviceId?.message} className="sm:col-span-2">
+          <FormField label="Service" error={errors.serviceId?.message} className="sm:col-span-2">
             <Controller
               control={control}
               name="serviceId"
@@ -508,7 +512,7 @@ export function AppointmentForm({
                 </Select>
               )}
             />
-          </Field>
+          </FormField>
         </CardContent>
       </Card>
 
@@ -517,7 +521,7 @@ export function AppointmentForm({
           <CardTitle className="text-sm">Schedule</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Field label="Date" required error={errors.date?.message}>
+          <FormField label="Date" required error={errors.date?.message}>
             <Controller
               control={control}
               name="date"
@@ -530,8 +534,8 @@ export function AppointmentForm({
                 />
               )}
             />
-          </Field>
-          <Field label="Time" required error={errors.time?.message}>
+          </FormField>
+          <FormField label="Time" required error={errors.time?.message}>
             <Controller
               control={control}
               name="time"
@@ -545,10 +549,10 @@ export function AppointmentForm({
                 />
               )}
             />
-          </Field>
-          <Field label="Duration (min)" required error={errors.durationMins?.message}>
+          </FormField>
+          <FormField label="Duration (min)" required error={errors.durationMins?.message}>
             <Input className="h-10" type="number" min={5} step={5} {...register('durationMins')} />
-          </Field>
+          </FormField>
         </CardContent>
       </Card>
 
@@ -586,7 +590,7 @@ export function AppointmentForm({
           />
 
           {sessionType === 'in_person' ? (
-            <Field label="Room" required error={errors.roomId?.message}>
+            <FormField label="Room" required error={errors.roomId?.message}>
               <Controller
                 control={control}
                 name="roomId"
@@ -609,16 +613,16 @@ export function AppointmentForm({
                   </Select>
                 )}
               />
-            </Field>
+            </FormField>
           ) : (
-            <Field label="Meeting Link" required error={errors.meetingUrl?.message}>
+            <FormField label="Meeting Link" required error={errors.meetingUrl?.message}>
               <Input
                 type="url"
                 inputMode="url"
                 placeholder="https://meet.example.com/room"
                 {...register('meetingUrl')}
               />
-            </Field>
+            </FormField>
           )}
         </CardContent>
       </Card>
@@ -629,7 +633,7 @@ export function AppointmentForm({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Fee" error={errors.feeOverride?.message}>
+            <FormField label="Fee" error={errors.feeOverride?.message}>
               <Input
                 type="number"
                 min={0}
@@ -642,10 +646,15 @@ export function AppointmentForm({
                   ? 'Leave blank to use the service fee.'
                   : 'Enter a fee or pick a service.'}
               </p>
-            </Field>
+            </FormField>
 
-            <div className="space-y-1.5">
-              <Label>Discount</Label>
+            <FormField
+              label="Discount"
+              error={
+                errors.discount?.message ||
+                (fixedExceedsFee ? 'Discount cannot exceed the fee.' : undefined)
+              }
+            >
               <div className="flex gap-2">
                 <Input
                   type="number"
@@ -674,17 +683,10 @@ export function AppointmentForm({
                   )}
                 />
               </div>
-              {errors.discount?.message && (
-                <p className="text-xs text-destructive">{errors.discount.message}</p>
-              )}
-              {fixedExceedsFee && (
-                <p className="text-xs text-destructive">Discount cannot exceed the fee.</p>
-              )}
-            </div>
+            </FormField>
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Discount code</Label>
+          <FormField label="Discount code">
             <div className="flex gap-2">
               <Input
                 value={promoCode}
@@ -708,21 +710,17 @@ export function AppointmentForm({
                   });
                 }}
               >
-                {validateCode.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  'Apply'
-                )}
+                {validateCode.isPending ? <ButtonSpinner className="mr-0" /> : 'Apply'}
               </Button>
             </div>
-          </div>
+          </FormField>
 
-          <Field label="Discount reason" error={errors.discountReason?.message}>
+          <FormField label="Discount reason" error={errors.discountReason?.message}>
             <Input
               placeholder="Required when a discount is applied"
               {...register('discountReason')}
             />
-          </Field>
+          </FormField>
 
           <div className="rounded-lg border bg-muted/40 p-3 text-sm">
             <Row label="Base fee" value={`${pricing.fee.toFixed(3)} ${CURRENCY}`} />
@@ -761,8 +759,7 @@ export function AppointmentForm({
                 />
               </div>
               {!appointment.isPaid && (
-                <div className="space-y-1.5">
-                  <Label>Payment method</Label>
+                <FormField label="Payment method">
                   <Select value={payMethodId || NONE} onValueChange={(v) => setPayMethodId(v === NONE ? '' : v)}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select method" />
@@ -776,7 +773,7 @@ export function AppointmentForm({
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </FormField>
               )}
             </div>
           )}
@@ -801,43 +798,12 @@ export function AppointmentForm({
         </CardContent>
       </Card>
 
-      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isPending}>
-          {isPending && <ButtonSpinner />}
-          {isEdit ? 'Save Changes' : 'Create Appointment'}
-        </Button>
-      </div>
+      <FormActions
+        onCancel={onCancel}
+        pending={isPending}
+        submitLabel={isEdit ? 'Save Changes' : 'Create Appointment'}
+      />
     </form>
-  );
-}
-
-function Field({
-  label,
-  error,
-  required,
-  className,
-  children,
-}: {
-  label: string;
-  error?: string;
-  required?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={className}>
-      <div className="space-y-1.5">
-        <Label>
-          {label}
-          {required && <span className="ml-0.5 text-destructive">*</span>}
-        </Label>
-        {children}
-        {error && <p className="text-xs text-destructive">{error}</p>}
-      </div>
-    </div>
   );
 }
 
