@@ -1,7 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandMark, LoadingDots } from '@/components/blocks/feedback/brand-mark';
-import { FluidSurface } from '@/components/ui/fluid';
 
 const sizeMap = {
   sm: 'size-4',
@@ -34,12 +33,8 @@ export function SectionLoader({
   className?: string;
 }) {
   return (
-    <FluidSurface
-      ambient
-      className={cn(
-        'flex flex-col items-center justify-center gap-3 py-14',
-        className,
-      )}
+    <div
+      className={cn('flex flex-col items-center justify-center gap-3 py-14', className)}
       role="status"
       aria-live="polite"
     >
@@ -48,7 +43,7 @@ export function SectionLoader({
         <p className="text-sm text-muted-foreground">{label}</p>
         <LoadingDots />
       </div>
-    </FluidSurface>
+    </div>
   );
 }
 

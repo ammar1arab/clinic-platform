@@ -320,76 +320,60 @@
   }
 
   /*
-   * Fluid loading — shared site-wide shimmer for skeletons / loaders.
-   * Brand blue → teal → soft amber, oversized canvas + blur (Gemini-style),
-   * tuned quietly for light cards and slightly stronger on dark.
+   * Gemini-style soft rotating border for cards / frames.
+   * Quiet brand colors; works on light and dark surfaces.
    */
-  .fluid-surface {
+  @property --aura-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+  }
+
+  .card-aura {
     position: relative;
-    overflow: hidden;
     isolation: isolate;
-    background: color-mix(in oklch, var(--muted) 88%, var(--card));
   }
 
-  .fluid-wave {
+  .card-aura::before {
+    content: "";
     position: absolute;
-    inset: -55%;
+    inset: 0;
     z-index: 0;
+    border-radius: inherit;
+    padding: 1px;
     pointer-events: none;
-    background: linear-gradient(
-      125deg,
-      color-mix(in oklch, var(--brand) 72%, transparent) 0%,
-      color-mix(in oklch, var(--accent-teal) 68%, transparent) 28%,
-      color-mix(in oklch, var(--primary) 58%, transparent) 52%,
-      color-mix(in oklch, var(--warning) 48%, transparent) 76%,
-      color-mix(in oklch, var(--brand) 72%, transparent) 100%
+    background: conic-gradient(
+      from var(--aura-angle),
+      color-mix(in oklch, var(--brand) 55%, transparent),
+      color-mix(in oklch, var(--accent-teal) 50%, transparent),
+      color-mix(in oklch, var(--primary) 35%, transparent),
+      color-mix(in oklch, var(--warning) 40%, transparent),
+      color-mix(in oklch, var(--brand) 55%, transparent)
     );
-    background-size: 400% 400%;
-    animation: fluidMove 9s ease-in-out infinite;
-    filter: blur(36px);
-    opacity: 0.2;
-    will-change: background-position;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.55;
+    animation: auraSpin 7s linear infinite;
   }
 
-  .dark .fluid-wave {
-    opacity: 0.34;
-    filter: blur(42px);
+  .dark .card-aura::before {
+    opacity: 0.7;
   }
 
-  .fluid-surface > :not(.fluid-wave) {
+  .card-aura > * {
     position: relative;
     z-index: 1;
   }
 
-  /* Soft ambient wash behind section / boot loaders (not a hard box). */
-  .fluid-ambient {
-    position: absolute;
-    inset: 10% 18%;
-    z-index: 0;
-    pointer-events: none;
-    border-radius: 999px;
-    overflow: hidden;
-    opacity: 0.9;
-  }
-
-  .fluid-ambient .fluid-wave {
-    opacity: 0.14;
-    filter: blur(48px);
-  }
-
-  .dark .fluid-ambient .fluid-wave {
-    opacity: 0.26;
-  }
-
-  @keyframes fluidMove {
-    0% {
-      background-position: 0% 42%;
-    }
-    50% {
-      background-position: 100% 58%;
-    }
-    100% {
-      background-position: 0% 42%;
+  @keyframes auraSpin {
+    to {
+      --aura-angle: 360deg;
     }
   }
 }

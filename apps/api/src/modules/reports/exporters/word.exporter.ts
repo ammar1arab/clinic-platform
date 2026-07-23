@@ -3,8 +3,8 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
-  HeadingLevel,
   Packer,
+  PageOrientation,
   Paragraph,
   Table,
   TableCell,
@@ -17,182 +17,54 @@ import { ExportedReport, ReportExporter } from "./report-exporter";
 import {
   REPORT_THEME,
   cellText,
+  chunkColumns,
   letterheadLines,
   metaLine,
+  useLandscape,
 } from "../utils/report-theme";
 
 @Injectable()
 export class WordExporter implements ReportExporter {
   readonly format = "docx" as const;
 
-  async export(doc: ReportDocument): Promise<ExportedReport> {
+  async export(source: ReportDocument): Promise<ExportedReport> {
+    const landscape = useLandscape(source.columns.length);
+    const parts = chunkColumns(source, landscape ? 8 : 6);
+
     const children: (Paragraph | Table)[] = [];
-
-    const head = letterheadLines(doc);
-    children.push(
-      new Paragraph({
-        heading: HeadingLevel.HEADING_1,
-        spacing: { after: 80 },
-        children: [
-          new TextRun({
-            text: head[0] ?? doc.letterhead.clinicName,
-            bold: true,
-            color: REPORT_THEME.ink.replace("#", ""),
-            size: 32,
-          }),
-        ],
-      }),
-    );
-
-    if (head.length > 1) {
-      children.push(
-        new Paragraph({
-          spacing: { after: 120 },
-          children: [
-            new TextRun({
-              text: head.slice(1).join("  ·  "),
-              color: REPORT_THEME.muted.replace("#", ""),
-              size: 18,
-            }),
-          ],
-        }),
-      );
-    }
-
-    children.push(
-      new Paragraph({
-        border: {
-          bottom: {
-            color: REPORT_THEME.accent.replace("#", ""),
-            space: 1,
-            style: BorderStyle.SINGLE,
-            size: 18,
-          },
-        },
-        spacing: { after: 200 },
-        children: [],
-      }),
-    );
-
-    children.push(
-      new Paragraph({
-        heading: HeadingLevel.HEADING_2,
-        spacing: { after: 60 },
-        children: [
-          new TextRun({
-            text: doc.title,
-            bold: true,
-            color: REPORT_THEME.ink.replace("#", ""),
-            size: 26,
-          }),
-        ],
-      }),
-    );
-
-    children.push(
-      new Paragraph({
-        spacing: { after: 240 },
-        children: [
-          new TextRun({
-            text: metaLine(doc),
-            color: REPORT_THEME.muted.replace("#", ""),
-            size: 18,
-            italics: true,
-          }),
-        ],
-      }),
-    );
-
-    if (doc.summary?.length) {
-      children.push(
-        new Paragraph({
-          spacing: { after: 120 },
-          children: [
-            new TextRun({
-              text: "Summary",
-              bold: true,
-              size: 22,
-              color: REPORT_THEME.ink.replace("#", ""),
-            }),
-          ],
-        }),
-      );
-
-      for (const item of doc.summary) {
+    parts.forEach((doc, index) => {
+      if (index > 0) {
         children.push(
           new Paragraph({
-            spacing: { after: 60 },
-            children: [
-              new TextRun({
-                text: `${item.label}: `,
-                bold: true,
-                size: 18,
-                color: REPORT_THEME.muted.replace("#", ""),
-              }),
-              new TextRun({
-                text: item.value || "—",
-                size: 20,
-                color: REPORT_THEME.ink.replace("#", ""),
-              }),
-            ],
+            children: [],
+            spacing: { before: 280, after: 160 },
+            border: {
+              top: {
+                style: BorderStyle.SINGLE,
+                size: 6,
+                color: REPORT_THEME.rule.replace("#", ""),
+                space: 8,
+              },
+            },
           }),
         );
       }
-
-      children.push(new Paragraph({ spacing: { after: 160 }, children: [] }));
-    }
-
-    children.push(
-      new Paragraph({
-        spacing: { after: 120 },
-        children: [
-          new TextRun({
-            text: "Records",
-            bold: true,
-            size: 22,
-            color: REPORT_THEME.ink.replace("#", ""),
-          }),
-        ],
-      }),
-    );
-
-    children.push(this.buildTable(doc));
-
-    const footerText =
-      doc.letterhead.footer?.trim() ||
-      `${doc.letterhead.clinicName} · Confidential clinical report`;
-
-    children.push(
-      new Paragraph({
-        spacing: { before: 320 },
-        border: {
-          top: {
-            color: REPORT_THEME.line.replace("#", ""),
-            space: 8,
-            style: BorderStyle.SINGLE,
-            size: 6,
-          },
-        },
-        alignment: AlignmentType.CENTER,
-        children: [
-          new TextRun({
-            text: footerText,
-            size: 16,
-            color: REPORT_THEME.muted.replace("#", ""),
-            italics: true,
-          }),
-        ],
-      }),
-    );
+      children.push(...this.buildPart(doc, index === 0));
+    });
 
     const document = new Document({
       creator: "Cureva Clinic Platform",
-      title: doc.title,
-      description: metaLine(doc),
+      title: source.title,
+      description: metaLine(source),
       sections: [
         {
           properties: {
             page: {
+              size: {
+                orientation: landscape
+                  ? PageOrientation.LANDSCAPE
+                  : PageOrientation.PORTRAIT,
+              },
               margin: {
                 top: 720,
                 bottom: 720,
@@ -211,8 +83,156 @@ export class WordExporter implements ReportExporter {
       buffer: Buffer.from(buffer),
       contentType:
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      filename: `${doc.filenameBase}.docx`,
+      filename: `${source.filenameBase}.docx`,
     };
+  }
+
+  private buildPart(doc: ReportDocument, includeSummary: boolean) {
+    const children: (Paragraph | Table)[] = [];
+    const head = letterheadLines(doc);
+
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 60 },
+        children: [
+          new TextRun({
+            text: head[0] ?? doc.letterhead.clinicName,
+            bold: true,
+            color: REPORT_THEME.ink.replace("#", ""),
+            size: 28,
+          }),
+        ],
+      }),
+    );
+
+    if (head.length > 1) {
+      children.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 100 },
+          children: [
+            new TextRun({
+              text: head.slice(1).join("  ·  "),
+              color: REPORT_THEME.muted.replace("#", ""),
+              size: 16,
+            }),
+          ],
+        }),
+      );
+    }
+
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        border: {
+          bottom: {
+            color: REPORT_THEME.rule.replace("#", ""),
+            space: 4,
+            style: BorderStyle.SINGLE,
+            size: 8,
+          },
+        },
+        spacing: { after: 160 },
+        children: [],
+      }),
+    );
+
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 40 },
+        children: [
+          new TextRun({
+            text: doc.title,
+            bold: true,
+            color: REPORT_THEME.ink.replace("#", ""),
+            size: 22,
+          }),
+        ],
+      }),
+    );
+
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
+        children: [
+          new TextRun({
+            text: metaLine(doc),
+            color: REPORT_THEME.muted.replace("#", ""),
+            size: 16,
+          }),
+        ],
+      }),
+    );
+
+    if (includeSummary && doc.summary?.length) {
+      children.push(
+        new Paragraph({
+          spacing: { after: 80 },
+          children: [
+            new TextRun({
+              text: "Summary",
+              bold: true,
+              size: 18,
+              color: REPORT_THEME.ink.replace("#", ""),
+            }),
+          ],
+        }),
+      );
+      for (const item of doc.summary) {
+        children.push(
+          new Paragraph({
+            spacing: { after: 40 },
+            children: [
+              new TextRun({
+                text: `${item.label}: `,
+                bold: true,
+                size: 16,
+                color: REPORT_THEME.muted.replace("#", ""),
+              }),
+              new TextRun({
+                text: item.value || "—",
+                size: 16,
+                color: REPORT_THEME.ink.replace("#", ""),
+              }),
+            ],
+          }),
+        );
+      }
+      children.push(new Paragraph({ spacing: { after: 120 }, children: [] }));
+    }
+
+    children.push(this.buildTable(doc));
+
+    const footerText =
+      doc.letterhead.footer?.trim() ||
+      `${doc.letterhead.clinicName} · Confidential`;
+
+    children.push(
+      new Paragraph({
+        spacing: { before: 240 },
+        alignment: AlignmentType.CENTER,
+        border: {
+          top: {
+            color: REPORT_THEME.rule.replace("#", ""),
+            space: 8,
+            style: BorderStyle.SINGLE,
+            size: 6,
+          },
+        },
+        children: [
+          new TextRun({
+            text: footerText,
+            size: 14,
+            color: REPORT_THEME.muted.replace("#", ""),
+          }),
+        ],
+      }),
+    );
+
+    return children;
   }
 
   private buildTable(doc: ReportDocument): Table {
@@ -227,6 +247,9 @@ export class WordExporter implements ReportExporter {
       left: border,
       right: border,
     };
+    const colCount = Math.max(doc.columns.length, 1);
+    const colWidth = Math.floor(9000 / colCount);
+    const fontSize = colCount >= 8 ? 12 : colCount >= 6 ? 14 : 16;
 
     const headerRow = new TableRow({
       tableHeader: true,
@@ -234,7 +257,7 @@ export class WordExporter implements ReportExporter {
         (col) =>
           new TableCell({
             borders,
-            width: { size: Math.floor(9000 / Math.max(doc.columns.length, 1)), type: WidthType.DXA },
+            width: { size: colWidth, type: WidthType.DXA },
             shading: { fill: REPORT_THEME.headerBg.replace("#", "") },
             children: [
               new Paragraph({
@@ -243,7 +266,7 @@ export class WordExporter implements ReportExporter {
                     text: col.header,
                     bold: true,
                     color: REPORT_THEME.headerFg.replace("#", ""),
-                    size: 16,
+                    size: fontSize,
                   }),
                 ],
               }),
@@ -259,7 +282,7 @@ export class WordExporter implements ReportExporter {
               children: [
                 new TableCell({
                   borders,
-                  columnSpan: Math.max(doc.columns.length, 1),
+                  columnSpan: colCount,
                   children: [
                     new Paragraph({
                       alignment: AlignmentType.CENTER,
@@ -268,7 +291,7 @@ export class WordExporter implements ReportExporter {
                           text: "No records",
                           italics: true,
                           color: REPORT_THEME.muted.replace("#", ""),
-                          size: 18,
+                          size: 16,
                         }),
                       ],
                     }),
@@ -284,12 +307,7 @@ export class WordExporter implements ReportExporter {
                   (col) =>
                     new TableCell({
                       borders,
-                      width: {
-                        size: Math.floor(
-                          9000 / Math.max(doc.columns.length, 1),
-                        ),
-                        type: WidthType.DXA,
-                      },
+                      width: { size: colWidth, type: WidthType.DXA },
                       shading:
                         index % 2 === 1
                           ? { fill: REPORT_THEME.stripe.replace("#", "") }
@@ -299,7 +317,7 @@ export class WordExporter implements ReportExporter {
                           children: [
                             new TextRun({
                               text: cellText(row[col.key]),
-                              size: 16,
+                              size: fontSize,
                               color: REPORT_THEME.ink.replace("#", ""),
                             }),
                           ],

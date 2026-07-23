@@ -17,7 +17,7 @@ import { TruncatedText } from '@/components/primitives/truncated-text';
 import { Pagination } from '@/components/primitives/pagination';
 import { TableFrame } from '@/components/blocks/data/table-frame';
 import { EmptyState } from '@/components/primitives/empty-state';
-import { FluidSkeletonStack } from '@/components/ui/fluid';
+import { SectionLoader } from '@/components/primitives/spinner';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import {
   IconDelete,
@@ -76,11 +76,7 @@ export function PatientsList({ patients, isLoading, clinicId }: Props) {
   if (isLoading) {
     return (
       <TableFrame>
-        <FluidSkeletonStack
-          count={6}
-          className="p-3 md:p-4"
-          itemClassName="h-[4.25rem] md:h-14"
-        />
+        <SectionLoader label="Loading patients…" />
       </TableFrame>
     );
   }

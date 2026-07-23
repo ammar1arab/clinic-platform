@@ -30,13 +30,13 @@ function triggerDownload(content: BlobPart, filename: string, mime: string) {
 }
 
 const THEME = {
-  ink: '#0F172A',
+  ink: '#1E293B',
   muted: '#64748B',
-  headerBg: '#0F766E',
+  headerBg: '#334155',
   headerFg: '#FFFFFF',
   stripe: '#F8FAFC',
-  accent: '#0D9488',
-  line: '#CBD5E1',
+  rule: '#CBD5E1',
+  line: '#E2E8F0',
 } as const;
 
 const HEADERS = [
@@ -151,7 +151,7 @@ export function exportPatientsPdf(patients: Patient[], title = 'Patients directo
     .map((p, index) => {
       const bg = index % 2 === 1 ? `background:${THEME.stripe};` : '';
       const cells = rowValues(p)
-        .map((v) => `<td style="${bg}">${xmlEscape(String(v))}</td>`)
+        .map((v) => `<td style="${bg}">${xmlEscape(String(v || '—'))}</td>`)
         .join('');
       return `<tr>${cells}</tr>`;
     })
@@ -164,23 +164,54 @@ export function exportPatientsPdf(patients: Patient[], title = 'Patients directo
   <meta charset="utf-8" />
   <title>${xmlEscape(title)}</title>
   <style>
-    body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 11px; color: ${THEME.ink}; margin: 28px; }
-    .accent { height: 3px; background: ${THEME.accent}; margin: 10px 0 16px; border: 0; }
-    h1 { font-size: 18px; margin: 0; }
-    p { margin: 4px 0 0; color: ${THEME.muted}; font-size: 10px; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid ${THEME.line}; padding: 5px 7px; text-align: left; }
-    th { background: ${THEME.headerBg}; color: ${THEME.headerFg}; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.02em; }
-    footer { margin-top: 24px; padding-top: 10px; border-top: 1px solid ${THEME.line}; color: ${THEME.muted}; font-size: 9px; text-align: center; }
+    @page { size: A4 landscape; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Calibri, system-ui, sans-serif;
+      font-size: 8.5px;
+      color: ${THEME.ink};
+      margin: 0;
+    }
+    .head { text-align: center; margin-bottom: 10px; }
+    h1 { font-size: 15px; margin: 0 0 2px; font-weight: 700; }
+    .meta { margin: 0; color: ${THEME.muted}; font-size: 8px; }
+    .rule { height: 1px; background: ${THEME.rule}; border: 0; margin: 8px 0 10px; }
+    table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    th, td {
+      border: 1px solid ${THEME.line};
+      padding: 3px 4px;
+      text-align: left;
+      vertical-align: top;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+    th {
+      background: ${THEME.headerBg};
+      color: ${THEME.headerFg};
+      font-weight: 600;
+      font-size: 7.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    footer {
+      margin-top: 12px;
+      padding-top: 6px;
+      border-top: 1px solid ${THEME.rule};
+      color: ${THEME.muted};
+      font-size: 7.5px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
-  <h1>${xmlEscape(title)}</h1>
-  <p>${patients.length} patient${patients.length === 1 ? '' : 's'} · Generated ${xmlEscape(new Date().toLocaleString())}</p>
-  <hr class="accent" />
+  <div class="head">
+    <h1>${xmlEscape(title)}</h1>
+    <p class="meta">${patients.length} patient${patients.length === 1 ? '' : 's'} · Generated ${xmlEscape(new Date().toLocaleString())}</p>
+  </div>
+  <hr class="rule" />
   <table>
     <thead><tr>${headers}</tr></thead>
-    <tbody>${rows || '<tr><td colspan="13">No records</td></tr>'}</tbody>
+    <tbody>${rows || `<tr><td colspan="${HEADERS.length}" style="text-align:center;color:${THEME.muted};">No records</td></tr>`}</tbody>
   </table>
   <footer>Confidential · Clinic Platform</footer>
   <script>window.onload = function () { window.print(); };</script>
@@ -193,23 +224,23 @@ export function exportPatientsPdf(patients: Patient[], title = 'Patients directo
   w.document.close();
 }
 
-/** Word-compatible HTML document (.doc) — opens in Microsoft Word. */
+/** Word-compatible HTML document (.doc) — landscape, full-width table. */
 export function exportPatientsWord(patients: Patient[], filename = 'patients.doc') {
   const headerCells = HEADERS.map(
     (h) =>
-      `<th style="background:${THEME.headerBg};color:${THEME.headerFg};padding:6px 8px;border:1px solid ${THEME.line};text-align:left;">${xmlEscape(h)}</th>`,
+      `<th style="background:${THEME.headerBg};color:${THEME.headerFg};padding:4px 5px;border:1px solid ${THEME.line};text-align:left;font-size:8pt;">${xmlEscape(h)}</th>`,
   ).join('');
 
   const bodyRows =
     patients.length === 0
-      ? `<tr><td colspan="13" style="padding:8px;border:1px solid ${THEME.line};color:${THEME.muted};font-style:italic;">No records</td></tr>`
+      ? `<tr><td colspan="${HEADERS.length}" style="padding:8px;border:1px solid ${THEME.line};color:${THEME.muted};font-style:italic;text-align:center;">No records</td></tr>`
       : patients
           .map((p, index) => {
             const bg = index % 2 === 1 ? THEME.stripe : '#FFFFFF';
             const cells = rowValues(p)
               .map(
                 (v) =>
-                  `<td style="background:${bg};padding:5px 8px;border:1px solid ${THEME.line};">${xmlEscape(String(v))}</td>`,
+                  `<td style="background:${bg};padding:3px 5px;border:1px solid ${THEME.line};font-size:8pt;word-wrap:break-word;">${xmlEscape(String(v || '—'))}</td>`,
               )
               .join('');
             return `<tr>${cells}</tr>`;
@@ -219,20 +250,44 @@ export function exportPatientsWord(patients: Patient[], filename = 'patients.doc
   const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
  xmlns:w="urn:schemas-microsoft-com:office:word"
  xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="utf-8"><title>Patients directory</title></head>
-<body style="font-family:Calibri,Segoe UI,sans-serif;color:${THEME.ink};">
-  <h1 style="margin:0 0 4px;font-size:20px;">Patients directory</h1>
-  <p style="margin:0 0 12px;color:${THEME.muted};font-size:11px;">
-    ${patients.length} patients · Generated ${xmlEscape(new Date().toLocaleString())}
-  </p>
-  <div style="border-top:3px solid ${THEME.accent};margin-bottom:16px;"></div>
-  <table style="border-collapse:collapse;width:100%;font-size:11px;">
+<head>
+<meta charset="utf-8">
+<title>Patients directory</title>
+<!--[if gte mso 9]>
+<xml>
+  <w:WordDocument>
+    <w:View>Print</w:View>
+  </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  @page Section1 {
+    size: 841.9pt 595.3pt;
+    mso-page-orientation: landscape;
+    margin: 36pt 36pt 36pt 36pt;
+  }
+  div.Section1 { page: Section1; }
+  body { font-family: Calibri, Segoe UI, sans-serif; color: ${THEME.ink}; }
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+</style>
+</head>
+<body>
+<div class="Section1">
+  <div style="text-align:center;margin-bottom:10px;">
+    <h1 style="margin:0 0 4px;font-size:16pt;">Patients directory</h1>
+    <p style="margin:0;color:${THEME.muted};font-size:9pt;">
+      ${patients.length} patients · Generated ${xmlEscape(new Date().toLocaleString())}
+    </p>
+  </div>
+  <div style="border-top:1px solid ${THEME.rule};margin:8px 0 12px;"></div>
+  <table>
     <thead><tr>${headerCells}</tr></thead>
     <tbody>${bodyRows}</tbody>
   </table>
-  <p style="margin-top:20px;color:${THEME.muted};font-size:10px;text-align:center;">
+  <p style="margin-top:16px;color:${THEME.muted};font-size:8pt;text-align:center;">
     Confidential · Clinic Platform
   </p>
+</div>
 </body></html>`;
 
   triggerDownload('\ufeff' + html, filename, 'application/msword');

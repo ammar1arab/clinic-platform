@@ -1,15 +1,18 @@
 import { formatDisplayDate } from "./report-format";
 import type { ReportDocument } from "../types/report-document";
 
-/** Shared visual tokens so PDF / Word / Excel / CSV feel like one product. */
+/**
+ * Neutral clinic report palette — matches product UI (slate + soft primary),
+ * not loud teal marketing colors.
+ */
 export const REPORT_THEME = {
-  ink: "#0F172A",
+  ink: "#1E293B",
   muted: "#64748B",
-  line: "#CBD5E1",
-  headerBg: "#0F766E",
+  line: "#E2E8F0",
+  headerBg: "#334155",
   headerFg: "#FFFFFF",
   stripe: "#F8FAFC",
-  accent: "#0D9488",
+  rule: "#CBD5E1",
 } as const;
 
 export function cellText(value: string | number | null | undefined): string {
@@ -44,4 +47,57 @@ export function csvPreface(doc: ReportDocument): string[] {
   }
   lines.push("#");
   return lines;
+}
+
+/** Prefer landscape when tables are wide. */
+export function useLandscape(columnCount: number): boolean {
+  return columnCount >= 7;
+}
+
+/**
+ * Relative column widths from header + sample cell lengths.
+ * Returns fractions summing to ~1.
+ */
+export function proportionalWidths(
+  doc: ReportDocument,
+  sampleRows = 12,
+): number[] {
+  const n = Math.max(doc.columns.length, 1);
+  const weights = doc.columns.map((col) => {
+    let maxLen = Math.max(col.header.length, 4);
+    for (const row of doc.rows.slice(0, sampleRows)) {
+      const raw = row[col.key];
+      const len = raw == null ? 1 : String(raw).length;
+      maxLen = Math.max(maxLen, Math.min(len, 28));
+    }
+    return maxLen;
+  });
+  const sum = weights.reduce((a, b) => a + b, 0) || n;
+  return weights.map((w) => w / sum);
+}
+
+/** Split wide tables into chunks so Word/PDF stay readable. */
+export function chunkColumns(doc: ReportDocument, maxCols = 6): ReportDocument[] {
+  if (doc.columns.length <= maxCols) return [doc];
+
+  const chunks: ReportDocument[] = [];
+  for (let i = 0; i < doc.columns.length; i += maxCols) {
+    const columns = doc.columns.slice(i, i + maxCols);
+    const keys = new Set(columns.map((c) => c.key));
+    chunks.push({
+      ...doc,
+      title:
+        chunks.length === 0
+          ? doc.title
+          : `${doc.title} (continued ${chunks.length + 1})`,
+      columns,
+      rows: doc.rows.map((row) => {
+        const next: Record<string, string | number | null> = {};
+        for (const key of keys) next[key] = row[key] ?? null;
+        return next;
+      }),
+      summary: i === 0 ? doc.summary : undefined,
+    });
+  }
+  return chunks;
 }

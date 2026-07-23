@@ -1,7 +1,6 @@
 'use client';
 
 import { BrandMark, LoadingDots } from './brand-mark';
-import { FluidSurface } from '@/components/ui/fluid';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -20,13 +19,12 @@ export function BootSplash({
   variant = 'fullscreen',
 }: Props) {
   return (
-    <FluidSurface
-      ambient
+    <div
       role="status"
       aria-live="polite"
       aria-busy="true"
       className={cn(
-        'flex flex-col items-center justify-center bg-background',
+        'relative flex flex-col items-center justify-center bg-background',
         variant === 'fullscreen' ? 'fixed inset-0 z-200' : 'min-h-[50vh] w-full',
         className,
       )}
@@ -43,6 +41,6 @@ export function BootSplash({
 
         <LoadingDots />
       </div>
-    </FluidSurface>
+    </div>
   );
 }
