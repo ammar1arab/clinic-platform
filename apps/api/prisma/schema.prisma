@@ -72,7 +72,7 @@ model Clinic {
   letterheadFooter     String?
   workingHoursStart    String       @default("08:00")
   workingHoursEnd      String       @default("20:00")
-  defaultCalendarView  CalendarView @default(week)
+  defaultCalendarView  CalendarView @default(month)
   defaultSessionType   SessionType  @default(in_person)
   defaultDepartmentId  String?
   timezone             String       @default("UTC")

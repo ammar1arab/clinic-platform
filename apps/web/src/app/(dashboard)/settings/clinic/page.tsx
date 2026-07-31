@@ -43,7 +43,7 @@ export default function ClinicSettingsPage() {
   const [workingHoursStart, setWorkingHoursStart] = useState('08:00');
   const [workingHoursEnd, setWorkingHoursEnd] = useState('20:00');
   const [timezone, setTimezone] = useState('UTC');
-  const [defaultCalendarView, setDefaultCalendarView] = useState<'day' | 'week'>('week');
+  const [defaultCalendarView, setDefaultCalendarView] = useState<'day' | 'week' | 'month'>('month');
   const [defaultSessionType, setDefaultSessionType] = useState<'in_person' | 'online'>(
     'in_person',
   );
@@ -127,14 +127,15 @@ export default function ClinicSettingsPage() {
           <FormField label="Default calendar view">
             <Select
               value={defaultCalendarView}
-              onValueChange={(v) => setDefaultCalendarView(v as 'day' | 'week')}
+              onValueChange={(v) => setDefaultCalendarView(v as 'day' | 'week' | 'month')}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="day">Day</SelectItem>
+                <SelectItem value="month">Month</SelectItem>
                 <SelectItem value="week">Week</SelectItem>
+                <SelectItem value="day">Day</SelectItem>
               </SelectContent>
             </Select>
           </FormField>

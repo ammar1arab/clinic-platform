@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppointments } from '@/hooks/use-appointments';
 import { useClinicId } from '@/hooks/use-clinic-id';
+import { useClinic } from '@/hooks/use-clinic';
 import { useClinicRealtime } from '@/hooks/use-clinic-realtime';
 import { useDepartments } from '@/hooks/use-departments';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -57,7 +58,20 @@ function SchedulePageInner() {
   const [range, setRange] = useState(initialRange);
   const rangeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const view = parseScheduleView(searchParams.get('view'));
+  const { data: clinic } = useClinic(clinicId);
+  const viewParam = searchParams.get('view');
+  const view = parseScheduleView(
+    viewParam ?? clinic?.defaultCalendarView ?? 'month',
+  );
+
+  // Persist clinic default into the URL once when opening /schedule bare.
+  useEffect(() => {
+    if (viewParam) return;
+    if (!clinic?.defaultCalendarView) return;
+    router.replace(schedulePath(parseScheduleView(clinic.defaultCalendarView)), {
+      scroll: false,
+    });
+  }, [clinic?.defaultCalendarView, viewParam, router]);
   const [search, setSearch] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [statusFilters, setStatusFilters] = useState<Set<AppointmentStatus>>(

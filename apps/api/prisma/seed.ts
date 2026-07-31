@@ -108,11 +108,47 @@ async function ensureExtraStaff(clinicId: string) {
   return created;
 }
 
+async function resolveClinic() {
+  if (process.env.SEED_CLINIC_ID) {
+    const byId = await prisma.clinic.findUnique({
+      where: { id: process.env.SEED_CLINIC_ID },
+    });
+    if (!byId) {
+      throw new Error(`SEED_CLINIC_ID not found: ${process.env.SEED_CLINIC_ID}`);
+    }
+    return byId;
+  }
+
+  const clinics = await prisma.clinic.findMany({
+    include: {
+      users: { include: { user: { select: { email: true } } } },
+      _count: { select: { users: true, patients: true } },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (clinics.length === 0) return null;
+
+  console.log('Available clinics:');
+  for (const c of clinics) {
+    const emails = c.users.map((u) => u.user.email).join(', ');
+    console.log(
+      `  - ${c.name} (${c.id}) staff=${c._count.users} patients=${c._count.patients} [${emails}]`,
+    );
+  }
+
+  // Prefer the clinic you actually log into (owner@clinic.com), then most staff.
+  const preferred =
+    clinics.find((c) =>
+      c.users.some((u) => u.user.email.toLowerCase() === 'owner@clinic.com'),
+    ) ??
+    [...clinics].sort((a, b) => b._count.users - a._count.users)[0];
+
+  return preferred;
+}
+
 async function main() {
-  const clinic =
-    (process.env.SEED_CLINIC_ID
-      ? await prisma.clinic.findUnique({ where: { id: process.env.SEED_CLINIC_ID } })
-      : null) ?? (await prisma.clinic.findFirst({ orderBy: { createdAt: 'asc' } }));
+  const clinic = await resolveClinic();
 
   if (!clinic) {
     throw new Error(
@@ -120,7 +156,7 @@ async function main() {
     );
   }
 
-  console.log(`Seeding clinic: ${clinic.name} (${clinic.id})`);
+  console.log(`\nSeeding clinic: ${clinic.name} (${clinic.id})`);
   await resetClinicOperationalData(clinic.id);
   console.log('Cleared operational data');
 

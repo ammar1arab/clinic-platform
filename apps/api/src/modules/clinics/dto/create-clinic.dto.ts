@@ -3,6 +3,7 @@ import { IsString, IsOptional, IsEmail, IsEnum } from "class-validator";
 export enum CalendarViewDto {
   day = "day",
   week = "week",
+  month = "month",
 }
 
 export enum ClinicSessionTypeDto {
