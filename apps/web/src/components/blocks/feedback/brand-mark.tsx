@@ -11,7 +11,6 @@ const dims: Record<Size, string> = {
   lg: 'size-16',
 };
 
-/** Animated clinic mark shared by full-page and sectional loaders. */
 export function BrandMark({
   className,
   size = 'md',
@@ -19,7 +18,7 @@ export function BrandMark({
 }: {
   className?: string;
   size?: Size;
-  /** Draw a thin orbit ring for "wow" loading without glow. */
+
   spinning?: boolean;
 }) {
   const gradientId = useId();
@@ -77,7 +76,6 @@ export function BrandMark({
   );
 }
 
-/** Compact three-dot movement — clear and GPU-cheap. */
 export function LoadingDots({ className }: { className?: string }) {
   return (
     <span

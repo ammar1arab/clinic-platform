@@ -34,6 +34,7 @@ enum AppointmentStatus {
 enum CalendarView {
   day
   week
+  month
 }
 
 enum ReferralType {
@@ -88,6 +89,7 @@ model Clinic {
   referrals       Referral[]
   paymentMethods  PaymentMethod[]
   packages        Package[]
+  patientPackages PatientPackage[]
   discountCodes   DiscountCode[]
   notifications   Notification[]
 }
@@ -202,11 +204,12 @@ model Patient {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  clinic        Clinic        @relation(fields: [clinicId], references: [id])
-  primaryDoctor ClinicUser?   @relation("PrimaryDoctorPatients", fields: [primaryDoctorId], references: [id])
-  package       Package?      @relation(fields: [packageId], references: [id])
-  discountCode  DiscountCode? @relation(fields: [discountCodeId], references: [id])
-  appointments  Appointment[]
+  clinic          Clinic           @relation(fields: [clinicId], references: [id])
+  primaryDoctor   ClinicUser?      @relation("PrimaryDoctorPatients", fields: [primaryDoctorId], references: [id])
+  package         Package?         @relation(fields: [packageId], references: [id])
+  discountCode    DiscountCode?    @relation(fields: [discountCodeId], references: [id])
+  appointments    Appointment[]
+  patientPackages PatientPackage[]
 }
 
 model Appointment {
@@ -220,12 +223,17 @@ model Appointment {
   scheduledAt     DateTime
   durationMins    Int               @default(45)
   sessionType     SessionType       @default(in_person)
-  status          AppointmentStatus @default(unconfirmed)
-  statusReason    String?
-  statusUpdatedBy String?
-  statusUpdatedAt DateTime?
-  cancelReason    String?
-  notes           String?
+  status            AppointmentStatus @default(unconfirmed)
+  statusReason      String?
+  statusUpdatedBy   String?
+  statusUpdatedAt   DateTime?
+  /// Clock start for wait — option A: defaults to scheduledAt when session starts / waiting begins
+  waitingStartedAt  DateTime?
+  inProgressAt      DateTime?
+  /// Frozen minutes waited when entering in_progress (how late session started vs waitingStartedAt)
+  waitingMins       Int?
+  cancelReason      String?
+  notes             String?
   fee              Decimal?          @db.Decimal(10, 3)
   discount         Decimal?          @db.Decimal(10, 3)
   discountType     DiscountType?
@@ -236,6 +244,9 @@ model Appointment {
   paidById         String?
   paymentMethod    String?
   paymentMethodId  String?
+  patientPackageId String?
+  /// Credit drawn from a credit-based enrollment. Null when the redemption consumed a session.
+  packageCredit    Decimal?          @db.Decimal(10, 3)
   meetingUrl       String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -246,10 +257,13 @@ model Appointment {
   department         Department?    @relation(fields: [departmentId], references: [id])
   room               Room?          @relation(fields: [roomId], references: [id])
   service            Service?       @relation(fields: [serviceId], references: [id])
-  paymentMethodRef   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
-  discountCode       DiscountCode?  @relation(fields: [discountCodeId], references: [id])
-  paidBy             ClinicUser?    @relation("PaidByStaff", fields: [paidById], references: [id])
+  paymentMethodRef   PaymentMethod?  @relation(fields: [paymentMethodId], references: [id])
+  discountCode       DiscountCode?   @relation(fields: [discountCodeId], references: [id])
+  paidBy             ClinicUser?     @relation("PaidByStaff", fields: [paidById], references: [id])
+  patientPackage     PatientPackage? @relation(fields: [patientPackageId], references: [id])
   referrals          Referral[]
+
+  @@index([clinicId, patientId, isPaid])
 }
 
 model Referral {
@@ -320,8 +334,34 @@ model Package {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  clinic   Clinic    @relation(fields: [clinicId], references: [id])
-  patients Patient[]
+  clinic      Clinic           @relation(fields: [clinicId], references: [id])
+  patients    Patient[]
+  enrollments PatientPackage[]
+}
+
+/// A package a patient actually bought. Totals are snapshotted at purchase time so
+/// later edits to the catalog Package never move an existing balance. Consumption is
+/// derived from the appointments that redeemed it — never stored as a counter.
+model PatientPackage {
+  id            String   @id @default(uuid())
+  clinicId      String
+  patientId     String
+  packageId     String
+  /// Session-based enrollment: total sessions bought. Null for credit-based.
+  sessionsTotal Int?
+  /// Credit-based enrollment: total prepaid value. Null for session-based.
+  creditTotal   Decimal? @db.Decimal(10, 3)
+  notes         String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  package      Package       @relation(fields: [packageId], references: [id])
+  appointments Appointment[]
+
+  @@index([clinicId, patientId, isActive])
 }
 
 model DiscountCode {

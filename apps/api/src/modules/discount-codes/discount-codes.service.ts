@@ -21,7 +21,7 @@ export class DiscountCodesService {
       dto.code,
     );
     if (existing) {
-      throw new ConflictException("Discount code already exists");
+      throw new ConflictException("Promocode already exists");
     }
     return this.discountCodesRepository.create(dto);
   }
@@ -32,7 +32,7 @@ export class DiscountCodesService {
 
   async findOne(id: string) {
     const code = await this.discountCodesRepository.findById(id);
-    if (!code) throw new NotFoundException("Discount code not found");
+    if (!code) throw new NotFoundException("Promocode not found");
     return code;
   }
 
@@ -43,7 +43,7 @@ export class DiscountCodesService {
         existing.clinicId,
         dto.code,
       );
-      if (clash) throw new ConflictException("Discount code already exists");
+      if (clash) throw new ConflictException("Promocode already exists");
     }
     return this.discountCodesRepository.update(id, dto);
   }
@@ -65,19 +65,19 @@ export class DiscountCodesService {
       dto.code,
     );
     if (!row || !row.isActive) {
-      throw new BadRequestException("Invalid or inactive discount code");
+      throw new BadRequestException("Invalid or inactive promocode");
     }
 
     const now = new Date();
     if (row.validFrom && row.validFrom > now) {
-      throw new BadRequestException("Discount code is not yet valid");
+      throw new BadRequestException("Promocode is not yet valid");
     }
     if (row.validTo && row.validTo < now) {
-      throw new BadRequestException("Discount code has expired");
+      throw new BadRequestException("Promocode has expired");
     }
     if (row.maxUses != null && row.usedCount >= row.maxUses) {
       throw new BadRequestException(
-        "Discount code has reached its usage limit",
+        "Promocode has reached its usage limit",
       );
     }
 

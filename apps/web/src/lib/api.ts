@@ -46,7 +46,7 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 409 conflicts are handled by the calling feature (schedule dialog).
+
     if (!(axios.isAxiosError(error) && error.response?.status === 409)) {
       toast.error(extractErrorMessage(error));
     }

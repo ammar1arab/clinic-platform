@@ -9,12 +9,15 @@ import { AppointmentsRepository } from "./appointments.repository";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { PrismaService } from "@/prisma/prisma.service";
 import { DiscountCodesService } from "@/modules/discount-codes/discount-codes.service";
+import { PatientPackagesService } from "@/modules/patient-packages/patient-packages.service";
+import { computePayable } from "./payable";
 import {
   CreateAppointmentDto,
   UpdateAppointmentDto,
   AppointmentFiltersDto,
   AppointmentStatusDto,
   MarkPaidDto,
+  RedeemPackageDto,
   SessionTypeDto,
   DiscountTypeDto,
 } from "./dto";
@@ -34,6 +37,7 @@ export class AppointmentsService {
     private dashboardGateway: DashboardGateway,
     private prisma: PrismaService,
     private discountCodesService: DiscountCodesService,
+    private patientPackagesService: PatientPackagesService,
   ) {}
 
   private async resolveDiscountCode(
@@ -55,7 +59,7 @@ export class AppointmentsService {
     const row = await this.prisma.discountCode.findFirst({
       where: { id: discountCodeId, clinicId },
     });
-    if (!row) throw new BadRequestException("Invalid discount code");
+    if (!row) throw new BadRequestException("Invalid promocode");
 
     await this.discountCodesService.validate({
       clinicId,
@@ -392,6 +396,75 @@ export class AppointmentsService {
       }
     }
 
+    // Package-covered visits: pricing is locked to the redeemed payable; change fee only
+    // after releasing coverage. Cancel / no-show auto-releases so balance is restored.
+    const nextStatus = dto.status ? String(dto.status) : null;
+    const becomingNonBillable =
+      nextStatus === AppointmentStatusDto.cancelled ||
+      nextStatus === AppointmentStatusDto.no_show;
+    if (existing.patientPackageId && becomingNonBillable) {
+      await this.appointmentsRepository.setPackageRedemption(clinicId, id, {
+        patientPackageId: null,
+        packageCredit: null,
+        isPaid: false,
+        paidAt: null,
+        paidById: null,
+        paymentMethodId: null,
+        paymentMethod: null,
+      });
+    } else if (existing.patientPackageId) {
+      const pricingTouched =
+        dto.feeOverride !== undefined ||
+        dto.discount !== undefined ||
+        dto.discountType !== undefined ||
+        dto.discountReason !== undefined ||
+        dto.discountCodeId !== undefined ||
+        dto.serviceId !== undefined;
+      if (pricingTouched) {
+        const nextFee =
+          dto.feeOverride !== undefined
+            ? dto.feeOverride
+            : existing.fee
+              ? Number(existing.fee)
+              : 0;
+        const nextDiscount =
+          dto.discount !== undefined
+            ? dto.discount
+            : existing.discount
+              ? Number(existing.discount)
+              : 0;
+        const nextType =
+          dto.discountType !== undefined
+            ? dto.discountType
+            : existing.discountType;
+        const currentPayable = computePayable(
+          existing.fee ? Number(existing.fee) : 0,
+          existing.discount ? Number(existing.discount) : 0,
+          existing.discountType,
+        );
+        const nextPayable = computePayable(nextFee, nextDiscount, nextType);
+        const feeChanged =
+          Math.abs(nextFee - (existing.fee ? Number(existing.fee) : 0)) > 1e-9;
+        const discountChanged =
+          Math.abs(
+            nextDiscount - (existing.discount ? Number(existing.discount) : 0),
+          ) > 1e-9 ||
+          String(nextType ?? "") !== String(existing.discountType ?? "");
+        const serviceChanged =
+          dto.serviceId !== undefined && dto.serviceId !== existing.serviceId;
+        if (
+          feeChanged ||
+          discountChanged ||
+          serviceChanged ||
+          Math.abs(nextPayable - currentPayable) > 1e-9
+        ) {
+          throw new BadRequestException(
+            "Release package coverage before changing this visit's pricing",
+          );
+        }
+      }
+    }
+
     const doctorId = dto.doctorId ?? existing.doctorId;
     const roomId = dto.roomId !== undefined ? dto.roomId : existing.roomId;
     const sessionType = dto.sessionType ?? existing.sessionType;
@@ -472,6 +545,9 @@ export class AppointmentsService {
       discountReason?: string;
       statusUpdatedBy?: string;
       statusUpdatedAt?: Date;
+      waitingStartedAt?: Date | null;
+      inProgressAt?: Date | null;
+      waitingMins?: number | null;
     } = {
       doctorId: dto.doctorId,
       departmentId: dto.departmentId,
@@ -495,6 +571,38 @@ export class AppointmentsService {
     if (dto.status && String(dto.status) !== String(existing.status)) {
       updateData.statusUpdatedBy = userId;
       updateData.statusUpdatedAt = new Date();
+
+      const nextStatus = String(dto.status);
+      const scheduledAt =
+        existing.scheduledAt instanceof Date
+          ? existing.scheduledAt
+          : new Date(existing.scheduledAt);
+
+      // Option A: wait clock anchors to scheduledAt (how late the session started).
+      if (
+        nextStatus === AppointmentStatusDto.waiting ||
+        nextStatus === AppointmentStatusDto.checked_in
+      ) {
+        if (!existing.waitingStartedAt) {
+          updateData.waitingStartedAt = scheduledAt;
+        }
+      }
+
+      if (nextStatus === AppointmentStatusDto.in_progress) {
+        const waitingStartedAt =
+          existing.waitingStartedAt ??
+          updateData.waitingStartedAt ??
+          scheduledAt;
+        const inProgressAt = new Date();
+        updateData.waitingStartedAt = waitingStartedAt;
+        updateData.inProgressAt = inProgressAt;
+        updateData.waitingMins = Math.max(
+          0,
+          Math.floor(
+            (inProgressAt.getTime() - waitingStartedAt.getTime()) / 60_000,
+          ),
+        );
+      }
     }
 
     const appointment = await this.appointmentsRepository.update(
@@ -512,7 +620,15 @@ export class AppointmentsService {
     id: string,
     dto: MarkPaidDto,
   ) {
-    await this.findOne(clinicId, id);
+    const existing = await this.findOne(clinicId, id);
+    if (existing.patientPackageId) {
+      throw new BadRequestException(
+        "Release package coverage before marking paid with a payment method",
+      );
+    }
+    if (existing.isPaid) {
+      throw new BadRequestException("This appointment is already paid");
+    }
 
     const paymentMethod = await this.prisma.paymentMethod.findFirst({
       where: { id: dto.paymentMethodId, clinicId, isActive: true },
@@ -537,12 +653,97 @@ export class AppointmentsService {
   }
 
   async markUnpaid(clinicId: string, id: string) {
-    await this.findOne(clinicId, id);
+    const existing = await this.findOne(clinicId, id);
+    if (existing.patientPackageId) {
+      throw new BadRequestException(
+        "Release package coverage instead of marking unpaid",
+      );
+    }
 
     const appointment = await this.appointmentsRepository.markUnpaid(
       clinicId,
       id,
     );
+    this.dashboardGateway.emitAppointmentChanged(clinicId);
+    return appointment;
+  }
+
+  /**
+   * Settle this visit from one of the patient's packages: draw a session or the visit's
+   * payable in credit, and record it as paid without touching a payment method — the
+   * money changed hands when the package was bought.
+   */
+  async redeemPackage(
+    clinicId: string,
+    clinicUserId: string,
+    id: string,
+    dto: RedeemPackageDto,
+  ) {
+    const existing = await this.findOne(clinicId, id);
+    if (existing.patientPackageId) {
+      throw new BadRequestException(
+        "This appointment is already covered by a package",
+      );
+    }
+    if (existing.isPaid) {
+      throw new BadRequestException("This appointment is already paid");
+    }
+
+    const payable = computePayable(
+      existing.fee ? Number(existing.fee) : 0,
+      existing.discount ? Number(existing.discount) : 0,
+      existing.discountType,
+    );
+
+    const { enrollment, credit } =
+      await this.patientPackagesService.resolveRedemption(
+        clinicId,
+        existing.patientId,
+        dto.patientPackageId,
+        payable,
+      );
+
+    const appointment = await this.appointmentsRepository.setPackageRedemption(
+      clinicId,
+      id,
+      {
+        patientPackageId: enrollment.id,
+        packageCredit: credit,
+        isPaid: true,
+        paidAt: new Date(),
+        paidById: clinicUserId,
+        paymentMethodId: null,
+        paymentMethod: `Package: ${enrollment.package.name}`,
+      },
+    );
+
+    this.dashboardGateway.emitAppointmentChanged(clinicId);
+    return appointment;
+  }
+
+  /** Undo a redemption — unlinking restores the balance, since usage is derived. */
+  async releasePackage(clinicId: string, id: string) {
+    const existing = await this.findOne(clinicId, id);
+    if (!existing.patientPackageId) {
+      throw new BadRequestException(
+        "This appointment is not covered by a package",
+      );
+    }
+
+    const appointment = await this.appointmentsRepository.setPackageRedemption(
+      clinicId,
+      id,
+      {
+        patientPackageId: null,
+        packageCredit: null,
+        isPaid: false,
+        paidAt: null,
+        paidById: null,
+        paymentMethodId: null,
+        paymentMethod: null,
+      },
+    );
+
     this.dashboardGateway.emitAppointmentChanged(clinicId);
     return appointment;
   }

@@ -15,12 +15,11 @@ const LEGEND_ITEMS: { status: AppointmentStatus; label: string }[] = [
 ];
 
 interface Props {
-  /** Empty set = show all statuses. */
+
   activeStatuses: Set<AppointmentStatus>;
   onToggleStatus: (status: AppointmentStatus) => void;
 }
 
-/** Clickable status filters. Scrolls horizontally on small screens. */
 export function ScheduleLegend({ activeStatuses, onToggleStatus }: Props) {
   const filtering = activeStatuses.size > 0;
 

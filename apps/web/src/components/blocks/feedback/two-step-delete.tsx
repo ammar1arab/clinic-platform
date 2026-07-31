@@ -32,17 +32,13 @@ interface Props {
   onContinue: () => void;
   onConfirm: () => void;
   isPending?: boolean;
-  /** Soft warning on step 1 */
+
   warning: string;
-  /** Final irreversible warning on step 2 */
+
   finalWarning: string;
   confirmLabel?: string;
 }
 
-/**
- * Stable two-step permanent delete flow used across patients, rooms,
- * departments, and services. Keeps long names truncated and safe in the layout.
- */
 export function TwoStepDeleteDialogs({
   step1,
   step2,
@@ -112,7 +108,6 @@ export function TwoStepDeleteDialogs({
   );
 }
 
-/** Tiny state helper so pages stay short. */
 export function useTwoStepDelete<T extends { id: string }>() {
   const [step1, setStep1] = useState<T | null>(null);
   const [step2, setStep2] = useState<T | null>(null);

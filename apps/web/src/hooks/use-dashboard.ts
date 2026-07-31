@@ -8,7 +8,7 @@ export function useDashboardKpis(clinicId: string) {
     queryKey: QUERY_KEYS.dashboard.kpis(clinicId),
     queryFn: () => dashboardService.getKpis(clinicId),
     enabled: !!clinicId,
-    // Soft fallback if the socket drops — live path still invalidates immediately.
+
     refetchInterval: 60_000,
   });
 }
@@ -22,7 +22,7 @@ export function useRoomUtilization(clinicId: string) {
   });
 }
 
-/** @deprecated Prefer useClinicRealtime — kept for existing dashboard imports. */
+
 export function useDashboardRealtime(
   clinicId: string,
   options?: ClinicRealtimeOptions,

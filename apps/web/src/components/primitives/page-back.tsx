@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface Props {
-  /** Where the back button navigates. Required — title lives in the topbar. */
+
   backHref: string;
   backLabel?: string;
   actions?: React.ReactNode;
   className?: string;
 }
 
-/** Slim back row only — page title is shown in the topbar. */
+
 export function PageBack({
   backHref,
   backLabel = 'Back',

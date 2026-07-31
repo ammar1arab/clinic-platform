@@ -1,9 +1,7 @@
 import { cn } from '@/lib/utils';
 
-/**
- * Consistent bordered frame around data tables.
- * Keeps overflow on the shared Table container (no double scrollbars).
- */
+
+
 export function TableFrame({
   children,
   className,

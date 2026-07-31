@@ -238,7 +238,7 @@ export default function DiscountCodesPage() {
                   <TableCell colSpan={7} className="p-0">
                     <EmptyState
                       icon={IconDiscount}
-                      title={search ? 'No matching codes' : 'No discount codes yet'}
+                      title={search ? 'No matching codes' : 'No promocodes yet'}
                       description={
                         search
                           ? 'Try a different search term.'
@@ -290,7 +290,7 @@ export default function DiscountCodesPage() {
         {!isLoading && totalItems === 0 && (
           <EmptyState
             icon={IconDiscount}
-            title={search ? 'No matching codes' : 'No discount codes yet'}
+            title={search ? 'No matching codes' : 'No promocodes yet'}
             description={
               search
                 ? 'Try a different search term.'
@@ -337,7 +337,7 @@ export default function DiscountCodesPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit discount code' : 'New discount code'}</DialogTitle>
+            <DialogTitle>{editing ? 'Edit promocode' : 'New promocode'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <FormField label="Code" htmlFor="dc-code">
@@ -423,7 +423,7 @@ export default function DiscountCodesPage() {
         }}
         isPending={deleteMutation.isPending}
         warning="This permanently removes the code. Past appointments keep their discount amounts but lose the code link. Prefer the Active toggle to retire a code temporarily."
-        finalWarning="This will permanently delete this discount code and clear it from patients and appointments. This cannot be undone."
+        finalWarning="This will permanently delete this promocode and clear it from patients and appointments. This cannot be undone."
       />
     </div>
   );

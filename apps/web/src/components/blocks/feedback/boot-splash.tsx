@@ -9,10 +9,6 @@ interface Props {
   variant?: 'fullscreen' | 'panel';
 }
 
-/**
- * Boot / route loading surface.
- * Shared by root, auth, dashboard `loading.tsx`, and auth session restore.
- */
 export function BootSplash({
   label = 'Preparing your clinic…',
   className,

@@ -19,6 +19,12 @@ export const QUERY_KEYS = {
     all: ['packages'] as const,
     list: (clinicId: string) => ['packages', clinicId] as const,
   },
+  patientPackages: {
+    all: ['patient-packages'] as const,
+    list: (patientId: string) => ['patient-packages', patientId] as const,
+    summary: (patientId: string, excludeAppointmentId?: string) =>
+      ['patient-packages', 'summary', patientId, excludeAppointmentId ?? null] as const,
+  },
   discountCodes: {
     all: ['discount-codes'] as const,
     list: (clinicId: string) => ['discount-codes', clinicId] as const,

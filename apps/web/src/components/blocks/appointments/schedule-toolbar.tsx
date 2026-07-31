@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SearchInput } from '@/components/primitives/search-input';
+import { Spinner } from '@/components/primitives/spinner';
 import type { Department } from '@/services/departments.service';
 
 const ALL_DEPARTMENTS = '__all__';
@@ -72,11 +73,17 @@ export function ScheduleToolbar({
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="whitespace-nowrap">
-            {count} appointment{count === 1 ? '' : 's'}
-            {isLoading ? ' · syncing' : ''}
-          </span>
+        <div className="flex min-h-4 items-center gap-1.5 text-xs text-muted-foreground">
+          {isLoading ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Spinner size="sm" className="text-muted-foreground" />
+              Loading appointments…
+            </span>
+          ) : (
+            <span className="whitespace-nowrap">
+              {count} appointment{count === 1 ? '' : 's'}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onNewPatient} className="shrink-0">

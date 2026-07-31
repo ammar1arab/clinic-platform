@@ -13,10 +13,8 @@ type FormFieldProps = {
   children: ReactNode;
 };
 
-/**
- * Shared labeled field shell — used by forms, dialogs, and settings.
- * Keeps spacing, required marker, and error text consistent.
- */
+
+
 export function FormField({
   label,
   error,

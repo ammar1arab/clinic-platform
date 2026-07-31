@@ -1,13 +1,25 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { PatientsRepository } from "./patients.repository";
+import { PatientPackagesService } from "@/modules/patient-packages/patient-packages.service";
 import { CreatePatientDto, UpdatePatientDto, PatientFiltersDto } from "./dto";
 
 @Injectable()
 export class PatientsService {
-  constructor(private patientsRepository: PatientsRepository) {}
+  constructor(
+    private patientsRepository: PatientsRepository,
+    private patientPackagesService: PatientPackagesService,
+  ) {}
 
-  create(dto: CreatePatientDto) {
-    return this.patientsRepository.create(dto);
+  async create(dto: CreatePatientDto) {
+    const patient = await this.patientsRepository.create(dto);
+    if (patient.packageId) {
+      await this.patientPackagesService.ensureEnrollment(
+        patient.clinicId,
+        patient.id,
+        patient.packageId,
+      );
+    }
+    return patient;
   }
 
   async findAll(filters: PatientFiltersDto) {
@@ -67,7 +79,16 @@ export class PatientsService {
 
   async update(id: string, dto: UpdatePatientDto) {
     await this.findOne(id);
-    return this.patientsRepository.update(id, dto);
+    const patient = await this.patientsRepository.update(id, dto);
+    // Assigning a package is what grants the balance; an existing one is left untouched.
+    if (patient.packageId) {
+      await this.patientPackagesService.ensureEnrollment(
+        patient.clinicId,
+        patient.id,
+        patient.packageId,
+      );
+    }
+    return patient;
   }
 
   async deactivate(id: string) {

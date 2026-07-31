@@ -4,10 +4,8 @@ import type { ReactNode } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
-/**
- * Mobile-first entity row used under settings / list tables.
- * Pair with a desktop `Table` inside `hidden md:block`.
- */
+
+
 export function EntityMobileCard({
   title,
   subtitle,

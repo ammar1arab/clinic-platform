@@ -1,4 +1,4 @@
-/** Click-centric popover placement — stable priority, viewport-clamped. */
+
 
 export interface AnchorRect {
   left: number;
@@ -17,7 +17,7 @@ export interface PopoverPlacement {
 
 const PAD = 12;
 const GAP = 12;
-/** Ignore giant event boxes (day-view full-width bars); use a click hotspot instead. */
+
 const MAX_ANCHOR_W = 120;
 const MAX_ANCHOR_H = 56;
 
@@ -53,10 +53,8 @@ export function rectFromElement(
   };
 }
 
-/**
- * Build a tight anchor around the click. Large calendar events (day view)
- * are shrunk to a hotspot so the popover stays next to the pointer.
- */
+
+
 export function clickAnchor(
   clickX: number,
   clickY: number,
@@ -96,10 +94,8 @@ function overlaps(a: AnchorRect, left: number, top: number, width: number, heigh
   );
 }
 
-/**
- * Stable placement: prefer right → left → bottom → top.
- * When `avoid` panels exist (e.g. more-list), prefer the roomier side of those panels.
- */
+
+
 export function placePopover(
   anchor: AnchorRect,
   width: number,
@@ -149,7 +145,7 @@ export function placePopover(
   const order: PopoverPlacement['side'][] =
     options?.prefer ??
     (avoid.length
-      ? // Keep more-list visible: open preview beside it, then below/above.
+      ?
         ['right', 'left', 'bottom', 'top']
       : ['right', 'left', 'bottom', 'top']);
 
@@ -160,7 +156,7 @@ export function placePopover(
     return c;
   }
 
-  // Fallback: roomiest side, clamped (may overlap slightly on tiny screens).
+
   const scores: { side: PopoverPlacement['side']; space: number }[] = (
     [
       { side: 'right' as const, space: vw - anchor.right - PAD },

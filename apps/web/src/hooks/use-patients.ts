@@ -30,6 +30,8 @@ export function useCreatePatient(_clinicId: string) {
     mutationFn: (data: CreatePatientInput) => patientsService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patients.all });
+
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patientPackages.all });
       toast.success('Patient added');
     },
   });
@@ -43,6 +45,7 @@ export function useUpdatePatient(_clinicId: string) {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patients.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patients.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patientPackages.all });
       toast.success('Patient updated');
     },
   });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Video, MapPin } from 'lucide-react';
@@ -29,7 +29,8 @@ import { useServices } from '@/hooks/use-services';
 import { usePatients } from '@/hooks/use-patients';
 import { useClinicStaff } from '@/hooks/use-clinic-staff';
 import { useClinicId } from '@/hooks/use-clinic-id';
-import { useCreateAppointment, useUpdateAppointment, useMarkAppointmentPaid, useMarkAppointmentUnpaid } from '@/hooks/use-appointments';
+import { useCreateAppointment, useUpdateAppointment, useMarkAppointmentPaid, useMarkAppointmentUnpaid, useRedeemAppointmentPackage, useReleaseAppointmentPackage } from '@/hooks/use-appointments';
+import { usePatientBilling } from '@/hooks/use-patient-packages';
 import { usePaymentMethods } from '@/hooks/use-payment-methods';
 import { useValidateDiscountCode, useDiscountCodes } from '@/hooks/use-discount-codes';
 import { usePackages } from '@/hooks/use-packages';
@@ -47,6 +48,8 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { extractErrorMessage } from '@/lib/api';
 import { Switch } from '@/components/ui/switch';
+import { formatWaitingMins, resolveWaitingMins } from '@/lib/waiting-time';
+import { PatientBalancePanel } from './patient-balance-panel';
 
 const NONE = '__none__';
 const CURRENCY = 'JOD';
@@ -140,11 +143,15 @@ export function AppointmentForm({
   const updateMutation = useUpdateAppointment();
   const markPaidMutation = useMarkAppointmentPaid();
   const markUnpaidMutation = useMarkAppointmentUnpaid();
+  const redeemPackage = useRedeemAppointmentPackage();
+  const releasePackage = useReleaseAppointmentPackage();
   const isPending =
     createMutation.isPending ||
     updateMutation.isPending ||
     markPaidMutation.isPending ||
-    markUnpaidMutation.isPending;
+    markUnpaidMutation.isPending ||
+    redeemPackage.isPending ||
+    releasePackage.isPending;
 
   const [status, setStatus] = useState<AppointmentStatus>(
     appointment?.status ?? 'unconfirmed',
@@ -155,6 +162,24 @@ export function AppointmentForm({
   );
   const [promoCode, setPromoCode] = useState('');
   const [appliedCodeId, setAppliedCodeId] = useState<string | null>(null);
+  const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    if (status !== 'waiting' && status !== 'checked_in') return;
+    const id = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(id);
+  }, [status]);
+
+  const waitingMins = appointment
+    ? resolveWaitingMins({
+        status,
+        scheduledAt: appointment.scheduledAt,
+        waitingStartedAt: appointment.waitingStartedAt,
+        waitingMins: appointment.waitingMins,
+        now,
+      })
+    : null;
 
   const activePayMethods = useMemo(
     () => (paymentMethods ?? []).filter((m) => m.isActive).sort((a, b) => a.sortOrder - b.sortOrder),
@@ -181,9 +206,20 @@ export function AppointmentForm({
 
   const sessionType = useWatch({ control, name: 'sessionType' });
   const serviceId = useWatch({ control, name: 'serviceId' });
+  const patientId = useWatch({ control, name: 'patientId' });
   const feeOverride = useWatch({ control, name: 'feeOverride' });
   const discount = useWatch({ control, name: 'discount' });
   const discountType = useWatch({ control, name: 'discountType' });
+
+  const { data: billing, isLoading: billingLoading } = usePatientBilling(
+    patientId,
+    !!patientId,
+    appointment?.id,
+  );
+
+  useEffect(() => {
+    setPendingPackageId(null);
+  }, [patientId]);
 
   const selectedService = useMemo(
     () => services?.find((s) => s.id === serviceId),
@@ -208,18 +244,16 @@ export function AppointmentForm({
     const patient = patients?.find((p) => p.id === patientId) as Patient | undefined;
     if (!patient) return;
 
+
+
+
     const pkg =
       (packages as ClinicPackage[] | undefined)?.find((p) => p.id === patient.packageId) ??
       null;
-    if (pkg) {
-      if (pkg.price != null && Number(pkg.price) > 0) {
-        setValue('feeOverride', String(Number(pkg.price)));
-      }
-      if (pkg.discountType && pkg.discountValue != null && Number(pkg.discountValue) > 0) {
-        setValue('discount', String(Number(pkg.discountValue)));
-        setValue('discountType', pkg.discountType);
-        setValue('discountReason', `Package: ${pkg.name}`);
-      }
+    if (pkg?.discountType && pkg.discountValue != null && Number(pkg.discountValue) > 0) {
+      setValue('discount', String(Number(pkg.discountValue)));
+      setValue('discountType', pkg.discountType);
+      setValue('discountReason', `Package: ${pkg.name}`);
     }
 
     const code =
@@ -268,7 +302,6 @@ export function AppointmentForm({
         });
         return;
       }
-      // Non-409 errors already toasted by the API interceptor.
     };
 
     if (isEdit && appointment) {
@@ -293,7 +326,7 @@ export function AppointmentForm({
             ...shared,
             status,
             cancelReason: status === 'cancelled' ? cancelReason.trim() : undefined,
-            // Always send discount so it can be cleared on edit.
+
             discount: hasDiscount ? Number(data.discount) : 0,
             discountType: data.discountType,
             discountReason: hasDiscount ? data.discountReason.trim() : undefined,
@@ -319,7 +352,17 @@ export function AppointmentForm({
             : {}),
         },
         {
-          onSuccess: (res) => onSuccess(res.id),
+          onSuccess: async (res) => {
+            if (pendingPackageId) {
+              try {
+                await redeemPackage.mutateAsync({
+                  id: res.id,
+                  patientPackageId: pendingPackageId,
+                });
+              } catch {}
+            }
+            onSuccess(res.id);
+          },
           onError: showConflict,
         },
       );
@@ -328,6 +371,10 @@ export function AppointmentForm({
 
   const handleTogglePaid = async (paid: boolean) => {
     if (!appointment) return;
+    if (appointment.patientPackageId) {
+      toast.error('Remove package coverage before changing payment status');
+      return;
+    }
     if (paid) {
       if (!payMethodId) {
         toast.error('Select a payment method first');
@@ -374,6 +421,14 @@ export function AppointmentForm({
                 })}
               </SelectContent>
             </Select>
+            {waitingMins != null && (
+              <p className="text-sm text-muted-foreground">
+                Waiting time:{' '}
+                <span className="font-medium tabular-nums text-foreground">
+                  {formatWaitingMins(waitingMins)}
+                </span>
+              </p>
+            )}
             {status === 'cancelled' && (
               <FormField
                 label="Cancellation Reason"
@@ -436,7 +491,7 @@ export function AppointmentForm({
                         {s.role ? ` · ${String(s.role).replace(/_/g, ' ')}` : ''}
                       </SelectItem>
                     ))}
-                    {/* Keep current selection visible if staff list hasn't loaded / missing */}
+
                     {field.value &&
                       !staff?.some((s) => s.id === field.value) &&
                       currentDoctorName && (
@@ -632,6 +687,12 @@ export function AppointmentForm({
           <CardTitle className="text-sm">Billing</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {!!appointment?.patientPackageId && (
+            <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-xs text-muted-foreground">
+              Pricing is locked while this visit is package-covered. Remove package coverage to edit fee or discount.
+            </p>
+          )}
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Fee" error={errors.feeOverride?.message}>
               <Input
@@ -639,6 +700,7 @@ export function AppointmentForm({
                 min={0}
                 step="0.001"
                 placeholder={selectedService ? Number(selectedService.fee).toFixed(3) : '0.000'}
+                disabled={!!appointment?.patientPackageId}
                 {...register('feeOverride')}
               />
               <p className="text-xs text-muted-foreground">
@@ -662,6 +724,7 @@ export function AppointmentForm({
                   step="0.001"
                   placeholder="0"
                   className="flex-1"
+                  disabled={!!appointment?.patientPackageId}
                   {...register('discount')}
                 />
                 <Controller
@@ -672,12 +735,12 @@ export function AppointmentForm({
                       <ToggleSeg
                         active={field.value === 'fixed'}
                         label={CURRENCY}
-                        onClick={() => field.onChange('fixed')}
+                        onClick={() => !appointment?.patientPackageId && field.onChange('fixed')}
                       />
                       <ToggleSeg
                         active={field.value === 'percentage'}
                         label="%"
-                        onClick={() => field.onChange('percentage')}
+                        onClick={() => !appointment?.patientPackageId && field.onChange('percentage')}
                       />
                     </div>
                   )}
@@ -686,18 +749,23 @@ export function AppointmentForm({
             </FormField>
           </div>
 
-          <FormField label="Discount code">
+          <FormField label="Promocode">
             <div className="flex gap-2">
               <Input
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                 placeholder="Optional promo code"
                 className="font-mono"
+                disabled={!!appointment?.patientPackageId}
               />
               <Button
                 type="button"
                 variant="outline"
-                disabled={!promoCode.trim() || validateCode.isPending}
+                disabled={
+                  !!appointment?.patientPackageId ||
+                  !promoCode.trim() ||
+                  validateCode.isPending
+                }
                 onClick={() => {
                   validateCode.mutate(promoCode.trim(), {
                     onSuccess: (res: ValidatedDiscountCode) => {
@@ -718,9 +786,42 @@ export function AppointmentForm({
           <FormField label="Discount reason" error={errors.discountReason?.message}>
             <Input
               placeholder="Required when a discount is applied"
+              disabled={!!appointment?.patientPackageId}
               {...register('discountReason')}
             />
           </FormField>
+
+          {patientId ? (
+            <PatientBalancePanel
+              billing={billing}
+              isLoading={billingLoading}
+              coveringPackageId={appointment?.patientPackageId}
+              payable={pricing.payable}
+              canRedeem={
+                isEdit &&
+                !!appointment &&
+                !appointment.isPaid &&
+                !appointment.patientPackageId
+              }
+              pendingPackageId={isEdit ? null : pendingPackageId}
+              onSelectPending={isEdit ? undefined : setPendingPackageId}
+              onRedeem={(patientPackageId) => {
+                if (!appointment) return;
+                redeemPackage.mutate({ id: appointment.id, patientPackageId });
+              }}
+              onRelease={() => {
+                if (!appointment) return;
+                releasePackage.mutate(appointment.id);
+              }}
+              redeemPending={redeemPackage.isPending}
+              releasePending={releasePackage.isPending}
+              disabledReason={
+                appointment?.isPaid && !appointment.patientPackageId
+                  ? 'Already paid'
+                  : undefined
+              }
+            />
+          ) : null}
 
           <div className="rounded-lg border bg-muted/40 p-3 text-sm">
             <Row label="Base fee" value={`${pricing.fee.toFixed(3)} ${CURRENCY}`} />
@@ -732,9 +833,24 @@ export function AppointmentForm({
             <div className="mt-2 flex items-center justify-between border-t pt-2 font-semibold">
               <span>Payable</span>
               <span>
-                {pricing.payable.toFixed(3)} {CURRENCY}
+                {appointment?.patientPackageId
+                  ? `0.000 ${CURRENCY}`
+                  : `${pricing.payable.toFixed(3)} ${CURRENCY}`}
               </span>
             </div>
+            {appointment?.patientPackageId && (
+              <p className="mt-1.5 text-[11px] text-success">
+                Covered by package
+                {appointment.packageCredit != null
+                  ? ` · ${Number(appointment.packageCredit).toFixed(3)} ${CURRENCY} credit used`
+                  : ' · 1 session used'}
+              </p>
+            )}
+            {!isEdit && pendingPackageId && (
+              <p className="mt-1.5 text-[11px] text-primary">
+                Package will be applied when you create this appointment
+              </p>
+            )}
           </div>
 
           {isEdit && appointment && (
@@ -744,21 +860,45 @@ export function AppointmentForm({
                   <p className="text-sm font-medium">Payment status</p>
                   <p className="text-xs text-muted-foreground">
                     {appointment.isPaid
-                      ? `Paid${
-                          appointment.paymentMethodRef?.name || appointment.paymentMethod
-                            ? ` · ${appointment.paymentMethodRef?.name ?? appointment.paymentMethod}`
-                            : ''
-                        }`
+                      ? appointment.patientPackageId
+                        ? `Paid · Package${
+                            appointment.paymentMethod
+                              ? ` (${appointment.paymentMethod})`
+                              : ''
+                          }`
+                        : `Paid${
+                            appointment.paymentMethodRef?.name || appointment.paymentMethod
+                              ? ` · ${appointment.paymentMethodRef?.name ?? appointment.paymentMethod}`
+                              : ''
+                          }`
                       : 'Unpaid'}
                   </p>
                 </div>
-                <Switch
-                  checked={appointment.isPaid}
-                  disabled={markPaidMutation.isPending || markUnpaidMutation.isPending}
-                  onCheckedChange={handleTogglePaid}
-                />
+                {appointment.patientPackageId ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={releasePackage.isPending}
+                    onClick={() => releasePackage.mutate(appointment.id)}
+                  >
+                    {releasePackage.isPending ? (
+                      <ButtonSpinner className="mr-0" />
+                    ) : (
+                      'Remove package'
+                    )}
+                  </Button>
+                ) : (
+                  <Switch
+                    checked={appointment.isPaid}
+                    disabled={
+                      markPaidMutation.isPending || markUnpaidMutation.isPending
+                    }
+                    onCheckedChange={handleTogglePaid}
+                  />
+                )}
               </div>
-              {!appointment.isPaid && (
+              {!appointment.isPaid && !appointment.patientPackageId && (
                 <FormField label="Payment method">
                   <Select value={payMethodId || NONE} onValueChange={(v) => setPayMethodId(v === NONE ? '' : v)}>
                     <SelectTrigger className="w-full">

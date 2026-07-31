@@ -19,7 +19,7 @@ export interface CrudService<TEntity, TCreate, TUpdate> {
 
 export interface CrudHooksConfig<TEntity, TCreate, TUpdate> {
   keys: QueryKeyFactory;
-  /** Singular label used in toast messages, e.g. "Department" */
+
   entity: string;
   labels?: {
     created?: string;
@@ -39,15 +39,6 @@ function invalidateList(
   queryClient.invalidateQueries({ queryKey: keys.list(clinicId) });
 }
 
-/**
- * Builds a consistent list + mutation hook set for clinic-scoped CRUD resources.
- *
- * @example
- * const {
- *   useList: useDepartments,
- *   useCreate: useCreateDepartment,
- * } = createCrudHooks({ keys: QUERY_KEYS.departments, entity: 'Department', service: departmentsService });
- */
 export function createCrudHooks<TEntity, TCreate, TUpdate>(
   config: CrudHooksConfig<TEntity, TCreate, TUpdate>,
 ) {

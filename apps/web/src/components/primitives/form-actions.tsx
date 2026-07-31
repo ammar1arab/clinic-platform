@@ -10,16 +10,15 @@ type FormActionsProps = {
   cancelLabel?: string;
   pending?: boolean;
   disabled?: boolean;
-  /** `page` = form footer row; `dialog` = joins DialogFooter flex via `contents` */
+
   variant?: 'page' | 'dialog';
   className?: string;
-  /** Use type="button" submit when wrapping custom click handlers (dialogs). */
+
   onSubmitClick?: () => void;
 };
 
-/**
- * Consistent Cancel + primary action with pending spinner.
- */
+
+
 export function FormActions({
   onCancel,
   submitLabel,

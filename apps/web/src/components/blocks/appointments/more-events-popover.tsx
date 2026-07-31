@@ -34,7 +34,7 @@ function resolveAnchor(state: MoreEventsState): AnchorRect {
   return clickAnchor(state.x, state.y, state.anchor);
 }
 
-/** "+N more" list — compact, theme-aware, portaled. */
+
 export function MoreEventsPopover({ state, onClose, onSelect }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -48,7 +48,7 @@ export function MoreEventsPopover({ state, onClose, onSelect }: Props) {
     const anchor = resolveAnchor(state);
     const h = panelRef.current?.offsetHeight ?? CARD_HEIGHT_EST;
     const w = panelRef.current?.offsetWidth ?? CARD_WIDTH;
-    // Prefer below the "+more" chip, then above — more stable than flipping L/R.
+
     setPlacement(
       placePopover(anchor, w, h, { prefer: ['bottom', 'top', 'right', 'left'] }),
     );

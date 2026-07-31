@@ -9,7 +9,7 @@ function Card({
   ...props
 }: React.ComponentProps<"div"> & {
   size?: "default" | "sm"
-  /** Soft Gemini-style border; animates on hover / focus (not always-on). */
+
   aura?: boolean
 }) {
   return (

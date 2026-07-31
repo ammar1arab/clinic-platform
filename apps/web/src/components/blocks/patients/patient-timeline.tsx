@@ -48,7 +48,7 @@ const KIND_META: Record<
   visit: {
     label: 'Visit',
     icon: IconVisit,
-    className: 'bg-primary/10 text-primary',
+    className: 'bg-muted text-foreground',
   },
   referral: {
     label: 'Referral',
@@ -58,7 +58,7 @@ const KIND_META: Record<
   payment: {
     label: 'Payment',
     icon: IconPayment,
-    className: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
+    className: 'bg-muted text-foreground',
   },
 };
 

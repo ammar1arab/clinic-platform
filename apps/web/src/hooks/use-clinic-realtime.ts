@@ -4,19 +4,16 @@ import { toast } from 'sonner';
 import { getSocket } from '@/lib/socket';
 import { QUERY_KEYS } from '@/constants/query-keys';
 
-/** Shared socket refcount so dashboard + schedule can stay live without fighting disconnects. */
+
 let socketUsers = 0;
 
 export type ClinicRealtimeOptions = {
-  /** Soft toast when appointments change (useful on dashboard). */
+
   notifyOnAppointmentChange?: boolean;
 };
 
-/**
- * Live clinic updates via socket.io.
- * Invalidates appointments, dashboard KPIs/rooms, and referrals when staff change data.
- * Returns connection status for UI ("Live" indicators).
- */
+
+
 export function useClinicRealtime(
   clinicId: string,
   options: ClinicRealtimeOptions = {},
@@ -47,6 +44,7 @@ export function useClinicRealtime(
 
     const refreshAppointments = () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patientPackages.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.kpisAll });
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.dashboard.roomUtilizationAll,

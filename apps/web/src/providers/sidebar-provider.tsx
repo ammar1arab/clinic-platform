@@ -16,7 +16,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Sync state with localStorage safely after mounting to prevent Next.js hydration mismatches
+
   useEffect(() => {
     const saved = localStorage.getItem('sidebar-collapsed');
     if (saved) {

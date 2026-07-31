@@ -1,6 +1,8 @@
 export interface DashboardKpis {
   total: number;
   inProgress: number;
+  waitingCount: number;
+  avgWaitingMins: number | null;
   completed: number;
   cancelled: number;
   roomCount: number;

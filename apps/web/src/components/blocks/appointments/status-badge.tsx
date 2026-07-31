@@ -58,14 +58,12 @@ export const STATUS_CONFIG: Record<
 interface Props {
   status: AppointmentStatus;
   className?: string;
-  /** Force the compact short label (useful in tight calendar cells). */
+
   compact?: boolean;
 }
 
-/**
- * Status pill with a colored dot. Shows a short label on small screens and
- * the full label from `sm` up; never wraps or overflows its container.
- */
+
+
 export function StatusBadgeBlock({ status, className, compact }: Props) {
   const config = STATUS_CONFIG[status];
   return (

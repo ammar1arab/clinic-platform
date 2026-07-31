@@ -15,6 +15,9 @@ export class DashboardService {
     const inProgress = appointments.filter(
       (a) => a.status === "in_progress",
     ).length;
+    const waitingCount = appointments.filter(
+      (a) => a.status === "waiting" || a.status === "checked_in",
+    ).length;
     const completed = appointments.filter(
       (a) => a.status === "completed",
     ).length;
@@ -22,7 +25,23 @@ export class DashboardService {
       (a) => a.status === "cancelled",
     ).length;
 
-    return { total, inProgress, completed, cancelled, roomCount };
+    const waits = appointments
+      .map((a) => a.waitingMins)
+      .filter((m): m is number => m != null && m >= 0);
+    const avgWaitingMins =
+      waits.length > 0
+        ? Math.round(waits.reduce((sum, m) => sum + m, 0) / waits.length)
+        : null;
+
+    return {
+      total,
+      inProgress,
+      waitingCount,
+      avgWaitingMins,
+      completed,
+      cancelled,
+      roomCount,
+    };
   }
 
   async getRoomUtilization(clinicId: string) {

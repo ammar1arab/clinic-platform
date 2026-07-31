@@ -51,7 +51,7 @@ function extFor(format: ReportFormat) {
 }
 
 export const reportsService = {
-  /** Patient medical report — PDF / Excel / CSV / Word */
+
   downloadPatientMedical: (
     patientId: string,
     clinicId: string,
@@ -62,7 +62,7 @@ export const reportsService = {
       `patient-report.${extFor(format)}`,
     ),
 
-  /** Referrals report (no payments) */
+
   downloadReferrals: (params: {
     clinicId: string;
     format?: ReportFormat;
@@ -82,7 +82,7 @@ export const reportsService = {
     return downloadReport(`/reports/referrals?${q.toString()}`, `referrals.${extFor(format)}`);
   },
 
-  /** Finance monthly report â€” revenue, unpaid, by method / doctor */
+
   downloadFinance: (params: {
     clinicId: string;
     format?: ReportFormat;
@@ -98,6 +98,6 @@ export const reportsService = {
     return downloadReport(`/reports/finance?${q.toString()}`, `finance.${extFor(format)}`);
   },
 
-  /** Absolute API base â€” useful for debugging downloads */
+
   apiBase: () => env.NEXT_PUBLIC_API_URL,
 };

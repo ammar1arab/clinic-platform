@@ -9,6 +9,7 @@ export * from "./dashboard/dashboard.module";
 export * from "./reports/reports.module";
 export * from "./payment-methods/payment-methods.module";
 export * from "./packages/packages.module";
+export * from "./patient-packages/patient-packages.module";
 export * from "./discount-codes/discount-codes.module";
 export * from "./referrals/referrals.module";
 export * from "./notifications/notifications.module";

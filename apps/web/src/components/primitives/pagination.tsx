@@ -11,7 +11,6 @@ interface Props {
   onPageChange: (page: number) => void;
 }
 
-/** Lightweight client-side pagination footer for list pages. Hidden when everything fits one page. */
 export function Pagination({ page, pageCount, totalItems, pageSize, onPageChange }: Props) {
   if (totalItems === 0 || pageCount <= 1) return null;
 

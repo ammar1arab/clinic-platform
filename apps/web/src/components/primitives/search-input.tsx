@@ -11,7 +11,6 @@ interface Props {
   className?: string;
 }
 
-/** Themed search box with a leading icon and a clear button, used across list pages. */
 export function SearchInput({ value, onChange, placeholder = 'Search…', className }: Props) {
   return (
     <div className={cn('relative', className)}>

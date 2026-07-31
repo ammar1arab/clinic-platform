@@ -1,12 +1,5 @@
 import { AUTH_COOKIE_NAME, AUTH_TOKEN_MAX_AGE } from '@/constants/auth';
 
-/**
- * Single source of truth for the auth token on the client.
- * Stored twice on purpose:
- *  - localStorage  → read by the axios interceptor for the `Authorization` header
- *  - cookie        → read by `proxy.ts` on the server for route protection
- */
-
 export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem(AUTH_COOKIE_NAME);

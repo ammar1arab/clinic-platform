@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { DatePicker } from '@/components/primitives/date-picker';
 import { FormField } from '@/components/primitives/form-field';
+import { IconWell } from '@/components/primitives/icon-well';
 import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
 import { PatientCombobox } from '@/components/blocks/appointments/patient-combobox';
 import { useClinicId } from '@/hooks/use-clinic-id';
@@ -38,6 +39,7 @@ import {
 import type { ReportFormat } from '@/services/reports.service';
 import { exportPatients, type PatientExportFormat } from '@/lib/export-patients';
 import { toast } from 'sonner';
+import type { LucideIcon } from 'lucide-react';
 
 function currentMonthRange() {
   const now = new Date();
@@ -130,12 +132,12 @@ function DatePresets({
 }
 
 function ReportBlock({
-  icon: Icon,
+  icon,
   title,
   description,
   children,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   title: string;
   description: string;
   children: React.ReactNode;
@@ -143,9 +145,7 @@ function ReportBlock({
   return (
     <section className="card-aura flex flex-col gap-4 rounded-xl bg-card p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-linear-to-br from-brand/15 to-accent-teal/20 text-primary">
-          <Icon className="size-4" />
-        </div>
+        <IconWell icon={icon} size="md" accent="default" />
         <div className="min-w-0 pt-0.5">
           <h2 className="text-sm font-semibold leading-none">{title}</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{description}</p>

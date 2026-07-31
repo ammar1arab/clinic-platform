@@ -18,6 +18,7 @@ import {
   UpdateAppointmentDto,
   AppointmentFiltersDto,
   MarkPaidDto,
+  RedeemPackageDto,
 } from "./dto";
 
 @ApiBearerAuth()
@@ -69,6 +70,29 @@ export class AppointmentsController {
   @Roles(Role.owner, Role.admin, Role.financial)
   markUnpaid(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.appointmentsService.markUnpaid(user.clinicId, id);
+  }
+
+  @Patch(":id/redeem-package")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial)
+  redeemPackage(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: RedeemPackageDto,
+  ) {
+    return this.appointmentsService.redeemPackage(
+      user.clinicId,
+      user.clinicUserId,
+      id,
+      dto,
+    );
+  }
+
+  @Patch(":id/release-package")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial)
+  releasePackage(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.appointmentsService.releasePackage(user.clinicId, id);
   }
 
   @Patch(":id")

@@ -12,7 +12,7 @@ function readSession<T>(key: string, initial: T): T {
   }
 }
 
-/** Persist state in sessionStorage (survives refresh, clears on tab close). */
+
 export function useSessionStorageState<T>(key: string, initial: T) {
   const [state, setState] = useState<T>(() => readSession(key, initial));
 
@@ -25,7 +25,7 @@ export function useSessionStorageState<T>(key: string, initial: T) {
     try {
       sessionStorage.setItem(key, JSON.stringify(state));
     } catch {
-      // ignore quota / private mode
+
     }
   }, [key, state]);
 

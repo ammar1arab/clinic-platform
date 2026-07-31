@@ -3,10 +3,6 @@
 import { useMemo, useState } from 'react';
 import { useDebounce } from './use-debounce';
 
-/**
- * Client-side search + pagination for small clinic-scoped lists (departments,
- * rooms, services, …) whose list endpoints don't support server-side filtering.
- */
 export function useListFilter<T>(
   items: T[] | undefined,
   searchFields: (item: T) => string[],
@@ -26,8 +22,7 @@ export function useListFilter<T>(
   }, [items, debouncedSearch, searchFields]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
-  // Clamp during render (no effect) so a shrinking result set never strands
-  // the user on a page that no longer exists.
+
   const currentPage = Math.min(page, pageCount);
 
   const pageItems = useMemo(

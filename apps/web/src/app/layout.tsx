@@ -9,12 +9,8 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-/**
- * FUTURE (web growth / ops — not wired yet):
- * - SEO: richer metadata, OG tags, sitemap, robots, JSON-LD
- * - Sentry, Microsoft Clarity, Google Analytics (GA4), Vercel Analytics
- * - Firebase Cloud Messaging for browser push
- */
+
+
 export const metadata: Metadata = {
   title: "Clinic Platform",
   description: "Clinic Management System",

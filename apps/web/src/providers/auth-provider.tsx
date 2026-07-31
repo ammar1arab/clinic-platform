@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const stored = getToken();
     if (stored) {
       setTokenState(stored);
-      // Re-sync the cookie in case the token predates cookie-based protection.
+
       setToken(stored);
       fetchMe().finally(() => setIsLoading(false));
     } else {

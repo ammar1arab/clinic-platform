@@ -16,17 +16,17 @@ export const FC_TO_VIEW: Record<string, ScheduleView> = {
 
 export function parseScheduleView(value: string | null | undefined): ScheduleView {
   if (value === 'day' || value === 'week' || value === 'month') return value;
-  return 'week';
+  return 'month';
 }
 
-/** Build `/schedule?view=…` so return navigations restore Day/Week/Month. */
-export function schedulePath(view: ScheduleView = 'week'): string {
+
+export function schedulePath(view: ScheduleView = 'month'): string {
   const params = new URLSearchParams();
   params.set('view', view);
   return `${ROUTES.SCHEDULE}?${params.toString()}`;
 }
 
-/** Resolve a safe return path; only allow same-origin app paths. */
+
 export function resolveReturnTo(
   returnTo: string | null | undefined,
   fallback: string,

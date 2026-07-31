@@ -71,4 +71,12 @@ export const appointmentsService = {
 
   markUnpaid: (id: string) =>
     api.patch<Appointment>(`/appointments/${id}/mark-unpaid`).then((r) => r.data),
+
+  redeemPackage: (id: string, patientPackageId: string) =>
+    api
+      .patch<Appointment>(`/appointments/${id}/redeem-package`, { patientPackageId })
+      .then((r) => r.data),
+
+  releasePackage: (id: string) =>
+    api.patch<Appointment>(`/appointments/${id}/release-package`).then((r) => r.data),
 };

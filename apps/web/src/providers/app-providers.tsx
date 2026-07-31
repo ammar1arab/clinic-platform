@@ -9,10 +9,6 @@ import { AuthProvider } from './auth-provider';
 import { ConfirmProvider } from './confirm-provider';
 import { SidebarProvider } from './sidebar-provider';
 
-/**
- * Single composition root for all client-side providers.
- * Order matters: theme → data layer → auth → UI dialogs → layout state.
- */
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ErrorBoundary>

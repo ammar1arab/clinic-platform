@@ -14,6 +14,9 @@ export interface Appointment {
   status: AppointmentStatus;
   statusReason: string | null;
   statusUpdatedAt: string | null;
+  waitingStartedAt: string | null;
+  inProgressAt: string | null;
+  waitingMins: number | null;
   cancelReason: string | null;
   notes: string | null;
   fee: string | null;
@@ -26,6 +29,10 @@ export interface Appointment {
   paymentMethod: string | null;
   paymentMethodId: string | null;
   paymentMethodRef?: { id: string; name: string } | null;
+  /** Set when the visit was settled from a package instead of a payment method. */
+  patientPackageId: string | null;
+  /** Credit drawn from a credit-based package; null when a session was consumed. */
+  packageCredit: string | null;
   meetingUrl: string | null;
   createdAt?: string;
   updatedAt?: string;

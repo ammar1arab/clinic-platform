@@ -72,7 +72,7 @@ function toFormValues(patient: PatientDetail): PatientFormData {
   };
 }
 
-/** Drops empty strings so blanks never overwrite existing values. */
+
 function toPayload(data: PatientFormData): Omit<CreatePatientInput, 'clinicId'> {
   const clean = (v?: string) => {
     const trimmed = v?.trim();
@@ -329,7 +329,7 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               />
             </FormField>
           <FormField
-            label="Discount code"
+            label="Promocode"
             error={errors.discountCodeId?.message}
             className="sm:col-span-2"
           >

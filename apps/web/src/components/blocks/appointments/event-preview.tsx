@@ -14,6 +14,7 @@ import {
   type AnchorRect,
   type PopoverPlacement,
 } from './popover-position';
+import { formatWaitingMins, resolveWaitingMins } from '@/lib/waiting-time';
 
 const CARD_WIDTH = 300;
 const CARD_HEIGHT_EST = 300;
@@ -44,16 +45,22 @@ function resolveAnchor(preview: EventPreviewState): AnchorRect {
   return clickAnchor(preview.x, preview.y, preview.anchor);
 }
 
-/** Anchored popover beside the click — portaled to body, no backdrop. */
 export function EventPreview({ preview, onClose, onExpand }: Props) {
   const { appointment: appt } = preview;
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState(() => new Date());
   const [placement, setPlacement] = useState<PopoverPlacement>(() =>
     placePopover(resolveAnchor(preview), CARD_WIDTH, CARD_HEIGHT_EST),
   );
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (appt.status !== 'waiting' && appt.status !== 'checked_in') return;
+    const id = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(id);
+  }, [appt.status]);
 
   useLayoutEffect(() => {
     const anchor = resolveAnchor(preview);
@@ -120,6 +127,7 @@ export function EventPreview({ preview, onClose, onExpand }: Props) {
 
   const pricing = computePayable(appt.fee, appt.discount, appt.discountType);
   const accent = STATUS_COLORS[appt.status];
+  const waitingMins = resolveWaitingMins({ ...appt, now });
   const style = {
     left: placement.left,
     top: placement.top,
@@ -201,6 +209,13 @@ export function EventPreview({ preview, onClose, onExpand }: Props) {
             label="Details"
             value={`${appt.durationMins} min · ${pricing.payable.toFixed(3)} JOD`}
           />
+          {waitingMins != null && (
+            <Row
+              icon={<Clock className="size-3.5" />}
+              label="Waiting time"
+              value={formatWaitingMins(waitingMins)}
+            />
+          )}
         </div>
 
         <div className="mt-3 flex items-center justify-end gap-2">

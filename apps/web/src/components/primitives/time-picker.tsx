@@ -15,13 +15,13 @@ import {
 } from '@/components/ui/select';
 
 interface Props {
-  /** `HH:mm` (24h). Empty string when unset. */
+
   value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  /** Minute step (default 5). */
+
   step?: 5 | 10 | 15 | 30;
 }
 

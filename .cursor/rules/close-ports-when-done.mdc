@@ -1,0 +1,14 @@
+---
+description: Always stop servers and free ports when finishing work
+alwaysApply: true
+---
+
+# Close ports when finishing work
+
+When you start any long-running process that binds a port (Nest, Next, Vite, Docker-mapped services, `nest start`, `npm run start:dev`, `npm run dev`, etc.):
+
+1. Track the PIDs / ports you opened during the session.
+2. Before ending your turn after the task is complete (or when the user asks to wrap up), **stop those processes and free the ports**.
+3. Prefer killing only processes you started — do not kill unrelated user servers unless the user asked to close everything.
+4. Verify the port is no longer listening after shutdown.
+5. Do not leave background `nest start` / `next dev` / similar servers running after you finish verifying they work, unless the user explicitly wants them left up.

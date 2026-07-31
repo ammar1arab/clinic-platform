@@ -4,10 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-/**
- * Top-of-viewport navigation progress — starts on internal link clicks,
- * completes when the route commits. Quiet, premium, Awwwards-adjacent.
- */
 export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -47,7 +43,6 @@ export function NavigationProgress() {
     }, 160);
   };
 
-  // Kick off on same-origin link clicks (before the route paints).
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
@@ -68,16 +63,13 @@ export function NavigationProgress() {
         const current = `${window.location.pathname}${window.location.search}`;
         if (next === current) return;
         start();
-      } catch {
-        // ignore invalid hrefs
-      }
+      } catch {}
     };
 
     document.addEventListener('click', onClick, true);
     return () => document.removeEventListener('click', onClick, true);
   }, []);
 
-  // Complete when the URL actually changes.
   useEffect(() => {
     if (prevKey.current !== key) {
       prevKey.current = key;

@@ -61,6 +61,46 @@ export interface UpdatePackageInput {
   isActive?: boolean;
 }
 
+/**
+ * A package a patient bought, with its live balance. Totals are snapshotted at
+ * purchase; used/remaining are derived from the appointments that redeemed it.
+ * Exactly one of the sessions/credit pairs is populated per enrollment.
+ */
+export interface PatientPackageDto {
+  id: string;
+  clinicId: string;
+  patientId: string;
+  packageId: string;
+  packageName: string;
+  sessionsTotal: number | null;
+  sessionsUsed: number;
+  sessionsRemaining: number | null;
+  creditTotal: string | null;
+  creditUsed: string;
+  creditRemaining: string | null;
+  /** True when this enrollment still has something left to redeem. */
+  hasBalance: boolean;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PatientBillingSummary {
+  /** Total payable across the patient's past unpaid visits. */
+  outstanding: string;
+  unpaidVisits: number;
+  packages: PatientPackageDto[];
+}
+
+export interface EnrollPatientPackageInput {
+  patientId: string;
+  packageId: string;
+  sessionsTotal?: number | null;
+  creditTotal?: number | null;
+  notes?: string;
+}
+
 export interface DiscountCodeDto {
   id: string;
   clinicId: string;

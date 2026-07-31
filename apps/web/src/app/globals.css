@@ -3,27 +3,24 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Two-layer token system so dark mode can cascade:
- *  - raw values live on :root / .dark
- *  - @theme inline maps them to Tailwind color utilities via var()
- */
+
+
 :root {
   color-scheme: light;
   --radius: 8px;
 
-  /* Brand colors — clinic blue + teal accent */
+  
   --brand: oklch(0.55 0.18 240);
   --brand-foreground: oklch(0.98 0 0);
   --accent-teal: oklch(0.6 0.14 185);
   --accent-teal-foreground: oklch(0.98 0 0);
 
-  /* Status colors */
+  
   --success: oklch(0.6 0.16 145);
   --warning: oklch(0.75 0.18 75);
   --error: oklch(0.58 0.22 25);
 
-  /* Base */
+  
   --background: oklch(0.99 0 0);
   --foreground: oklch(0.13 0.01 260);
   --card: oklch(1 0 0);
@@ -45,18 +42,18 @@
 .dark {
   color-scheme: dark;
 
-  /* Brand colors — lifted for contrast on dark surfaces */
+  
   --brand: oklch(0.62 0.17 240);
   --brand-foreground: oklch(0.98 0 0);
   --accent-teal: oklch(0.65 0.13 185);
   --accent-teal-foreground: oklch(0.15 0.01 260);
 
-  /* Status colors */
+  
   --success: oklch(0.65 0.15 145);
   --warning: oklch(0.78 0.16 75);
   --error: oklch(0.65 0.2 25);
 
-  /* Base */
+  
   --background: oklch(0.15 0.012 260);
   --foreground: oklch(0.96 0.005 260);
   --card: oklch(0.18 0.014 260);
@@ -144,12 +141,12 @@
     letter-spacing: -0.02em;
   }
 
-  /* Smooth scrolling everywhere */
+  
   html {
     scroll-behavior: smooth;
   }
 
-  /* Interactive cursor + hover affordance system-wide */
+  
   button,
   [role="button"],
   [role="menuitem"],
@@ -175,7 +172,7 @@
     cursor: not-allowed;
   }
 
-  /* Hide scrollbars everywhere, keep scroll functional */
+  
   * {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -187,7 +184,7 @@
 }
 
 @layer utilities {
-  /* Subtle fade-in for page content */
+  
   .fade-in {
     animation: fadeIn 0.25s ease-out;
   }
@@ -203,14 +200,14 @@
     }
   }
 
-  /* Truncate with ellipsis, common in tables */
+  
   .text-truncate {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  /* —— Clinical loading motions —— */
+  
   .animate-clinic-dot {
     animation: clinicDot 0.72s ease-in-out infinite;
   }
@@ -294,10 +291,9 @@
     }
   }
 
-  /*
-   * Clean clinic card border — thin rotating accent, always on.
-   * Hover: slightly clearer, no heavy glow.
-   */
+  
+
+
   @property --aura-angle {
     syntax: "<angle>";
     inherits: false;
@@ -309,7 +305,7 @@
     position: relative;
     isolation: isolate;
     box-shadow: 0 1px 2px color-mix(in oklch, var(--foreground) 3%, transparent);
-    transition: box-shadow 0.35s ease;
+    transition: box-shadow 0.2s ease;
   }
 
   .card-aura::before {
@@ -320,17 +316,17 @@
     border-radius: inherit;
     padding: var(--aura-pad);
     pointer-events: none;
-    opacity: 0.42;
-    transition: opacity 0.35s ease, padding 0.35s ease;
-    animation: auraSpin 18s linear infinite;
+    opacity: 0.55;
+    transition: opacity 0.2s ease, padding 0.2s ease;
+    animation: auraSpin 11s linear infinite;
     background: conic-gradient(
       from var(--aura-angle),
-      color-mix(in oklch, var(--border) 70%, transparent),
-      color-mix(in oklch, var(--brand) 45%, var(--border)),
-      color-mix(in oklch, var(--accent-teal) 40%, var(--border)),
-      color-mix(in oklch, var(--border) 70%, transparent),
-      color-mix(in oklch, var(--brand) 35%, var(--border)),
-      color-mix(in oklch, var(--border) 70%, transparent)
+      color-mix(in oklch, var(--border) 55%, transparent),
+      color-mix(in oklch, var(--brand) 65%, var(--border)),
+      color-mix(in oklch, var(--accent-teal) 60%, var(--border)),
+      color-mix(in oklch, var(--border) 55%, transparent),
+      color-mix(in oklch, var(--brand) 55%, var(--border)),
+      color-mix(in oklch, var(--border) 55%, transparent)
     );
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
@@ -349,35 +345,35 @@
 
   @media (hover: hover) and (pointer: fine) {
     .card-aura:hover {
-      --aura-pad: 1.5px;
-      box-shadow: 0 4px 16px -8px color-mix(in oklch, var(--foreground) 12%, transparent);
+      --aura-pad: 2px;
+      box-shadow: 0 6px 20px -8px color-mix(in oklch, var(--foreground) 16%, transparent);
     }
 
     .card-aura:hover::before {
-      opacity: 0.72;
-      animation-duration: 12s;
+      opacity: 0.95;
+      animation-duration: 6.5s;
     }
   }
 
   .card-aura:focus-within {
-    --aura-pad: 1.5px;
+    --aura-pad: 2px;
   }
 
   .card-aura:focus-within::before {
-    opacity: 0.68;
+    opacity: 0.9;
   }
 
   .dark .card-aura::before {
-    opacity: 0.5;
+    opacity: 0.62;
   }
 
   .dark .card-aura:hover::before,
   .dark .card-aura:focus-within::before {
-    opacity: 0.8;
+    opacity: 1;
   }
 
   .dark .card-aura:hover {
-    box-shadow: 0 6px 20px -10px color-mix(in oklch, black 50%, transparent);
+    box-shadow: 0 8px 24px -10px color-mix(in oklch, black 55%, transparent);
   }
 
   @keyframes auraSpin {
@@ -398,7 +394,7 @@
   }
 }
 
-/* ==================== FullCalendar Theme ==================== */
+
 
 .fc {
   --fc-border-color: var(--color-border);
@@ -429,7 +425,7 @@
   min-width: 0;
 }
 
-/* Spread: left nav | centered title | view tabs */
+
 .fc .fc-toolbar-chunk:nth-child(1) {
   flex: 0 0 auto;
   justify-content: flex-start;
@@ -536,7 +532,7 @@
   height: 3rem;
 }
 
-/* Week view: enough lane height for stacked badges */
+
 .fc-timeGridWeek-view .fc-timegrid-slot {
   height: 3.25rem;
 }
@@ -545,7 +541,7 @@
   min-height: 2.5rem;
 }
 
-/* Day view: taller slots so event badges read clearly */
+
 .fc-timeGridDay-view .fc-timegrid-slot {
   height: 4.5rem;
 }
@@ -582,7 +578,7 @@
   color: #fff !important;
 }
 
-/* Month + time-grid chips share the same solid status fill + white text */
+
 .fc-daygrid-event,
 .fc-daygrid-block-event,
 .fc-daygrid-dot-event {
@@ -604,7 +600,7 @@
   width: 100%;
 }
 
-/* Kill FC list-item / pale defaults in month view — solid chips only */
+
 .fc-daygrid-month-view .fc-daygrid-event,
 .fc-dayGridMonth-view .fc-daygrid-event {
   border: none !important;
@@ -644,7 +640,7 @@
   padding: 0;
 }
 
-/* Cancelled appointments read as de-emphasised, struck through. */
+
 .fc-event-cancelled {
   opacity: 0.55;
   filter: grayscale(0.35);
@@ -654,7 +650,7 @@
   text-decoration: line-through;
 }
 
-/* ---- Month day cells + create affordance ---- */
+
 
 .fc .fc-daygrid-day-frame {
   position: relative;
@@ -677,7 +673,7 @@
   background: color-mix(in oklch, var(--color-primary) 7%, transparent);
 }
 
-/* Centered + to create appointment (month view) */
+
 .fc .fc-day-add {
   position: absolute;
   inset: 0;
@@ -713,7 +709,7 @@
   border-radius: var(--radius-md);
 }
 
-/* Time-grid lanes (day / week views) */
+
 .fc .fc-timegrid-col-bg,
 .fc .fc-timegrid-col-frame {
   transition: background-color 0.1s ease;
@@ -728,7 +724,7 @@
   background: color-mix(in oklch, var(--color-primary) 4%, transparent) !important;
 }
 
-/* Day number chip in month view */
+
 .fc .fc-daygrid-day-number {
   position: relative;
   z-index: 4;
@@ -744,7 +740,7 @@
   font-weight: 600;
 }
 
-/* Space + distinct style for "+N more" so it doesn't look like an appointment */
+
 .fc .fc-daygrid-day-bottom {
   position: relative;
   z-index: 3;
@@ -810,7 +806,7 @@
 }
 
 @media (max-width: 768px) {
-  /* Keep arrows, Today, date, and Day/Week/Month on one spaced row */
+  
   .fc .fc-toolbar {
     flex-direction: row;
     flex-wrap: nowrap;
@@ -914,10 +910,8 @@
   }
 }
 
-/*
- * iOS Safari/Chrome zoom the page when a focused control is under 16px.
- * Root rem on mobile is 14px, so text-base (1rem) is NOT enough — use 16px.
- */
+
+
 @supports (-webkit-touch-callout: none) {
   @media (max-width: 767px) {
     input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -30,6 +30,9 @@ import {
   VIEW_TO_FC,
 } from './schedule-nav';
 import { rectFromElement, type AnchorRect } from './popover-position';
+import { CalendarSkeleton } from './calendar-skeleton';
+
+const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
 
 interface Props {
   appointments: Appointment[] | undefined;
@@ -44,7 +47,7 @@ interface Props {
 
 export function AppointmentCalendar({
   appointments,
-  isLoading: _isLoading,
+  isLoading,
   isFetching,
   view,
   onViewChange,
@@ -53,6 +56,14 @@ export function AppointmentCalendar({
   onSelectSlot,
 }: Props) {
   const calendarRef = useRef<FullCalendar>(null);
+  const onViewChangeRef = useRef(onViewChange);
+  const onVisibleRangeChangeRef = useRef(onVisibleRangeChange);
+  const onSelectSlotRef = useRef(onSelectSlot);
+
+  onViewChangeRef.current = onViewChange;
+  onVisibleRangeChangeRef.current = onVisibleRangeChange;
+  onSelectSlotRef.current = onSelectSlot;
+
   const events = useMemo(
     () =>
       appointments?.map((appt) => ({
@@ -65,7 +76,7 @@ export function AppointmentCalendar({
         backgroundColor: STATUS_COLORS[appt.status],
         borderColor: STATUS_COLORS[appt.status],
         textColor: '#ffffff',
-        display: 'block',
+        display: 'block' as const,
         classNames: appt.status === 'cancelled' ? ['fc-event-cancelled'] : [],
         extendedProps: { appointment: appt },
       })) ?? [],
@@ -74,61 +85,77 @@ export function AppointmentCalendar({
 
   const [preview, setPreview] = useState<EventPreviewState | null>(null);
   const [moreList, setMoreList] = useState<MoreEventsState | null>(null);
+  const syncingViewRef = useRef(false);
 
-  // Keep FullCalendar in sync when the URL view param changes (e.g. browser back).
+
+
   useEffect(() => {
     const api = calendarRef.current?.getApi();
     if (!api) return;
     const next = VIEW_TO_FC[view];
-    if (api.view.type !== next) {
-      api.changeView(next);
-    }
+    if (api.view.type === next) return;
+    syncingViewRef.current = true;
+    api.changeView(next);
+    queueMicrotask(() => {
+      syncingViewRef.current = false;
+    });
   }, [view]);
 
-  const openPreview = (
-    appt: Appointment,
-    x: number,
-    y: number,
-    anchor?: AnchorRect,
-    opts?: { keepMore?: boolean },
-  ) => {
-    // Desktop: keep "+more" list open beside the preview.
-    // Mobile: close it so the preview has room.
-    const keepMore =
-      opts?.keepMore === true &&
-      typeof window !== 'undefined' &&
-      window.matchMedia('(min-width: 768px)').matches;
-    if (!keepMore) setMoreList(null);
-    setPreview({ appointment: appt, x, y, anchor });
-  };
+  const openPreview = useCallback(
+    (
+      appt: Appointment,
+      x: number,
+      y: number,
+      anchor?: AnchorRect,
+      opts?: { keepMore?: boolean },
+    ) => {
+      const keepMore =
+        opts?.keepMore === true &&
+        typeof window !== 'undefined' &&
+        window.matchMedia('(min-width: 768px)').matches;
+      if (!keepMore) setMoreList(null);
+      setPreview({ appointment: appt, x, y, anchor });
+    },
+    [],
+  );
 
-  const handleEventClick = (arg: EventClickArg) => {
-    const appt = arg.event.extendedProps.appointment as Appointment | undefined;
-    if (!appt) return;
-    const el =
-      (arg.el as HTMLElement | undefined) ??
-      (arg.jsEvent.target as HTMLElement | null)?.closest?.('.fc-event');
-    openPreview(
-      appt,
-      arg.jsEvent.clientX,
-      arg.jsEvent.clientY,
-      rectFromElement(el, arg.jsEvent.clientX, arg.jsEvent.clientY),
-    );
-  };
+  const handleEventClick = useCallback(
+    (arg: EventClickArg) => {
+      const appt = arg.event.extendedProps.appointment as Appointment | undefined;
+      if (!appt) return;
+      const el =
+        (arg.el as HTMLElement | undefined) ??
+        (arg.jsEvent.target as HTMLElement | null)?.closest?.('.fc-event');
+      openPreview(
+        appt,
+        arg.jsEvent.clientX,
+        arg.jsEvent.clientY,
+        rectFromElement(el, arg.jsEvent.clientX, arg.jsEvent.clientY),
+      );
+    },
+    [openPreview],
+  );
 
-  const handleDateSelect = (arg: DateSelectArg) => {
+  const handleDateSelect = useCallback((arg: DateSelectArg) => {
     setPreview(null);
     setMoreList(null);
-    onSelectSlot(arg.start);
-  };
+    onSelectSlotRef.current(arg.start);
+  }, []);
 
-  const handleDatesSet = (arg: DatesSetArg) => {
-    const next = FC_TO_VIEW[arg.view.type];
-    if (next && next !== view) onViewChange(next);
-    onVisibleRangeChange?.(arg.start, arg.end);
-  };
+  const handleDatesSet = useCallback(
+    (arg: DatesSetArg) => {
+      const next = FC_TO_VIEW[arg.view.type];
 
-  const handleMoreLinkClick = (arg: MoreLinkArg) => {
+      if (!syncingViewRef.current && next && next !== view) {
+        onViewChangeRef.current(next);
+      }
+      syncingViewRef.current = false;
+      onVisibleRangeChangeRef.current?.(arg.start, arg.end);
+    },
+    [view],
+  );
+
+  const handleMoreLinkClick = useCallback((arg: MoreLinkArg) => {
     const jsEvent = arg.jsEvent as MouseEvent;
     if (typeof jsEvent.preventDefault === 'function') jsEvent.preventDefault();
     if (typeof jsEvent.stopPropagation === 'function') jsEvent.stopPropagation();
@@ -155,19 +182,19 @@ export function AppointmentCalendar({
       anchor: rectFromElement(el, x, y),
     });
 
-    // FullCalendar opens its built-in popover when this returns void/falsy
-    // (`!return || return === 'popover'`). A non-string truthy value skips both
-    // the default popover and view zoom — only our custom list shows.
     return true as unknown as 'popover';
-  };
+  }, []);
 
-  const renderMoreLinkContent = (arg: MoreLinkContentArg) => (
-    <span className="fc-more-badge flex w-full min-h-[1.5rem] items-center justify-center gap-1 rounded-md border border-dashed border-primary/35 bg-primary/8 px-1.5 py-0.5 text-[10px] font-semibold leading-tight tracking-wide text-primary dark:bg-primary/15 dark:text-primary">
-      +{arg.num} more
-    </span>
+  const renderMoreLinkContent = useCallback(
+    (arg: MoreLinkContentArg) => (
+      <span className="fc-more-badge flex w-full min-h-[1.5rem] items-center justify-center gap-1 rounded-md border border-dashed border-primary/35 bg-primary/8 px-1.5 py-0.5 text-[10px] font-semibold leading-tight tracking-wide text-primary dark:bg-primary/15 dark:text-primary">
+        +{arg.num} more
+      </span>
+    ),
+    [],
   );
 
-  const renderEventContent = (arg: EventContentArg) => {
+  const renderEventContent = useCallback((arg: EventContentArg) => {
     const appt = arg.event.extendedProps.appointment as Appointment | undefined;
     const viewType = arg.view.type;
     const isMonth = viewType === 'dayGridMonth';
@@ -175,7 +202,9 @@ export function AppointmentCalendar({
     const isWeek = viewType === 'timeGridWeek';
 
     if (isMonth) {
-      const fill = appt ? STATUS_COLORS[appt.status] : (arg.event.backgroundColor || '#64748b');
+      const fill = appt
+        ? STATUS_COLORS[appt.status]
+        : arg.event.backgroundColor || '#64748b';
       return (
         <div
           className="fc-event-inner fc-event-month flex min-h-[1.35rem] min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-white"
@@ -201,12 +230,13 @@ export function AppointmentCalendar({
           <span className="text-[11px] font-semibold leading-tight tracking-wide opacity-95">
             {timeLabel}
           </span>
-          <span className="truncate text-sm font-semibold leading-tight">{arg.event.title}</span>
+          <span className="truncate text-sm font-semibold leading-tight">
+            {arg.event.title}
+          </span>
         </div>
       );
     }
 
-    // Week (and any other time-grid) — compact but readable
     return (
       <div
         className={cn(
@@ -219,102 +249,116 @@ export function AppointmentCalendar({
         <span className="truncate text-[11px] font-semibold">{arg.event.title}</span>
       </div>
     );
-  };
+  }, []);
+
+  const handleEventDidMount = useCallback(
+    (info: { event: { extendedProps: Record<string, unknown>; backgroundColor?: string }; el: HTMLElement }) => {
+      const appt = info.event.extendedProps.appointment as Appointment | undefined;
+      const color = appt
+        ? STATUS_COLORS[appt.status]
+        : info.event.backgroundColor || '#64748b';
+      info.el.style.setProperty('background-color', color, 'important');
+      info.el.style.setProperty('border-color', color, 'important');
+      info.el.style.setProperty('color', '#ffffff', 'important');
+    },
+    [],
+  );
+
+  const handleDayCellDidMount = useCallback(
+    (arg: { view: { type: string }; el: HTMLElement; date: Date }) => {
+      if (arg.view.type !== 'dayGridMonth') return;
+      const frame = arg.el.querySelector('.fc-daygrid-day-frame');
+      if (!frame || frame.querySelector('.fc-day-add')) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'fc-day-add';
+      btn.setAttribute('aria-label', 'Add appointment');
+      btn.innerHTML =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setPreview(null);
+        setMoreList(null);
+        const slot = new Date(arg.date);
+        if (slot.getHours() === 0 && slot.getMinutes() === 0) {
+          slot.setHours(9, 0, 0, 0);
+        }
+        onSelectSlotRef.current(slot);
+      });
+      frame.appendChild(btn);
+    },
+    [],
+  );
+
+
+  if (isLoading && !appointments) {
+    return <CalendarSkeleton />;
+  }
 
   return (
-    <div className="card-aura relative rounded-xl bg-card p-2 sm:p-3 lg:p-4 [&_.fc]:text-sm">
-      {isFetching && (
-        <div className="pointer-events-none absolute right-3 top-3 z-10 size-2 rounded-full bg-primary/70" />
-      )}
+    <div
+      className="card-aura relative rounded-xl bg-card p-2 sm:p-3 lg:p-4 [&_.fc]:text-sm"
+      aria-busy={isFetching || undefined}
+    >
       <FullCalendar
-          ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView={VIEW_TO_FC[view]}
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'timeGridDay,timeGridWeek,dayGridMonth',
-          }}
-          buttonText={{
-            today: 'Today',
-            day: 'Day',
-            week: 'Week',
-            month: 'Month',
-          }}
-          height="auto"
-          slotMinTime="07:00:00"
-          slotMaxTime="21:00:00"
-          allDaySlot={false}
-          selectable
-          selectMirror
-          selectAllow={() => view !== 'month'}
-          editable={false}
-          nowIndicator
-          events={events}
-          eventDisplay="block"
-          eventDidMount={(info) => {
-            const appt = info.event.extendedProps.appointment as Appointment | undefined;
-            const color = appt
-              ? STATUS_COLORS[appt.status]
-              : (info.event.backgroundColor || '#64748b');
-            info.el.style.setProperty('background-color', color, 'important');
-            info.el.style.setProperty('border-color', color, 'important');
-            info.el.style.setProperty('color', '#ffffff', 'important');
-          }}
-          dayCellDidMount={(arg) => {
-            if (arg.view.type !== 'dayGridMonth') return;
-            const frame = arg.el.querySelector('.fc-daygrid-day-frame');
-            if (!frame || frame.querySelector('.fc-day-add')) return;
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'fc-day-add';
-            btn.setAttribute('aria-label', 'Add appointment');
-            btn.innerHTML =
-              '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
-            btn.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setPreview(null);
-              setMoreList(null);
-              const slot = new Date(arg.date);
-              // Month cells are midnight — default to a sensible morning start.
-              if (slot.getHours() === 0 && slot.getMinutes() === 0) {
-                slot.setHours(9, 0, 0, 0);
-              }
-              onSelectSlot(slot);
-            });
-            frame.appendChild(btn);
-          }}
-          eventClick={handleEventClick}
-          select={handleDateSelect}
-          datesSet={handleDatesSet}
-          eventContent={renderEventContent}
-          dayMaxEvents={4}
-          eventMaxStack={4}
-          moreLinkClick={handleMoreLinkClick}
-          moreLinkContent={renderMoreLinkContent}
-          expandRows
-          stickyHeaderDates
-          views={{
-            timeGridDay: {
-              slotMinTime: '07:00:00',
-              slotMaxTime: '21:00:00',
-              eventMaxStack: 4,
-            },
-            timeGridWeek: {
-              eventMaxStack: 4,
-            },
-            dayGridMonth: {
-              dayMaxEvents: 4,
-              eventDisplay: 'block',
-            },
-          }}
-          businessHours={{
-            daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-            startTime: '08:00',
-            endTime: '20:00',
-          }}
-        />
+        ref={calendarRef}
+        plugins={PLUGINS}
+        initialView={VIEW_TO_FC[view]}
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: 'timeGridDay,timeGridWeek,dayGridMonth',
+        }}
+        buttonText={{
+          today: 'Today',
+          day: 'Day',
+          week: 'Week',
+          month: 'Month',
+        }}
+        height="auto"
+        slotMinTime="07:00:00"
+        slotMaxTime="21:00:00"
+        allDaySlot={false}
+        selectable
+        selectMirror
+        selectAllow={() => view !== 'month'}
+        editable={false}
+        nowIndicator
+        events={events}
+        eventDisplay="block"
+        eventDidMount={handleEventDidMount}
+        dayCellDidMount={handleDayCellDidMount}
+        eventClick={handleEventClick}
+        select={handleDateSelect}
+        datesSet={handleDatesSet}
+        eventContent={renderEventContent}
+        dayMaxEvents={4}
+        eventMaxStack={4}
+        moreLinkClick={handleMoreLinkClick}
+        moreLinkContent={renderMoreLinkContent}
+        expandRows
+        stickyHeaderDates
+        views={{
+          timeGridDay: {
+            slotMinTime: '07:00:00',
+            slotMaxTime: '21:00:00',
+            eventMaxStack: 4,
+          },
+          timeGridWeek: {
+            eventMaxStack: 4,
+          },
+          dayGridMonth: {
+            dayMaxEvents: 4,
+            eventDisplay: 'block',
+          },
+        }}
+        businessHours={{
+          daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+          startTime: '08:00',
+          endTime: '20:00',
+        }}
+      />
 
       {moreList && (
         <MoreEventsPopover

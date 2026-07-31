@@ -4,10 +4,6 @@ import { useIsMutating } from '@tanstack/react-query';
 import { LoadingDots } from './brand-mark';
 import { cn } from '@/lib/utils';
 
-/**
- * Floating activity pill for write operations only. Background refetches
- * intentionally stay silent so opening and filtering pages never flickers.
- */
 export function GlobalActivity() {
   const mutating = useIsMutating();
   const active = mutating > 0;

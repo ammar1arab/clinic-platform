@@ -14,6 +14,8 @@ export type {
   ClinicSummary,
   PaymentMethodDto,
   PackageDto,
+  PatientPackageDto,
+  PatientBillingSummary,
   DiscountCodeDto,
   Patient,
   PatientDetail,

@@ -33,7 +33,7 @@ const pageTitles: Record<string, string> = {
   '/settings/services': 'Services',
   '/settings/payment-methods': 'Payment methods',
   '/settings/packages': 'Packages',
-  '/settings/discount-codes': 'Discount codes',
+  '/settings/discount-codes': 'Promocodes',
   '/settings/clinic': 'Clinic defaults',
 };
 

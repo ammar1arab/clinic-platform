@@ -11,7 +11,7 @@ type Props = {
   onNameArChange: (value: string) => void;
   nameId?: string;
   nameArId?: string;
-  /** English name is required by default. */
+
   required?: boolean;
   maxLength?: number;
   className?: string;
@@ -19,10 +19,8 @@ type Props = {
   arabicError?: string;
 };
 
-/**
- * Create/edit only — English + Arabic name inputs.
- * Lists and detail views stay English until bilingual mode ships.
- */
+
+
 export function BilingualNameFields({
   name,
   nameAr,
@@ -65,7 +63,7 @@ export function BilingualNameFields({
   );
 }
 
-/** Optional helper for API payloads — omit empty Arabic. */
+
 export function optionalArabicName(value: string | undefined | null): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;

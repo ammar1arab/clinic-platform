@@ -13,8 +13,10 @@ export function useAppointments(filters: AppointmentFilters, enabled = true) {
     queryKey: QUERY_KEYS.appointments.list(filters),
     queryFn: () => appointmentsService.getAll(filters),
     enabled,
-    staleTime: 30_000,
+    staleTime: 45_000,
+    gcTime: 5 * 60_000,
     placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -75,6 +77,42 @@ export function useMarkAppointmentUnpaid() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.detail(res.id) });
       toast.success('Marked as unpaid');
+    },
+  });
+}
+
+export function useRedeemAppointmentPackage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, patientPackageId }: { id: string; patientPackageId: string }) =>
+      appointmentsService.redeemPackage(id, patientPackageId),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.detail(res.id) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patientPackages.all });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.patientPackages.summary(res.patientId),
+      });
+      toast.success('Visit covered by package');
+    },
+    onError: () => {
+
+    },
+  });
+}
+
+export function useReleaseAppointmentPackage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => appointmentsService.releasePackage(id),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.detail(res.id) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patientPackages.all });
+      queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.patientPackages.summary(res.patientId),
+      });
+      toast.success('Package coverage removed');
     },
   });
 }

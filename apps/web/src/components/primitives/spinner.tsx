@@ -8,7 +8,6 @@ const sizeMap = {
   lg: 'size-6',
 } as const;
 
-/** Inline spinner for tight UI (table cells, tiny badges). */
 export function Spinner({
   size = 'default',
   className,
@@ -24,7 +23,6 @@ export function Spinner({
   );
 }
 
-/** Centered section loading — use inside cards, tables, detail panes. */
 export function SectionLoader({
   label = 'Loading…',
   className,

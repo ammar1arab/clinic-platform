@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 
-// ==================== Reusable Primitives ====================
-// Compose these into feature schemas instead of writing fresh rules each time.
+
+
 
 export const personName = (max = 50) =>
   z
@@ -36,7 +36,7 @@ export const optionalEmail = z
   .optional()
   .or(z.literal(''));
 
-/** Optional ISO date (yyyy-mm-dd) that must not be in the future. */
+
 export const optionalPastDate = z
   .string()
   .optional()
@@ -45,7 +45,7 @@ export const optionalPastDate = z
 
 export const positiveNumber = (max = 100000) => z.coerce.number().min(0).max(max);
 
-// ==================== Feature Schemas ====================
+
 
 export const patientSchema = z.object({
   firstNameEn: personName(50),
@@ -161,7 +161,7 @@ export const appointmentSchema = z
     }
   });
 
-// ==================== Inferred Types ====================
+
 
 export type PatientFormData = z.infer<typeof patientSchema>;
 export type DepartmentFormData = z.infer<typeof departmentSchema>;

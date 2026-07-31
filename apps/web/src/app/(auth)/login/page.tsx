@@ -43,7 +43,7 @@ export default function LoginPage() {
       toast.success('Welcome back!');
       router.push(ROUTES.DASHBOARD);
     } catch {
-      // error toast is handled automatically by api.ts interceptor
+
     } finally {
       setLoading(false);
     }

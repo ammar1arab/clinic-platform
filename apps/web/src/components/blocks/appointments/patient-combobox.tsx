@@ -13,11 +13,11 @@ interface Props {
   value: string;
   onChange: (id: string) => void;
   placeholder?: string;
-  /** Allow clearing the selection (e.g. optional filters). */
+
   allowClear?: boolean;
 }
 
-/** Lightweight searchable patient picker (Popover + filtered list). */
+
 export function PatientCombobox({
   patients,
   value,

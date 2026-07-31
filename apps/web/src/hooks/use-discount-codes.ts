@@ -17,8 +17,8 @@ const {
   useRemove: useDeleteDiscountCode,
 } = createCrudHooks<DiscountCode, CreateDiscountCodeInput, UpdateDiscountCodeInput>({
   keys: QUERY_KEYS.discountCodes,
-  entity: 'Discount code',
-  labels: { removed: 'Discount code permanently deleted' },
+  entity: 'Promocode',
+  labels: { removed: 'Promocode permanently deleted' },
   service: {
     getAll: discountCodesService.getAll,
     create: discountCodesService.create,
@@ -31,7 +31,7 @@ const {
 export function useValidateDiscountCode(clinicId: string) {
   return useMutation({
     mutationFn: (code: string) => discountCodesService.validate(clinicId, code),
-    onError: () => toast.error('Invalid discount code'),
+    onError: () => toast.error('Invalid promocode'),
   });
 }
 

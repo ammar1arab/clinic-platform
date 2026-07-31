@@ -1,7 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** Shared empty surface — one job: explain why the list/region has no data. */
 export function EmptyState({
   icon: Icon,
   title,

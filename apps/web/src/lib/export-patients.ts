@@ -73,7 +73,7 @@ function rowValues(p: Patient): (string | number)[] {
   ];
 }
 
-/** Export the currently filtered/sorted patient list as CSV (Excel-friendly BOM). */
+
 export function exportPatientsCsv(patients: Patient[], filename = 'patients.csv') {
   const preface = [
     '# Patients directory',
@@ -87,7 +87,7 @@ export function exportPatientsCsv(patients: Patient[], filename = 'patients.csv'
   triggerDownload(bom + csv, filename, 'text/csv;charset=utf-8');
 }
 
-/** SpreadsheetML — opens in Excel / LibreOffice (.xls). */
+
 export function exportPatientsExcel(patients: Patient[], filename = 'patients.xls') {
   const headerCells = HEADERS.map(
     (h) =>
@@ -145,7 +145,7 @@ export function exportPatientsExcel(patients: Patient[], filename = 'patients.xl
   triggerDownload(xml, filename, 'application/vnd.ms-excel');
 }
 
-/** Opens a print dialog so the user can Save as PDF. */
+
 export function exportPatientsPdf(patients: Patient[], title = 'Patients directory') {
   const rows = patients
     .map((p, index) => {
@@ -224,7 +224,7 @@ export function exportPatientsPdf(patients: Patient[], title = 'Patients directo
   w.document.close();
 }
 
-/** Word-compatible HTML document (.doc) — landscape, full-width table. */
+
 export function exportPatientsWord(patients: Patient[], filename = 'patients.doc') {
   const headerCells = HEADERS.map(
     (h) =>

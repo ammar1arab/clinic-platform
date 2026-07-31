@@ -4,10 +4,8 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-/**
- * Subtle content rise on each dashboard page navigation.
- * Short, calm, doesn't fight with data fetchers.
- */
+
+
 export function PageTransition({
   children,
   className,

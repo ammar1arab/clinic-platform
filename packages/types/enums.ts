@@ -16,7 +16,7 @@ export type AppointmentStatus =
   | 'no_show'
   | 'cancelled';
 
-export type CalendarView = 'day' | 'week';
+export type CalendarView = 'day' | 'week' | 'month';
 
 export type ReportFormat = 'pdf' | 'xlsx' | 'csv' | 'docx';
 

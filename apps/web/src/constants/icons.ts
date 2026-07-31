@@ -1,7 +1,6 @@
-/**
- * Canonical lucide icons for the clinic UI — import from here so the same
- * concept always uses the same glyph.
- */
+
+
+
 export {
   LayoutDashboard as IconDashboard,
   Calendar as IconSchedule,

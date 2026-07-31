@@ -82,6 +82,9 @@ export class AppointmentsRepository {
       discountReason?: string;
       statusUpdatedBy?: string;
       statusUpdatedAt?: Date;
+      waitingStartedAt?: Date | null;
+      inProgressAt?: Date | null;
+      waitingMins?: number | null;
     },
   ) {
     return this.prisma.appointment.update({
@@ -114,6 +117,32 @@ export class AppointmentsRepository {
         // Clear legacy string; name comes from paymentMethodRef
         paymentMethod: null,
       },
+      include: {
+        patient: true,
+        doctor: true,
+        room: true,
+        service: true,
+        paymentMethodRef: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  setPackageRedemption(
+    clinicId: string,
+    id: string,
+    data: {
+      patientPackageId: string | null;
+      packageCredit: number | null;
+      isPaid: boolean;
+      paidAt: Date | null;
+      paidById: string | null;
+      paymentMethodId: string | null;
+      paymentMethod: string | null;
+    },
+  ) {
+    return this.prisma.appointment.update({
+      where: { id, clinicId },
+      data,
       include: {
         patient: true,
         doctor: true,

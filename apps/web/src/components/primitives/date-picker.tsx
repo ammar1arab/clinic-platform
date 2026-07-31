@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select"
 
 interface Props {
-  /** ISO date string `yyyy-MM-dd` (empty string when unset). */
+
   value?: string
   onChange: (value: string) => void
   placeholder?: string
@@ -25,7 +25,7 @@ interface Props {
   className?: string
   fromDate?: Date
   toDate?: Date
-  /** Show month + year selects (recommended for DOB). */
+
   withDropdown?: boolean
 }
 
@@ -153,7 +153,7 @@ export function DatePicker({
         }}
       >
         <div className="flex flex-col">
-          {/* Own header — never nest native/DayPicker dropdowns */}
+          {}
           {withDropdown ? (
             <div className="flex items-center gap-1.5 border-b p-2.5">
               <Button

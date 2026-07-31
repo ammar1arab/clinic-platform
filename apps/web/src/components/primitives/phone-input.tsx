@@ -20,7 +20,7 @@ export function PhoneInputField({ value, onChange, className, disabled }: Props)
       disabled={disabled}
       onChange={(val) => onChange(val ?? '')}
       className={cn(
-        // Match the base <Input/> shell so all fields are visually consistent.
+
         'flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors md:text-sm',
         'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
         'has-disabled:cursor-not-allowed has-disabled:opacity-50',

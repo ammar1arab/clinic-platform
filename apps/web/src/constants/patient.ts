@@ -7,11 +7,6 @@ export const GENDERS = [
 
 export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as const;
 
-/**
- * Sort presets shown in the UI. Each maps to a `sortBy` + `sortOrder` pair
- * understood by the Patients API. The `value` is a `sortBy:sortOrder` string
- * so it can back a single <Select>.
- */
 export const PATIENT_SORTS = [
   { value: 'createdAt:desc', label: 'Newest first' },
   { value: 'createdAt:asc', label: 'Oldest first' },

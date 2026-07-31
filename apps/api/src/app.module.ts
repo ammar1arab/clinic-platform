@@ -15,6 +15,7 @@ import {
   ReportsModule,
   PaymentMethodsModule,
   PackagesModule,
+  PatientPackagesModule,
   DiscountCodesModule,
   ReferralsModule,
   NotificationsModule,
