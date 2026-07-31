@@ -96,7 +96,8 @@ export function AppointmentCalendar({
     if (api.view.type === next) return;
     syncingViewRef.current = true;
     api.changeView(next);
-    queueMicrotask(() => {
+    // Clear after FC has applied the view; microtask alone can race datesSet.
+    requestAnimationFrame(() => {
       syncingViewRef.current = false;
     });
   }, [view]);

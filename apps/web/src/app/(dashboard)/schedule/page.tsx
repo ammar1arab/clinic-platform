@@ -57,21 +57,34 @@ function SchedulePageInner() {
   const searchParams = useSearchParams();
   const [range, setRange] = useState(initialRange);
   const rangeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seededDefaultRef = useRef(false);
 
   const { data: clinic } = useClinic(clinicId);
   const viewParam = searchParams.get('view');
-  const view = parseScheduleView(
-    viewParam ?? clinic?.defaultCalendarView ?? 'month',
+
+  // Optimistic local view so Day/Week/Month sticks immediately (URL catches up async).
+  const [view, setViewState] = useState<ScheduleView>(() =>
+    parseScheduleView(viewParam ?? 'month'),
   );
 
-  // Persist clinic default into the URL once when opening /schedule bare.
+  // Sync from URL for back/forward and deep links — not while we already match.
   useEffect(() => {
-    if (viewParam) return;
+    if (!viewParam) return;
+    const fromUrl = parseScheduleView(viewParam);
+    setViewState((prev) => (prev === fromUrl ? prev : fromUrl));
+  }, [viewParam]);
+
+  // Persist clinic default into the URL once when opening /schedule bare.
+  // Never overwrite after the user (or FC toolbar) has already set a view.
+  useEffect(() => {
+    if (viewParam || seededDefaultRef.current) return;
     if (!clinic?.defaultCalendarView) return;
-    router.replace(schedulePath(parseScheduleView(clinic.defaultCalendarView)), {
-      scroll: false,
-    });
+    seededDefaultRef.current = true;
+    const next = parseScheduleView(clinic.defaultCalendarView);
+    setViewState(next);
+    router.replace(schedulePath(next), { scroll: false });
   }, [clinic?.defaultCalendarView, viewParam, router]);
+
   const [search, setSearch] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [statusFilters, setStatusFilters] = useState<Set<AppointmentStatus>>(
@@ -93,10 +106,14 @@ function SchedulePageInner() {
 
   const setView = useCallback(
     (next: ScheduleView) => {
-      if (next === view) return;
+      seededDefaultRef.current = true;
+      setViewState((prev) => {
+        if (prev === next) return prev;
+        return next;
+      });
       router.replace(schedulePath(next), { scroll: false });
     },
-    [router, view],
+    [router],
   );
 
   const toggleStatus = useCallback((status: AppointmentStatus) => {

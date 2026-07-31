@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/constants/routes';
+import { schedulePath } from '@/components/blocks/appointments/schedule-nav';
 import { useSidebar } from '@/providers/sidebar-provider';
 import { useAuth } from '@/providers';
 import { X, PanelLeftClose } from 'lucide-react';
@@ -18,7 +19,7 @@ import {
 
 const navItems = [
   { label: 'Dashboard', href: ROUTES.DASHBOARD, icon: IconDashboard },
-  { label: 'Schedule', href: ROUTES.SCHEDULE, icon: IconSchedule },
+  { label: 'Schedule', href: schedulePath('month'), icon: IconSchedule },
   { label: 'Patients', href: ROUTES.PATIENTS, icon: IconPatients },
   { label: 'Reports', href: ROUTES.REPORTS, icon: IconReports },
   { label: 'Settings', href: ROUTES.SETTINGS, icon: IconSettings },
