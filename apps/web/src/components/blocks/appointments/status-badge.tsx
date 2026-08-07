@@ -1,5 +1,8 @@
+'use client';
+
 import { cn } from '@/lib/utils';
 import { AppointmentStatus } from '@/services/appointments.service';
+import { SoftTip } from '@/components/primitives/soft-tip';
 
 export const STATUS_COLORS: Record<AppointmentStatus, string> = {
   unconfirmed: '#f59e0b',
@@ -94,25 +97,27 @@ interface Props {
 
 export function StatusBadgeBlock({ status, className, compact }: Props) {
   const config = STATUS_CONFIG[status];
+
   return (
-    <span
-      title={config.label}
-      aria-label={config.label}
-      className={cn(
-        'inline-flex max-w-full shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-4 whitespace-nowrap',
-        config.className,
-        className,
-      )}
-    >
-      <span className={cn('size-1.5 shrink-0 rounded-full', config.dotClassName)} />
-      {compact ? (
-        <span className="truncate">{config.short}</span>
-      ) : (
-        <>
-          <span className="truncate sm:hidden">{config.short}</span>
-          <span className="hidden truncate sm:inline">{config.label}</span>
-        </>
-      )}
-    </span>
+    <SoftTip label={config.label} side="top">
+      <span
+        aria-label={config.label}
+        className={cn(
+          'inline-flex max-w-full shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-4 whitespace-nowrap',
+          config.className,
+          className,
+        )}
+      >
+        <span className={cn('size-1.5 shrink-0 rounded-full', config.dotClassName)} />
+        {compact ? (
+          <span className="truncate">{config.short}</span>
+        ) : (
+          <>
+            <span className="truncate sm:hidden">{config.short}</span>
+            <span className="hidden truncate sm:inline">{config.label}</span>
+          </>
+        )}
+      </span>
+    </SoftTip>
   );
 }

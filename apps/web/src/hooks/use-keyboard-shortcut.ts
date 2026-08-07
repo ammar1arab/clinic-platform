@@ -1,20 +1,11 @@
 'use client';
 
 /**
- * useKeyboardShortcut
- *
- * Attach one or more keyboard shortcuts globally.
- * - Skips when focused on an input/textarea/select/contenteditable (unless ignoreInputs=false)
- * - Supports modifiers: ctrl, meta, alt, shift (e.g. "ctrl+k", "shift+n")
- * - Use "mod" for ctrl on Windows / cmd on Mac
- *
- * Example:
- *   useKeyboardShortcut('n', handleNewAppt);
- *   useKeyboardShortcut(['ctrl+k', 'meta+k'], openSearch);
- *   useKeyboardShortcut('escape', onClose, { ignoreInputs: false });
+ * useKeyboardShortcut — attaches global key handlers via useSyncExternalStore
+ * (no useEffect). Skips editable fields unless ignoreInputs is false.
  */
 
-import { useEffect, useRef } from 'react';
+import { useRef, useSyncExternalStore } from 'react';
 
 interface ShortcutOptions {
   ignoreInputs?: boolean;
@@ -49,8 +40,8 @@ function normKey(k: string): string {
 }
 
 function isEditableTarget(): boolean {
-  const el = document.activeElement as HTMLElement | null;
-  if (!el) return false;
+  const el = document.activeElement;
+  if (!(el instanceof HTMLElement)) return false;
   const tag = el.tagName.toLowerCase();
   return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
 }
@@ -59,21 +50,17 @@ function matches(e: KeyboardEvent, p: Parsed): boolean {
   const pressedKey = normKey(e.key.toLowerCase());
   if (pressedKey !== p.key) return false;
 
-  const wantCtrl = !!(p.ctrl || p.mod);
-  const wantMeta = !!(p.meta || (p.mod && typeof navigator !== 'undefined' && /mac/i.test(navigator.platform)));
   const wantAlt = !!p.alt;
   const wantShift = !!p.shift;
-
-  // If no modifiers required, disallow ctrl/meta/alt (allow shift for capitals if not specified)
   const hasModifiers = p.ctrl || p.meta || p.alt || p.mod;
+
   if (!hasModifiers) {
     if (e.ctrlKey || e.metaKey || e.altKey) return false;
     if (p.shift != null && e.shiftKey !== wantShift) return false;
     return true;
   }
 
-  // Exact modifier match
-  const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
+  const isMac = /mac/i.test(navigator.platform);
   const ctrlOrMeta = isMac ? e.metaKey : e.ctrlKey;
 
   if (p.mod && !ctrlOrMeta) return false;
@@ -85,6 +72,31 @@ function matches(e: KeyboardEvent, p: Parsed): boolean {
   return true;
 }
 
+function subscribeKeydown(
+  enabled: boolean,
+  ignoreInputs: boolean,
+  parsed: Parsed[],
+  getCallback: () => (e: KeyboardEvent) => void,
+) {
+  return (onStoreChange: () => void) => {
+    if (!enabled) return () => undefined;
+
+    const handler = (e: KeyboardEvent) => {
+      if (ignoreInputs && isEditableTarget()) return;
+      for (const p of parsed) {
+        if (!matches(e, p)) continue;
+        e.preventDefault();
+        getCallback()(e);
+        onStoreChange();
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  };
+}
+
 export function useKeyboardShortcut(
   shortcuts: string | string[],
   callback: (e: KeyboardEvent) => void,
@@ -94,24 +106,13 @@ export function useKeyboardShortcut(
   const cbRef = useRef(callback);
   cbRef.current = callback;
 
-  const parsed = (Array.isArray(shortcuts) ? shortcuts : [shortcuts]).map(parse);
+  const list = Array.isArray(shortcuts) ? shortcuts : [shortcuts];
+  const parsedKey = list.join('|');
+  const parsed = list.map(parse);
 
-  useEffect(() => {
-    if (!enabled) return;
-
-    const handler = (e: KeyboardEvent) => {
-      if (ignoreInputs && isEditableTarget()) return;
-      for (const p of parsed) {
-        if (matches(e, p)) {
-          e.preventDefault();
-          cbRef.current(e);
-          return;
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, ignoreInputs, JSON.stringify(parsed)]);
+  useSyncExternalStore(
+    subscribeKeydown(enabled, ignoreInputs, parsed, () => cbRef.current),
+    () => parsedKey,
+    () => parsedKey,
+  );
 }

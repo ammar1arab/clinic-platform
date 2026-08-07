@@ -289,7 +289,7 @@ export function AppointmentForm({
       feeOverride: data.feeOverride.trim() ? Number(data.feeOverride) : undefined,
     };
 
-    const showConflict = async (error: unknown) => {
+    const showConflict = async (error: Parameters<typeof extractErrorMessage>[0]) => {
       if (axios.isAxiosError(error) && error.response?.status === 409) {
         await confirm({
           title: 'Scheduling conflict',
@@ -297,7 +297,6 @@ export function AppointmentForm({
           confirmLabel: 'OK',
           cancelLabel: 'Close',
         });
-        return;
       }
     };
 

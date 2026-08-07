@@ -46,7 +46,6 @@ function hasOpenOverlay() {
   return Boolean(
     document.querySelector(
       [
-        '[data-calendar-popover="preview"]',
         '[data-slot="dropdown-menu-content"][data-state="open"]',
         '[data-slot="dialog-content"][data-state="open"]',
         '[data-slot="select-content"][data-state="open"]',

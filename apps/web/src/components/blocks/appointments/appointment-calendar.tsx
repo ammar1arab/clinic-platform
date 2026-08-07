@@ -1,22 +1,23 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import interactionPlugin, { type EventResizeDoneArg } from '@fullcalendar/interaction';
 import {
   DatesSetArg,
   EventClickArg,
   DateSelectArg,
   EventContentArg,
+  EventDropArg,
+  EventMountArg,
   MoreLinkContentArg,
 } from '@fullcalendar/core';
 import { MapPin, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Appointment } from '@/services/appointments.service';
 import { STATUS_COLORS } from './status-badge';
-import { EventPreview, EventPreviewState } from './event-preview';
 import {
   formatApptTimeRange,
   formatApptTip,
@@ -30,7 +31,6 @@ import {
   ScheduleView,
   VIEW_TO_FC,
 } from './schedule-nav';
-import { rectFromElement, type AnchorRect } from './popover-position';
 import { CalendarSkeleton } from './calendar-skeleton';
 import { ViewFocusToggle } from './view-focus';
 import { useUpdateAppointment } from '@/hooks/use-appointments';
@@ -40,30 +40,6 @@ import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
-
-interface CalendarEventProps {
-  appointment: Appointment;
-}
-
-interface CalendarDropInfo {
-  event: {
-    id: string;
-    start: Date | null;
-    end: Date | null;
-    extendedProps: CalendarEventProps;
-  };
-  revert: () => void;
-}
-
-interface CalendarResizeInfo {
-  event: {
-    id: string;
-    start: Date | null;
-    end: Date | null;
-    extendedProps: CalendarEventProps;
-  };
-  revert: () => void;
-}
 
 function isAppointment(value: object): value is Appointment {
   return (
@@ -80,6 +56,28 @@ function readAppointment(extendedProps: object): Appointment | null {
   const value = extendedProps.appointment;
   if (typeof value !== 'object' || value === null) return null;
   return isAppointment(value) ? value : null;
+}
+
+function hasScheduleConflict(
+  appointments: Appointment[] | undefined,
+  appt: Appointment,
+  startTime: number,
+  durationMins: number,
+) {
+  const endTime = startTime + durationMins * 60000;
+  return Boolean(
+    appointments?.some((other) => {
+      if (other.id === appt.id) return false;
+      if (other.status === 'cancelled' || other.status === 'no_show') return false;
+      const otherStart = new Date(other.scheduledAt).getTime();
+      const otherEnd = otherStart + other.durationMins * 60000;
+      if (!(startTime < otherEnd && endTime > otherStart)) return false;
+      return (
+        other.doctorId === appt.doctorId ||
+        Boolean(appt.roomId && other.roomId && other.roomId === appt.roomId)
+      );
+    }),
+  );
 }
 
 interface Props {
@@ -129,40 +127,17 @@ export function AppointmentCalendar({
     [appointments],
   );
 
-  const [preview, setPreview] = useState<EventPreviewState | null>(null);
-
-  const openPreview = useCallback(
-    (
-      appt: Appointment,
-      x: number,
-      y: number,
-      anchor?: AnchorRect,
-    ) => {
-      setPreview({ appointment: appt, x, y, anchor });
-    },
-    [],
-  );
-
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
       const appt = readAppointment(arg.event.extendedProps);
       if (!appt) return;
-      const target = arg.jsEvent.target;
-      const fromEvent = target instanceof Element ? target.closest('.fc-event') : null;
-      const el = arg.el ?? fromEvent;
-      openPreview(
-        appt,
-        arg.jsEvent.clientX,
-        arg.jsEvent.clientY,
-        rectFromElement(el, arg.jsEvent.clientX, arg.jsEvent.clientY),
-      );
+      onEventClick(appt);
     },
-    [openPreview],
+    [onEventClick],
   );
 
   const handleDateSelect = useCallback(
     (arg: DateSelectArg) => {
-      setPreview(null);
       onSelectSlot(arg.start);
     },
     [onSelectSlot],
@@ -171,17 +146,15 @@ export function AppointmentCalendar({
   const handleDatesSet = useCallback(
     (arg: DatesSetArg) => {
       const next = FC_TO_VIEW[arg.view.type];
-      if (next && next !== view) {
-        onViewChange(next);
-      }
+      if (next && next !== view) onViewChange(next);
       onVisibleRangeChange?.(arg.start, arg.end);
     },
     [view, onViewChange, onVisibleRangeChange],
   );
 
   const handleEventDrop = useCallback(
-    (info: CalendarDropInfo) => {
-      const appt = info.event.extendedProps.appointment;
+    (info: EventDropArg) => {
+      const appt = readAppointment(info.event.extendedProps);
       if (!appt || !info.event.start) {
         info.revert();
         return;
@@ -194,36 +167,25 @@ export function AppointmentCalendar({
 
       const scheduledAt = info.event.start.toISOString();
       const durationMins = info.event.end
-        ? Math.max(15, Math.round((info.event.end.getTime() - info.event.start.getTime()) / 60000))
+        ? Math.max(
+            15,
+            Math.round((info.event.end.getTime() - info.event.start.getTime()) / 60000),
+          )
         : appt.durationMins;
 
-      const startTime = info.event.start.getTime();
-      const endTime = startTime + durationMins * 60000;
-      const hasConflict = appointments?.some((other) => {
-        if (other.id === appt.id) return false;
-        if (other.status === 'cancelled' || other.status === 'no_show') return false;
-        const otherStart = new Date(other.scheduledAt).getTime();
-        const otherEnd = otherStart + other.durationMins * 60000;
-        const overlaps = startTime < otherEnd && endTime > otherStart;
-        if (!overlaps) return false;
-        return (
-          other.doctorId === appt.doctorId ||
-          (appt.roomId && other.roomId && other.roomId === appt.roomId)
-        );
-      });
-
-      if (hasConflict) {
+      if (
+        hasScheduleConflict(
+          appointments,
+          appt,
+          info.event.start.getTime(),
+          durationMins,
+        )
+      ) {
         toast.warning('Conflict detected: Doctor or room has overlapping appointment');
       }
 
       updateMutation.mutate(
-        {
-          id: appt.id,
-          data: {
-            scheduledAt,
-            durationMins,
-          },
-        },
+        { id: appt.id, data: { scheduledAt, durationMins } },
         {
           onError: (err) => {
             info.revert();
@@ -236,8 +198,8 @@ export function AppointmentCalendar({
   );
 
   const handleEventResize = useCallback(
-    (info: CalendarResizeInfo) => {
-      const appt = info.event.extendedProps.appointment;
+    (info: EventResizeDoneArg) => {
+      const appt = readAppointment(info.event.extendedProps);
       if (!appt || !info.event.start || !info.event.end) {
         info.revert();
         return;
@@ -253,10 +215,7 @@ export function AppointmentCalendar({
       );
 
       updateMutation.mutate(
-        {
-          id: appt.id,
-          data: { durationMins },
-        },
+        { id: appt.id, data: { durationMins } },
         {
           onError: (err) => {
             info.revert();
@@ -279,19 +238,14 @@ export function AppointmentCalendar({
 
   const renderEventContent = useCallback((arg: EventContentArg) => {
     const appt = readAppointment(arg.event.extendedProps);
-    const viewType = arg.view.type;
-    const isMonth = viewType === 'dayGridMonth';
+    const isMonth = arg.view.type === 'dayGridMonth';
     const fullName = appt ? patientDisplayName(appt) : arg.event.title;
     const shortName = appt ? patientShortName(appt) : arg.event.title;
-    const compactStart = appt
-      ? formatCompactTime(appt.scheduledAt)
-      : arg.timeText;
+    const compactStart = appt ? formatCompactTime(appt.scheduledAt) : arg.timeText;
     const rangeLabel = appt ? formatApptTimeRange(appt) : arg.timeText;
     const doctorName = appt?.doctor?.name;
     const doctorLabel = doctorName ? doctorShortName(doctorName) : '';
-    const tip = appt
-      ? formatApptTip(appt, { rangeLabel, doctorName })
-      : fullName;
+    const tip = appt ? formatApptTip(appt, { rangeLabel, doctorName }) : fullName;
     const Icon = appt?.sessionType === 'online' ? Video : MapPin;
     const fill = appt
       ? STATUS_COLORS[appt.status]
@@ -332,28 +286,25 @@ export function AppointmentCalendar({
             </span>
           ) : null}
           {appt?.service?.name ? (
-            <span className="fc-event-chip__service">{appt.service.name}</span>
+            <span className="fc-event-chip__service" title={appt.service.name}>
+              {appt.service.name}
+            </span>
           ) : null}
         </div>
       </div>
     );
   }, []);
 
-  const handleEventDidMount = useCallback(
-    (info: {
-      event: { extendedProps: object; backgroundColor?: string };
-      el: HTMLElement;
-    }) => {
-      const appt = readAppointment(info.event.extendedProps);
-      const color = appt
-        ? STATUS_COLORS[appt.status]
-        : info.event.backgroundColor || '#64748b';
-      info.el.style.setProperty('background-color', color, 'important');
-      info.el.style.setProperty('border-color', color, 'important');
-      info.el.style.setProperty('color', '#ffffff', 'important');
-    },
-    [],
-  );
+  const handleEventDidMount = useCallback((info: EventMountArg) => {
+    const appt = readAppointment(info.event.extendedProps);
+    const color = appt
+      ? STATUS_COLORS[appt.status]
+      : info.event.backgroundColor || '#64748b';
+    info.el.style.setProperty('background-color', color, 'important');
+    info.el.style.setProperty('border-color', color, 'important');
+    info.el.style.setProperty('color', '#ffffff', 'important');
+    info.el.setAttribute('title', appt ? formatApptTip(appt) : info.event.title);
+  }, []);
 
   const handleDayCellDidMount = useCallback(
     (arg: { view: { type: string }; el: HTMLElement; date: Date }) => {
@@ -369,7 +320,6 @@ export function AppointmentCalendar({
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setPreview(null);
         const slot = new Date(arg.date);
         if (slot.getHours() === 0 && slot.getMinutes() === 0) {
           slot.setHours(9, 0, 0, 0);
@@ -443,8 +393,8 @@ export function AppointmentCalendar({
           eventDidMount={handleEventDidMount}
           dayCellDidMount={handleDayCellDidMount}
           eventClick={handleEventClick}
-          eventDrop={handleEventDrop as never}
-          eventResize={handleEventResize as never}
+          eventDrop={handleEventDrop}
+          eventResize={handleEventResize}
           select={handleDateSelect}
           datesSet={handleDatesSet}
           eventContent={renderEventContent}
@@ -477,18 +427,6 @@ export function AppointmentCalendar({
           }}
         />
       </div>
-
-      {preview && (
-        <EventPreview
-          preview={preview}
-          preferVertical={view === 'day' || isMobile}
-          onClose={() => setPreview(null)}
-          onExpand={(appt) => {
-            setPreview(null);
-            onEventClick(appt);
-          }}
-        />
-      )}
     </div>
   );
 }
