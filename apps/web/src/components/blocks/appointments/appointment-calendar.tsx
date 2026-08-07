@@ -19,8 +19,8 @@ import { STATUS_COLORS } from './status-badge';
 import { formatApptTip, patientDisplayName } from './appointment-display';
 import { hasScheduleConflict } from './appointment-conflict';
 import { CalendarEventChip, readCalendarAppointment } from './calendar-event-chip';
-import { EventPreview, type EventPreviewState } from './event-preview';
-import { rectFromElement, type AnchorRect } from './popover-position';
+import { EventPreview, type EventPreviewState, type PreviewPlacement } from './event-preview';
+import { rectFromElement } from './popover-position';
 import { FC_TO_VIEW, ScheduleView, VIEW_TO_FC } from './schedule-nav';
 import { CalendarSkeleton } from './calendar-skeleton';
 import { ViewFocusToggle } from './view-focus';
@@ -60,13 +60,6 @@ export function AppointmentCalendar({
   const isMobile = useIsMobile();
   const [preview, setPreview] = useState<EventPreviewState | null>(null);
 
-  const openPreview = useCallback(
-    (appt: Appointment, x: number, y: number, anchor?: AnchorRect) => {
-      setPreview({ appointment: appt, x, y, anchor });
-    },
-    [],
-  );
-
   const events = useMemo(
     () =>
       appointments?.map((appt) => ({
@@ -87,22 +80,19 @@ export function AppointmentCalendar({
     [appointments],
   );
 
-  const handleEventClick = useCallback(
-    (arg: EventClickArg) => {
-      const appt = readCalendarAppointment(arg.event.extendedProps);
-      if (!appt) return;
-      const target = arg.jsEvent.target;
-      const fromEvent = target instanceof Element ? target.closest('.fc-event') : null;
-      const el = arg.el ?? fromEvent;
-      openPreview(
-        appt,
-        arg.jsEvent.clientX,
-        arg.jsEvent.clientY,
-        rectFromElement(el, arg.jsEvent.clientX, arg.jsEvent.clientY),
-      );
-    },
-    [openPreview],
-  );
+  const handleEventClick = useCallback((arg: EventClickArg) => {
+    const appt = readCalendarAppointment(arg.event.extendedProps);
+    if (!appt) return;
+    const target = arg.jsEvent.target;
+    const fromEvent = target instanceof Element ? target.closest('.fc-event') : null;
+    const el = arg.el ?? fromEvent;
+    setPreview({
+      appointment: appt,
+      x: arg.jsEvent.clientX,
+      y: arg.jsEvent.clientY,
+      anchor: rectFromElement(el, arg.jsEvent.clientX, arg.jsEvent.clientY),
+    });
+  }, []);
 
   const handleDateSelect = useCallback(
     (arg: DateSelectArg) => {
@@ -243,6 +233,9 @@ export function AppointmentCalendar({
 
   const sizeHostRef = useResizeObserver(syncCalendarSize);
 
+  const previewPlacement: PreviewPlacement =
+    isMobile || view === 'day' ? 'vertical' : 'horizontal';
+
   if (isLoading && !appointments) {
     return <CalendarSkeleton />;
   }
@@ -307,7 +300,7 @@ export function AppointmentCalendar({
           dayMaxEvents={isMobile ? 2 : 4}
           eventMaxStack={isMobile ? 2 : 4}
           slotEventOverlap={false}
-          eventMinHeight={isMobile ? 22 : 26}
+          eventMinHeight={isMobile ? 28 : 32}
           moreLinkClick="popover"
           moreLinkContent={renderMoreLinkContent}
           expandRows
@@ -334,17 +327,17 @@ export function AppointmentCalendar({
         />
       </div>
 
-      {preview && (
+      {preview ? (
         <EventPreview
           preview={preview}
-          preferVertical={view === 'day' || isMobile}
+          placement={previewPlacement}
           onClose={() => setPreview(null)}
           onExpand={(appt) => {
             setPreview(null);
             onEventClick(appt);
           }}
         />
-      )}
+      ) : null}
     </div>
   );
 }

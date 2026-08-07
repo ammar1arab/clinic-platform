@@ -215,7 +215,7 @@ export function WaitingQueueBoard({
           'grid grid-cols-1 gap-2.5 p-2.5 sm:gap-3 sm:p-3 md:gap-4 md:p-4',
           stageTab === 'all' ? 'lg:grid-cols-4' : 'lg:grid-cols-1',
           focused &&
-            'min-h-0 flex-1 overflow-y-auto overscroll-contain lg:grid-rows-1 lg:items-stretch lg:overflow-hidden',
+            'min-h-0 flex-1 overflow-y-auto overscroll-contain max-lg:content-start lg:grid-rows-1 lg:items-stretch lg:overflow-hidden',
         )}
       >
         {isVisible('waiting') && (
@@ -543,7 +543,7 @@ function StageColumn({
     <div
       className={cn(
         'card-aura flex flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs sm:rounded-2xl',
-        focused && 'min-h-0 h-full',
+        focused && 'min-h-0 lg:h-full',
       )}
     >
       <div className="flex items-center justify-between border-b bg-muted/25 p-2.5 sm:p-3">
@@ -553,16 +553,21 @@ function StageColumn({
             style={{ backgroundColor: accentColor }}
           />
           <span className="text-muted-foreground">{icon}</span>
-          <h3 className="text-xs font-bold text-foreground tracking-tight">{title}</h3>
+          <h3 className="text-xs font-bold tracking-tight text-foreground">{title}</h3>
         </div>
-        <span className={cn('rounded-full border px-2.5 py-0.5 text-[10px] font-bold shadow-2xs', badgeClassName)}>
+        <span
+          className={cn(
+            'rounded-full border px-2.5 py-0.5 text-[10px] font-bold shadow-2xs',
+            badgeClassName,
+          )}
+        >
           {count}
         </span>
       </div>
       <div
         className={cn(
           'flex flex-col gap-2.5 overflow-y-auto overscroll-contain p-3',
-          focused ? 'min-h-0 flex-1' : 'min-h-90 max-h-[72vh]',
+          focused ? 'max-lg:max-h-none lg:min-h-0 lg:flex-1' : 'min-h-90 max-h-[72vh]',
         )}
       >
         {children}

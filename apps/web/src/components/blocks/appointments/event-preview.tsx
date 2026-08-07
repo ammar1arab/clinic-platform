@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   Clock,
   DoorOpen,
@@ -13,8 +13,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { STATUS_COLORS } from './status-badge';
-import { Appointment, AppointmentStatus, computePayable } from '@/services/appointments.service';
-import { formatApptTimeRange, patientDisplayName } from './appointment-display';
+import {
+  Appointment,
+  AppointmentStatus,
+  computePayable,
+} from '@/services/appointments.service';
+import {
+  formatApptTimeRange,
+  formatDoctorLabel,
+  patientDisplayName,
+} from './appointment-display';
 import { type AnchorRect, clickAnchor } from './popover-position';
 import { formatWaitingMins, resolveWaitingMins } from '@/lib/waiting-time';
 import { AppointmentStatusSelect } from './appointment-status-select';
@@ -28,9 +36,12 @@ export interface EventPreviewState {
   anchor?: AnchorRect;
 }
 
+/** horizontal = L/R (month/week desktop), vertical = T/B (day/mobile), auto = best space (timeline). */
+export type PreviewPlacement = 'horizontal' | 'vertical' | 'auto';
+
 interface Props {
   preview: EventPreviewState;
-  preferVertical?: boolean;
+  placement?: PreviewPlacement;
   onClose: () => void;
   onExpand: (appointment: Appointment) => void;
 }
@@ -42,25 +53,37 @@ const MOBILE_MAX_WIDTH = 768;
 function resolvePreviewSide(
   x: number,
   y: number,
-  preferVertical: boolean,
+  placement: PreviewPlacement,
 ): PreviewSide {
   if (typeof window === 'undefined') {
-    return preferVertical ? 'bottom' : 'right';
+    return placement === 'horizontal' ? 'right' : 'bottom';
   }
 
   const { innerWidth: vw, innerHeight: vh } = window;
-  const verticalOnly = preferVertical || vw < MOBILE_MAX_WIDTH;
+  const mobile = vw < MOBILE_MAX_WIDTH;
 
-  if (verticalOnly) {
+  if (mobile || placement === 'vertical') {
     return y > vh * 0.55 ? 'top' : 'bottom';
   }
 
-  return x > vw * 0.5 ? 'left' : 'right';
+  if (placement === 'horizontal') {
+    return x > vw * 0.5 ? 'left' : 'right';
+  }
+
+  const space = {
+    right: vw - x,
+    left: x,
+    bottom: vh - y,
+    top: y,
+  } as const;
+
+  return (Object.entries(space) as [PreviewSide, number][]).sort(
+    (a, b) => b[1] - a[1],
+  )[0][0];
 }
 
 function formatDayLabel(appt: Appointment) {
-  const start = new Date(appt.scheduledAt);
-  return start.toLocaleDateString(undefined, {
+  return new Date(appt.scheduledAt).toLocaleDateString(undefined, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -84,7 +107,7 @@ function isNestedOverlay(target: EventTarget | null) {
 
 export function EventPreview({
   preview,
-  preferVertical = false,
+  placement = 'horizontal',
   onClose,
   onExpand,
 }: Props) {
@@ -106,20 +129,21 @@ export function EventPreview({
   const accent = STATUS_COLORS[currentStatus];
   const waitingMins = resolveWaitingMins({ ...appt, status: currentStatus, now });
 
-  const anchorRect = useMemo(() => {
-    return clickAnchor(preview.x, preview.y, preview.anchor);
-  }, [preview.x, preview.y, preview.anchor]);
+  const anchorRect = useMemo(
+    () => clickAnchor(preview.x, preview.y, preview.anchor),
+    [preview.x, preview.y, preview.anchor],
+  );
 
   const side = useMemo(
-    () => resolvePreviewSide(preview.x, preview.y, preferVertical),
-    [preview.x, preview.y, preferVertical],
+    () => resolvePreviewSide(preview.x, preview.y, placement),
+    [preview.x, preview.y, placement],
   );
 
   if (!mounted) return null;
 
   return (
     <Popover
-      open={true}
+      open
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -127,7 +151,7 @@ export function EventPreview({
     >
       <PopoverAnchor asChild>
         <div
-          aria-hidden="true"
+          aria-hidden
           style={{
             position: 'fixed',
             left: Math.max(0, anchorRect.left),
@@ -168,7 +192,7 @@ export function EventPreview({
         data-calendar-popover="preview"
       >
         <div
-          className="h-1 w-full shrink-0 transition-colors duration-200"
+          className="h-1 w-full shrink-0"
           style={{ backgroundColor: accent }}
           aria-hidden
         />
@@ -188,14 +212,13 @@ export function EventPreview({
           <div className="flex shrink-0 items-center gap-1.5">
             <AppointmentStatusSelect
               appointment={{ ...appt, status: currentStatus }}
-              onStatusChange={(next) => setCurrentStatus(next)}
+              onStatusChange={setCurrentStatus}
             />
-
             <button
               type="button"
               aria-label="Close preview"
               onClick={onClose}
-              className="grid size-7 place-items-center rounded-md text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground active:scale-95 cursor-pointer"
+              className="grid size-7 cursor-pointer place-items-center rounded-md text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground active:scale-95"
             >
               <X className="size-3.5" />
             </button>
@@ -203,19 +226,19 @@ export function EventPreview({
         </div>
 
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3.5">
-          <div className="space-y-2 rounded-lg border bg-muted/30 p-2.5 text-xs">
+          <div className="space-y-2.5 rounded-lg border bg-muted/30 p-2.5 text-xs">
             <Row
               icon={<UserRound className="size-3.5" />}
               label="Doctor"
-              value={appt.doctor.name}
+              value={formatDoctorLabel(appt.doctor?.name)}
             />
-            {appt.service && (
+            {appt.service ? (
               <Row
                 icon={<Stethoscope className="size-3.5" />}
                 label="Service"
                 value={appt.service.name}
               />
-            )}
+            ) : null}
             {appt.sessionType === 'online' ? (
               <Row
                 icon={<Video className="size-3.5" />}
@@ -235,34 +258,32 @@ export function EventPreview({
                   )
                 }
               />
-            ) : (
-              appt.room && (
-                <Row icon={<DoorOpen className="size-3.5" />} label="Room" value={appt.room.name} />
-              )
-            )}
+            ) : appt.room ? (
+              <Row icon={<DoorOpen className="size-3.5" />} label="Room" value={appt.room.name} />
+            ) : null}
             <Row
               icon={<Clock className="size-3.5" />}
               label="Details"
               value={`${appt.durationMins} min · ${pricing.payable.toFixed(3)} JOD`}
             />
-            {waitingMins != null && (
+            {waitingMins != null ? (
               <Row
                 icon={<Clock className="size-3.5" />}
                 label="Waiting time"
                 value={formatWaitingMins(waitingMins)}
               />
-            )}
+            ) : null}
           </div>
         </div>
 
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border/60 bg-muted/20 px-3.5 py-2.5">
-          <Button variant="ghost" size="sm" onClick={onClose} className="transition-all hover:bg-muted">
+          <Button variant="ghost" size="sm" onClick={onClose}>
             Close
           </Button>
           <Button
             size="sm"
             onClick={() => onExpand({ ...appt, status: currentStatus })}
-            className="transition-all hover:shadow-md active:scale-95"
+            className="active:scale-95"
           >
             <Maximize2 className="mr-1.5 size-3.5" />
             Open appointment
@@ -278,9 +299,9 @@ function Row({
   label,
   value,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
-  value: React.ReactNode;
+  value: ReactNode;
 }) {
   const title = typeof value === 'string' ? value : undefined;
   return (
