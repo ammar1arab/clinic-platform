@@ -31,7 +31,7 @@ import { Appointment, AppointmentStatus } from '@/services/appointments.service'
 import { useUpdateAppointment, useMarkAppointmentPaid } from '@/hooks/use-appointments';
 import { AppointmentStatusSelect } from './appointment-status-select';
 import { formatApptTimeRange, patientDisplayName } from './calendar-time';
-import { STATUS_COLORS } from './status-colors';
+import { STATUS_COLORS } from './status-badge';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -196,7 +196,7 @@ export function WaitingQueueBoard({
           : 'card-aura rounded-2xl',
       )}
     >
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/20 px-3 py-2.5 sm:px-4">
+      <div className="flex items-center justify-between gap-2 border-b bg-muted/20 px-2.5 py-2 sm:px-3">
         <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto scrollbar-none">
           {stageTabs.map(({ key, label, icon, cls }) => (
             <button

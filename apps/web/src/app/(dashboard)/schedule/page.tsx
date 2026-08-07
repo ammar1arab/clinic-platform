@@ -13,7 +13,6 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { Appointment, AppointmentStatus } from '@/services/appointments.service';
 import { ROUTES } from '@/constants/routes';
 import { ScheduleToolbar } from '@/components/blocks/appointments/schedule-toolbar';
-import { ScheduleLegend } from '@/components/blocks/appointments/schedule-legend';
 import { CalendarSkeleton } from '@/components/blocks/appointments/calendar-skeleton';
 import { DoctorTimeline } from '@/components/blocks/appointments/doctor-timeline';
 import { WaitingQueueBoard } from '@/components/blocks/appointments/waiting-queue-board';
@@ -29,16 +28,14 @@ const AppointmentCalendar = dynamic(
     import('@/components/blocks/appointments/appointment-calendar').then(
       (m) => m.AppointmentCalendar,
     ),
-  {
-    ssr: false,
-    loading: () => <CalendarSkeleton />,
-  },
+  { ssr: false, loading: () => <CalendarSkeleton /> },
 );
 
 function rangeFromVisible(start: Date, end: Date) {
-  const from = new Date(start.getFullYear(), start.getMonth() - 1, 1);
-  const to = new Date(end.getFullYear(), end.getMonth() + 2, 0);
-  return { startDate: from.toISOString(), endDate: to.toISOString() };
+  return {
+    startDate: new Date(start.getFullYear(), start.getMonth() - 1, 1).toISOString(),
+    endDate: new Date(end.getFullYear(), end.getMonth() + 2, 0).toISOString(),
+  };
 }
 
 function initialRange() {
@@ -71,9 +68,7 @@ function SchedulePageInner() {
   const [prevParam, setPrevParam] = useState(viewParam);
   if (viewParam !== prevParam) {
     setPrevParam(viewParam);
-    if (viewParam) {
-      setCurrentView(parseScheduleView(viewParam));
-    }
+    if (viewParam) setCurrentView(parseScheduleView(viewParam));
   }
 
   const [search, setSearch] = useState('');
@@ -112,12 +107,12 @@ function SchedulePageInner() {
     });
   }, []);
 
+  const clearStatuses = useCallback(() => setStatusFilters(new Set()), []);
+
   const handleVisibleRangeChange = useCallback((start: Date, end: Date) => {
     const next = rangeFromVisible(start, end);
     setRange((prev) =>
-      prev.startDate === next.startDate && prev.endDate === next.endDate
-        ? prev
-        : next,
+      prev.startDate === next.startDate && prev.endDate === next.endDate ? prev : next,
     );
   }, []);
 
@@ -135,18 +130,16 @@ function SchedulePageInner() {
 
   const goNewAppointment = useCallback(
     (date?: Date, doctorId?: string) => {
-      const params = new URLSearchParams();
-      params.set('view', view);
+      const params = new URLSearchParams({ view });
       if (date) {
         const pad = (n: number) => String(n).padStart(2, '0');
-        const dateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-        const timeStr = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-        params.set('date', dateStr);
-        params.set('time', timeStr);
+        params.set(
+          'date',
+          `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+        );
+        params.set('time', `${pad(date.getHours())}:${pad(date.getMinutes())}`);
       }
-      if (doctorId) {
-        params.set('doctorId', doctorId);
-      }
+      if (doctorId) params.set('doctorId', doctorId);
       router.push(`${ROUTES.SCHEDULE_NEW}?${params.toString()}`);
     },
     [router, view],
@@ -160,7 +153,7 @@ function SchedulePageInner() {
   );
 
   return (
-    <div className="flex min-h-0 flex-col gap-3">
+    <div className="flex min-h-0 flex-col gap-2">
       <ScheduleToolbar
         view={view}
         onViewChange={setView}
@@ -169,6 +162,9 @@ function SchedulePageInner() {
         departmentId={departmentId}
         onDepartmentChange={setDepartmentId}
         departments={departments}
+        statusFilters={statusFilters}
+        onToggleStatus={toggleStatus}
+        onClearStatuses={clearStatuses}
         count={filteredAppointments?.length ?? 0}
         isLoading={isLoading}
         onNewPatient={() =>
@@ -178,10 +174,6 @@ function SchedulePageInner() {
         }
         onNewAppointment={() => goNewAppointment()}
       />
-
-      {view !== 'queue' && (
-        <ScheduleLegend activeStatuses={statusFilters} onToggleStatus={toggleStatus} />
-      )}
 
       {view === 'doctors' ? (
         <ViewFocus label="Doctor timeline">
@@ -230,18 +222,19 @@ function SchedulePageInner() {
 
 function ScheduleFallback() {
   return (
-    <div className="space-y-3">
-      <div className="card-aura rounded-2xl border bg-card/90 p-2.5 sm:p-3 space-y-2.5">
+    <div className="space-y-2">
+      <div className="card-aura space-y-2 rounded-xl border bg-card/90 p-2 sm:p-2.5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="h-9 w-full sm:w-64 rounded-xl bg-muted/60" />
-          <div className="flex items-center gap-2">
-            <div className="h-9 w-32 rounded-xl bg-muted/60" />
-            <div className="h-9 w-32 rounded-xl bg-muted/60" />
+          <div className="h-8 w-full rounded-lg bg-muted/60 sm:w-64" />
+          <div className="flex gap-1.5">
+            <div className="h-8 w-24 rounded-lg bg-muted/60" />
+            <div className="h-8 w-28 rounded-lg bg-muted/60" />
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-2">
-          <div className="h-8 w-64 rounded-lg bg-muted/50" />
+        <div className="flex flex-wrap gap-1.5 border-t pt-2">
           <div className="h-8 w-48 rounded-lg bg-muted/50" />
+          <div className="h-8 w-36 rounded-lg bg-muted/50" />
+          <div className="h-8 w-28 rounded-lg bg-muted/50" />
         </div>
       </div>
       <CalendarSkeleton />

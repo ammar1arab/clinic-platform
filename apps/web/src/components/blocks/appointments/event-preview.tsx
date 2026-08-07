@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
-import { STATUS_COLORS } from './status-colors';
+import { STATUS_COLORS } from './status-badge';
 import { Appointment, AppointmentStatus, computePayable } from '@/services/appointments.service';
 import { formatApptTimeRange, patientDisplayName } from './calendar-time';
 import { type AnchorRect, clickAnchor } from './popover-position';

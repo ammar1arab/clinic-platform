@@ -14,8 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Appointment } from '@/services/appointments.service';
 import { ClinicStaffMember } from '@/services/clinics.service';
-import { STATUS_COLORS } from './status-colors';
-import { STATUS_CONFIG } from './status-badge';
+import { STATUS_COLORS, STATUS_CONFIG } from './status-badge';
 import { AppointmentStatusSelect } from './appointment-status-select';
 import { patientDisplayName, formatApptStartAmPm } from './calendar-time';
 import { cn } from '@/lib/utils';
@@ -406,7 +405,7 @@ export function DoctorTimeline({
       )}
     >
 
-      <div className="flex flex-col gap-2.5 border-b bg-muted/20 px-3 py-2.5 sm:px-4">
+      <div className="flex flex-col gap-2 border-b bg-muted/20 px-2.5 py-2 sm:px-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
 
           <div className="flex min-w-0 items-center gap-1.5">

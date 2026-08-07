@@ -15,7 +15,7 @@ import {
 import { MapPin, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Appointment } from '@/services/appointments.service';
-import { STATUS_COLORS } from './status-colors';
+import { STATUS_COLORS } from './status-badge';
 import { EventPreview, EventPreviewState } from './event-preview';
 import {
   formatApptStartAmPm,
@@ -386,8 +386,8 @@ export function AppointmentCalendar({
       className={cn(
         'relative bg-card [&_.fc]:text-sm',
         focused
-          ? 'flex h-full min-h-0 flex-col overflow-hidden rounded-none border-0 p-2 sm:p-3'
-          : 'card-aura rounded-xl border p-2 sm:p-3 lg:p-4',
+          ? 'flex h-full min-h-0 flex-col overflow-hidden rounded-none border-0 p-1.5 sm:p-2'
+          : 'card-aura rounded-xl border p-2 sm:p-2.5',
       )}
       aria-busy={isFetching || undefined}
     >
