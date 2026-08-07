@@ -175,7 +175,10 @@ export function EventPreview({
 
         <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border/60 px-3.5 py-3">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+            <p
+              className="truncate text-sm font-semibold tracking-tight text-foreground"
+              title={patientDisplayName(appt)}
+            >
               {patientDisplayName(appt)}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
@@ -201,7 +204,11 @@ export function EventPreview({
 
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3.5">
           <div className="space-y-2 rounded-lg border bg-muted/30 p-2.5 text-xs">
-            <Row icon={<UserRound className="size-3.5" />} label="Doctor" value={appt.doctor.name} />
+            <Row
+              icon={<UserRound className="size-3.5" />}
+              label="Doctor"
+              value={appt.doctor.name}
+            />
             {appt.service && (
               <Row
                 icon={<Stethoscope className="size-3.5" />}
@@ -275,14 +282,19 @@ function Row({
   label: string;
   value: React.ReactNode;
 }) {
+  const title = typeof value === 'string' ? value : undefined;
   return (
     <div className="flex items-center gap-2.5">
       <span className="grid size-6 shrink-0 place-items-center rounded-md bg-background text-muted-foreground shadow-2xs">
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">{label}</p>
-        <p className="truncate text-foreground font-medium">{value}</p>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        <p className="truncate font-medium text-foreground" title={title}>
+          {value}
+        </p>
       </div>
     </div>
   );

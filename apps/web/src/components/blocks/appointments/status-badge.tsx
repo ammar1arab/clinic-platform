@@ -97,6 +97,7 @@ export function StatusBadgeBlock({ status, className, compact }: Props) {
   return (
     <span
       title={config.label}
+      aria-label={config.label}
       className={cn(
         'inline-flex max-w-full shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-4 whitespace-nowrap',
         config.className,

@@ -571,6 +571,14 @@
   min-height: 0 !important;
   container-type: size;
   overflow: hidden !important;
+  margin: 0 1px 1px 0 !important;
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, white 22%, transparent),
+    0 1px 2px color-mix(in oklch, black 12%, transparent);
+}
+
+.fc-timegrid-event-harness + .fc-timegrid-event-harness {
+  margin-top: 1px;
 }
 
 .fc-timegrid-event .fc-event-main {
@@ -640,6 +648,7 @@
 .fc-event-chip__time,
 .fc-event-chip__name,
 .fc-event-chip__range,
+.fc-event-chip__doctor,
 .fc-event-chip__service {
   min-width: 0;
   overflow: hidden;
@@ -666,9 +675,16 @@
 }
 
 .fc-event-chip__range,
+.fc-event-chip__doctor,
 .fc-event-chip__service {
   font-size: 0.6rem;
   font-weight: 500;
+}
+
+.fc-event-chip__doctor {
+  flex-shrink: 1;
+  max-width: 42%;
+  opacity: 0.95;
 }
 
 .fc-event-chip__service {
@@ -723,13 +739,14 @@
     font-weight: 700;
   }
 
-  .fc-event-chip__range {
+  .fc-event-chip__range,
+  .fc-event-chip__doctor {
     font-size: 0.625rem;
   }
 
   .fc-event-chip__service {
     display: inline;
-    max-width: 45%;
+    max-width: 36%;
   }
 }
 
@@ -745,6 +762,13 @@
   }
 
   .fc-event-chip__name--full {
+    display: none !important;
+  }
+}
+
+@container (max-width: 96px) and (min-height: 40px) {
+  .fc-event-chip__doctor,
+  .fc-event-chip__service {
     display: none !important;
   }
 }

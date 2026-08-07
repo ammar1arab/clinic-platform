@@ -22,7 +22,10 @@ export function formatApptStartAmPm(appt: Appointment) {
 export {
   patientDisplayName,
   patientShortName,
+  doctorDisplayName,
+  doctorShortName,
   formatCompactTime,
+  formatApptTip,
   densityFromHeight,
   type EventDensity,
 } from './event-density';

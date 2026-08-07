@@ -19,9 +19,13 @@ import { AppointmentStatusSelect } from './appointment-status-select';
 import {
   patientDisplayName,
   patientShortName,
+  doctorDisplayName,
+  doctorShortName,
   formatApptStartAmPm,
+  formatApptTip,
   densityFromHeight,
 } from './calendar-time';
+import { SoftTip } from '@/components/primitives/soft-tip';
 import { cn } from '@/lib/utils';
 import { TimelineSkeleton } from '@/components/primitives/skeleton-presets';
 import { useNow } from '@/hooks/use-now';
@@ -110,15 +114,16 @@ function layoutAppts(appts: Appointment[], doctors: Map<string, TimelineDoctor>)
     }
 
     const top = Math.max(0, (startMin - START_HOUR * 60)) * PX_PER_MIN;
-    const height = Math.max(28, appt.durationMins * PX_PER_MIN);
+    const height = Math.max(26, appt.durationMins * PX_PER_MIN);
+    const gutter = maxCols > 1 ? 1.5 : 0;
 
     return {
       appt,
       doctor: doctors.get(appt.doctorId),
       top,
       height,
-      leftPct: (col / maxCols) * 100,
-      widthPct: (1 / maxCols) * 100,
+      leftPct: (col / maxCols) * 100 + gutter / 2,
+      widthPct: (1 / maxCols) * 100 - gutter,
     };
   });
 
@@ -143,11 +148,14 @@ function TimelineEventBlock({
   const statusCfg = STATUS_CONFIG[appt.status];
   const density = densityFromHeight(height);
   const isCancelled = appt.status === 'cancelled';
-  const doctorName = doctor?.name ?? appt.doctor?.name ?? 'Doctor';
+  const doctorName = doctorDisplayName(doctor?.name ?? appt.doctor?.name);
+  const doctorShort = doctorShortName(doctorName);
   const fullName = patientDisplayName(appt);
   const shortName = patientShortName(appt);
   const timeLabel = `${formatApptStartAmPm(appt)} · ${appt.durationMins}m`;
   const narrow = widthPct < 34;
+  const tip = formatApptTip(appt, { doctorName });
+  const gapPx = widthPct < 50 ? 5 : 4;
 
   return (
     <div
@@ -167,9 +175,9 @@ function TimelineEventBlock({
       }}
       className={cn(
         'group absolute z-10 flex overflow-hidden rounded-lg border border-border/70 bg-card shadow-xs',
-        'cursor-pointer outline-none transition-[box-shadow,transform,border-color] duration-150',
-        'hover:z-20 hover:border-primary/40 hover:shadow-md',
-        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        'cursor-pointer outline-none transition-[box-shadow,transform,border-color,z-index] duration-150',
+        'hover:z-30 hover:border-primary/40 hover:shadow-md',
+        'focus-visible:z-30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
         'active:scale-[0.985]',
         isCancelled && 'opacity-55',
       )}
@@ -177,12 +185,12 @@ function TimelineEventBlock({
         top: `${top + 1}px`,
         height: `${Math.max(height - 2, 22)}px`,
         left: `calc(${leftPct}% + 2px)`,
-        width: `calc(${widthPct}% - 4px)`,
+        width: `calc(${widthPct}% - ${gapPx}px)`,
         borderLeftWidth: 3,
         borderLeftColor: accent,
         backgroundColor: `color-mix(in oklch, ${accent} 9%, var(--card))`,
       }}
-      title={`${fullName} · ${timeLabel} · ${doctorName}`}
+      title={tip}
     >
       <div
         className={cn(
@@ -230,20 +238,28 @@ function TimelineEventBlock({
         )}
 
         {(density === 'md' || density === 'lg') && !narrow && (
-          <p className="flex min-w-0 items-center gap-1 truncate text-[10px] text-muted-foreground">
+          <p
+            className="flex min-w-0 items-center gap-1 truncate text-[10px] text-muted-foreground"
+            title={`Dr. ${doctorName}`}
+          >
             <span
               className="size-1.5 shrink-0 rounded-full"
               style={{ backgroundColor: doctor?.color ?? accent }}
               aria-hidden
             />
-            <span className="truncate font-medium text-foreground/80">{doctorName}</span>
+            <span className="truncate font-medium text-foreground/80">
+              Dr. {density === 'md' ? doctorShort : doctorName}
+            </span>
           </p>
         )}
 
         {density === 'lg' && !narrow && (
           <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
             {appt.service && (
-              <span className="flex min-w-0 max-w-full items-center gap-1 truncate font-medium text-foreground/75">
+              <span
+                className="flex min-w-0 max-w-full items-center gap-1 truncate font-medium text-foreground/75"
+                title={appt.service.name}
+              >
                 <Stethoscope className="size-2.5 shrink-0 text-primary" />
                 <span className="truncate">{appt.service.name}</span>
               </span>
@@ -254,7 +270,10 @@ function TimelineEventBlock({
                 Online
               </span>
             ) : appt.room ? (
-              <span className="inline-flex min-w-0 items-center gap-1 truncate font-medium">
+              <span
+                className="inline-flex min-w-0 items-center gap-1 truncate font-medium"
+                title={appt.room.name}
+              >
                 <DoorOpen className="size-2.5 shrink-0" />
                 <span className="truncate">{appt.room.name}</span>
               </span>
@@ -278,6 +297,7 @@ function TimelineEventBlock({
               'w-fit max-w-full truncate rounded-md border px-1 py-px text-[9px] font-semibold leading-tight',
               statusCfg.className,
             )}
+            title={statusCfg.label}
           >
             {statusCfg.short}
           </span>
@@ -443,34 +463,48 @@ export function DoctorTimeline({
 
         {allDoctors.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-            <button type="button" onClick={() => setActiveDoctorId('all')}
+            <button
+              type="button"
+              onClick={() => setActiveDoctorId('all')}
               className={cn(
                 'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
                 activeDoctorId === 'all'
                   ? 'bg-foreground text-background shadow-xs'
                   : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}>
+              )}
+            >
               All doctors
             </button>
-            {allDoctors.map((doc) => (
-              <button key={doc.id} type="button" onClick={() => setActiveDoctorId(doc.id)}
-                className={cn(
-                  'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
-                  activeDoctorId === doc.id
-                    ? 'bg-foreground text-background shadow-xs'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
-                )}>
-                <span
-                  className="size-2 shrink-0 rounded-full"
-                  style={{ backgroundColor: doc.color }}
-                />
-                <span className="hidden sm:inline">{doc.name}</span>
-                <span className="sm:hidden">{doc.name.split(' ')[0]}</span>
-                <span className="rounded-full bg-background/25 px-1 text-[10px] font-bold">
-                  {dayAppts.filter((a) => a.doctorId === doc.id).length}
-                </span>
-              </button>
-            ))}
+            {allDoctors.map((doc) => {
+              const full = doctorDisplayName(doc.name);
+              const short = doctorShortName(full);
+              const count = dayAppts.filter((a) => a.doctorId === doc.id).length;
+              return (
+                <SoftTip key={doc.id} label={`Dr. ${full}`} side="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setActiveDoctorId(doc.id)}
+                    aria-label={`Dr. ${full}`}
+                    className={cn(
+                      'inline-flex max-w-[9.5rem] shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95 sm:max-w-[12rem]',
+                      activeDoctorId === doc.id
+                        ? 'bg-foreground text-background shadow-xs'
+                        : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+                    )}
+                  >
+                    <span
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: doc.color }}
+                    />
+                    <span className="hidden truncate sm:inline">{full}</span>
+                    <span className="truncate sm:hidden">{short}</span>
+                    <span className="rounded-full bg-background/25 px-1 text-[10px] font-bold">
+                      {count}
+                    </span>
+                  </button>
+                </SoftTip>
+              );
+            })}
           </div>
         )}
       </div>

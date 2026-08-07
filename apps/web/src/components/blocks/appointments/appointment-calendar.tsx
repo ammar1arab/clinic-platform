@@ -19,7 +19,9 @@ import { STATUS_COLORS } from './status-badge';
 import { EventPreview, EventPreviewState } from './event-preview';
 import {
   formatApptTimeRange,
+  formatApptTip,
   formatCompactTime,
+  doctorShortName,
   patientDisplayName,
   patientShortName,
 } from './calendar-time';
@@ -285,8 +287,10 @@ export function AppointmentCalendar({
       ? formatCompactTime(appt.scheduledAt)
       : arg.timeText;
     const rangeLabel = appt ? formatApptTimeRange(appt) : arg.timeText;
+    const doctorName = appt?.doctor?.name;
+    const doctorLabel = doctorName ? doctorShortName(doctorName) : '';
     const tip = appt
-      ? `${fullName} · ${rangeLabel}${appt.service?.name ? ` · ${appt.service.name}` : ''}`
+      ? formatApptTip(appt, { rangeLabel, doctorName })
       : fullName;
     const Icon = appt?.sessionType === 'online' ? Video : MapPin;
     const fill = appt
@@ -322,6 +326,11 @@ export function AppointmentCalendar({
         </div>
         <div className="fc-event-chip__secondary">
           <span className="fc-event-chip__range">{rangeLabel}</span>
+          {doctorLabel ? (
+            <span className="fc-event-chip__doctor" title={doctorName}>
+              Dr. {doctorLabel}
+            </span>
+          ) : null}
           {appt?.service?.name ? (
             <span className="fc-event-chip__service">{appt.service.name}</span>
           ) : null}
@@ -441,6 +450,8 @@ export function AppointmentCalendar({
           eventContent={renderEventContent}
           dayMaxEvents={isMobile ? 2 : 4}
           eventMaxStack={isMobile ? 2 : 4}
+          slotEventOverlap={false}
+          eventMinHeight={isMobile ? 22 : 26}
           moreLinkClick="popover"
           moreLinkContent={renderMoreLinkContent}
           expandRows
