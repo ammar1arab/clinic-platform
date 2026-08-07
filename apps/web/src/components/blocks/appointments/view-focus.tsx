@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useMemo,
   useState,
   type ReactNode,
 } from 'react';
@@ -12,17 +13,28 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
 
-const ViewFocusContext = createContext(false);
+interface ViewFocusApi {
+  focused: boolean;
+  enter: () => void;
+  exit: () => void;
+  toggle: () => void;
+}
+
+const ViewFocusContext = createContext<ViewFocusApi | null>(null);
 
 /** True when the nearest ViewFocus shell is in focus (full-page) mode. */
 export function useViewFocused() {
+  return useContext(ViewFocusContext)?.focused ?? false;
+}
+
+/** Focus controls for header toggles — null outside a ViewFocus shell. */
+export function useViewFocusControls() {
   return useContext(ViewFocusContext);
 }
 
 type FocusRender = (focused: boolean) => ReactNode;
 
 interface ViewFocusProps {
-  /** Short label shown in the focus chrome (e.g. "Calendar"). */
   label: string;
   children: ReactNode | FocusRender;
   className?: string;
@@ -32,24 +44,52 @@ function isFocusRender(children: ReactNode | FocusRender): children is FocusRend
   return typeof children === 'function';
 }
 
+/** Compact header control — place inside calendar / timeline / queue headers. */
+export function ViewFocusToggle({ className }: { className?: string }) {
+  const api = useViewFocusControls();
+  if (!api || api.focused) return null;
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon-sm"
+      onClick={api.enter}
+      title="Focus view"
+      aria-label="Focus view"
+      className={cn(
+        'size-8 shrink-0 rounded-lg border-border/70 bg-background/80 text-muted-foreground shadow-2xs',
+        'hover:border-primary/40 hover:bg-card hover:text-foreground active:scale-95',
+        className,
+      )}
+    >
+      <Maximize2 className="size-3.5" />
+    </Button>
+  );
+}
+
 /**
- * Wraps a schedule surface so it can enter a full-page focus mode.
- * Keeps a single React tree (no remount) by toggling fixed positioning.
- * Scroll stays on the shell via CSS — no body lock / useEffect.
+ * Full-page focus shell. Keeps one React tree via fixed positioning.
+ * Put `<ViewFocusToggle />` in each view header — no floating overlay button.
  */
 export function ViewFocus({ label, children, className }: ViewFocusProps) {
   const [focused, setFocused] = useState(false);
 
   const enter = useCallback(() => setFocused(true), []);
   const exit = useCallback(() => setFocused(false), []);
+  const toggle = useCallback(() => setFocused((v) => !v), []);
 
   useKeyboardShortcut('escape', exit, { enabled: focused, ignoreInputs: false });
+
+  const api = useMemo(
+    () => ({ focused, enter, exit, toggle }),
+    [focused, enter, exit, toggle],
+  );
 
   const content = isFocusRender(children) ? children(focused) : children;
 
   return (
-    <ViewFocusContext.Provider value={focused}>
-      {/* Preserve approximate page height while the surface is fixed */}
+    <ViewFocusContext.Provider value={api}>
       {focused ? <div className="h-[min(72vh,40rem)] w-full" aria-hidden /> : null}
 
       <div
@@ -85,23 +125,7 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
               Exit focus
             </Button>
           </div>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            size="icon-sm"
-            onClick={enter}
-            title="Focus view"
-            aria-label={`Focus ${label}`}
-            className={cn(
-              'absolute top-2.5 right-2.5 z-30 size-8 rounded-lg border-border/80 bg-card/95 shadow-xs backdrop-blur-sm',
-              'text-muted-foreground hover:border-primary/40 hover:bg-card hover:text-foreground',
-              'active:scale-95',
-            )}
-          >
-            <Maximize2 className="size-3.5" />
-          </Button>
-        )}
+        ) : null}
 
         <div
           className={cn(

@@ -31,6 +31,7 @@ import {
 } from './schedule-nav';
 import { rectFromElement, type AnchorRect } from './popover-position';
 import { CalendarSkeleton } from './calendar-skeleton';
+import { ViewFocusToggle } from './view-focus';
 import { useUpdateAppointment } from '@/hooks/use-appointments';
 import { useResizeObserver } from '@/hooks/use-resize-observer';
 import { toast } from 'sonner';
@@ -425,12 +426,18 @@ export function AppointmentCalendar({
       className={cn(
         'card-aura relative bg-card [&_.fc]:text-sm',
         focused
-          ? 'flex h-full min-h-0 flex-col rounded-xl border p-2 sm:p-3 [&_.fc-header-toolbar]:pr-0'
-          : 'rounded-xl p-2 pr-11 sm:p-3 sm:pr-12 lg:p-4 lg:pr-12',
+          ? 'flex h-full min-h-0 flex-col rounded-xl border p-2 sm:p-3'
+          : 'rounded-xl border p-2 sm:p-3 lg:p-4',
       )}
       aria-busy={isFetching || undefined}
     >
-      <div ref={sizeHostRef} className={cn(focused && 'min-h-0 flex-1')}>
+      <div
+        ref={sizeHostRef}
+        className={cn('relative', focused && 'min-h-0 flex-1', '[&_.fc-header-toolbar]:pr-10')}
+      >
+        <div className="absolute top-0 right-0 z-20">
+          <ViewFocusToggle />
+        </div>
         <FullCalendar
           key={view}
           ref={calendarRef}

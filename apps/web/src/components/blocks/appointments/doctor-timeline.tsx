@@ -21,6 +21,7 @@ import { patientDisplayName, formatApptStartAmPm } from './calendar-time';
 import { cn } from '@/lib/utils';
 import { TimelineSkeleton } from '@/components/primitives/skeleton-presets';
 import { useNow } from '@/hooks/use-now';
+import { ViewFocusToggle } from './view-focus';
 
 /* ─── Constants ──────────────────────────────────────────────────────────────── */
 const START_HOUR = 7;
@@ -430,40 +431,41 @@ export function DoctorTimeline({
     >
 
       {/* ── Toolbar ───────────────────────────────────────────────────────────── */}
-      <div className={cn(
-        'flex flex-col gap-2.5 border-b bg-muted/20 px-3 py-2.5 sm:px-4',
-        !focused && 'pr-12',
-      )}>
+      <div className="flex flex-col gap-2.5 border-b bg-muted/20 px-3 py-2.5 sm:px-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
 
           {/* Date navigation */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             <Button variant="outline" size="sm" onClick={goToday} disabled={isToday}
               className="h-8 px-2.5 text-xs font-semibold active:scale-95">
               <CalendarDays className="size-3.5" />
-              <span className="hidden sm:inline ml-1">Today</span>
+              <span className="ml-1 hidden sm:inline">Today</span>
             </Button>
             <div className="flex items-center overflow-hidden rounded-lg border bg-background/60">
               <button type="button" onClick={() => shiftDate(-1)} aria-label="Previous day"
-                className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors active:scale-95 cursor-pointer">
+                className="flex h-8 w-8 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95">
                 <ChevronLeft className="size-4" />
               </button>
               <button type="button" onClick={() => shiftDate(1)} aria-label="Next day"
-                className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors active:scale-95 cursor-pointer">
+                className="flex h-8 w-8 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95">
                 <ChevronRight className="size-4" />
               </button>
             </div>
-            <span className="text-xs sm:text-sm font-bold text-foreground">{dateLabel}</span>
+            <span className="truncate text-xs font-bold text-foreground sm:text-sm">{dateLabel}</span>
           </div>
 
-          {/* Stats — compact, no badge */}
-          <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
-            <span className="flex items-center gap-1">
-              <Users className="size-3.5 text-primary" />
-              {allDoctors.length} dr{allDoctors.length !== 1 ? 's' : ''}
-            </span>
-            <span className="h-3 w-px bg-border" />
-            <span>{dayAppts.length} appt{dayAppts.length !== 1 ? 's' : ''}</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground sm:gap-3">
+              <span className="flex items-center gap-1">
+                <Users className="size-3.5 text-primary" />
+                {allDoctors.length} dr{allDoctors.length !== 1 ? 's' : ''}
+              </span>
+              <span className="hidden h-3 w-px bg-border sm:block" />
+              <span className="hidden sm:inline">
+                {dayAppts.length} appt{dayAppts.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <ViewFocusToggle />
           </div>
         </div>
 

@@ -35,8 +35,8 @@ import { STATUS_COLORS } from './status-colors';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { StatGridSkeleton, CardGridSkeleton } from '@/components/primitives/skeleton-presets';
-import { useViewFocused } from './view-focus';
+import { CardGridSkeleton } from '@/components/primitives/skeleton-presets';
+import { useViewFocused, ViewFocusToggle } from './view-focus';
 
 type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
 
@@ -157,89 +157,73 @@ export function WaitingQueueBoard({
   );
 
   if (isLoading && (!appointments || appointments.length === 0)) {
-    return (
-      <div className="space-y-4">
-        <StatGridSkeleton count={4} />
-        <CardGridSkeleton count={4} columns="grid-cols-1 lg:grid-cols-4" />
-      </div>
-    );
+    return <CardGridSkeleton count={4} columns="grid-cols-1 lg:grid-cols-4" />;
   }
+
+  const stageTabs = [
+    { key: 'all' as const, label: 'All', icon: null, cls: 'bg-primary text-primary-foreground' },
+    {
+      key: 'waiting' as const,
+      label: `Waiting (${waitingList.length})`,
+      icon: <Timer className="size-3" />,
+      cls: 'bg-amber-600 text-white',
+    },
+    {
+      key: 'in_progress' as const,
+      label: `Consulting (${inProgressList.length})`,
+      icon: <Stethoscope className="size-3" />,
+      cls: 'bg-blue-600 text-white',
+    },
+    {
+      key: 'upcoming' as const,
+      label: `Upcoming (${upcomingList.length})`,
+      icon: <Users className="size-3" />,
+      cls: 'bg-slate-700 text-white dark:bg-slate-600',
+    },
+    {
+      key: 'completed' as const,
+      label: `Done (${completedList.length})`,
+      icon: <CheckCircle2 className="size-3" />,
+      cls: 'bg-emerald-600 text-white',
+    },
+  ];
 
   return (
     <div
       className={cn(
-        'relative space-y-4',
-        focused && 'flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain pr-1',
-        !focused && 'pr-1',
+        'card-aura flex flex-col overflow-hidden rounded-2xl border bg-card shadow-xs',
+        focused && 'h-full min-h-0 rounded-xl',
       )}
     >
-      {/* Focus control clearance on the first row */}
-      <div className={cn('grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4', !focused && 'pr-10')}>
-        <StatCard
-          icon={<Timer className="size-4 text-amber-500" />}
-          label="In Waiting Room"
-          value={waitingList.length}
-          colorClass="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-          onClick={() => setStageTab((p) => (p === 'waiting' ? 'all' : 'waiting'))}
-          active={stageTab === 'waiting'}
-        />
-        <StatCard
-          icon={<Stethoscope className="size-4 text-blue-500" />}
-          label="In Consultation"
-          value={inProgressList.length}
-          colorClass="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
-          onClick={() => setStageTab((p) => (p === 'in_progress' ? 'all' : 'in_progress'))}
-          active={stageTab === 'in_progress'}
-        />
-        <StatCard
-          icon={<Users className="size-4 text-slate-500" />}
-          label="Upcoming Today"
-          value={upcomingList.length}
-          colorClass="bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
-          onClick={() => setStageTab((p) => (p === 'upcoming' ? 'all' : 'upcoming'))}
-          active={stageTab === 'upcoming'}
-        />
-        <StatCard
-          icon={<CheckCircle2 className="size-4 text-emerald-500" />}
-          label="Done / Closed"
-          value={completedList.length}
-          colorClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-          onClick={() => setStageTab((p) => (p === 'completed' ? 'all' : 'completed'))}
-          active={stageTab === 'completed'}
-        />
+      <div className="flex items-center justify-between gap-2 border-b bg-muted/20 px-3 py-2.5 sm:px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto scrollbar-none lg:hidden">
+          {stageTabs.map(({ key, label, icon, cls }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setStageTab(key)}
+              className={cn(
+                'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-all duration-150 active:scale-95',
+                stageTab === key
+                  ? cls
+                  : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              {icon}
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="hidden text-xs font-semibold text-muted-foreground lg:block">
+          Today · {dayAppointments.length} on board
+        </p>
+        <ViewFocusToggle />
       </div>
 
-      {/* Mobile stage tab strip */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none lg:hidden">
-        {(
-          [
-            { key: 'all', label: 'All', icon: null, cls: 'bg-primary text-primary-foreground' },
-            { key: 'waiting', label: `Waiting (${waitingList.length})`, icon: <Timer className="size-3" />, cls: 'bg-amber-600 text-white' },
-            { key: 'in_progress', label: `Consulting (${inProgressList.length})`, icon: <Stethoscope className="size-3" />, cls: 'bg-blue-600 text-white' },
-            { key: 'upcoming', label: `Upcoming (${upcomingList.length})`, icon: <Users className="size-3" />, cls: 'bg-slate-700 text-white dark:bg-slate-600' },
-            { key: 'completed', label: `Done (${completedList.length})`, icon: <CheckCircle2 className="size-3" />, cls: 'bg-emerald-600 text-white' },
-          ] satisfies { key: StageTab; label: string; icon: React.ReactNode; cls: string }[]
-        ).map(({ key, label, icon, cls }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setStageTab(key)}
-            className={cn(
-              'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs',
-              stageTab === key ? cls : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
-            )}
-          >
-            {icon}
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Stage columns */}
       <div
         className={cn(
-          'grid grid-cols-1 gap-4 lg:grid-cols-4',
-          focused && 'min-h-0 flex-1 lg:items-stretch',
+          'grid grid-cols-1 gap-3 p-3 sm:gap-4 sm:p-4 lg:grid-cols-4',
+          focused && 'min-h-0 flex-1 overflow-y-auto overscroll-contain lg:items-stretch',
         )}
       >
         {/* Waiting */}
@@ -551,42 +535,6 @@ function QuickActionMenu({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  colorClass,
-  onClick,
-  active,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  colorClass: string;
-  onClick?: () => void;
-  active?: boolean;
-}) {
-  return (
-    <div
-      onClick={onClick}
-      className={cn(
-        'card-aura flex items-center gap-3 rounded-2xl border bg-card p-3.5 shadow-xs transition-all duration-200 cursor-pointer select-none',
-        active
-          ? 'ring-2 ring-primary border-primary bg-primary/5 shadow-sm scale-[1.02]'
-          : 'hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/40 active:scale-[0.97]',
-      )}
-    >
-      <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl border shadow-2xs', colorClass)}>
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] font-semibold text-muted-foreground truncate">{label}</p>
-        <p className="text-lg font-bold tracking-tight text-foreground">{value}</p>
-      </div>
-    </div>
   );
 }
 

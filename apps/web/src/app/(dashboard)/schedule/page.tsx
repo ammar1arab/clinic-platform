@@ -160,7 +160,7 @@ function SchedulePageInner() {
   );
 
   return (
-    <div className="space-y-3">
+    <div className="flex min-h-0 flex-col gap-3">
       <ScheduleToolbar
         view={view}
         onViewChange={setView}
