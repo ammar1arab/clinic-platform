@@ -393,7 +393,11 @@ export function AppointmentCalendar({
     >
       <div
         ref={sizeHostRef}
-        className={cn('relative', focused && 'min-h-0 flex-1', '[&_.fc-header-toolbar]:pr-10')}
+        className={cn(
+          'relative',
+          focused && 'min-h-0 flex-1',
+          !focused && '[&_.fc-header-toolbar]:pr-10',
+        )}
       >
         <div className="absolute top-0 right-0 z-20">
           <ViewFocusToggle />
