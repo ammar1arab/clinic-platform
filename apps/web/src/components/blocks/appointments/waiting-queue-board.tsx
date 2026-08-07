@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { useNow } from '@/hooks/use-now';
 import {
   CalendarClock,
@@ -59,53 +59,64 @@ function formatElapsed(minutes: number): string {
 }
 
 export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Props) {
+  type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
+  const [stageTab, setStageTab] = useState<StageTab>('all');
   const now = useNow(10_000);
   const updateMutation = useUpdateAppointment();
   const markPaidMutation = useMarkAppointmentPaid();
 
-  const todayAppointments = useMemo(() => {
+  const dayAppointments = useMemo(() => {
     if (!appointments) return [];
     const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999).getTime();
+    today.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
 
     return appointments.filter((appt) => {
-      const t = new Date(appt.scheduledAt).getTime();
-      return t >= startOfDay && t <= endOfDay;
+      const apptDate = new Date(appt.scheduledAt);
+      return apptDate >= today && apptDate <= endOfDay;
     });
   }, [appointments]);
 
-  const { waitingList, inProgressList, upcomingList, completedList } = useMemo(() => {
-    const waiting: Appointment[] = [];
-    const inProgress: Appointment[] = [];
-    const upcoming: Appointment[] = [];
-    const completed: Appointment[] = [];
+  const waitingList = useMemo(
+    () =>
+      dayAppointments
+        .filter((a) => a.status === 'waiting' || a.status === 'checked_in')
+        .sort((a, b) => {
+          const aTime = new Date(a.waitingStartedAt || a.statusUpdatedAt || a.scheduledAt).getTime();
+          const bTime = new Date(b.waitingStartedAt || b.statusUpdatedAt || b.scheduledAt).getTime();
+          return aTime - bTime;
+        }),
+    [dayAppointments],
+  );
 
-    for (const appt of todayAppointments) {
-      if (appt.status === 'waiting' || appt.status === 'checked_in') {
-        waiting.push(appt);
-      } else if (appt.status === 'in_progress') {
-        inProgress.push(appt);
-      } else if (appt.status === 'completed') {
-        completed.push(appt);
-      } else if (appt.status === 'confirmed' || appt.status === 'unconfirmed') {
-        upcoming.push(appt);
-      }
-    }
+  const inProgressList = useMemo(
+    () =>
+      dayAppointments
+        .filter((a) => a.status === 'in_progress')
+        .sort((a, b) => {
+          const aTime = new Date(a.inProgressAt || a.statusUpdatedAt || a.scheduledAt).getTime();
+          const bTime = new Date(b.inProgressAt || b.statusUpdatedAt || b.scheduledAt).getTime();
+          return aTime - bTime;
+        }),
+    [dayAppointments],
+  );
 
-    waiting.sort((a, b) => {
-      const aStart = new Date(a.waitingStartedAt || a.statusUpdatedAt || a.scheduledAt).getTime();
-      const bStart = new Date(b.waitingStartedAt || b.statusUpdatedAt || b.scheduledAt).getTime();
-      return aStart - bStart;
-    });
+  const upcomingList = useMemo(
+    () =>
+      dayAppointments
+        .filter((a) => a.status === 'confirmed' || a.status === 'unconfirmed')
+        .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()),
+    [dayAppointments],
+  );
 
-    return {
-      waitingList: waiting,
-      inProgressList: inProgress,
-      upcomingList: upcoming,
-      completedList: completed,
-    };
-  }, [todayAppointments]);
+  const completedList = useMemo(
+    () =>
+      dayAppointments
+        .filter((a) => a.status === 'completed')
+        .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
+    [dayAppointments],
+  );
 
   const handleQuickStatus = useCallback((appt: Appointment, targetStatus: AppointmentStatus) => {
     updateMutation.mutate(
@@ -121,10 +132,6 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
             toast.success(`Visit completed for ${patientDisplayName(appt)}`);
           } else if (targetStatus === 'checked_in' || targetStatus === 'waiting') {
             toast.success(`${patientDisplayName(appt)} checked into waiting room`);
-          } else if (targetStatus === 'no_show') {
-            toast.warning(`Marked ${patientDisplayName(appt)} as no-show`);
-          } else if (targetStatus === 'cancelled') {
-            toast.info(`Cancelled visit for ${patientDisplayName(appt)}`);
           }
         },
         onError: (err) => {
@@ -143,88 +150,294 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
     );
   }
 
+  const isVisible = (stage: 'waiting' | 'in_progress' | 'upcoming' | 'completed') => {
+    return stageTab === 'all' || stageTab === stage;
+  };
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* Quick Summary Stat Cards */}
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <StatCard
           icon={<Timer className="size-4 text-amber-500" />}
           label="In Waiting Room"
           value={waitingList.length}
           colorClass="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+          onClick={() => setStageTab((prev: StageTab) => (prev === 'waiting' ? 'all' : 'waiting'))}
+          active={stageTab === 'waiting'}
         />
         <StatCard
           icon={<Stethoscope className="size-4 text-blue-500" />}
           label="In Consultation"
           value={inProgressList.length}
           colorClass="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+          onClick={() => setStageTab((prev: StageTab) => (prev === 'in_progress' ? 'all' : 'in_progress'))}
+          active={stageTab === 'in_progress'}
         />
         <StatCard
           icon={<Users className="size-4 text-slate-500" />}
           label="Upcoming Today"
           value={upcomingList.length}
           colorClass="bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
+          onClick={() => setStageTab((prev: StageTab) => (prev === 'upcoming' ? 'all' : 'upcoming'))}
+          active={stageTab === 'upcoming'}
         />
         <StatCard
           icon={<CheckCircle2 className="size-4 text-emerald-500" />}
           label="Completed Today"
           value={completedList.length}
           colorClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+          onClick={() => setStageTab((prev: StageTab) => (prev === 'completed' ? 'all' : 'completed'))}
+          active={stageTab === 'completed'}
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-        <StageColumn
-          title="Waiting Room"
-          count={waitingList.length}
-          accentColor="#f59e0b"
-          badgeClassName="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-          icon={<Timer className="size-4 text-amber-500" />}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none lg:hidden">
+        <button
+          type="button"
+          onClick={() => setStageTab('all')}
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
+            stageTab === 'all'
+              ? 'bg-primary text-primary-foreground shadow-xs'
+              : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
         >
-          {waitingList.length === 0 ? (
-            <EmptyStageMessage
-              icon={<Timer className="size-6 text-amber-500/40" />}
-              text="No patients waiting right now"
-            />
-          ) : (
-            waitingList.map((appt) => {
-              const waitMins = calculateElapsedMinutes(
-                appt.waitingStartedAt || appt.statusUpdatedAt || appt.scheduledAt,
-                now,
-              );
+          All Stages
+        </button>
+        <button
+          type="button"
+          onClick={() => setStageTab('waiting')}
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
+            stageTab === 'waiting'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <Timer className="size-3" />
+          Waiting ({waitingList.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setStageTab('in_progress')}
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
+            stageTab === 'in_progress'
+              ? 'bg-blue-600 text-white shadow-xs'
+              : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <Stethoscope className="size-3" />
+          Consulting ({inProgressList.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setStageTab('upcoming')}
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
+            stageTab === 'upcoming'
+              ? 'bg-slate-700 text-white shadow-xs dark:bg-slate-600'
+              : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <Users className="size-3" />
+          Upcoming ({upcomingList.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setStageTab('completed')}
+          className={cn(
+            'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
+            stageTab === 'completed'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
+          <CheckCircle2 className="size-3" />
+          Completed ({completedList.length})
+        </button>
+      </div>
 
-              let timerStyle = 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
-              let waitLabel = 'On Track';
-              if (waitMins >= 25) {
-                timerStyle = 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 animate-pulse';
-                waitLabel = 'Long Wait';
-              } else if (waitMins >= 12) {
-                timerStyle = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30';
-                waitLabel = 'Moderate';
-              }
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        {isVisible('waiting') && (
+          <StageColumn
+            title="Waiting Room"
+            count={waitingList.length}
+            accentColor="#f59e0b"
+            badgeClassName="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+            icon={<Timer className="size-4 text-amber-500" />}
+          >
+            {waitingList.length === 0 ? (
+              <EmptyStageMessage
+                icon={<Timer className="size-6 text-amber-500/40" />}
+                text="No patients waiting right now"
+              />
+            ) : (
+              waitingList.map((appt) => {
+                const waitMins = calculateElapsedMinutes(
+                  appt.waitingStartedAt || appt.statusUpdatedAt || appt.scheduledAt,
+                  now,
+                );
 
-              return (
+                let timerStyle = 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
+                let waitLabel = 'On Track';
+                if (waitMins >= 25) {
+                  timerStyle = 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 animate-pulse';
+                  waitLabel = 'Long Wait';
+                } else if (waitMins >= 12) {
+                  timerStyle = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30';
+                  waitLabel = 'Moderate';
+                }
+
+                return (
+                  <QueueCard
+                    key={appt.id}
+                    appointment={appt}
+                    onClick={() => onEventClick(appt)}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-transform hover:scale-105 shadow-2xs',
+                          timerStyle,
+                        )}
+                      >
+                        <Clock className="size-3" />
+                        {formatElapsed(waitMins)} ({waitLabel})
+                      </span>
+
+                      <div className="flex items-center gap-1">
+                        <AppointmentStatusSelect appointment={appt} compact />
+                        <CardMenu
+                          onAction={(action) => {
+                            if (action === 'in_progress') handleQuickStatus(appt, 'in_progress');
+                            else if (action === 'no_show') handleQuickStatus(appt, 'no_show');
+                            else if (action === 'cancel') handleQuickStatus(appt, 'cancelled');
+                            else if (action === 'view') onEventClick(appt);
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        size="sm"
+                        className="w-full bg-emerald-600 font-bold text-xs text-white shadow-xs hover:bg-emerald-700 active:scale-[0.98] transition-all"
+                        disabled={updateMutation.isPending}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleQuickStatus(appt, 'in_progress');
+                        }}
+                      >
+                        <Play className="mr-1.5 size-3.5 fill-current" />
+                        Start Consultation
+                      </Button>
+                    </div>
+                  </QueueCard>
+                );
+              })
+            )}
+          </StageColumn>
+        )}
+
+        {isVisible('in_progress') && (
+          <StageColumn
+            title="In Consultation"
+            count={inProgressList.length}
+            accentColor="#3b82f6"
+            badgeClassName="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30"
+            icon={<Stethoscope className="size-4 text-blue-500" />}
+          >
+            {inProgressList.length === 0 ? (
+              <EmptyStageMessage
+                icon={<Stethoscope className="size-6 text-blue-500/40" />}
+                text="No consultations currently in session"
+              />
+            ) : (
+              inProgressList.map((appt) => {
+                const sessionMins = calculateElapsedMinutes(
+                  appt.inProgressAt || appt.statusUpdatedAt || appt.scheduledAt,
+                  now,
+                );
+
+                return (
+                  <QueueCard
+                    key={appt.id}
+                    appointment={appt}
+                    onClick={() => onEventClick(appt)}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-300 shadow-2xs">
+                        <Timer className="size-3 animate-spin" />
+                        Session: {formatElapsed(sessionMins)} / {appt.durationMins}m
+                      </span>
+
+                      <div className="flex items-center gap-1">
+                        <AppointmentStatusSelect appointment={appt} compact />
+                        <CardMenu
+                          onAction={(action) => {
+                            if (action === 'complete') handleQuickStatus(appt, 'completed');
+                            else if (action === 'return_waiting') handleQuickStatus(appt, 'waiting');
+                            else if (action === 'view') onEventClick(appt);
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        size="sm"
+                        className="w-full bg-blue-600 font-bold text-xs text-white shadow-xs hover:bg-blue-700 active:scale-[0.98] transition-all"
+                        disabled={updateMutation.isPending}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleQuickStatus(appt, 'completed');
+                        }}
+                      >
+                        <CheckCircle2 className="mr-1.5 size-3.5" />
+                        Finish Consultation
+                      </Button>
+                    </div>
+                  </QueueCard>
+                );
+              })
+            )}
+          </StageColumn>
+        )}
+
+        {isVisible('upcoming') && (
+          <StageColumn
+            title="Upcoming Today"
+            count={upcomingList.length}
+            accentColor="#64748b"
+            badgeClassName="bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30"
+            icon={<CalendarClock className="size-4 text-slate-500" />}
+          >
+            {upcomingList.length === 0 ? (
+              <EmptyStageMessage
+                icon={<CalendarClock className="size-6 text-slate-500/40" />}
+                text="No upcoming visits left today"
+              />
+            ) : (
+              upcomingList.map((appt) => (
                 <QueueCard
                   key={appt.id}
                   appointment={appt}
                   onClick={() => onEventClick(appt)}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-transform hover:scale-105 shadow-2xs',
-                        timerStyle,
-                      )}
-                    >
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
                       <Clock className="size-3" />
-                      {formatElapsed(waitMins)} ({waitLabel})
+                      {formatApptTimeRange(appt)}
                     </span>
 
                     <div className="flex items-center gap-1">
                       <AppointmentStatusSelect appointment={appt} compact />
                       <CardMenu
                         onAction={(action) => {
-                          if (action === 'in_progress') handleQuickStatus(appt, 'in_progress');
-                          else if (action === 'no_show') handleQuickStatus(appt, 'no_show');
+                          if (action === 'check_in') handleQuickStatus(appt, 'waiting');
+                          else if (action === 'start') handleQuickStatus(appt, 'in_progress');
                           else if (action === 'cancel') handleQuickStatus(appt, 'cancelled');
                           else if (action === 'view') onEventClick(appt);
                         }}
@@ -235,208 +448,90 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
                   <div className="mt-3 flex gap-2">
                     <Button
                       size="sm"
-                      className="w-full bg-emerald-600 font-bold text-xs text-white shadow-xs hover:bg-emerald-700 active:scale-[0.98] transition-all"
+                      variant="outline"
+                      className="w-full text-xs font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
                       disabled={updateMutation.isPending}
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleQuickStatus(appt, 'in_progress');
+                        handleQuickStatus(appt, 'waiting');
                       }}
                     >
-                      <Play className="mr-1.5 size-3.5 fill-current" />
-                      Start Consultation
+                      <UserCheck className="mr-1.5 size-3.5 text-primary" />
+                      Patient Arrived
                     </Button>
                   </div>
                 </QueueCard>
-              );
-            })
-          )}
-        </StageColumn>
+              ))
+            )}
+          </StageColumn>
+        )}
 
-        <StageColumn
-          title="In Consultation"
-          count={inProgressList.length}
-          accentColor="#3b82f6"
-          badgeClassName="bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30"
-          icon={<Stethoscope className="size-4 text-blue-500" />}
-        >
-          {inProgressList.length === 0 ? (
-            <EmptyStageMessage
-              icon={<Stethoscope className="size-6 text-blue-500/40" />}
-              text="No consultations currently in session"
-            />
-          ) : (
-            inProgressList.map((appt) => {
-              const sessionMins = calculateElapsedMinutes(
-                appt.inProgressAt || appt.statusUpdatedAt || appt.scheduledAt,
-                now,
-              );
+        {isVisible('completed') && (
+          <StageColumn
+            title="Completed"
+            count={completedList.length}
+            accentColor="#10b981"
+            badgeClassName="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+            icon={<CheckCircle2 className="size-4 text-emerald-500" />}
+          >
+            {completedList.length === 0 ? (
+              <EmptyStageMessage
+                icon={<CheckCircle2 className="size-6 text-emerald-500/40" />}
+                text="No completed visits yet today"
+              />
+            ) : (
+              completedList.map((appt) => {
+                const isPaid = appt.isPaid;
 
-              return (
-                <QueueCard
-                  key={appt.id}
-                  appointment={appt}
-                  onClick={() => onEventClick(appt)}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-300 shadow-2xs">
-                      <Timer className="size-3 animate-spin" />
-                      Session: {formatElapsed(sessionMins)} / {appt.durationMins}m
-                    </span>
-
-                    <div className="flex items-center gap-1">
-                      <AppointmentStatusSelect appointment={appt} compact />
-                      <CardMenu
-                        onAction={(action) => {
-                          if (action === 'complete') handleQuickStatus(appt, 'completed');
-                          else if (action === 'return_waiting') handleQuickStatus(appt, 'waiting');
-                          else if (action === 'view') onEventClick(appt);
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex gap-2">
-                    <Button
-                      size="sm"
-                      className="w-full bg-blue-600 font-bold text-xs text-white shadow-xs hover:bg-blue-700 active:scale-[0.98] transition-all"
-                      disabled={updateMutation.isPending}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleQuickStatus(appt, 'completed');
-                      }}
-                    >
-                      <CheckCircle2 className="mr-1.5 size-3.5" />
-                      Finish Consultation
-                    </Button>
-                  </div>
-                </QueueCard>
-              );
-            })
-          )}
-        </StageColumn>
-
-        <StageColumn
-          title="Upcoming Today"
-          count={upcomingList.length}
-          accentColor="#64748b"
-          badgeClassName="bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/30"
-          icon={<CalendarClock className="size-4 text-slate-500" />}
-        >
-          {upcomingList.length === 0 ? (
-            <EmptyStageMessage
-              icon={<CalendarClock className="size-6 text-slate-500/40" />}
-              text="No upcoming visits left today"
-            />
-          ) : (
-            upcomingList.map((appt) => (
-              <QueueCard
-                key={appt.id}
-                appointment={appt}
-                onClick={() => onEventClick(appt)}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
-                    <Clock className="size-3" />
-                    {formatApptTimeRange(appt)}
-                  </span>
-
-                  <div className="flex items-center gap-1">
-                    <AppointmentStatusSelect appointment={appt} compact />
-                    <CardMenu
-                      onAction={(action) => {
-                        if (action === 'check_in') handleQuickStatus(appt, 'waiting');
-                        else if (action === 'start') handleQuickStatus(appt, 'in_progress');
-                        else if (action === 'cancel') handleQuickStatus(appt, 'cancelled');
-                        else if (action === 'view') onEventClick(appt);
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full text-xs font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
-                    disabled={updateMutation.isPending}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleQuickStatus(appt, 'waiting');
-                    }}
+                return (
+                  <QueueCard
+                    key={appt.id}
+                    appointment={appt}
+                    onClick={() => onEventClick(appt)}
                   >
-                    <UserCheck className="mr-1.5 size-3.5 text-primary" />
-                    Patient Arrived
-                  </Button>
-                </div>
-              </QueueCard>
-            ))
-          )}
-        </StageColumn>
-
-        <StageColumn
-          title="Completed"
-          count={completedList.length}
-          accentColor="#10b981"
-          badgeClassName="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-          icon={<CheckCircle2 className="size-4 text-emerald-500" />}
-        >
-          {completedList.length === 0 ? (
-            <EmptyStageMessage
-              icon={<CheckCircle2 className="size-6 text-emerald-500/40" />}
-              text="No completed visits yet today"
-            />
-          ) : (
-            completedList.map((appt) => {
-              const isPaid = appt.isPaid;
-
-              return (
-                <QueueCard
-                  key={appt.id}
-                  appointment={appt}
-                  onClick={() => onEventClick(appt)}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle2 className="size-3" /> Visit Completed
-                    </span>
-
-                    <div className="flex items-center gap-1">
-                      <AppointmentStatusSelect appointment={appt} compact />
-                      <CardMenu
-                        onAction={(action) => {
-                          if (action === 'view') onEventClick(appt);
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-[11px]">
-                    <span className="text-muted-foreground font-medium">Billing:</span>
-                    {isPaid ? (
-                      <span className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
-                        <CreditCard className="size-3" /> Paid
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="size-3" /> Visit Completed
                       </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markPaidMutation.mutate({
-                            id: appt.id,
-                            paymentMethodId: appt.paymentMethodId || '',
-                          });
-                        }}
-                        className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
-                      >
-                        <CreditCard className="size-3" /> Unpaid (Mark Paid)
-                      </button>
-                    )}
-                  </div>
-                </QueueCard>
-              );
-            })
-          )}
-        </StageColumn>
+
+                      <div className="flex items-center gap-1">
+                        <AppointmentStatusSelect appointment={appt} compact />
+                        <CardMenu
+                          onAction={(action) => {
+                            if (action === 'view') onEventClick(appt);
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-[11px]">
+                      <span className="text-muted-foreground font-medium">Billing:</span>
+                      {isPaid ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
+                          <CreditCard className="size-3" /> Paid
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markPaidMutation.mutate({
+                              id: appt.id,
+                              paymentMethodId: appt.paymentMethodId || '',
+                            });
+                          }}
+                          className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                        >
+                          <CreditCard className="size-3" /> Unpaid (Mark Paid)
+                        </button>
+                      )}
+                    </div>
+                  </QueueCard>
+                );
+              })
+            )}
+          </StageColumn>
+        )}
       </div>
     </div>
   );
@@ -447,19 +542,31 @@ function StatCard({
   label,
   value,
   colorClass,
+  onClick,
+  active,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   colorClass: string;
+  onClick?: () => void;
+  active?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-xs transition-all duration-150 hover:shadow-sm">
-      <div className={cn('grid size-9 shrink-0 place-items-center rounded-lg border', colorClass)}>
+    <div
+      onClick={onClick}
+      className={cn(
+        'card-aura flex items-center gap-3 rounded-2xl border bg-card p-3.5 shadow-xs transition-all duration-150 cursor-pointer active:scale-95',
+        active
+          ? 'ring-2 ring-primary border-primary bg-primary/5 shadow-sm'
+          : 'hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/40',
+      )}
+    >
+      <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl border shadow-2xs', colorClass)}>
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+        <p className="text-[11px] font-semibold text-muted-foreground truncate">{label}</p>
         <p className="text-lg font-bold tracking-tight text-foreground">{value}</p>
       </div>
     </div>
@@ -482,8 +589,8 @@ function StageColumn({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col rounded-xl border bg-card/60 shadow-xs backdrop-blur-xs">
-      <div className="flex items-center justify-between border-b p-3 bg-muted/20">
+    <div className="card-aura flex flex-col rounded-2xl border bg-card/75 shadow-xs backdrop-blur-xs overflow-hidden">
+      <div className="flex items-center justify-between border-b p-3 bg-muted/25">
         <div className="flex items-center gap-2">
           <span
             className="size-2 rounded-full ring-2 ring-background"
@@ -492,11 +599,11 @@ function StageColumn({
           <span className="text-muted-foreground">{icon}</span>
           <h3 className="text-xs font-bold text-foreground tracking-tight">{title}</h3>
         </div>
-        <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-bold shadow-2xs', badgeClassName)}>
+        <span className={cn('rounded-full border px-2.5 py-0.5 text-[10px] font-bold shadow-2xs', badgeClassName)}>
           {count}
         </span>
       </div>
-      <div className="flex flex-col gap-2.5 p-3 min-h-[380px] max-h-[72vh] overflow-y-auto overscroll-contain">
+      <div className="flex flex-col gap-2.5 p-3 min-h-[360px] max-h-[72vh] overflow-y-auto overscroll-contain">
         {children}
       </div>
     </div>
@@ -518,7 +625,7 @@ function QueueCard({
   return (
     <div
       onClick={onClick}
-      className="group relative flex flex-col rounded-xl border bg-card p-3.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-primary/50 active:scale-[0.99] cursor-pointer"
+      className="card-aura group relative flex flex-col rounded-xl border bg-card p-3.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/50 hover:ring-1 hover:ring-primary/25 active:scale-[0.985] cursor-pointer"
       style={{
         borderLeftWidth: '4px',
         borderLeftColor: accent,

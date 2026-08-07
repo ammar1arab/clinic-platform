@@ -110,13 +110,8 @@ export function AppointmentCalendar({
       x: number,
       y: number,
       anchor?: AnchorRect,
-      opts?: { keepMore?: boolean },
     ) => {
-      const keepMore =
-        opts?.keepMore === true &&
-        typeof window !== 'undefined' &&
-        window.matchMedia('(min-width: 768px)').matches;
-      if (!keepMore) setMoreList(null);
+      setMoreList(null);
       setPreview({ appointment: appt, x, y, anchor });
     },
     [],
@@ -460,13 +455,8 @@ export function AppointmentCalendar({
       {moreList && (
         <MoreEventsPopover
           state={moreList}
-          onClose={() => {
-            setMoreList(null);
-            setPreview(null);
-          }}
-          onSelect={(appt, x, y, anchor) =>
-            openPreview(appt, x, y, anchor, { keepMore: true })
-          }
+          onClose={() => setMoreList(null)}
+          onSelect={(appt, x, y, anchor) => openPreview(appt, x, y, anchor)}
         />
       )}
 

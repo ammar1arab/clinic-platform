@@ -106,6 +106,8 @@ export function MoreEventsPopover({ state, onClose, onSelect }: Props) {
                 key={appt.id}
                 type="button"
                 onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   const target = e.currentTarget;
                   const rect = target.getBoundingClientRect();
                   onSelect(appt, e.clientX, e.clientY, {

@@ -63,9 +63,17 @@ function SchedulePageInner() {
   const { data: staff } = useClinicStaff(clinicId);
   const viewParam = searchParams.get('view');
 
-  const view: ScheduleView = parseScheduleView(
-    viewParam || clinic?.defaultCalendarView || 'month',
+  const [view, setCurrentView] = useState<ScheduleView>(() =>
+    parseScheduleView(viewParam || clinic?.defaultCalendarView || 'month'),
   );
+
+  const [prevParam, setPrevParam] = useState(viewParam);
+  if (viewParam !== prevParam) {
+    setPrevParam(viewParam);
+    if (viewParam) {
+      setCurrentView(parseScheduleView(viewParam));
+    }
+  }
 
   const [search, setSearch] = useState('');
   const [departmentId, setDepartmentId] = useState('');
@@ -88,6 +96,7 @@ function SchedulePageInner() {
 
   const setView = useCallback(
     (next: ScheduleView) => {
+      setCurrentView(next);
       router.replace(schedulePath(next), { scroll: false });
     },
     [router],
@@ -206,17 +215,17 @@ function SchedulePageInner() {
 function ScheduleFallback() {
   return (
     <div className="space-y-3">
-      <div className="flex flex-col gap-2.5">
-        <div className="flex items-center gap-2">
-          <div className="h-9 min-w-0 flex-1 rounded-md bg-muted/60 sm:max-w-56" />
-          <div className="h-9 w-36 shrink-0 rounded-md bg-muted/60 sm:w-44" />
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <div className="h-4 w-28 rounded bg-muted/50" />
-          <div className="flex gap-2">
-            <div className="h-8 w-24 rounded-md bg-muted/60" />
-            <div className="h-8 w-28 rounded-md bg-muted/60" />
+      <div className="card-aura rounded-2xl border bg-card/90 p-2.5 sm:p-3 space-y-2.5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="h-9 w-full sm:w-64 rounded-xl bg-muted/60" />
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-32 rounded-xl bg-muted/60" />
+            <div className="h-9 w-32 rounded-xl bg-muted/60" />
           </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-2">
+          <div className="h-8 w-64 rounded-lg bg-muted/50" />
+          <div className="h-8 w-48 rounded-lg bg-muted/50" />
         </div>
       </div>
       <CalendarSkeleton />

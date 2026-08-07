@@ -51,6 +51,7 @@ export function DoctorTimeline({
     d.setHours(0, 0, 0, 0);
     return d;
   });
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>('all');
 
   const now = useNow(30_000);
 
@@ -86,10 +87,16 @@ export function DoctorTimeline({
     return Array.from(map.values());
   }, [doctors, appointments]);
 
+  const displayedDoctors = useMemo(() => {
+    if (selectedDoctorId === 'all') return activeDoctors;
+    const found = activeDoctors.find((d) => d.id === selectedDoctorId);
+    return found ? [found] : activeDoctors;
+  }, [activeDoctors, selectedDoctorId]);
+
   const dateLabel = useMemo(() => {
     return selectedDate.toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'long',
+      weekday: 'short',
+      month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
@@ -125,47 +132,57 @@ export function DoctorTimeline({
     setSelectedDate(d);
   };
 
+  const dayStart = useMemo(() => {
+    const d = new Date(selectedDate);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }, [selectedDate]);
+
+  const dayEnd = useMemo(() => {
+    const d = new Date(selectedDate);
+    d.setHours(23, 59, 59, 999);
+    return d.getTime();
+  }, [selectedDate]);
+
   const apptsByDoctor = useMemo(() => {
     const map = new Map<string, Appointment[]>();
     if (!appointments) return map;
 
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
     for (const appt of appointments) {
-      const apptDate = new Date(appt.scheduledAt);
-      if (apptDate >= startOfDay && apptDate <= endOfDay) {
-        const docId = appt.doctorId;
-        const list = map.get(docId) ?? [];
+      const t = new Date(appt.scheduledAt).getTime();
+      if (t >= dayStart && t <= dayEnd) {
+        const list = map.get(appt.doctorId) ?? [];
         list.push(appt);
-        map.set(docId, list);
+        map.set(appt.doctorId, list);
       }
     }
+
     return map;
-  }, [appointments, selectedDate]);
+  }, [appointments, dayStart, dayEnd]);
 
-  const nowHour = now.getHours();
-  const nowMinutes = now.getMinutes();
-  const isNowInSchedule = isToday && nowHour >= 7 && nowHour <= 20;
-  const nowTopPercent = isNowInSchedule
-    ? ((nowHour - 7 + nowMinutes / 60) / HOURS.length) * 100
-    : null;
+  const nowTopPercent = useMemo(() => {
+    if (!isToday) return null;
+    const h = now.getHours();
+    const m = now.getMinutes();
+    if (h < 7 || h >= 21) return null;
+    const totalMinutes = (h - 7) * 60 + m;
+    const timelineTotal = 14 * 60;
+    return (totalMinutes / timelineTotal) * 100;
+  }, [isToday, now]);
 
-  if (isLoading && (!appointments || appointments.length === 0)) {
-    return <TimelineSkeleton hours={7} columns={Math.min(4, Math.max(2, activeDoctors.length || 3))} />;
+  if (isLoading) {
+    return <TimelineSkeleton columns={Math.max(2, activeDoctors.length || 3)} />;
   }
 
   if (activeDoctors.length === 0) {
     return (
-      <div className="flex h-80 flex-col items-center justify-center rounded-xl border bg-card p-6 text-center shadow-xs">
-        <div className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary">
+      <div className="card-aura flex flex-col items-center justify-center rounded-2xl border bg-card p-12 text-center shadow-xs">
+        <div className="grid size-12 place-items-center rounded-2xl bg-muted/80 text-muted-foreground shadow-2xs">
           <Users className="size-6" />
         </div>
-        <h3 className="mt-3 text-sm font-semibold text-foreground">No doctors registered</h3>
+        <h3 className="mt-3 text-sm font-bold text-foreground">No Doctors Available</h3>
         <p className="mt-1 text-xs text-muted-foreground max-w-sm">
-          Add medical staff in Clinic Settings to view side-by-side doctor schedules.
+          There are no doctors or scheduled visits for this clinic today.
         </p>
         <Button
           size="sm"
@@ -183,63 +200,104 @@ export function DoctorTimeline({
   }
 
   return (
-    <div className="card-aura relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all duration-200">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-muted/20 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleToday}
-            disabled={isToday}
-            className="transition-all active:scale-95 font-medium"
-          >
-            Today
-          </Button>
-          <div className="flex items-center gap-0.5 rounded-lg border bg-background/60 p-0.5">
+    <div className="card-aura relative flex flex-col overflow-hidden rounded-2xl border bg-card shadow-xs transition-all duration-200">
+      <div className="flex flex-col gap-3 border-b bg-muted/20 p-3 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 transition-all active:scale-95"
-              onClick={handlePrevDay}
-              aria-label="Previous day"
+              variant="outline"
+              size="sm"
+              onClick={handleToday}
+              disabled={isToday}
+              className="h-8 transition-all duration-150 active:scale-95 font-semibold text-xs"
             >
-              <ChevronLeft className="size-4" />
+              Today
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 transition-all active:scale-95"
-              onClick={handleNextDay}
-              aria-label="Next day"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
+            <div className="flex items-center gap-0.5 rounded-lg border bg-background/80 p-0.5 shadow-2xs">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 transition-all active:scale-95"
+                onClick={handlePrevDay}
+                aria-label="Previous day"
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 transition-all active:scale-95"
+                onClick={handleNextDay}
+                aria-label="Next day"
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+            <span className="text-xs sm:text-sm font-bold tracking-tight text-foreground">{dateLabel}</span>
+            {isToday && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] sm:text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-2xs">
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-ping" />
+                Live Today
+              </span>
+            )}
           </div>
-          <span className="text-sm font-bold tracking-tight text-foreground">{dateLabel}</span>
-          {isToday && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-ping" />
-              Live Today
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="hidden sm:inline-flex items-center gap-1 font-medium text-foreground">
+              <User className="size-3.5 text-primary" />
+              {activeDoctors.length} Doctor{activeDoctors.length === 1 ? '' : 's'}
             </span>
-          )}
+            <span className="hidden sm:inline">·</span>
+            <span className="text-[11px] text-muted-foreground font-medium">Click slot to book</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-            <User className="size-3.5 text-primary" />
-            {activeDoctors.length} Doctor{activeDoctors.length === 1 ? '' : 's'}
-          </span>
-          <span>·</span>
-          <span className="text-muted-foreground">Click any empty slot to book</span>
-        </div>
+        {activeDoctors.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setSelectedDoctorId('all')}
+              className={cn(
+                'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
+                selectedDoctorId === 'all'
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <Users className="size-3" />
+              All Doctors ({activeDoctors.length})
+            </button>
+            {activeDoctors.map((doc) => {
+              const active = selectedDoctorId === doc.id;
+              return (
+                <button
+                  key={doc.id}
+                  type="button"
+                  onClick={() => setSelectedDoctorId(doc.id)}
+                  className={cn(
+                    'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
+                    active
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+                  )}
+                >
+                  <span className="grid size-4 place-items-center rounded-full bg-background/30 text-[9px]">
+                    {doc.initials}
+                  </span>
+                  {doc.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="relative max-h-[75vh] min-h-125 overflow-auto">
         <div
           className="grid relative"
           style={{
-            gridTemplateColumns: `76px repeat(${activeDoctors.length}, minmax(260px, 1fr))`,
-            minWidth: `${76 + activeDoctors.length * 260}px`,
+            gridTemplateColumns: `64px repeat(${displayedDoctors.length}, minmax(${displayedDoctors.length === 1 ? '100%' : '240px'}, 1fr))`,
+            minWidth: displayedDoctors.length === 1 ? '100%' : `${64 + displayedDoctors.length * 240}px`,
           }}
         >
           {nowTopPercent !== null && (
@@ -252,21 +310,21 @@ export function DoctorTimeline({
             </div>
           )}
 
-          <div className="sticky top-0 left-0 z-30 flex items-center justify-center border-r border-b bg-card/95 p-3 text-xs font-bold text-muted-foreground backdrop-blur-md shadow-xs">
-            <Clock className="size-4" />
+          <div className="sticky top-0 left-0 z-30 flex items-center justify-center border-r border-b bg-card/95 p-2 text-xs font-bold text-muted-foreground backdrop-blur-md shadow-xs">
+            <Clock className="size-3.5 text-primary" />
           </div>
 
-          {activeDoctors.map((doc) => {
+          {displayedDoctors.map((doc) => {
             const docAppts = apptsByDoctor.get(doc.id) ?? [];
             const activeCount = docAppts.filter((a) => a.status !== 'cancelled').length;
 
             return (
               <div
                 key={doc.id}
-                className="sticky top-0 z-20 flex items-center justify-between border-r border-b bg-card/95 p-3.5 backdrop-blur-md shadow-xs transition-colors"
+                className="sticky top-0 z-20 flex items-center justify-between border-r border-b bg-card/95 p-3 backdrop-blur-md shadow-xs transition-colors"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-bold text-primary shadow-xs ring-1 ring-primary/20">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-bold text-primary shadow-xs ring-1 ring-primary/20">
                     {doc.initials}
                   </div>
                   <div className="min-w-0">
@@ -308,7 +366,7 @@ export function DoctorTimeline({
                   {hourLabel}
                 </div>
 
-                {activeDoctors.map((doc) => {
+                {displayedDoctors.map((doc) => {
                   const docAppts = apptsByDoctor.get(doc.id) ?? [];
 
                   const hourAppts = docAppts.filter((appt) => {
@@ -324,10 +382,10 @@ export function DoctorTimeline({
                         slot.setHours(hour, 0, 0, 0);
                         onSelectSlot(slot, doc.id);
                       }}
-                      className="group relative flex min-h-28 flex-col gap-1.5 border-r border-b bg-background/40 p-1.5 transition-all duration-150 hover:bg-primary/4 cursor-pointer"
+                      className="group relative flex min-h-28 flex-col gap-1.5 border-r border-b bg-background/30 p-1.5 transition-all duration-150 hover:bg-primary/5 cursor-pointer"
                     >
                       <div className="absolute inset-0 z-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none">
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary/15 px-2.5 py-1 text-xs font-bold text-primary shadow-sm ring-1 ring-primary/20 transition-transform group-hover:scale-105">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary/15 px-2.5 py-1 text-xs font-bold text-primary shadow-xs ring-1 ring-primary/20 transition-transform group-hover:scale-105">
                           <Plus className="size-3.5" /> Book {hourLabel}
                         </span>
                       </div>
@@ -344,8 +402,8 @@ export function DoctorTimeline({
                               onEventClick(appt);
                             }}
                             className={cn(
-                              'relative z-10 flex flex-col justify-between rounded-lg border bg-card p-2.5 text-left shadow-xs transition-all duration-200 cursor-pointer',
-                              'hover:shadow-lg hover:border-primary/50 hover:scale-[1.015] active:scale-[0.99]',
+                              'card-aura relative z-10 flex flex-col justify-between rounded-xl border bg-card p-2.5 text-left shadow-xs transition-all duration-200 cursor-pointer',
+                              'hover:-translate-y-0.5 hover:shadow-md hover:border-primary/50 hover:ring-1 hover:ring-primary/20 active:scale-[0.985]',
                               isCancelled && 'opacity-60 bg-muted/40 line-through',
                             )}
                             style={{
