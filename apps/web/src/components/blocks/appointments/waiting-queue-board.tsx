@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { useNow } from '@/hooks/use-now';
 import {
   CalendarClock,
@@ -18,13 +18,13 @@ import {
   UserX,
   Users,
   Video,
-  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Appointment, AppointmentStatus } from '@/services/appointments.service';
@@ -36,6 +36,8 @@ import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { StatGridSkeleton, CardGridSkeleton } from '@/components/primitives/skeleton-presets';
+
+type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
 
 interface Props {
   appointments: Appointment[] | undefined;
@@ -59,7 +61,6 @@ function formatElapsed(minutes: number): string {
 }
 
 export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Props) {
-  type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
   const [stageTab, setStageTab] = useState<StageTab>('all');
   const now = useNow(10_000);
   const updateMutation = useUpdateAppointment();
@@ -71,7 +72,6 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
     today.setHours(0, 0, 0, 0);
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
-
     return appointments.filter((appt) => {
       const apptDate = new Date(appt.scheduledAt);
       return apptDate >= today && apptDate <= endOfDay;
@@ -113,33 +113,40 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
   const completedList = useMemo(
     () =>
       dayAppointments
-        .filter((a) => a.status === 'completed')
+        .filter((a) => a.status === 'completed' || a.status === 'no_show' || a.status === 'cancelled')
         .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
     [dayAppointments],
   );
 
-  const handleQuickStatus = useCallback((appt: Appointment, targetStatus: AppointmentStatus) => {
-    updateMutation.mutate(
-      {
-        id: appt.id,
-        data: { status: targetStatus },
-      },
-      {
-        onSuccess: () => {
-          if (targetStatus === 'in_progress') {
-            toast.success(`Started consultation with ${patientDisplayName(appt)}`);
-          } else if (targetStatus === 'completed') {
-            toast.success(`Visit completed for ${patientDisplayName(appt)}`);
-          } else if (targetStatus === 'checked_in' || targetStatus === 'waiting') {
-            toast.success(`${patientDisplayName(appt)} checked into waiting room`);
-          }
+  const handleQuickStatus = useCallback(
+    (appt: Appointment, targetStatus: AppointmentStatus) => {
+      updateMutation.mutate(
+        { id: appt.id, data: { status: targetStatus } },
+        {
+          onSuccess: () => {
+            const name = patientDisplayName(appt);
+            const msgs: Partial<Record<AppointmentStatus, string>> = {
+              in_progress: `Started consultation with ${name}`,
+              completed: `Visit completed for ${name}`,
+              waiting: `${name} returned to waiting room`,
+              checked_in: `${name} checked in`,
+              no_show: `${name} marked as no-show`,
+            };
+            toast.success(msgs[targetStatus] || 'Status updated');
+          },
+          onError: (err) => {
+            toast.error(extractErrorMessage(err) || 'Failed to update status');
+          },
         },
-        onError: (err) => {
-          toast.error(extractErrorMessage(err) || 'Failed to update status');
-        },
-      },
-    );
-  }, [updateMutation]);
+      );
+    },
+    [updateMutation],
+  );
+
+  const isVisible = useCallback(
+    (stage: StageTab) => stageTab === 'all' || stageTab === stage,
+    [stageTab],
+  );
 
   if (isLoading && (!appointments || appointments.length === 0)) {
     return (
@@ -150,20 +157,16 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
     );
   }
 
-  const isVisible = (stage: 'waiting' | 'in_progress' | 'upcoming' | 'completed') => {
-    return stageTab === 'all' || stageTab === stage;
-  };
-
   return (
     <div className="space-y-4">
-      {/* Quick Summary Stat Cards */}
+      {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         <StatCard
           icon={<Timer className="size-4 text-amber-500" />}
           label="In Waiting Room"
           value={waitingList.length}
           colorClass="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-          onClick={() => setStageTab((prev: StageTab) => (prev === 'waiting' ? 'all' : 'waiting'))}
+          onClick={() => setStageTab((p) => (p === 'waiting' ? 'all' : 'waiting'))}
           active={stageTab === 'waiting'}
         />
         <StatCard
@@ -171,7 +174,7 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
           label="In Consultation"
           value={inProgressList.length}
           colorClass="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
-          onClick={() => setStageTab((prev: StageTab) => (prev === 'in_progress' ? 'all' : 'in_progress'))}
+          onClick={() => setStageTab((p) => (p === 'in_progress' ? 'all' : 'in_progress'))}
           active={stageTab === 'in_progress'}
         />
         <StatCard
@@ -179,87 +182,48 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
           label="Upcoming Today"
           value={upcomingList.length}
           colorClass="bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
-          onClick={() => setStageTab((prev: StageTab) => (prev === 'upcoming' ? 'all' : 'upcoming'))}
+          onClick={() => setStageTab((p) => (p === 'upcoming' ? 'all' : 'upcoming'))}
           active={stageTab === 'upcoming'}
         />
         <StatCard
           icon={<CheckCircle2 className="size-4 text-emerald-500" />}
-          label="Completed Today"
+          label="Done / Closed"
           value={completedList.length}
           colorClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-          onClick={() => setStageTab((prev: StageTab) => (prev === 'completed' ? 'all' : 'completed'))}
+          onClick={() => setStageTab((p) => (p === 'completed' ? 'all' : 'completed'))}
           active={stageTab === 'completed'}
         />
       </div>
 
+      {/* Mobile stage tab strip */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none lg:hidden">
-        <button
-          type="button"
-          onClick={() => setStageTab('all')}
-          className={cn(
-            'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
-            stageTab === 'all'
-              ? 'bg-primary text-primary-foreground shadow-xs'
-              : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
-          )}
-        >
-          All Stages
-        </button>
-        <button
-          type="button"
-          onClick={() => setStageTab('waiting')}
-          className={cn(
-            'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
-            stageTab === 'waiting'
-              ? 'bg-amber-600 text-white shadow-xs'
-              : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
-          )}
-        >
-          <Timer className="size-3" />
-          Waiting ({waitingList.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setStageTab('in_progress')}
-          className={cn(
-            'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
-            stageTab === 'in_progress'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
-          )}
-        >
-          <Stethoscope className="size-3" />
-          Consulting ({inProgressList.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setStageTab('upcoming')}
-          className={cn(
-            'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
-            stageTab === 'upcoming'
-              ? 'bg-slate-700 text-white shadow-xs dark:bg-slate-600'
-              : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
-          )}
-        >
-          <Users className="size-3" />
-          Upcoming ({upcomingList.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setStageTab('completed')}
-          className={cn(
-            'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95',
-            stageTab === 'completed'
-              ? 'bg-emerald-600 text-white shadow-xs'
-              : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
-          )}
-        >
-          <CheckCircle2 className="size-3" />
-          Completed ({completedList.length})
-        </button>
+        {(
+          [
+            { key: 'all', label: 'All', icon: null, cls: 'bg-primary text-primary-foreground' },
+            { key: 'waiting', label: `Waiting (${waitingList.length})`, icon: <Timer className="size-3" />, cls: 'bg-amber-600 text-white' },
+            { key: 'in_progress', label: `Consulting (${inProgressList.length})`, icon: <Stethoscope className="size-3" />, cls: 'bg-blue-600 text-white' },
+            { key: 'upcoming', label: `Upcoming (${upcomingList.length})`, icon: <Users className="size-3" />, cls: 'bg-slate-700 text-white dark:bg-slate-600' },
+            { key: 'completed', label: `Done (${completedList.length})`, icon: <CheckCircle2 className="size-3" />, cls: 'bg-emerald-600 text-white' },
+          ] satisfies { key: StageTab; label: string; icon: React.ReactNode; cls: string }[]
+        ).map(({ key, label, icon, cls }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setStageTab(key)}
+            className={cn(
+              'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95 shadow-2xs',
+              stageTab === key ? cls : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+          >
+            {icon}
+            {label}
+          </button>
+        ))}
       </div>
 
+      {/* Stage columns */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+        {/* Waiting */}
         {isVisible('waiting') && (
           <StageColumn
             title="Waiting Room"
@@ -269,66 +233,54 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
             icon={<Timer className="size-4 text-amber-500" />}
           >
             {waitingList.length === 0 ? (
-              <EmptyStageMessage
-                icon={<Timer className="size-6 text-amber-500/40" />}
-                text="No patients waiting right now"
-              />
+              <EmptyStageMessage icon={<Timer className="size-6 text-amber-500/40" />} text="No patients waiting right now" />
             ) : (
               waitingList.map((appt) => {
                 const waitMins = calculateElapsedMinutes(
                   appt.waitingStartedAt || appt.statusUpdatedAt || appt.scheduledAt,
                   now,
                 );
-
-                let timerStyle = 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
-                let waitLabel = 'On Track';
-                if (waitMins >= 25) {
-                  timerStyle = 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 animate-pulse';
-                  waitLabel = 'Long Wait';
-                } else if (waitMins >= 12) {
-                  timerStyle = 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30';
-                  waitLabel = 'Moderate';
-                }
+                const timerStyle =
+                  waitMins >= 25
+                    ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40 animate-pulse'
+                    : waitMins >= 12
+                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                      : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30';
+                const waitLabel = waitMins >= 25 ? 'Long Wait' : waitMins >= 12 ? 'Moderate' : 'On Track';
 
                 return (
-                  <QueueCard
-                    key={appt.id}
-                    appointment={appt}
-                    onClick={() => onEventClick(appt)}
-                  >
+                  <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
                     <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-transform hover:scale-105 shadow-2xs',
-                          timerStyle,
-                        )}
-                      >
+                      <span className={cn('inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs', timerStyle)}>
                         <Clock className="size-3" />
-                        {formatElapsed(waitMins)} ({waitLabel})
+                        {formatElapsed(waitMins)} · {waitLabel}
                       </span>
-
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />
-                        <CardMenu
-                          onAction={(action) => {
-                            if (action === 'in_progress') handleQuickStatus(appt, 'in_progress');
-                            else if (action === 'no_show') handleQuickStatus(appt, 'no_show');
-                            else if (action === 'cancel') handleQuickStatus(appt, 'cancelled');
-                            else if (action === 'view') onEventClick(appt);
-                          }}
+                        <QuickActionMenu
+                          onView={() => onEventClick(appt)}
+                          actions={[
+                            {
+                              label: 'Start Consultation',
+                              icon: <Play className="size-3.5" />,
+                              onClick: () => handleQuickStatus(appt, 'in_progress'),
+                            },
+                            {
+                              label: 'Mark No-Show',
+                              icon: <UserX className="size-3.5" />,
+                              className: 'text-amber-600',
+                              onClick: () => handleQuickStatus(appt, 'no_show'),
+                            },
+                          ]}
                         />
                       </div>
                     </div>
-
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3">
                       <Button
                         size="sm"
                         className="w-full bg-emerald-600 font-bold text-xs text-white shadow-xs hover:bg-emerald-700 active:scale-[0.98] transition-all"
                         disabled={updateMutation.isPending}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleQuickStatus(appt, 'in_progress');
-                        }}
+                        onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, 'in_progress'); }}
                       >
                         <Play className="mr-1.5 size-3.5 fill-current" />
                         Start Consultation
@@ -341,6 +293,7 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
           </StageColumn>
         )}
 
+        {/* In Progress */}
         {isVisible('in_progress') && (
           <StageColumn
             title="In Consultation"
@@ -350,50 +303,52 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
             icon={<Stethoscope className="size-4 text-blue-500" />}
           >
             {inProgressList.length === 0 ? (
-              <EmptyStageMessage
-                icon={<Stethoscope className="size-6 text-blue-500/40" />}
-                text="No consultations currently in session"
-              />
+              <EmptyStageMessage icon={<Stethoscope className="size-6 text-blue-500/40" />} text="No consultations currently in session" />
             ) : (
               inProgressList.map((appt) => {
                 const sessionMins = calculateElapsedMinutes(
                   appt.inProgressAt || appt.statusUpdatedAt || appt.scheduledAt,
                   now,
                 );
+                const isLong = sessionMins > appt.durationMins;
 
                 return (
-                  <QueueCard
-                    key={appt.id}
-                    appointment={appt}
-                    onClick={() => onEventClick(appt)}
-                  >
+                  <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 dark:text-blue-300 shadow-2xs">
+                      <span className={cn(
+                        'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs',
+                        isLong
+                          ? 'border-rose-500/40 bg-rose-500/15 text-rose-700 dark:text-rose-300 animate-pulse'
+                          : 'border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-300',
+                      )}>
                         <Timer className="size-3 animate-spin" />
-                        Session: {formatElapsed(sessionMins)} / {appt.durationMins}m
+                        {formatElapsed(sessionMins)} / {appt.durationMins}m
                       </span>
-
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />
-                        <CardMenu
-                          onAction={(action) => {
-                            if (action === 'complete') handleQuickStatus(appt, 'completed');
-                            else if (action === 'return_waiting') handleQuickStatus(appt, 'waiting');
-                            else if (action === 'view') onEventClick(appt);
-                          }}
+                        <QuickActionMenu
+                          onView={() => onEventClick(appt)}
+                          actions={[
+                            {
+                              label: 'Finish Consultation',
+                              icon: <CheckCircle2 className="size-3.5" />,
+                              onClick: () => handleQuickStatus(appt, 'completed'),
+                            },
+                            {
+                              label: 'Return to Waiting',
+                              icon: <RotateCcw className="size-3.5" />,
+                              onClick: () => handleQuickStatus(appt, 'waiting'),
+                            },
+                          ]}
                         />
                       </div>
                     </div>
-
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3">
                       <Button
                         size="sm"
                         className="w-full bg-blue-600 font-bold text-xs text-white shadow-xs hover:bg-blue-700 active:scale-[0.98] transition-all"
                         disabled={updateMutation.isPending}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleQuickStatus(appt, 'completed');
-                        }}
+                        onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, 'completed'); }}
                       >
                         <CheckCircle2 className="mr-1.5 size-3.5" />
                         Finish Consultation
@@ -406,6 +361,7 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
           </StageColumn>
         )}
 
+        {/* Upcoming */}
         {isVisible('upcoming') && (
           <StageColumn
             title="Upcoming Today"
@@ -415,46 +371,41 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
             icon={<CalendarClock className="size-4 text-slate-500" />}
           >
             {upcomingList.length === 0 ? (
-              <EmptyStageMessage
-                icon={<CalendarClock className="size-6 text-slate-500/40" />}
-                text="No upcoming visits left today"
-              />
+              <EmptyStageMessage icon={<CalendarClock className="size-6 text-slate-500/40" />} text="No upcoming visits left today" />
             ) : (
               upcomingList.map((appt) => (
-                <QueueCard
-                  key={appt.id}
-                  appointment={appt}
-                  onClick={() => onEventClick(appt)}
-                >
+                <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
                       <Clock className="size-3" />
                       {formatApptTimeRange(appt)}
                     </span>
-
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                       <AppointmentStatusSelect appointment={appt} compact />
-                      <CardMenu
-                        onAction={(action) => {
-                          if (action === 'check_in') handleQuickStatus(appt, 'waiting');
-                          else if (action === 'start') handleQuickStatus(appt, 'in_progress');
-                          else if (action === 'cancel') handleQuickStatus(appt, 'cancelled');
-                          else if (action === 'view') onEventClick(appt);
-                        }}
+                      <QuickActionMenu
+                        onView={() => onEventClick(appt)}
+                        actions={[
+                          {
+                            label: 'Patient Arrived',
+                            icon: <UserCheck className="size-3.5" />,
+                            onClick: () => handleQuickStatus(appt, 'waiting'),
+                          },
+                          {
+                            label: 'Start Directly',
+                            icon: <Play className="size-3.5" />,
+                            onClick: () => handleQuickStatus(appt, 'in_progress'),
+                          },
+                        ]}
                       />
                     </div>
                   </div>
-
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3">
                     <Button
                       size="sm"
                       variant="outline"
                       className="w-full text-xs font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
                       disabled={updateMutation.isPending}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleQuickStatus(appt, 'waiting');
-                      }}
+                      onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, 'waiting'); }}
                     >
                       <UserCheck className="mr-1.5 size-3.5 text-primary" />
                       Patient Arrived
@@ -466,74 +417,121 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
           </StageColumn>
         )}
 
+        {/* Completed / Closed */}
         {isVisible('completed') && (
           <StageColumn
-            title="Completed"
+            title="Done / Closed"
             count={completedList.length}
             accentColor="#10b981"
             badgeClassName="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
             icon={<CheckCircle2 className="size-4 text-emerald-500" />}
           >
             {completedList.length === 0 ? (
-              <EmptyStageMessage
-                icon={<CheckCircle2 className="size-6 text-emerald-500/40" />}
-                text="No completed visits yet today"
-              />
+              <EmptyStageMessage icon={<CheckCircle2 className="size-6 text-emerald-500/40" />} text="No completed visits yet today" />
             ) : (
-              completedList.map((appt) => {
-                const isPaid = appt.isPaid;
+              completedList.map((appt) => (
+                <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="size-3" /> Visit Completed
+                    </span>
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <AppointmentStatusSelect appointment={appt} compact />
+                      <QuickActionMenu onView={() => onEventClick(appt)} actions={[]} />
+                    </div>
+                  </div>
 
-                return (
-                  <QueueCard
-                    key={appt.id}
-                    appointment={appt}
-                    onClick={() => onEventClick(appt)}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="size-3" /> Visit Completed
+                  <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-[11px]">
+                    <span className="text-muted-foreground font-medium">Billing:</span>
+                    {appt.isPaid ? (
+                      <span className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
+                        <CreditCard className="size-3" /> Paid
                       </span>
-
-                      <div className="flex items-center gap-1">
-                        <AppointmentStatusSelect appointment={appt} compact />
-                        <CardMenu
-                          onAction={(action) => {
-                            if (action === 'view') onEventClick(appt);
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-[11px]">
-                      <span className="text-muted-foreground font-medium">Billing:</span>
-                      {isPaid ? (
-                        <span className="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
-                          <CreditCard className="size-3" /> Paid
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            markPaidMutation.mutate({
-                              id: appt.id,
-                              paymentMethodId: appt.paymentMethodId || '',
-                            });
-                          }}
-                          className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
-                        >
-                          <CreditCard className="size-3" /> Unpaid (Mark Paid)
-                        </button>
-                      )}
-                    </div>
-                  </QueueCard>
-                );
-              })
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!appt.paymentMethodId) {
+                            toast.info('Open appointment details to select a payment method first');
+                            onEventClick(appt);
+                            return;
+                          }
+                          markPaidMutation.mutate(
+                            { id: appt.id, paymentMethodId: appt.paymentMethodId },
+                            {
+                              onSuccess: () => toast.success('Marked as paid'),
+                              onError: (err) => toast.error(extractErrorMessage(err) || 'Failed to mark as paid'),
+                            },
+                          );
+                        }}
+                        className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer transition-colors active:scale-95"
+                      >
+                        <CreditCard className="size-3" /> Unpaid · Mark Paid
+                      </button>
+                    )}
+                  </div>
+                </QueueCard>
+              ))
             )}
           </StageColumn>
         )}
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+interface QuickAction {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  className?: string;
+}
+
+function QuickActionMenu({
+  onView,
+  actions,
+}: {
+  onView: () => void;
+  actions: QuickAction[];
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer active:scale-95"
+        >
+          <MoreHorizontal className="size-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44 text-xs">
+        <DropdownMenuItem
+          className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs"
+          onClick={onView}
+        >
+          <Eye className="size-3.5 shrink-0 text-muted-foreground" />
+          Open Details
+        </DropdownMenuItem>
+
+        {actions.length > 0 && <DropdownMenuSeparator />}
+
+        {actions.map((action) => (
+          <DropdownMenuItem
+            key={action.label}
+            className={cn('flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs', action.className)}
+            onClick={action.onClick}
+          >
+            <span className="shrink-0 text-muted-foreground">{action.icon}</span>
+            {action.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -556,10 +554,10 @@ function StatCard({
     <div
       onClick={onClick}
       className={cn(
-        'card-aura flex items-center gap-3 rounded-2xl border bg-card p-3.5 shadow-xs transition-all duration-150 cursor-pointer active:scale-95',
+        'card-aura flex items-center gap-3 rounded-2xl border bg-card p-3.5 shadow-xs transition-all duration-200 cursor-pointer select-none',
         active
-          ? 'ring-2 ring-primary border-primary bg-primary/5 shadow-sm'
-          : 'hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/40',
+          ? 'ring-2 ring-primary border-primary bg-primary/5 shadow-sm scale-[1.02]'
+          : 'hover:-translate-y-0.5 hover:shadow-sm hover:border-primary/40 active:scale-[0.97]',
       )}
     >
       <div className={cn('grid size-9 shrink-0 place-items-center rounded-xl border shadow-2xs', colorClass)}>
@@ -626,10 +624,7 @@ function QueueCard({
     <div
       onClick={onClick}
       className="card-aura group relative flex flex-col rounded-xl border bg-card p-3.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/50 hover:ring-1 hover:ring-primary/25 active:scale-[0.985] cursor-pointer"
-      style={{
-        borderLeftWidth: '4px',
-        borderLeftColor: accent,
-      }}
+      style={{ borderLeftWidth: '4px', borderLeftColor: accent }}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -641,7 +636,7 @@ function QueueCard({
             {formatApptTimeRange(appt)}
           </p>
         </div>
-        <div className="grid size-6 shrink-0 place-items-center rounded-full bg-muted text-[9px] font-bold text-muted-foreground">
+        <div className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-[9px] font-bold text-muted-foreground ring-2 ring-background">
           {docInitials}
         </div>
       </div>
@@ -673,50 +668,10 @@ function QueueCard({
   );
 }
 
-function CardMenu({
-  onAction,
-}: {
-  onAction: (action: string) => void;
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          onClick={(e) => e.stopPropagation()}
-          className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer"
-        >
-          <MoreHorizontal className="size-3.5" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40 text-xs">
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAction('view'); }}>
-          <Eye className="mr-2 size-3.5" /> Open details
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAction('in_progress'); }}>
-          <Play className="mr-2 size-3.5" /> Start visit
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAction('complete'); }}>
-          <CheckCircle2 className="mr-2 size-3.5" /> Complete visit
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAction('return_waiting'); }}>
-          <RotateCcw className="mr-2 size-3.5" /> Return to waiting
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAction('no_show'); }} className="text-amber-600">
-          <UserX className="mr-2 size-3.5" /> Mark No-Show
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAction('cancel'); }} className="text-rose-600">
-          <XCircle className="mr-2 size-3.5" /> Cancel visit
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 function EmptyStageMessage({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="flex h-36 flex-col items-center justify-center rounded-xl border border-dashed p-4 text-center text-xs text-muted-foreground bg-muted/10">
-      <div className="mb-2">{icon}</div>
+      <div className="mb-2 opacity-60">{icon}</div>
       <p className="font-medium">{text}</p>
     </div>
   );
