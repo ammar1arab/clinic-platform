@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -19,6 +19,8 @@ import { STATUS_COLORS } from './status-badge';
 import { formatApptTip, patientDisplayName } from './appointment-display';
 import { hasScheduleConflict } from './appointment-conflict';
 import { CalendarEventChip, readCalendarAppointment } from './calendar-event-chip';
+import { EventPreview, type EventPreviewState } from './event-preview';
+import { rectFromElement, type AnchorRect } from './popover-position';
 import { FC_TO_VIEW, ScheduleView, VIEW_TO_FC } from './schedule-nav';
 import { CalendarSkeleton } from './calendar-skeleton';
 import { ViewFocusToggle } from './view-focus';
@@ -56,6 +58,14 @@ export function AppointmentCalendar({
   const calendarRef = useRef<FullCalendar>(null);
   const updateMutation = useUpdateAppointment();
   const isMobile = useIsMobile();
+  const [preview, setPreview] = useState<EventPreviewState | null>(null);
+
+  const openPreview = useCallback(
+    (appt: Appointment, x: number, y: number, anchor?: AnchorRect) => {
+      setPreview({ appointment: appt, x, y, anchor });
+    },
+    [],
+  );
 
   const events = useMemo(
     () =>
@@ -80,13 +90,25 @@ export function AppointmentCalendar({
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
       const appt = readCalendarAppointment(arg.event.extendedProps);
-      if (appt) onEventClick(appt);
+      if (!appt) return;
+      const target = arg.jsEvent.target;
+      const fromEvent = target instanceof Element ? target.closest('.fc-event') : null;
+      const el = arg.el ?? fromEvent;
+      openPreview(
+        appt,
+        arg.jsEvent.clientX,
+        arg.jsEvent.clientY,
+        rectFromElement(el, arg.jsEvent.clientX, arg.jsEvent.clientY),
+      );
     },
-    [onEventClick],
+    [openPreview],
   );
 
   const handleDateSelect = useCallback(
-    (arg: DateSelectArg) => onSelectSlot(arg.start),
+    (arg: DateSelectArg) => {
+      setPreview(null);
+      onSelectSlot(arg.start);
+    },
     [onSelectSlot],
   );
 
@@ -203,6 +225,7 @@ export function AppointmentCalendar({
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        setPreview(null);
         const slot = new Date(arg.date);
         if (slot.getHours() === 0 && slot.getMinutes() === 0) {
           slot.setHours(9, 0, 0, 0);
@@ -310,6 +333,18 @@ export function AppointmentCalendar({
           }}
         />
       </div>
+
+      {preview && (
+        <EventPreview
+          preview={preview}
+          preferVertical={view === 'day' || isMobile}
+          onClose={() => setPreview(null)}
+          onExpand={(appt) => {
+            setPreview(null);
+            onEventClick(appt);
+          }}
+        />
+      )}
     </div>
   );
 }

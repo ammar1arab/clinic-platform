@@ -8,9 +8,9 @@ export type NameParts = {
 };
 
 export function densityFromHeight(height: number): EventDensity {
-  if (height < 34) return 'xs';
-  if (height < 52) return 'sm';
-  if (height < 90) return 'md';
+  if (height < 40) return 'xs';
+  if (height < 62) return 'sm';
+  if (height < 108) return 'md';
   return 'lg';
 }
 
@@ -21,12 +21,6 @@ export function formatTimeAmPm(date: Date | string) {
     minute: '2-digit',
     hour12: true,
   });
-}
-
-export function formatCompactTime(date: Date | string) {
-  return formatTimeAmPm(date).replace(/\s?(AM|PM)/i, (_, mer: string) =>
-    mer.charAt(0).toLowerCase(),
-  );
 }
 
 export function formatHourLabel(hour: number): string {

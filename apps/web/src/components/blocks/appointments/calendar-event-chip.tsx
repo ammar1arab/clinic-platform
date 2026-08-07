@@ -5,12 +5,11 @@ import type { EventContentArg } from '@fullcalendar/core';
 import type { Appointment } from '@/services/appointments.service';
 import { STATUS_COLORS } from './status-badge';
 import {
+  formatApptStartAmPm,
   formatApptTimeRange,
   formatApptTip,
-  formatCompactTime,
   formatDoctorLabel,
   patientDisplayName,
-  patientShortName,
 } from './appointment-display';
 
 function isAppointment(value: object): value is Appointment {
@@ -34,8 +33,7 @@ export function CalendarEventChip({ arg }: { arg: EventContentArg }) {
   const appt = readCalendarAppointment(arg.event.extendedProps);
   const isMonth = arg.view.type === 'dayGridMonth';
   const fullName = appt ? patientDisplayName(appt) : arg.event.title;
-  const shortName = appt ? patientShortName(appt) : arg.event.title;
-  const compactStart = appt ? formatCompactTime(appt.scheduledAt) : arg.timeText;
+  const startLabel = appt ? formatApptStartAmPm(appt) : arg.timeText;
   const rangeLabel = appt ? formatApptTimeRange(appt) : arg.timeText;
   const doctorName = appt?.doctor?.name;
   const tip = appt ? formatApptTip(appt, { rangeLabel, doctorName }) : fullName;
@@ -51,8 +49,8 @@ export function CalendarEventChip({ arg }: { arg: EventContentArg }) {
         title={tip}
         style={{ backgroundColor: fill, color: '#fff' }}
       >
-        <span className="fc-event-chip__time">{compactStart}</span>
-        <span className="fc-event-chip__name">{shortName}</span>
+        <span className="fc-event-chip__time">{startLabel}</span>
+        <span className="fc-event-chip__name">{fullName}</span>
       </div>
     );
   }
@@ -62,14 +60,9 @@ export function CalendarEventChip({ arg }: { arg: EventContentArg }) {
       <div className="fc-event-chip__primary">
         <Icon className="fc-event-chip__icon" aria-hidden />
         <span className="fc-event-chip__time fc-event-chip__time--compact">
-          {compactStart}
+          {startLabel}
         </span>
-        <span className="fc-event-chip__name fc-event-chip__name--short">
-          {shortName}
-        </span>
-        <span className="fc-event-chip__name fc-event-chip__name--full">
-          {fullName}
-        </span>
+        <span className="fc-event-chip__name">{fullName}</span>
       </div>
       <div className="fc-event-chip__secondary">
         <span className="fc-event-chip__range">{rangeLabel}</span>

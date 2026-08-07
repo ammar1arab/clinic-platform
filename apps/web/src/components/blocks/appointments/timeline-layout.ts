@@ -78,7 +78,7 @@ export function layoutTimelineAppts(
     }
 
     const top = Math.max(0, startMin - TIMELINE_START_HOUR * 60) * TIMELINE_PX_PER_MIN;
-    const height = Math.max(26, appt.durationMins * TIMELINE_PX_PER_MIN);
+    const height = Math.max(32, appt.durationMins * TIMELINE_PX_PER_MIN);
     const gutter = maxCols > 1 ? 1.5 : 0;
 
     return {

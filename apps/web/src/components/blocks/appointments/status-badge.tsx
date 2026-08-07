@@ -2,7 +2,6 @@
 
 import { cn } from '@/lib/utils';
 import { AppointmentStatus } from '@/services/appointments.service';
-import { SoftTip } from '@/components/primitives/soft-tip';
 
 export const STATUS_COLORS: Record<AppointmentStatus, string> = {
   unconfirmed: '#f59e0b',
@@ -21,49 +20,49 @@ export const STATUS_CONFIG: Record<
 > = {
   unconfirmed: {
     label: 'Unconfirmed',
-    short: 'Unconf.',
-    className: 'bg-warning/12 text-warning border-warning/20',
+    short: 'Pending',
+    className: 'bg-warning/15 text-warning border-warning/25',
     dotClassName: 'bg-warning',
   },
   confirmed: {
     label: 'Confirmed',
-    short: 'Ok',
-    className: 'bg-success/12 text-success border-success/20',
+    short: 'Confirmed',
+    className: 'bg-success/15 text-success border-success/25',
     dotClassName: 'bg-success',
   },
   checked_in: {
     label: 'Checked In',
-    short: 'In',
-    className: 'bg-success/12 text-success border-success/20',
+    short: 'Checked in',
+    className: 'bg-success/15 text-success border-success/25',
     dotClassName: 'bg-success',
   },
   waiting: {
     label: 'Waiting',
-    short: 'Wait',
-    className: 'bg-warning/12 text-warning border-warning/20',
+    short: 'Waiting',
+    className: 'bg-warning/15 text-warning border-warning/25',
     dotClassName: 'bg-warning',
   },
   in_progress: {
     label: 'In Progress',
-    short: 'Live',
-    className: 'bg-primary/12 text-primary border-primary/20',
+    short: 'In progress',
+    className: 'bg-primary/15 text-primary border-primary/25',
     dotClassName: 'bg-primary animate-pulse',
   },
   completed: {
     label: 'Completed',
     short: 'Done',
-    className: 'bg-primary/12 text-primary border-primary/20',
+    className: 'bg-primary/15 text-primary border-primary/25',
     dotClassName: 'bg-primary',
   },
   no_show: {
     label: 'No Show',
-    short: 'No',
-    className: 'bg-error/12 text-error border-error/20',
+    short: 'No-show',
+    className: 'bg-error/15 text-error border-error/25',
     dotClassName: 'bg-error',
   },
   cancelled: {
     label: 'Cancelled',
-    short: 'X',
+    short: 'Cancelled',
     className: 'bg-muted text-muted-foreground border-border',
     dotClassName: 'bg-muted-foreground',
   },
@@ -97,27 +96,20 @@ interface Props {
 
 export function StatusBadgeBlock({ status, className, compact }: Props) {
   const config = STATUS_CONFIG[status];
+  const text = compact ? config.short : config.label;
 
   return (
-    <SoftTip label={config.label} side="top">
-      <span
-        aria-label={config.label}
-        className={cn(
-          'inline-flex max-w-full shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium leading-4 whitespace-nowrap',
-          config.className,
-          className,
-        )}
-      >
-        <span className={cn('size-1.5 shrink-0 rounded-full', config.dotClassName)} />
-        {compact ? (
-          <span className="truncate">{config.short}</span>
-        ) : (
-          <>
-            <span className="truncate sm:hidden">{config.short}</span>
-            <span className="hidden truncate sm:inline">{config.label}</span>
-          </>
-        )}
-      </span>
-    </SoftTip>
+    <span
+      title={config.label}
+      aria-label={config.label}
+      className={cn(
+        'inline-flex max-w-full shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold leading-none tracking-tight',
+        config.className,
+        className,
+      )}
+    >
+      <span className={cn('size-1.5 shrink-0 rounded-full', config.dotClassName)} />
+      <span className="truncate">{text}</span>
+    </span>
   );
 }

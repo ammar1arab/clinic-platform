@@ -18,7 +18,6 @@ import { STATUS_COLORS, STATUS_CONFIG } from './status-badge';
 import { AppointmentStatusSelect } from './appointment-status-select';
 import {
   patientDisplayName,
-  patientShortName,
   doctorDisplayName,
   formatApptStartAmPm,
   formatApptTip,
@@ -38,6 +37,8 @@ import {
   type PositionedAppt,
   type TimelineDoctor,
 } from './timeline-layout';
+import { EventPreview, type EventPreviewState } from './event-preview';
+import { rectFromElement } from './popover-position';
 import { SoftTip } from '@/components/primitives/soft-tip';
 import { cn } from '@/lib/utils';
 import { TimelineSkeleton } from '@/components/primitives/skeleton-presets';
@@ -60,19 +61,27 @@ function TimelineEventBlock({
   height,
   leftPct,
   widthPct,
-  onEventClick,
-}: PositionedAppt & { onEventClick: (appointment: Appointment) => void }) {
+  onOpen,
+}: PositionedAppt & {
+  onOpen: (appt: Appointment, el: HTMLElement, x: number, y: number) => void;
+}) {
   const accent = STATUS_COLORS[appt.status];
   const statusCfg = STATUS_CONFIG[appt.status];
   const density = densityFromHeight(height);
   const isCancelled = appt.status === 'cancelled';
   const doctorName = doctorDisplayName(doctor?.name ?? appt.doctor?.name);
   const fullName = patientDisplayName(appt);
-  const shortName = patientShortName(appt);
   const timeLabel = `${formatApptStartAmPm(appt)} · ${appt.durationMins}m`;
   const narrow = widthPct < 34;
   const tip = formatApptTip(appt, { doctorName });
   const gapPx = widthPct < 50 ? 5 : 4;
+  const blockH = Math.max(height - 2, 28);
+
+  const openFromEvent = (e: React.MouseEvent | React.KeyboardEvent, el: HTMLElement) => {
+    const x = 'clientX' in e ? e.clientX : el.getBoundingClientRect().left + el.clientWidth / 2;
+    const y = 'clientY' in e ? e.clientY : el.getBoundingClientRect().top + el.clientHeight / 2;
+    onOpen(appt, el, x, y);
+  };
 
   return (
     <div
@@ -81,13 +90,13 @@ function TimelineEventBlock({
       tabIndex={0}
       onClick={(e) => {
         e.stopPropagation();
-        onEventClick(appt);
+        openFromEvent(e, e.currentTarget);
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           e.stopPropagation();
-          onEventClick(appt);
+          openFromEvent(e, e.currentTarget);
         }
       }}
       className={cn(
@@ -100,7 +109,7 @@ function TimelineEventBlock({
       )}
       style={{
         top: `${top + 1}px`,
-        height: `${Math.max(height - 2, 22)}px`,
+        height: `${blockH}px`,
         left: `calc(${leftPct}% + 2px)`,
         width: `calc(${widthPct}% - ${gapPx}px)`,
         borderLeftWidth: 3,
@@ -111,33 +120,30 @@ function TimelineEventBlock({
     >
       <div
         className={cn(
-          'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
-          density === 'xs' && 'justify-center px-1.5 py-0.5',
-          density === 'sm' && 'justify-center gap-0.5 px-1.5 py-1',
-          density === 'md' && 'gap-0.5 px-2 py-1.5',
-          density === 'lg' && 'gap-1 px-2.5 py-2',
+          'flex min-h-0 min-w-0 flex-1 flex-col justify-center overflow-hidden',
+          density === 'xs' && 'gap-0 px-1.5 py-1',
+          density === 'sm' && 'gap-0.5 px-2 py-1',
+          density === 'md' && 'gap-1 px-2 py-1.5',
+          density === 'lg' && 'justify-start gap-1 px-2.5 py-2',
         )}
       >
-        <div className="flex min-w-0 items-center gap-1">
+        <div className="flex min-w-0 items-center gap-1.5">
           <p
             className={cn(
-              'min-w-0 flex-1 truncate font-semibold leading-tight text-foreground',
-              density === 'xs' ? 'text-[10px]' : 'text-[11px] sm:text-xs',
+              'min-w-0 flex-1 truncate font-semibold text-foreground',
+              density === 'xs' ? 'text-[11px] leading-4' : 'text-xs leading-4 sm:text-[13px] sm:leading-5',
               isCancelled && 'line-through',
             )}
           >
-            {density === 'xs' || narrow ? shortName : fullName}
+            {fullName}
           </p>
-
-          {density === 'xs' && (
+          {density === 'xs' || density === 'sm' || narrow ? (
             <span
               className={cn('size-1.5 shrink-0 rounded-full', statusCfg.dotClassName)}
               title={statusCfg.label}
               aria-hidden
             />
-          )}
-
-          {density === 'lg' && !narrow && (
+          ) : density === 'lg' ? (
             <div
               className="shrink-0"
               onClick={(e) => e.stopPropagation()}
@@ -145,18 +151,18 @@ function TimelineEventBlock({
             >
               <AppointmentStatusSelect appointment={appt} compact />
             </div>
-          )}
+          ) : null}
         </div>
 
         {density !== 'xs' && (
-          <p className="truncate text-[10px] font-medium tabular-nums text-muted-foreground">
+          <p className="truncate text-[11px] font-medium leading-4 tabular-nums text-muted-foreground">
             {timeLabel}
           </p>
         )}
 
-        {(density === 'md' || density === 'lg') && !narrow && (
+        {density === 'md' && !narrow && (
           <p
-            className="flex min-w-0 items-center gap-1 truncate text-[10px] text-muted-foreground"
+            className="flex min-w-0 items-center gap-1.5 truncate text-[11px] leading-4 text-muted-foreground"
             title={formatDoctorLabel(doctorName)}
           >
             <span
@@ -165,59 +171,52 @@ function TimelineEventBlock({
               aria-hidden
             />
             <span className="truncate font-medium text-foreground/80">
-              {formatDoctorLabel(doctorName, { short: density === 'md' })}
+              {formatDoctorLabel(doctorName, { short: true })}
             </span>
           </p>
         )}
 
         {density === 'lg' && !narrow && (
-          <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
-            {appt.service && (
+          <>
+            <p
+              className="flex min-w-0 items-center gap-1.5 truncate text-[11px] leading-4 text-muted-foreground"
+              title={formatDoctorLabel(doctorName)}
+            >
               <span
-                className="flex min-w-0 max-w-full items-center gap-1 truncate font-medium text-foreground/75"
-                title={appt.service.name}
-              >
-                <Stethoscope className="size-2.5 shrink-0 text-primary" />
-                <span className="truncate">{appt.service.name}</span>
+                className="size-1.5 shrink-0 rounded-full"
+                style={{ backgroundColor: doctor?.color ?? accent }}
+                aria-hidden
+              />
+              <span className="truncate font-medium text-foreground/80">
+                {formatDoctorLabel(doctorName)}
               </span>
-            )}
-            {appt.sessionType === 'online' ? (
-              <span className="inline-flex items-center gap-1 font-medium text-primary">
-                <Video className="size-2.5 shrink-0" />
-                Online
-              </span>
-            ) : appt.room ? (
-              <span
-                className="inline-flex min-w-0 items-center gap-1 truncate font-medium"
-                title={appt.room.name}
-              >
-                <DoorOpen className="size-2.5 shrink-0" />
-                <span className="truncate">{appt.room.name}</span>
-              </span>
-            ) : null}
-          </div>
-        )}
-
-        {density === 'md' && !narrow && (
-          <div
-            className="mt-auto pt-0.5"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-          >
-            <AppointmentStatusSelect appointment={appt} compact />
-          </div>
-        )}
-
-        {(density === 'sm' || (density === 'md' && narrow)) && (
-          <span
-            className={cn(
-              'w-fit max-w-full truncate rounded-md border px-1 py-px text-[9px] font-semibold leading-tight',
-              statusCfg.className,
-            )}
-            title={statusCfg.label}
-          >
-            {statusCfg.short}
-          </span>
+            </p>
+            <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-4 text-muted-foreground">
+              {appt.service ? (
+                <span
+                  className="flex min-w-0 max-w-full items-center gap-1 truncate font-medium text-foreground/75"
+                  title={appt.service.name}
+                >
+                  <Stethoscope className="size-2.5 shrink-0 text-primary" />
+                  <span className="truncate">{appt.service.name}</span>
+                </span>
+              ) : null}
+              {appt.sessionType === 'online' ? (
+                <span className="inline-flex items-center gap-1 font-medium text-primary">
+                  <Video className="size-2.5 shrink-0" />
+                  Online
+                </span>
+              ) : appt.room ? (
+                <span
+                  className="inline-flex min-w-0 items-center gap-1 truncate font-medium"
+                  title={appt.room.name}
+                >
+                  <DoorOpen className="size-2.5 shrink-0" />
+                  <span className="truncate">{appt.room.name}</span>
+                </span>
+              ) : null}
+            </div>
+          </>
         )}
       </div>
     </div>
@@ -236,9 +235,22 @@ export function DoctorTimeline({
     const d = new Date(); d.setHours(0, 0, 0, 0); return d;
   });
   const [activeDoctorId, setActiveDoctorId] = useState<string>('all');
+  const [preview, setPreview] = useState<EventPreviewState | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const now = useNow(30_000);
   const isToday = isSameDay(selectedDate, now);
+
+  const openPreview = useCallback(
+    (appt: Appointment, el: HTMLElement, x: number, y: number) => {
+      setPreview({
+        appointment: appt,
+        x,
+        y,
+        anchor: rectFromElement(el, x, y),
+      });
+    },
+    [],
+  );
 
   const doctorMap = useMemo<Map<string, TimelineDoctor>>(() => {
     const map = new Map<string, TimelineDoctor>();
@@ -325,6 +337,7 @@ export function DoctorTimeline({
   const handleGridClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if ((e.target as HTMLElement).closest('[data-appt]')) return;
+      setPreview(null);
       const rect = e.currentTarget.getBoundingClientRect();
       const offsetY = e.clientY - rect.top + e.currentTarget.scrollTop;
       const pxPerMin = TIMELINE_HOUR_HEIGHT / 60;
@@ -523,12 +536,24 @@ export function DoctorTimeline({
               <TimelineEventBlock
                 key={item.appt.id}
                 {...item}
-                onEventClick={onEventClick}
+                onOpen={openPreview}
               />
             ))}
           </div>
         </div>
       </div>
+
+      {preview ? (
+        <EventPreview
+          preview={preview}
+          placement="auto"
+          onClose={() => setPreview(null)}
+          onExpand={(appt) => {
+            setPreview(null);
+            onEventClick(appt);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
