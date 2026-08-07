@@ -1,154 +1,117 @@
+'use client';
+
 /**
  * useKeyboardShortcut
  *
- * Registers one or more keyboard shortcuts and fires a callback.
- * Automatically skips when focus is inside an input/textarea/contenteditable
- * unless `ignoreInputs` is false.
+ * Attach one or more keyboard shortcuts globally.
+ * - Skips when focused on an input/textarea/select/contenteditable (unless ignoreInputs=false)
+ * - Supports modifiers: ctrl, meta, alt, shift (e.g. "ctrl+k", "shift+n")
+ * - Use "mod" for ctrl on Windows / cmd on Mac
  *
- * Usage:
- *   useKeyboardShortcut('n', onNewAppointment);
- *   useKeyboardShortcut(['ctrl+k', 'meta+k'], onOpenSearch);
+ * Example:
+ *   useKeyboardShortcut('n', handleNewAppt);
+ *   useKeyboardShortcut(['ctrl+k', 'meta+k'], openSearch);
+ *   useKeyboardShortcut('escape', onClose, { ignoreInputs: false });
  */
 
-type Modifier = 'ctrl' | 'meta' | 'alt' | 'shift';
+import { useEffect, useRef } from 'react';
 
-interface Options {
-  /** If true (default), shortcut is ignored when typing in inputs */
+interface ShortcutOptions {
   ignoreInputs?: boolean;
-  /** Only fire when the shortcut is held down repeatedly */
-  allowRepeat?: boolean;
-  /** Enable/disable the shortcut without unmounting */
   enabled?: boolean;
 }
 
-function parseShortcut(raw: string): { key: string; modifiers: Set<Modifier> } {
-  const parts = raw.toLowerCase().split('+');
-  const mods = new Set<Modifier>();
-  let key = '';
-  for (const p of parts) {
-    if (p === 'ctrl' || p === 'meta' || p === 'alt' || p === 'shift') {
-      mods.add(p as Modifier);
-    } else {
-      key = p;
-    }
-  }
-  return { key, modifiers: mods };
+interface Parsed {
+  key: string;
+  ctrl?: boolean;
+  meta?: boolean;
+  alt?: boolean;
+  shift?: boolean;
+  mod?: boolean;
 }
 
-function isInputFocused(): boolean {
-  const el = document.activeElement;
+function parse(raw: string): Parsed {
+  const parts = raw.toLowerCase().split('+');
+  const result: Parsed = { key: '' };
+  for (const p of parts) {
+    if (p === 'ctrl') result.ctrl = true;
+    else if (p === 'meta') result.meta = true;
+    else if (p === 'alt') result.alt = true;
+    else if (p === 'shift') result.shift = true;
+    else if (p === 'mod') result.mod = true;
+    else result.key = p;
+  }
+  return result;
+}
+
+function normKey(k: string): string {
+  return k === 'escape' ? 'esc' : k === 'delete' ? 'del' : k;
+}
+
+function isEditableTarget(): boolean {
+  const el = document.activeElement as HTMLElement | null;
   if (!el) return false;
   const tag = el.tagName.toLowerCase();
-  return (
-    tag === 'input' ||
-    tag === 'textarea' ||
-    tag === 'select' ||
-    (el as HTMLElement).isContentEditable
-  );
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
 }
 
-import { useCallback, useRef } from 'react';
+function matches(e: KeyboardEvent, p: Parsed): boolean {
+  const pressedKey = normKey(e.key.toLowerCase());
+  if (pressedKey !== p.key) return false;
 
-// Global registry so multiple hook instances share one listener
-type Handler = (e: KeyboardEvent) => void;
-const registry = new Map<string, Set<Handler>>();
-let listenerAttached = false;
+  const wantCtrl = !!(p.ctrl || p.mod);
+  const wantMeta = !!(p.meta || (p.mod && typeof navigator !== 'undefined' && /mac/i.test(navigator.platform)));
+  const wantAlt = !!p.alt;
+  const wantShift = !!p.shift;
 
-function globalKeyHandler(e: KeyboardEvent) {
-  for (const [, handlers] of registry) {
-    for (const h of handlers) {
-      h(e);
-    }
+  // If no modifiers required, disallow ctrl/meta/alt (allow shift for capitals if not specified)
+  const hasModifiers = p.ctrl || p.meta || p.alt || p.mod;
+  if (!hasModifiers) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return false;
+    if (p.shift != null && e.shiftKey !== wantShift) return false;
+    return true;
   }
-}
 
-function ensureListener() {
-  if (!listenerAttached && typeof window !== 'undefined') {
-    window.addEventListener('keydown', globalKeyHandler, { capture: true });
-    listenerAttached = true;
-  }
-}
+  // Exact modifier match
+  const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform);
+  const ctrlOrMeta = isMac ? e.metaKey : e.ctrlKey;
 
-let idCounter = 0;
+  if (p.mod && !ctrlOrMeta) return false;
+  if (p.ctrl && !e.ctrlKey) return false;
+  if (p.meta && !e.metaKey) return false;
+  if (wantAlt !== e.altKey) return false;
+  if (wantShift !== e.shiftKey) return false;
+
+  return true;
+}
 
 export function useKeyboardShortcut(
   shortcuts: string | string[],
   callback: (e: KeyboardEvent) => void,
-  options: Options = {},
+  options: ShortcutOptions = {},
 ) {
-  const { ignoreInputs = true, allowRepeat = false, enabled = true } = options;
+  const { ignoreInputs = true, enabled = true } = options;
+  const cbRef = useRef(callback);
+  cbRef.current = callback;
 
-  const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+  const parsed = (Array.isArray(shortcuts) ? shortcuts : [shortcuts]).map(parse);
 
-  const idRef = useRef<string>(`ks-${++idCounter}`);
+  useEffect(() => {
+    if (!enabled) return;
 
-  const parsed = (Array.isArray(shortcuts) ? shortcuts : [shortcuts]).map(parseShortcut);
-
-  const handler = useCallback(
-    (e: KeyboardEvent) => {
-      if (!enabled) return;
-      if (!allowRepeat && e.repeat) return;
-      if (ignoreInputs && isInputFocused()) return;
-
-      for (const { key, modifiers } of parsed) {
-        const pressedKey = e.key.toLowerCase();
-        const keyMatch = pressedKey === key || (key === 'esc' && pressedKey === 'escape') || (key === 'del' && pressedKey === 'delete');
-        if (!keyMatch) continue;
-
-        const ctrlMatch = modifiers.has('ctrl') === (e.ctrlKey || e.metaKey);
-        const metaMatch = modifiers.has('meta') === e.metaKey;
-        const altMatch = modifiers.has('alt') === e.altKey;
-        const shiftMatch = modifiers.has('shift') === e.shiftKey;
-
-        // If modifier set, require exact match; if no modifiers, require none pressed (except shift for uppercase letters)
-        const hasModifiers = modifiers.size > 0;
-        if (hasModifiers) {
-          if (!ctrlMatch || !altMatch || !shiftMatch) continue;
-        } else {
-          // No modifiers expected — reject if ctrl/meta/alt are pressed
-          if (e.ctrlKey || e.metaKey || e.altKey) continue;
+    const handler = (e: KeyboardEvent) => {
+      if (ignoreInputs && isEditableTarget()) return;
+      for (const p of parsed) {
+        if (matches(e, p)) {
+          e.preventDefault();
+          cbRef.current(e);
+          return;
         }
-
-        e.preventDefault();
-        callbackRef.current(e);
-        return;
       }
-    },
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [enabled, allowRepeat, ignoreInputs, JSON.stringify(parsed)],
-  );
-
-  const handlerRef = useRef(handler);
-  handlerRef.current = handler;
-
-  // Register/unregister using a stable proxy
-  const proxyRef = useRef<Handler>((e) => handlerRef.current(e));
-
-  // Mount
-  if (typeof window !== 'undefined') {
-    ensureListener();
-    const id = idRef.current;
-    if (!registry.has(id)) {
-      const set = new Set<Handler>();
-      set.add(proxyRef.current);
-      registry.set(id, set);
-    }
-  }
-
-  // Cleanup on unmount via a ref that always runs
-  const cleanupRef = useRef(() => {
-    registry.delete(idRef.current);
-  });
-
-  // Self-cleanup: in React 18 strict mode this runs twice; idRef ensures isolation
-  if (typeof window !== 'undefined') {
-    // Register cleanup in a way that works with both strict mode and production
-    const id = idRef.current;
-    if (!registry.get(id)?.has(proxyRef.current)) {
-      const set = registry.get(id) ?? new Set<Handler>();
-      set.add(proxyRef.current);
-      registry.set(id, set);
-    }
-  }
+  }, [enabled, ignoreInputs, JSON.stringify(parsed)]);
 }
