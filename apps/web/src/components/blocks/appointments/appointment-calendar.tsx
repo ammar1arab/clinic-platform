@@ -384,19 +384,18 @@ export function AppointmentCalendar({
   return (
     <div
       className={cn(
-        'card-aura relative bg-card [&_.fc]:text-sm',
+        'relative bg-card [&_.fc]:text-sm',
         focused
-          ? 'flex h-full min-h-0 flex-col rounded-xl border p-2 sm:p-3'
-          : 'rounded-xl border p-2 sm:p-3 lg:p-4',
+          ? 'flex h-full min-h-0 flex-col overflow-hidden rounded-none border-0 p-2 sm:p-3'
+          : 'card-aura rounded-xl border p-2 sm:p-3 lg:p-4',
       )}
       aria-busy={isFetching || undefined}
     >
       <div
         ref={sizeHostRef}
         className={cn(
-          'relative',
-          focused && 'min-h-0 flex-1',
-          !focused && '[&_.fc-header-toolbar]:pr-10',
+          'relative [&_.fc-header-toolbar]:pr-10',
+          focused && 'flex h-full min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-view-harness]:min-h-0',
         )}
       >
         <div className="absolute top-0 right-0 z-20">

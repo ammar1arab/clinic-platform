@@ -424,6 +424,15 @@
   font-family: inherit;
 }
 
+[data-view-focus='true'] .fc,
+[data-view-focus='true'] .fc .fc-view-harness {
+  height: 100% !important;
+}
+
+[data-view-focus='true'] .fc .fc-scroller {
+  overflow: auto !important;
+}
+
 .fc .fc-toolbar {
   display: flex;
   flex-direction: row;

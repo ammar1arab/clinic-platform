@@ -399,8 +399,10 @@ export function DoctorTimeline({
   return (
     <div
       className={cn(
-        'card-aura flex flex-col overflow-hidden border bg-card shadow-xs',
-        focused ? 'h-full min-h-0 rounded-xl' : 'rounded-2xl',
+        'flex flex-col overflow-hidden border bg-card shadow-xs',
+        focused
+          ? 'h-full min-h-0 rounded-none border-0'
+          : 'card-aura rounded-2xl',
       )}
     >
 

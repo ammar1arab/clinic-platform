@@ -58,23 +58,23 @@ function hasOpenOverlay() {
 
 export function ViewFocusToggle({ className }: { className?: string }) {
   const api = useViewFocusControls();
-  if (!api || api.focused) return null;
+  if (!api) return null;
 
   return (
     <Button
       type="button"
       variant="outline"
       size="icon-sm"
-      onClick={api.enter}
-      title="Focus view"
-      aria-label="Focus view"
+      onClick={api.focused ? api.exit : api.enter}
+      title={api.focused ? 'Exit focus' : 'Focus view'}
+      aria-label={api.focused ? 'Exit focus' : 'Focus view'}
       className={cn(
         'size-8 shrink-0 rounded-lg border-border/70 bg-background/80 text-muted-foreground shadow-2xs',
         'hover:border-primary/40 hover:bg-card hover:text-foreground active:scale-95',
         className,
       )}
     >
-      <Maximize2 className="size-3.5" />
+      {api.focused ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
     </Button>
   );
 }
@@ -107,6 +107,7 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
 
       <div
         data-view-focus={focused ? 'true' : undefined}
+        aria-label={focused ? `${label} focus view` : undefined}
         className={cn(
           focused
             ? [
@@ -118,34 +119,10 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
             : cn('relative', className),
         )}
       >
-        {focused ? (
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b bg-card/95 px-3 py-2 backdrop-blur-md sm:px-4">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold tracking-tight text-foreground">
-                {label}
-              </p>
-              <p className="hidden text-[11px] text-muted-foreground sm:block">
-                Press Esc to exit focus
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={exit}
-              className="shrink-0 gap-1.5 active:scale-95"
-              aria-label={`Exit focus · ${label}`}
-            >
-              <Minimize2 className="size-3.5" />
-              Exit focus
-            </Button>
-          </div>
-        ) : null}
-
         <div
           className={cn(
             'min-h-0 min-w-0',
-            focused && 'flex flex-1 flex-col overflow-hidden overscroll-contain p-2 sm:p-3 md:p-4',
+            focused && 'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
           )}
         >
           {content}

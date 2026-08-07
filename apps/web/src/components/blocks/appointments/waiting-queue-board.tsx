@@ -190,8 +190,10 @@ export function WaitingQueueBoard({
   return (
     <div
       className={cn(
-        'card-aura flex flex-col overflow-hidden rounded-2xl border bg-card shadow-xs',
-        focused && 'h-full min-h-0 rounded-xl',
+        'flex flex-col overflow-hidden border bg-card shadow-xs',
+        focused
+          ? 'h-full min-h-0 rounded-none border-0'
+          : 'card-aura rounded-2xl',
       )}
     >
       <div className="flex items-center justify-between gap-2 border-b bg-muted/20 px-3 py-2.5 sm:px-4">
