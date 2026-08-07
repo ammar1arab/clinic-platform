@@ -110,7 +110,7 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
         className={cn(
           focused
             ? [
-                'fixed right-0 bottom-0 top-13 z-40 flex flex-col overflow-hidden overscroll-none bg-background md:top-14',
+                'fixed inset-x-0 bottom-0 top-13 z-40 flex flex-col overflow-hidden overscroll-none bg-background md:top-14',
                 isCollapsed ? 'md:left-18' : 'md:left-56 lg:left-64',
                 'transition-[left] duration-300 ease-in-out',
                 'animate-in fade-in-0 zoom-in-[0.985] duration-300 ease-out',
