@@ -11,7 +11,10 @@ import {
 } from 'date-fns';
 import {
   FileDown,
+  FileSpreadsheet,
+  FileText,
   GitBranch,
+  File,
   UserRound,
   Users,
   Wallet,
@@ -21,6 +24,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DatePicker } from '@/components/primitives/date-picker';
@@ -62,6 +68,13 @@ function FormatDownloadButton({
   label?: string;
   className?: string;
 }) {
+  const formats: { key: ReportFormat; label: string; ext: string; desc: string }[] = [
+    { key: 'pdf',  label: 'PDF',   ext: '.pdf',  desc: 'Portable, print-ready' },
+    { key: 'docx', label: 'Word',  ext: '.docx', desc: 'Microsoft Word document' },
+    { key: 'xlsx', label: 'Excel', ext: '.xlsx', desc: 'Spreadsheet with data' },
+    { key: 'csv',  label: 'CSV',   ext: '.csv',  desc: 'Plain comma-separated' },
+  ];
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -74,11 +87,22 @@ function FormatDownloadButton({
           {label}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuItem onClick={() => onDownload('pdf')}>PDF</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onDownload('docx')}>Word</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onDownload('xlsx')}>Excel</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onDownload('csv')}>CSV</DropdownMenuItem>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuLabel>Export format</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {formats.map(({ key, label, ext, desc }) => (
+          <DropdownMenuItem
+            key={key}
+            onClick={() => onDownload(key)}
+            className="flex-col items-start gap-0 py-2"
+          >
+            <div className="flex w-full items-center justify-between">
+              <span className="font-semibold">{label}</span>
+              <DropdownMenuShortcut>{ext}</DropdownMenuShortcut>
+            </div>
+            <span className="text-[11px] text-muted-foreground group-focus/menu-item:text-accent-foreground/70">{desc}</span>
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

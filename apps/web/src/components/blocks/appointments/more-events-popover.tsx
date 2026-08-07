@@ -69,13 +69,18 @@ export function MoreEventsPopover({ state, onClose, onSelect }: Props) {
         sideOffset={6}
         avoidCollisions={true}
         collisionPadding={16}
-        onInteractOutside={(e) => {
+        onPointerDownOutside={(e) => {
+          // Stay open when clicking inside the event preview
           const target = e.target as HTMLElement | null;
-          // Don't close if clicking inside the event preview
           if (target?.closest('[data-calendar-popover="preview"]')) {
+            e.preventDefault();
             return;
           }
           onClose();
+        }}
+        onFocusOutside={(e) => {
+          // Prevent focus stealing by EventPreview from closing this
+          e.preventDefault();
         }}
         onEscapeKeyDown={onClose}
         className="w-[min(calc(100vw-2rem),280px)] p-0 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-2xl ring-1 ring-foreground/10 z-[100]"

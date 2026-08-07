@@ -106,12 +106,21 @@ export function EventPreview({ preview, onClose, onExpand }: Props) {
         sideOffset={10}
         avoidCollisions={true}
         collisionPadding={16}
-        onInteractOutside={(e) => {
+        onPointerDownOutside={(e) => {
           const target = e.target as HTMLElement | null;
+          // Don't close when clicking inside the Show More list
           if (target?.closest('[data-calendar-popover="more"]')) {
+            e.preventDefault();
             return;
           }
           onClose();
+        }}
+        onFocusOutside={(e) => {
+          // Prevent focus changes within other calendar popovers from closing this
+          const related = e.detail?.originalEvent?.relatedTarget as HTMLElement | null;
+          if (related?.closest?.('[data-calendar-popover="more"]')) {
+            e.preventDefault();
+          }
         }}
         onEscapeKeyDown={onClose}
         className="w-[min(calc(100vw-2rem),310px)] p-0 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-2xl ring-1 ring-foreground/10 z-[110]"
