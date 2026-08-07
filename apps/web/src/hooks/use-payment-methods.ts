@@ -6,7 +6,7 @@ import {
 } from '@/services/payment-methods.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { createCrudHooks } from './create-crud-hooks';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApiMutation } from './use-api-mutation';
 import { toast } from 'sonner';
 
 const {
@@ -29,12 +29,11 @@ const {
 });
 
 export function useReorderPaymentMethods(clinicId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (orderedIds: string[]) =>
+  return useApiMutation<PaymentMethod[], unknown, string[]>({
+    request: (orderedIds: string[]) =>
       paymentMethodsService.reorder(clinicId, orderedIds),
+    invalidateQueries: [QUERY_KEYS.paymentMethods.list(clinicId)],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.paymentMethods.list(clinicId) });
       toast.success('Order updated');
     },
   });

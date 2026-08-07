@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers';
 import { SidebarBlock } from '@/components/blocks/layout/sidebar';
@@ -12,13 +11,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+  if (isLoading) {
+    return <LoadingOverlay />;
+  }
+
+  if (!isAuthenticated) {
+    if (typeof window !== 'undefined') {
       router.replace('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
-
-  if (isLoading || !isAuthenticated) {
     return <LoadingOverlay />;
   }
 

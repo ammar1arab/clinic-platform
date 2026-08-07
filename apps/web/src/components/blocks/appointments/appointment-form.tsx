@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useNow } from '@/hooks/use-now';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Video, MapPin } from 'lucide-react';
@@ -163,13 +164,7 @@ export function AppointmentForm({
   const [promoCode, setPromoCode] = useState('');
   const [appliedCodeId, setAppliedCodeId] = useState<string | null>(null);
   const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    if (status !== 'waiting' && status !== 'checked_in') return;
-    const id = window.setInterval(() => setNow(new Date()), 30_000);
-    return () => window.clearInterval(id);
-  }, [status]);
+  const now = useNow(30_000);
 
   const waitingMins = appointment
     ? resolveWaitingMins({
@@ -211,15 +206,17 @@ export function AppointmentForm({
   const discount = useWatch({ control, name: 'discount' });
   const discountType = useWatch({ control, name: 'discountType' });
 
+  const [prevPatientId, setPrevPatientId] = useState(patientId);
+  if (patientId !== prevPatientId) {
+    setPrevPatientId(patientId);
+    setPendingPackageId(null);
+  }
+
   const { data: billing, isLoading: billingLoading } = usePatientBilling(
     patientId,
     !!patientId,
     appointment?.id,
   );
-
-  useEffect(() => {
-    setPendingPackageId(null);
-  }, [patientId]);
 
   const selectedService = useMemo(
     () => services?.find((s) => s.id === serviceId),

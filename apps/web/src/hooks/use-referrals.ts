@@ -1,64 +1,63 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   referralsService,
   CreateReferralInput,
   ReferralFilters,
+  Referral,
 } from '@/services/referrals.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
+import { useFetchData } from './use-fetch-data';
+import { useApiMutation } from './use-api-mutation';
 
 export function useReferrals(filters: ReferralFilters) {
-  return useQuery({
+  return useFetchData<Referral[]>({
     queryKey: QUERY_KEYS.referrals.list(filters),
-    queryFn: () => referralsService.getAll(filters),
-    enabled: !!filters.clinicId,
+    request: () => referralsService.getAll(filters),
+    options: {
+      enabled: !!filters.clinicId,
+    },
   });
 }
 
-export function useCreateReferral(clinicId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateReferralInput) => referralsService.create(data),
+export function useCreateReferral(clinicId?: string) {
+  void clinicId;
+  return useApiMutation<Referral, unknown, CreateReferralInput>({
+    request: (data) => referralsService.create(data),
+    invalidateQueries: [QUERY_KEYS.referrals.all, QUERY_KEYS.patients.all],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.referrals.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patients.all });
       toast.success('Request sent');
     },
   });
 }
 
-export function useAcceptReferral(clinicId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => referralsService.accept(id),
+export function useAcceptReferral(clinicId?: string) {
+  void clinicId;
+  return useApiMutation<Referral, unknown, string>({
+    request: (id) => referralsService.accept(id),
+    invalidateQueries: [QUERY_KEYS.referrals.all, QUERY_KEYS.patients.all],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.referrals.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patients.all });
       toast.success('Referral accepted');
     },
   });
 }
 
-export function useRejectReferral(clinicId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => referralsService.reject(id),
+export function useRejectReferral(clinicId?: string) {
+  void clinicId;
+  return useApiMutation<Referral, unknown, string>({
+    request: (id) => referralsService.reject(id),
+    invalidateQueries: [QUERY_KEYS.referrals.all, QUERY_KEYS.patients.all],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.referrals.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patients.all });
       toast.success('Referral rejected');
     },
   });
 }
 
-export function useReferralOpinion(clinicId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, opinion }: { id: string; opinion: string }) =>
-      referralsService.setOpinion(id, opinion),
+export function useReferralOpinion(clinicId?: string) {
+  void clinicId;
+  return useApiMutation<Referral, unknown, { id: string; opinion: string }>({
+    request: ({ id, opinion }) => referralsService.setOpinion(id, opinion),
+    invalidateQueries: [QUERY_KEYS.referrals.all, QUERY_KEYS.patients.all],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.referrals.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patients.all });
       toast.success('Opinion saved');
     },
   });

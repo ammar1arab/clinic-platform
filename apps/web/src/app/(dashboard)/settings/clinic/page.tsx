@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import { ButtonSpinner } from '@/components/blocks/feedback';
 import { useClinic, useUpdateClinic } from '@/hooks/use-clinic';
 import { useDepartments } from '@/hooks/use-departments';
 import { useClinicId } from '@/hooks/use-clinic-id';
+import type { Clinic } from '@/services/clinics.service';
 
 const NONE = '__none__';
 
@@ -34,36 +35,26 @@ const TIMEZONES = [
   'Europe/London',
 ];
 
-export default function ClinicSettingsPage() {
-  const clinicId = useClinicId();
-  const { data: clinic, isLoading } = useClinic(clinicId);
+interface FormProps {
+  clinic: Clinic;
+  clinicId: string;
+}
+
+function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
   const { data: departments } = useDepartments(clinicId);
   const updateMutation = useUpdateClinic(clinicId);
 
-  const [workingHoursStart, setWorkingHoursStart] = useState('08:00');
-  const [workingHoursEnd, setWorkingHoursEnd] = useState('20:00');
-  const [timezone, setTimezone] = useState('UTC');
-  const [defaultCalendarView, setDefaultCalendarView] = useState<'day' | 'week' | 'month'>('month');
-  const [defaultSessionType, setDefaultSessionType] = useState<'in_person' | 'online'>(
-    'in_person',
+  const [workingHoursStart, setWorkingHoursStart] = useState(clinic.workingHoursStart || '08:00');
+  const [workingHoursEnd, setWorkingHoursEnd] = useState(clinic.workingHoursEnd || '20:00');
+  const [timezone, setTimezone] = useState(clinic.timezone || 'UTC');
+  const [defaultCalendarView, setDefaultCalendarView] = useState<'day' | 'week' | 'month'>(
+    clinic.defaultCalendarView || 'month',
   );
-  const [defaultDepartmentId, setDefaultDepartmentId] = useState('');
-  const [letterheadFooter, setLetterheadFooter] = useState('');
-
-  useEffect(() => {
-    if (!clinic) return;
-    setWorkingHoursStart(clinic.workingHoursStart);
-    setWorkingHoursEnd(clinic.workingHoursEnd);
-    setTimezone(clinic.timezone || 'UTC');
-    setDefaultCalendarView(clinic.defaultCalendarView);
-    setDefaultSessionType(clinic.defaultSessionType);
-    setDefaultDepartmentId(clinic.defaultDepartmentId ?? '');
-    setLetterheadFooter(clinic.letterheadFooter ?? '');
-  }, [clinic]);
-
-  if (isLoading || !clinic) {
-    return <SectionLoader label="Loading clinic settings…" />;
-  }
+  const [defaultSessionType, setDefaultSessionType] = useState<'in_person' | 'online'>(
+    clinic.defaultSessionType || 'in_person',
+  );
+  const [defaultDepartmentId, setDefaultDepartmentId] = useState(clinic.defaultDepartmentId ?? '');
+  const [letterheadFooter, setLetterheadFooter] = useState(clinic.letterheadFooter ?? '');
 
   const handleSave = () => {
     updateMutation.mutate({
@@ -201,4 +192,15 @@ export default function ClinicSettingsPage() {
       </div>
     </div>
   );
+}
+
+export default function ClinicSettingsPage() {
+  const clinicId = useClinicId();
+  const { data: clinic, isLoading } = useClinic(clinicId);
+
+  if (isLoading || !clinic) {
+    return <SectionLoader label="Loading clinic settings…" />;
+  }
+
+  return <ClinicSettingsForm key={clinic.id} clinic={clinic} clinicId={clinicId} />;
 }

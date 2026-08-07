@@ -1,119 +1,189 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   appointmentsService,
   AppointmentFilters,
+  Appointment,
   CreateAppointmentInput,
   UpdateAppointmentInput,
 } from '@/services/appointments.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
+import { useFetchData } from './use-fetch-data';
+import { useApiMutation } from './use-api-mutation';
 
 export function useAppointments(filters: AppointmentFilters, enabled = true) {
-  return useQuery({
+  return useFetchData<Appointment[]>({
     queryKey: QUERY_KEYS.appointments.list(filters),
-    queryFn: () => appointmentsService.getAll(filters),
-    enabled,
-    staleTime: 45_000,
-    gcTime: 5 * 60_000,
-    placeholderData: keepPreviousData,
-    refetchOnWindowFocus: false,
+    request: () => appointmentsService.getAll(filters),
+    options: {
+      enabled,
+      staleTime: 45_000,
+      gcTime: 5 * 60_000,
+      keepPreviousData: true,
+      refetchOnWindowFocus: false,
+    },
   });
 }
 
 export function useAppointment(id: string) {
-  return useQuery({
+  return useFetchData<Appointment>({
     queryKey: QUERY_KEYS.appointments.detail(id),
-    queryFn: () => appointmentsService.getOne(id),
-    enabled: !!id,
+    request: () => appointmentsService.getOne(id),
+    options: {
+      enabled: !!id,
+    },
   });
 }
 
 export function useCreateAppointment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateAppointmentInput) => appointmentsService.create(data),
+  return useApiMutation<Appointment, unknown, CreateAppointmentInput>({
+    request: (data: CreateAppointmentInput) => appointmentsService.create(data),
+    invalidateQueries: [
+      QUERY_KEYS.appointments.all,
+      QUERY_KEYS.dashboard.kpisAll,
+      QUERY_KEYS.dashboard.roomUtilizationAll,
+    ],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.kpisAll });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.roomUtilizationAll });
       toast.success('Appointment created');
     },
   });
 }
 
+function applyOptimisticUpdate(
+  current: Appointment,
+  patch: UpdateAppointmentInput,
+): Appointment {
+  const nowIso = new Date().toISOString();
+  const next: Appointment = {
+    ...current,
+    status: patch.status ?? current.status,
+    scheduledAt: patch.scheduledAt ?? current.scheduledAt,
+    durationMins: patch.durationMins ?? current.durationMins,
+    doctorId: patch.doctorId ?? current.doctorId,
+    roomId: patch.roomId !== undefined ? patch.roomId : current.roomId,
+    serviceId: patch.serviceId !== undefined ? patch.serviceId : current.serviceId,
+    notes: patch.notes !== undefined ? patch.notes : current.notes,
+    cancelReason: patch.cancelReason !== undefined ? patch.cancelReason : current.cancelReason,
+    statusUpdatedAt: patch.status ? nowIso : current.statusUpdatedAt,
+    updatedAt: nowIso,
+  };
+
+  if (patch.status === 'in_progress' && !current.inProgressAt) {
+    next.inProgressAt = nowIso;
+  }
+  if ((patch.status === 'waiting' || patch.status === 'checked_in') && !current.waitingStartedAt) {
+    next.waitingStartedAt = nowIso;
+  }
+  return next;
+}
+
+interface UpdateAppointmentContext {
+  previousLists?: [QueryKey, Appointment[] | undefined][];
+  previousDetail?: Appointment;
+}
+
 export function useUpdateAppointment() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateAppointmentInput }) =>
-      appointmentsService.update(id, data),
-    onSuccess: (_, variables) => {
+
+  return useApiMutation<
+    Appointment,
+    Error,
+    { id: string; data: UpdateAppointmentInput },
+    UpdateAppointmentContext
+  >({
+    request: ({ id, data }) => appointmentsService.update(id, data),
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.appointments.all });
+
+      const previousLists = queryClient.getQueriesData<Appointment[]>({
+        queryKey: QUERY_KEYS.appointments.all,
+      }) as [QueryKey, Appointment[] | undefined][];
+      const previousDetail = queryClient.getQueryData<Appointment>(
+        QUERY_KEYS.appointments.detail(id),
+      );
+
+      queryClient.setQueriesData<Appointment[]>(
+        { queryKey: QUERY_KEYS.appointments.all },
+        (old) => {
+          if (!old) return old;
+          return old.map((appt) =>
+            appt.id === id ? applyOptimisticUpdate(appt, data) : appt,
+          );
+        },
+      );
+
+      if (previousDetail) {
+        queryClient.setQueryData<Appointment>(
+          QUERY_KEYS.appointments.detail(id),
+          applyOptimisticUpdate(previousDetail, data),
+        );
+      }
+
+      return { previousLists, previousDetail };
+    },
+    onError: (_err, { id }, context) => {
+      if (context?.previousLists) {
+        for (const [queryKey, oldData] of context.previousLists) {
+          queryClient.setQueryData(queryKey, () => oldData);
+        }
+      }
+      if (context?.previousDetail) {
+        queryClient.setQueryData(
+          QUERY_KEYS.appointments.detail(id),
+          () => context.previousDetail,
+        );
+      }
+    },
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.detail(variables.id) });
+      if (variables?.id) {
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.detail(variables.id) });
+      }
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.kpisAll });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.roomUtilizationAll });
+    },
+    onSuccess: () => {
       toast.success('Appointment updated');
     },
   });
 }
 
 export function useMarkAppointmentPaid() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, paymentMethodId }: { id: string; paymentMethodId: string }) =>
-      appointmentsService.markPaid(id, paymentMethodId),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.detail(res.id) });
+  return useApiMutation<Appointment, unknown, { id: string; paymentMethodId: string }>({
+    request: ({ id, paymentMethodId }) => appointmentsService.markPaid(id, paymentMethodId),
+    invalidateQueries: [QUERY_KEYS.appointments.all],
+    onSuccess: () => {
       toast.success('Marked as paid');
     },
   });
 }
 
 export function useMarkAppointmentUnpaid() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => appointmentsService.markUnpaid(id),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.detail(res.id) });
+  return useApiMutation<Appointment, unknown, string>({
+    request: (id) => appointmentsService.markUnpaid(id),
+    invalidateQueries: [QUERY_KEYS.appointments.all],
+    onSuccess: () => {
       toast.success('Marked as unpaid');
     },
   });
 }
 
 export function useRedeemAppointmentPackage() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, patientPackageId }: { id: string; patientPackageId: string }) =>
-      appointmentsService.redeemPackage(id, patientPackageId),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.detail(res.id) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patientPackages.all });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.patientPackages.summary(res.patientId),
-      });
+  return useApiMutation<Appointment, unknown, { id: string; patientPackageId: string }>({
+    request: ({ id, patientPackageId }) => appointmentsService.redeemPackage(id, patientPackageId),
+    invalidateQueries: [QUERY_KEYS.appointments.all, QUERY_KEYS.patientPackages.all],
+    onSuccess: () => {
       toast.success('Visit covered by package');
-    },
-    onError: () => {
-
     },
   });
 }
 
 export function useReleaseAppointmentPackage() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => appointmentsService.releasePackage(id),
-    onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.detail(res.id) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patientPackages.all });
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.patientPackages.summary(res.patientId),
-      });
+  return useApiMutation<Appointment, unknown, string>({
+    request: (id) => appointmentsService.releasePackage(id),
+    invalidateQueries: [QUERY_KEYS.appointments.all, QUERY_KEYS.patientPackages.all],
+    onSuccess: () => {
       toast.success('Package coverage removed');
     },
   });
 }
-

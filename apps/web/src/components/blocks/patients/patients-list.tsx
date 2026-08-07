@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Table,
@@ -17,7 +17,7 @@ import { TruncatedText } from '@/components/primitives/truncated-text';
 import { Pagination } from '@/components/primitives/pagination';
 import { TableFrame } from '@/components/blocks/data/table-frame';
 import { EmptyState } from '@/components/primitives/empty-state';
-import { SectionLoader } from '@/components/primitives/spinner';
+import { TableSkeleton } from '@/components/primitives/skeleton-presets';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import {
   IconDelete,
@@ -61,9 +61,11 @@ export function PatientsList({ patients, isLoading, clinicId }: Props) {
   const pageCount = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
 
-  useEffect(() => {
+  const [prevPatients, setPrevPatients] = useState(patients);
+  if (patients !== prevPatients) {
+    setPrevPatients(patients);
     setPage(1);
-  }, [patients]);
+  }
 
   const pageItems = useMemo(() => {
     if (!patients) return [];
@@ -74,11 +76,7 @@ export function PatientsList({ patients, isLoading, clinicId }: Props) {
   const openPatient = (id: string) => router.push(`/patients/${id}`);
 
   if (isLoading) {
-    return (
-      <TableFrame>
-        <SectionLoader label="Loading patients…" />
-      </TableFrame>
-    );
+    return <TableSkeleton rows={8} cols={6} hasHeader={false} />;
   }
 
   if (!patients || patients.length === 0) {

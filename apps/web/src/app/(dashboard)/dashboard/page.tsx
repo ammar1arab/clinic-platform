@@ -31,39 +31,45 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6 lg:gap-4">
         <KpiCardBlock
           label="Today's Appointments"
-          value={kpisLoading ? '—' : (kpis?.total ?? 0)}
+          value={kpis?.total ?? 0}
           icon={IconTodaysAppointments}
           accent="default"
+          isLoading={kpisLoading}
         />
         <KpiCardBlock
           label="Waiting"
-          value={kpisLoading ? '—' : (kpis?.waitingCount ?? 0)}
+          value={kpis?.waitingCount ?? 0}
           icon={Timer}
           accent="warning"
+          isLoading={kpisLoading}
         />
         <KpiCardBlock
           label="In Progress"
-          value={kpisLoading ? '—' : (kpis?.inProgress ?? 0)}
+          value={kpis?.inProgress ?? 0}
           icon={IconTime}
           accent="teal"
+          isLoading={kpisLoading}
         />
         <KpiCardBlock
           label="Completed"
-          value={kpisLoading ? '—' : (kpis?.completed ?? 0)}
+          value={kpis?.completed ?? 0}
           icon={CheckCircle2}
           accent="success"
+          isLoading={kpisLoading}
         />
         <KpiCardBlock
           label="Avg Wait"
-          value={kpisLoading ? '—' : formatWaitingMins(kpis?.avgWaitingMins)}
+          value={formatWaitingMins(kpis?.avgWaitingMins)}
           icon={Hourglass}
           accent="warning"
+          isLoading={kpisLoading}
         />
         <KpiCardBlock
           label="Rooms"
-          value={kpisLoading ? '—' : (kpis?.roomCount ?? 0)}
+          value={kpis?.roomCount ?? 0}
           icon={IconRoom}
           accent="teal"
+          isLoading={kpisLoading}
         />
       </div>
 

@@ -1,7 +1,8 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useFetchData } from './use-fetch-data';
+import { useApiMutation } from './use-api-mutation';
 
 type QueryKeyFactory = {
   all: readonly unknown[];
@@ -19,7 +20,6 @@ export interface CrudService<TEntity, TCreate, TUpdate> {
 
 export interface CrudHooksConfig<TEntity, TCreate, TUpdate> {
   keys: QueryKeyFactory;
-
   entity: string;
   labels?: {
     created?: string;
@@ -29,14 +29,6 @@ export interface CrudHooksConfig<TEntity, TCreate, TUpdate> {
     reactivated?: string;
   };
   service: CrudService<TEntity, TCreate, TUpdate>;
-}
-
-function invalidateList(
-  queryClient: ReturnType<typeof useQueryClient>,
-  keys: QueryKeyFactory,
-  clinicId: string,
-) {
-  queryClient.invalidateQueries({ queryKey: keys.list(clinicId) });
 }
 
 export function createCrudHooks<TEntity, TCreate, TUpdate>(
@@ -52,79 +44,75 @@ export function createCrudHooks<TEntity, TCreate, TUpdate>(
   };
 
   function useList(clinicId: string) {
-    return useQuery({
+    return useFetchData<TEntity[]>({
       queryKey: keys.list(clinicId),
-      queryFn: () => service.getAll(clinicId),
-      enabled: !!clinicId,
+      request: () => service.getAll(clinicId),
+      options: {
+        enabled: !!clinicId,
+      },
     });
   }
 
   function useCreate(clinicId: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-      mutationFn: (data: TCreate) => service.create(data),
+    return useApiMutation<TEntity, unknown, TCreate>({
+      request: (data: TCreate) => service.create(data),
+      invalidateQueries: keys.list(clinicId),
       onSuccess: () => {
-        invalidateList(queryClient, keys, clinicId);
         toast.success(labels.created);
       },
     });
   }
 
   function useUpdate(clinicId: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-      mutationFn: ({ id, data }: { id: string; data: TUpdate }) =>
-        service.update(id, data),
+    return useApiMutation<TEntity, unknown, { id: string; data: TUpdate }>({
+      request: ({ id, data }: { id: string; data: TUpdate }) => service.update(id, data),
+      invalidateQueries: keys.list(clinicId),
       onSuccess: () => {
-        invalidateList(queryClient, keys, clinicId);
         toast.success(labels.updated);
       },
     });
   }
 
   function useRemove(clinicId: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-      mutationFn: (id: string) => {
+    return useApiMutation<unknown, unknown, string>({
+      request: (id: string) => {
         if (!service.remove) {
           throw new Error(`createCrudHooks(${entity}): service.remove is not configured`);
         }
         return service.remove(id);
       },
+      invalidateQueries: keys.list(clinicId),
       onSuccess: () => {
-        invalidateList(queryClient, keys, clinicId);
         toast.success(labels.removed);
       },
     });
   }
 
   function useDeactivate(clinicId: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-      mutationFn: (id: string) => {
+    return useApiMutation<unknown, unknown, string>({
+      request: (id: string) => {
         if (!service.deactivate) {
           throw new Error(`createCrudHooks(${entity}): service.deactivate is not configured`);
         }
         return service.deactivate(id);
       },
+      invalidateQueries: keys.list(clinicId),
       onSuccess: () => {
-        invalidateList(queryClient, keys, clinicId);
         toast.success(labels.deactivated);
       },
     });
   }
 
   function useReactivate(clinicId: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-      mutationFn: (id: string) => {
+    return useApiMutation<unknown, unknown, string>({
+      request: (id: string) => {
         if (!service.reactivate) {
           throw new Error(`createCrudHooks(${entity}): service.reactivate is not configured`);
         }
         return service.reactivate(id);
       },
+      invalidateQueries: keys.list(clinicId),
       onSuccess: () => {
-        invalidateList(queryClient, keys, clinicId);
         toast.success(labels.reactivated);
       },
     });

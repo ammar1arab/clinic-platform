@@ -3,10 +3,11 @@ import {
   CreateDiscountCodeInput,
   UpdateDiscountCodeInput,
   DiscountCode,
+  ValidatedDiscountCode,
 } from '@/services/discount-codes.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { createCrudHooks } from './create-crud-hooks';
-import { useMutation } from '@tanstack/react-query';
+import { useApiMutation } from './use-api-mutation';
 import { toast } from 'sonner';
 
 const {
@@ -29,8 +30,8 @@ const {
 });
 
 export function useValidateDiscountCode(clinicId: string) {
-  return useMutation({
-    mutationFn: (code: string) => discountCodesService.validate(clinicId, code),
+  return useApiMutation<ValidatedDiscountCode, unknown, string>({
+    request: (code: string) => discountCodesService.validate(clinicId, code),
     onError: () => toast.error('Invalid promocode'),
   });
 }

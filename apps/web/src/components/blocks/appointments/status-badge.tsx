@@ -55,14 +55,22 @@ export const STATUS_CONFIG: Record<
   },
 };
 
+export const STATUS_OPTIONS: AppointmentStatus[] = [
+  'unconfirmed',
+  'confirmed',
+  'checked_in',
+  'waiting',
+  'in_progress',
+  'completed',
+  'no_show',
+  'cancelled',
+];
+
 interface Props {
   status: AppointmentStatus;
   className?: string;
-
   compact?: boolean;
 }
-
-
 
 export function StatusBadgeBlock({ status, className, compact }: Props) {
   const config = STATUS_CONFIG[status];

@@ -1,10 +1,14 @@
-import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { reportsService, ReportFormat } from '@/services/reports.service';
+import { useApiMutation } from './use-api-mutation';
+
+export interface ReportDownloadResult {
+  filename: string;
+}
 
 export function useDownloadPatientReport(clinicId: string) {
-  return useMutation({
-    mutationFn: ({
+  return useApiMutation<ReportDownloadResult, unknown, { patientId: string; format?: ReportFormat }>({
+    request: ({
       patientId,
       format = 'pdf',
     }: {
@@ -18,14 +22,18 @@ export function useDownloadPatientReport(clinicId: string) {
 }
 
 export function useDownloadReferralsReport(clinicId: string) {
-  return useMutation({
-    mutationFn: (params: {
+  return useApiMutation<
+    ReportDownloadResult,
+    unknown,
+    {
       format?: ReportFormat;
       patientId?: string;
       toDoctorId?: string;
       from?: string;
       to?: string;
-    }) => reportsService.downloadReferrals({ clinicId, ...params }),
+    }
+  >({
+    request: (params) => reportsService.downloadReferrals({ clinicId, ...params }),
     onSuccess: (res) => {
       toast.success(`Downloaded ${res.filename}`);
     },
@@ -33,12 +41,16 @@ export function useDownloadReferralsReport(clinicId: string) {
 }
 
 export function useDownloadFinanceReport(clinicId: string) {
-  return useMutation({
-    mutationFn: (params: {
+  return useApiMutation<
+    ReportDownloadResult,
+    unknown,
+    {
       format?: ReportFormat;
       from?: string;
       to?: string;
-    }) => reportsService.downloadFinance({ clinicId, ...params }),
+    }
+  >({
+    request: (params) => reportsService.downloadFinance({ clinicId, ...params }),
     onSuccess: (res) => {
       toast.success(`Downloaded ${res.filename}`);
     },

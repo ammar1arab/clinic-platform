@@ -1,22 +1,24 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { clinicsService, UpdateClinicInput } from '@/services/clinics.service';
+import { clinicsService, UpdateClinicInput, Clinic } from '@/services/clinics.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
+import { useFetchData } from './use-fetch-data';
+import { useApiMutation } from './use-api-mutation';
 
 export function useClinic(clinicId: string) {
-  return useQuery({
+  return useFetchData<Clinic>({
     queryKey: QUERY_KEYS.clinics.detail(clinicId),
-    queryFn: () => clinicsService.getOne(clinicId),
-    enabled: !!clinicId,
+    request: () => clinicsService.getOne(clinicId),
+    options: {
+      enabled: !!clinicId,
+    },
   });
 }
 
 export function useUpdateClinic(clinicId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: UpdateClinicInput) => clinicsService.update(clinicId, data),
+  return useApiMutation<Clinic, unknown, UpdateClinicInput>({
+    request: (data: UpdateClinicInput) => clinicsService.update(clinicId, data),
+    invalidateQueries: [QUERY_KEYS.clinics.detail(clinicId)],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.clinics.detail(clinicId) });
       toast.success('Clinic settings saved');
     },
   });

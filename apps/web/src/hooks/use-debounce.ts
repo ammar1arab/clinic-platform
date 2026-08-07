@@ -1,12 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useDeferredValue } from 'react';
 
-export function useDebounce<T>(value: T, delay: number): T {
-  const [debounced, setDebounced] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-
-  return debounced;
+export function useDebounce<T>(value: T, delay?: number): T {
+  void delay;
+  return useDeferredValue(value);
 }
+
+export default useDebounce;

@@ -17,6 +17,7 @@ function NewAppointmentInner() {
 
   const defaultDate = params.get('date') ?? '';
   const defaultTime = params.get('time') ?? '';
+  const defaultDoctorId = params.get('doctorId') ?? user?.clinicUserId ?? '';
   const backHref = schedulePath(parseScheduleView(params.get('view')));
 
   return (
@@ -26,8 +27,8 @@ function NewAppointmentInner() {
       <AppointmentForm
         defaultDate={defaultDate}
         defaultTime={defaultTime}
-        currentDoctorId={user?.clinicUserId ?? ''}
-        currentDoctorName={user?.name ?? 'You'}
+        currentDoctorId={defaultDoctorId}
+        currentDoctorName={user?.name ?? 'Doctor'}
         onCancel={() => router.push(backHref)}
         onSuccess={() => router.push(backHref)}
       />

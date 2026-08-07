@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -31,8 +31,31 @@ import {
 } from './schedule-nav';
 import { rectFromElement, type AnchorRect } from './popover-position';
 import { CalendarSkeleton } from './calendar-skeleton';
+import { useUpdateAppointment } from '@/hooks/use-appointments';
+import { toast } from 'sonner';
+import { extractErrorMessage } from '@/lib/api';
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
+
+interface CalendarDropInfo {
+  event: {
+    id: string;
+    start: Date | null;
+    end: Date | null;
+    extendedProps: Record<string, unknown>;
+  };
+  revert: () => void;
+}
+
+interface CalendarResizeInfo {
+  event: {
+    id: string;
+    start: Date | null;
+    end: Date | null;
+    extendedProps: Record<string, unknown>;
+  };
+  revert: () => void;
+}
 
 interface Props {
   appointments: Appointment[] | undefined;
@@ -56,13 +79,7 @@ export function AppointmentCalendar({
   onSelectSlot,
 }: Props) {
   const calendarRef = useRef<FullCalendar>(null);
-  const onViewChangeRef = useRef(onViewChange);
-  const onVisibleRangeChangeRef = useRef(onVisibleRangeChange);
-  const onSelectSlotRef = useRef(onSelectSlot);
-
-  onViewChangeRef.current = onViewChange;
-  onVisibleRangeChangeRef.current = onVisibleRangeChange;
-  onSelectSlotRef.current = onSelectSlot;
+  const updateMutation = useUpdateAppointment();
 
   const events = useMemo(
     () =>
@@ -77,6 +94,7 @@ export function AppointmentCalendar({
         borderColor: STATUS_COLORS[appt.status],
         textColor: '#ffffff',
         display: 'block' as const,
+        editable: appt.status !== 'cancelled' && appt.status !== 'completed',
         classNames: appt.status === 'cancelled' ? ['fc-event-cancelled'] : [],
         extendedProps: { appointment: appt },
       })) ?? [],
@@ -85,22 +103,6 @@ export function AppointmentCalendar({
 
   const [preview, setPreview] = useState<EventPreviewState | null>(null);
   const [moreList, setMoreList] = useState<MoreEventsState | null>(null);
-  const syncingViewRef = useRef(false);
-
-
-
-  useEffect(() => {
-    const api = calendarRef.current?.getApi();
-    if (!api) return;
-    const next = VIEW_TO_FC[view];
-    if (api.view.type === next) return;
-    syncingViewRef.current = true;
-    api.changeView(next);
-    // Clear after FC has applied the view; microtask alone can race datesSet.
-    requestAnimationFrame(() => {
-      syncingViewRef.current = false;
-    });
-  }, [view]);
 
   const openPreview = useCallback(
     (
@@ -137,23 +139,113 @@ export function AppointmentCalendar({
     [openPreview],
   );
 
-  const handleDateSelect = useCallback((arg: DateSelectArg) => {
-    setPreview(null);
-    setMoreList(null);
-    onSelectSlotRef.current(arg.start);
-  }, []);
+  const handleDateSelect = useCallback(
+    (arg: DateSelectArg) => {
+      setPreview(null);
+      setMoreList(null);
+      onSelectSlot(arg.start);
+    },
+    [onSelectSlot],
+  );
 
   const handleDatesSet = useCallback(
     (arg: DatesSetArg) => {
       const next = FC_TO_VIEW[arg.view.type];
-
-      if (!syncingViewRef.current && next && next !== view) {
-        onViewChangeRef.current(next);
+      if (next && next !== view) {
+        onViewChange(next);
       }
-      syncingViewRef.current = false;
-      onVisibleRangeChangeRef.current?.(arg.start, arg.end);
+      onVisibleRangeChange?.(arg.start, arg.end);
     },
-    [view],
+    [view, onViewChange, onVisibleRangeChange],
+  );
+
+  const handleEventDrop = useCallback(
+    (info: CalendarDropInfo) => {
+      const appt = info.event.extendedProps.appointment as Appointment | undefined;
+      if (!appt || !info.event.start) {
+        info.revert();
+        return;
+      }
+      if (appt.status === 'cancelled') {
+        toast.error('Cancelled appointments cannot be rescheduled');
+        info.revert();
+        return;
+      }
+
+      const scheduledAt = info.event.start.toISOString();
+      const durationMins = info.event.end
+        ? Math.max(15, Math.round((info.event.end.getTime() - info.event.start.getTime()) / 60000))
+        : appt.durationMins;
+
+      const startTime = info.event.start.getTime();
+      const endTime = startTime + durationMins * 60000;
+      const hasConflict = appointments?.some((other) => {
+        if (other.id === appt.id) return false;
+        if (other.status === 'cancelled' || other.status === 'no_show') return false;
+        const otherStart = new Date(other.scheduledAt).getTime();
+        const otherEnd = otherStart + other.durationMins * 60000;
+        const overlaps = startTime < otherEnd && endTime > otherStart;
+        if (!overlaps) return false;
+        return (
+          other.doctorId === appt.doctorId ||
+          (appt.roomId && other.roomId && other.roomId === appt.roomId)
+        );
+      });
+
+      if (hasConflict) {
+        toast.warning('Conflict detected: Doctor or room has overlapping appointment');
+      }
+
+      updateMutation.mutate(
+        {
+          id: appt.id,
+          data: {
+            scheduledAt,
+            durationMins,
+          },
+        },
+        {
+          onError: (err) => {
+            info.revert();
+            toast.error(extractErrorMessage(err) || 'Failed to reschedule appointment');
+          },
+        },
+      );
+    },
+    [appointments, updateMutation],
+  );
+
+  const handleEventResize = useCallback(
+    (info: CalendarResizeInfo) => {
+      const appt = info.event.extendedProps.appointment as Appointment | undefined;
+      if (!appt || !info.event.start || !info.event.end) {
+        info.revert();
+        return;
+      }
+      if (appt.status === 'cancelled') {
+        info.revert();
+        return;
+      }
+
+      const durationMins = Math.max(
+        15,
+        Math.round((info.event.end.getTime() - info.event.start.getTime()) / 60000),
+      );
+
+      updateMutation.mutate(
+        {
+          id: appt.id,
+          data: { durationMins },
+        },
+        {
+          onError: (err) => {
+            info.revert();
+            toast.error(extractErrorMessage(err) || 'Failed to update duration');
+          },
+        },
+      );
+    },
+    [updateMutation],
   );
 
   const handleMoreLinkClick = useCallback((arg: MoreLinkArg) => {
@@ -285,13 +377,12 @@ export function AppointmentCalendar({
         if (slot.getHours() === 0 && slot.getMinutes() === 0) {
           slot.setHours(9, 0, 0, 0);
         }
-        onSelectSlotRef.current(slot);
+        onSelectSlot(slot);
       });
       frame.appendChild(btn);
     },
-    [],
+    [onSelectSlot],
   );
-
 
   if (isLoading && !appointments) {
     return <CalendarSkeleton />;
@@ -303,6 +394,7 @@ export function AppointmentCalendar({
       aria-busy={isFetching || undefined}
     >
       <FullCalendar
+        key={view}
         ref={calendarRef}
         plugins={PLUGINS}
         initialView={VIEW_TO_FC[view]}
@@ -324,13 +416,17 @@ export function AppointmentCalendar({
         selectable
         selectMirror
         selectAllow={() => view !== 'month'}
-        editable={false}
+        editable
+        eventDurationEditable
+        eventResizableFromStart
         nowIndicator
         events={events}
         eventDisplay="block"
         eventDidMount={handleEventDidMount}
         dayCellDidMount={handleDayCellDidMount}
         eventClick={handleEventClick}
+        eventDrop={handleEventDrop as never}
+        eventResize={handleEventResize as never}
         select={handleDateSelect}
         datesSet={handleDatesSet}
         eventContent={renderEventContent}

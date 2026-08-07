@@ -1,10 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-
-
 
 export function PageTransition({
   children,
@@ -14,20 +11,12 @@ export function PageTransition({
   className?: string;
 }) {
   const pathname = usePathname();
-  const [entered, setEntered] = useState(false);
-
-  useEffect(() => {
-    setEntered(false);
-    const id = requestAnimationFrame(() => setEntered(true));
-    return () => cancelAnimationFrame(id);
-  }, [pathname]);
 
   return (
     <div
       key={pathname}
       className={cn(
-        'min-h-full will-change-transform transition-[opacity,transform] duration-300 ease-out',
-        entered ? 'translate-y-0 opacity-100' : 'translate-y-1.5 opacity-0',
+        'min-h-full animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out',
         className,
       )}
     >

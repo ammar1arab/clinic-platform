@@ -1,12 +1,14 @@
 import { ROUTES } from '@/constants/routes';
 
-export type ScheduleView = 'day' | 'week' | 'month';
+export type ScheduleView = 'day' | 'week' | 'month' | 'doctors' | 'queue';
 
-export const VIEW_TO_FC = {
+export const VIEW_TO_FC: Record<ScheduleView, string> = {
   day: 'timeGridDay',
   week: 'timeGridWeek',
   month: 'dayGridMonth',
-} as const satisfies Record<ScheduleView, string>;
+  doctors: 'timeGridDay',
+  queue: 'timeGridDay',
+};
 
 export const FC_TO_VIEW: Record<string, ScheduleView> = {
   timeGridDay: 'day',
@@ -15,17 +17,23 @@ export const FC_TO_VIEW: Record<string, ScheduleView> = {
 };
 
 export function parseScheduleView(value: string | null | undefined): ScheduleView {
-  if (value === 'day' || value === 'week' || value === 'month') return value;
+  if (
+    value === 'day' ||
+    value === 'week' ||
+    value === 'month' ||
+    value === 'doctors' ||
+    value === 'queue'
+  ) {
+    return value;
+  }
   return 'month';
 }
-
 
 export function schedulePath(view: ScheduleView = 'month'): string {
   const params = new URLSearchParams();
   params.set('view', view);
   return `${ROUTES.SCHEDULE}?${params.toString()}`;
 }
-
 
 export function resolveReturnTo(
   returnTo: string | null | undefined,

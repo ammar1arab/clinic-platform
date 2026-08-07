@@ -1,11 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
-import { clinicsService } from '@/services/clinics.service';
+import { clinicsService, ClinicStaffMember } from '@/services/clinics.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
+import { useFetchData } from './use-fetch-data';
 
 export function useClinicStaff(clinicId: string) {
-  return useQuery({
+  return useFetchData<ClinicStaffMember[]>({
     queryKey: QUERY_KEYS.clinics.staff(clinicId),
-    queryFn: () => clinicsService.getStaff(clinicId),
-    enabled: !!clinicId,
+    request: () => clinicsService.getStaff(clinicId),
+    options: {
+      enabled: !!clinicId,
+    },
   });
 }

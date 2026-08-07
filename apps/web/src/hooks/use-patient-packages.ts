@@ -1,49 +1,54 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   patientPackagesService,
   EnrollPatientPackageInput,
+  PatientPackageDto,
+  PatientBillingSummary,
 } from '@/services/patient-packages.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
+import { useFetchData } from './use-fetch-data';
+import { useApiMutation } from './use-api-mutation';
 
 export function usePatientBilling(
   patientId: string,
   enabled = true,
   excludeAppointmentId?: string,
 ) {
-  return useQuery({
+  return useFetchData<PatientBillingSummary>({
     queryKey: QUERY_KEYS.patientPackages.summary(patientId, excludeAppointmentId),
-    queryFn: () => patientPackagesService.getSummary(patientId, excludeAppointmentId),
-    enabled: enabled && !!patientId,
-    staleTime: 30_000,
+    request: () => patientPackagesService.getSummary(patientId, excludeAppointmentId),
+    options: {
+      enabled: enabled && !!patientId,
+      staleTime: 30_000,
+    },
   });
 }
 
 export function usePatientPackages(patientId: string) {
-  return useQuery({
+  return useFetchData<PatientPackageDto[]>({
     queryKey: QUERY_KEYS.patientPackages.list(patientId),
-    queryFn: () => patientPackagesService.getByPatient(patientId),
-    enabled: !!patientId,
+    request: () => patientPackagesService.getByPatient(patientId),
+    options: {
+      enabled: !!patientId,
+    },
   });
 }
 
 export function useEnrollPatientPackage() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: EnrollPatientPackageInput) => patientPackagesService.enroll(data),
+  return useApiMutation<PatientPackageDto, unknown, EnrollPatientPackageInput>({
+    request: (data) => patientPackagesService.enroll(data),
+    invalidateQueries: [QUERY_KEYS.patientPackages.all],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patientPackages.all });
       toast.success('Package added');
     },
   });
 }
 
 export function useDeactivatePatientPackage() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => patientPackagesService.deactivate(id),
+  return useApiMutation<unknown, unknown, string>({
+    request: (id) => patientPackagesService.deactivate(id),
+    invalidateQueries: [QUERY_KEYS.patientPackages.all],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patientPackages.all });
       toast.success('Package removed');
     },
   });

@@ -1,8 +1,10 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { authService, MeResponse } from '@/services/auth.service';
 import { getToken, setToken, clearToken } from '@/lib/auth-token';
+import { useFetchData } from '@/hooks/use-fetch-data';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AuthContextType {
   user: MeResponse | null;
@@ -16,49 +18,41 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setTokenState] = useState<string | null>(null);
-  const [user, setUser] = useState<MeResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [token, setTokenState] = useState<string | null>(() => getToken());
+  const queryClient = useQueryClient();
 
-  const fetchMe = async () => {
-    try {
-      const me = await authService.getMe();
-      setUser(me);
-    } catch {
-      clearToken();
-      setTokenState(null);
-      setUser(null);
-    }
-  };
+  const { data: user, isLoading } = useFetchData<MeResponse>({
+    queryKey: ['auth', 'me', token],
+    request: () => authService.getMe(),
+    options: {
+      enabled: !!token,
+      staleTime: 300_000,
+    },
+  });
 
-  useEffect(() => {
-    const stored = getToken();
-    if (stored) {
-      setTokenState(stored);
-
-      setToken(stored);
-      fetchMe().finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const login = async (newToken: string) => {
+  const login = useCallback(async (newToken: string) => {
     setToken(newToken);
     setTokenState(newToken);
-    await fetchMe();
-  };
+    await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+  }, [queryClient]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     clearToken();
     setTokenState(null);
-    setUser(null);
-  };
+    queryClient.setQueryData(['auth', 'me', token], null);
+  }, [queryClient, token]);
+
+  const value = useMemo<AuthContextType>(() => ({
+    user: user ?? null,
+    token,
+    login,
+    logout,
+    isAuthenticated: !!token && !!user,
+    isLoading: !!token && isLoading,
+  }), [user, token, login, logout, isLoading]);
 
   return (
-    <AuthContext.Provider
-      value={{ user, token, login, logout, isAuthenticated: !!token, isLoading }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -66,6 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
   return context;
 }

@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/constants/routes';
 import { schedulePath } from '@/components/blocks/appointments/schedule-nav';
@@ -36,9 +36,11 @@ export function SidebarBlock() {
     .slice(0, 2)
     .toUpperCase();
 
-  useEffect(() => {
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setMobileOpen(false);
-  }, [pathname, setMobileOpen]);
+  }
 
   return (
     <>

@@ -1,20 +1,13 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { createPortal } from 'react-dom';
+import { useMemo } from 'react';
 import { X } from 'lucide-react';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Appointment } from '@/services/appointments.service';
 import { STATUS_COLORS } from './status-colors';
 import { formatApptStartAmPm, patientDisplayName } from './calendar-time';
-import {
-  clickAnchor,
-  placePopover,
-  type AnchorRect,
-  type PopoverPlacement,
-} from './popover-position';
-
-const CARD_WIDTH = 260;
-const CARD_HEIGHT_EST = 240;
+import { clickAnchor, type AnchorRect } from './popover-position';
+import { useMounted } from '@/hooks/use-mounted';
 
 export interface MoreEventsState {
   date: Date;
@@ -30,141 +23,120 @@ interface Props {
   onSelect: (appointment: Appointment, x: number, y: number, anchor?: AnchorRect) => void;
 }
 
-function resolveAnchor(state: MoreEventsState): AnchorRect {
-  return clickAnchor(state.x, state.y, state.anchor);
-}
-
-
 export function MoreEventsPopover({ state, onClose, onSelect }: Props) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
-  const [placement, setPlacement] = useState<PopoverPlacement>(() =>
-    placePopover(resolveAnchor(state), CARD_WIDTH, CARD_HEIGHT_EST),
-  );
+  const mounted = useMounted();
 
-  useEffect(() => setMounted(true), []);
+  const anchorRect = useMemo(() => {
+    return clickAnchor(state.x, state.y, state.anchor);
+  }, [state.x, state.y, state.anchor]);
 
-  useLayoutEffect(() => {
-    const anchor = resolveAnchor(state);
-    const h = panelRef.current?.offsetHeight ?? CARD_HEIGHT_EST;
-    const w = panelRef.current?.offsetWidth ?? CARD_WIDTH;
-
-    setPlacement(
-      placePopover(anchor, w, h, { prefer: ['bottom', 'top', 'right', 'left'] }),
-    );
-  }, [state]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    const onPointer = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      if (target.closest('[data-calendar-popover]')) return;
-      if (panelRef.current && !panelRef.current.contains(target)) {
-        onClose();
-      }
-    };
-    const onReposition = () => {
-      const anchor = resolveAnchor(state);
-      const h = panelRef.current?.offsetHeight ?? CARD_HEIGHT_EST;
-      const w = panelRef.current?.offsetWidth ?? CARD_WIDTH;
-      setPlacement(
-        placePopover(anchor, w, h, { prefer: ['bottom', 'top', 'right', 'left'] }),
-      );
-    };
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('resize', onReposition);
-    document.addEventListener('mousedown', onPointer, true);
-    document.addEventListener('touchstart', onPointer, true);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('resize', onReposition);
-      document.removeEventListener('mousedown', onPointer, true);
-      document.removeEventListener('touchstart', onPointer, true);
-    };
-  }, [onClose, state]);
-
-  const dayLabel = state.date.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
-  const style = {
-    left: placement.left,
-    top: placement.top,
-    width: CARD_WIDTH,
-  } as CSSProperties;
+  const dateLabel = useMemo(() => {
+    return state.date.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  }, [state.date]);
 
   if (!mounted) return null;
 
-  return createPortal(
-    <div
-      ref={panelRef}
-      role="dialog"
-      aria-label={`Appointments on ${dayLabel}`}
-      data-calendar-popover="more"
-      data-side={placement.side}
-      className="fixed z-[100] flex max-h-[min(60vh,18rem)] w-[260px] flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 duration-100"
-      style={style}
+  return (
+    <Popover
+      open={true}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      modal={false}
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/70 px-2.5 py-2">
-        <div className="min-w-0">
-          <p className="truncate text-xs font-semibold">{dayLabel}</p>
-          <p className="text-[10px] text-muted-foreground">
-            {state.appointments.length} total
-          </p>
-        </div>
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-        >
-          <X className="size-3" />
-        </button>
-      </div>
+      <PopoverAnchor asChild>
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            left: Math.max(0, anchorRect.left),
+            top: Math.max(0, anchorRect.top),
+            width: Math.max(1, anchorRect.width),
+            height: Math.max(1, anchorRect.height),
+            pointerEvents: 'none',
+            zIndex: 90,
+          }}
+        />
+      </PopoverAnchor>
 
-      <ul className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain p-1.5">
-        {state.appointments.map((appt) => {
-          const accent = STATUS_COLORS[appt.status];
-          return (
-            <li key={appt.id}>
+      <PopoverContent
+        side="bottom"
+        align="start"
+        sideOffset={6}
+        avoidCollisions={true}
+        collisionPadding={16}
+        onInteractOutside={(e) => {
+          const target = e.target as HTMLElement | null;
+          if (target?.closest('[data-calendar-popover="preview"]')) {
+            return;
+          }
+          onClose();
+        }}
+        onEscapeKeyDown={onClose}
+        className="w-[min(calc(100vw-2rem),280px)] p-0 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-2xl ring-1 ring-foreground/10 z-[100]"
+        data-calendar-popover="more"
+      >
+        <div className="flex items-center justify-between border-b px-3 py-2 bg-muted/20">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold tracking-tight text-foreground">{dateLabel}</p>
+            <p className="text-[10px] text-muted-foreground">
+              {state.appointments.length} appointment
+              {state.appointments.length === 1 ? '' : 's'}
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all duration-150 cursor-pointer active:scale-95"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+
+        <div className="max-h-[min(55vh,18rem)] space-y-1.5 overflow-y-auto overscroll-contain p-2">
+          {state.appointments.map((appt) => {
+            const color = STATUS_COLORS[appt.status];
+            return (
               <button
+                key={appt.id}
                 type="button"
                 onClick={(e) => {
-                  e.stopPropagation();
                   const target = e.currentTarget;
-                  const r = target.getBoundingClientRect();
+                  const rect = target.getBoundingClientRect();
                   onSelect(appt, e.clientX, e.clientY, {
-                    left: r.left,
-                    top: r.top,
-                    right: r.right,
-                    bottom: r.bottom,
-                    width: r.width,
-                    height: r.height,
+                    left: rect.left,
+                    top: rect.top,
+                    right: rect.right,
+                    bottom: rect.bottom,
+                    width: rect.width,
+                    height: rect.height,
                   });
                 }}
-                className="flex w-full items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition hover:bg-muted/80 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
+                className="group flex w-full items-center gap-2 rounded-lg border border-transparent p-2 text-left text-xs transition-all duration-150 hover:border-border/80 hover:bg-muted/70 cursor-pointer active:scale-[0.98]"
               >
                 <span
-                  className="size-1.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: accent }}
+                  className="size-2 shrink-0 rounded-full transition-transform duration-150 group-hover:scale-125 shadow-xs"
+                  style={{ backgroundColor: color }}
                   aria-hidden
                 />
-                <span className="shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
-                  {formatApptStartAmPm(appt)}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-foreground">
-                  {patientDisplayName(appt)}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                    {patientDisplayName(appt)}
+                  </p>
+                  <p className="truncate text-[10px] text-muted-foreground">
+                    {formatApptStartAmPm(appt)} · {appt.doctor.name}
+                  </p>
+                </div>
               </button>
-            </li>
-          );
-        })}
-      </ul>
-    </div>,
-    document.body,
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

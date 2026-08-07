@@ -67,23 +67,31 @@ export function DatePicker({
   const [open, setOpen] = React.useState(false)
   const selected = parseISO(value)
 
-  const rangeStart = fromDate ?? (withDropdown ? new Date(1920, 0, 1) : undefined)
-  const rangeEnd = toDate ?? (withDropdown ? new Date() : undefined)
+  const rangeStart = React.useMemo(() => {
+    return fromDate ?? (withDropdown ? new Date(1920, 0, 1) : undefined);
+  }, [fromDate, withDropdown]);
+
+  const rangeEnd = React.useMemo(() => {
+    return toDate ?? (withDropdown ? new Date() : undefined);
+  }, [toDate, withDropdown]);
 
   const [month, setMonth] = React.useState<Date>(
     () => selected ?? rangeEnd ?? new Date(),
-  )
+  );
 
-  React.useEffect(() => {
-    if (!value) return
-    const next = parseISO(value)
-    if (next) setMonth(next)
-  }, [value])
+  const [prevValue, setPrevValue] = React.useState(value);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    if (value) {
+      const next = parseISO(value);
+      if (next) setMonth(next);
+    }
+  }
 
   const years = React.useMemo(() => {
-    if (!rangeStart || !rangeEnd) return []
-    return buildYears(rangeStart, rangeEnd, true)
-  }, [rangeStart, rangeEnd])
+    if (!rangeStart || !rangeEnd) return [];
+    return buildYears(rangeStart, rangeEnd, true);
+  }, [rangeStart, rangeEnd]);
 
   const disabledMatcher = [
     ...(fromDate ? [{ before: fromDate }] : []),

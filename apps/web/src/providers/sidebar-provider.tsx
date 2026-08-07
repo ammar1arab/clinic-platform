@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
+import { useMounted } from '@/hooks/use-mounted';
 
 interface SidebarContextType {
   isCollapsed: boolean;
@@ -12,23 +13,21 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-
-  useEffect(() => {
-    const saved = localStorage.getItem('sidebar-collapsed');
-    if (saved) {
-      setIsCollapsed(saved === 'true');
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sidebar-collapsed') === 'true';
     }
-    setMounted(true);
-  }, []);
+    return false;
+  });
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const mounted = useMounted();
 
   const toggleSidebar = () => {
     setIsCollapsed((prev) => {
       const next = !prev;
-      localStorage.setItem('sidebar-collapsed', String(next));
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sidebar-collapsed', String(next));
+      }
       return next;
     });
   };

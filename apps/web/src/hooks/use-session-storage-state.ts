@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 
 function readSession<T>(key: string, initial: T): T {
   if (typeof window === 'undefined') return initial;
@@ -12,22 +12,31 @@ function readSession<T>(key: string, initial: T): T {
   }
 }
 
-
 export function useSessionStorageState<T>(key: string, initial: T) {
-  const [state, setState] = useState<T>(() => readSession(key, initial));
+  const [state, setStateInternal] = useState<T>(() => readSession(key, initial));
+  const [prevKey, setPrevKey] = useState(key);
 
-  useEffect(() => {
-    setState(readSession(key, initial));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only rehydrate when storage key changes
-  }, [key]);
+  if (key !== prevKey) {
+    setPrevKey(key);
+    setStateInternal(readSession(key, initial));
+  }
 
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(key, JSON.stringify(state));
-    } catch {
-
-    }
-  }, [key, state]);
+  const setState = useCallback(
+    (value: T | ((prev: T) => T)) => {
+      setStateInternal((prev) => {
+        const next = typeof value === 'function' ? (value as (p: T) => T)(prev) : value;
+        try {
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem(key, JSON.stringify(next));
+          }
+        } catch {
+          // ignore quota errors
+        }
+        return next;
+      });
+    },
+    [key],
+  );
 
   return [state, setState] as const;
 }

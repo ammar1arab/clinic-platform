@@ -263,6 +263,10 @@ model Appointment {
   patientPackage     PatientPackage? @relation(fields: [patientPackageId], references: [id])
   referrals          Referral[]
 
+  @@index([clinicId, scheduledAt])
+  @@index([clinicId, doctorId, scheduledAt])
+  @@index([clinicId, status])
+  @@index([clinicId, departmentId, scheduledAt])
   @@index([clinicId, patientId, isPaid])
 }
 
