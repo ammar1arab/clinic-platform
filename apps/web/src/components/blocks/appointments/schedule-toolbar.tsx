@@ -49,7 +49,6 @@ export function ScheduleToolbar({
 
   return (
     <div className="card-aura flex flex-col gap-2.5 rounded-2xl border bg-card/90 p-2.5 shadow-xs backdrop-blur-md sm:gap-3 sm:p-3.5">
-      {/* Row 1: views + actions */}
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center overflow-x-auto rounded-xl border bg-muted/50 p-1 shadow-2xs scrollbar-none">
           <button
@@ -119,7 +118,6 @@ export function ScheduleToolbar({
         </div>
       </div>
 
-      {/* Row 2: filters + compact count (same line on mobile & desktop) */}
       <div className="flex flex-wrap items-center gap-2 border-t border-border/40 pt-2.5">
         <SearchInput
           value={search}

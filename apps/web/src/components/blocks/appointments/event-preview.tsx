@@ -30,7 +30,6 @@ export interface EventPreviewState {
 
 interface Props {
   preview: EventPreviewState;
-  /** Day view: top/bottom. Month/week desktop: left/right. Mobile always top/bottom. */
   preferVertical?: boolean;
   onClose: () => void;
   onExpand: (appointment: Appointment) => void;
@@ -53,11 +52,9 @@ function resolvePreviewSide(
   const verticalOnly = preferVertical || vw < MOBILE_MAX_WIDTH;
 
   if (verticalOnly) {
-    // Top/bottom only; Radix flips between the pair on collision.
     return y > vh * 0.55 ? 'top' : 'bottom';
   }
 
-  // Month/week desktop: left/right only.
   return x > vw * 0.5 ? 'left' : 'right';
 }
 
@@ -134,22 +131,7 @@ export function EventPreview({
         sideOffset={10}
         avoidCollisions
         collisionPadding={12}
-        onPointerDownOutside={(e) => {
-          const target = e.target as HTMLElement | null;
-          // Don't close when clicking inside the Show More list
-          if (target?.closest('[data-calendar-popover="more"]')) {
-            e.preventDefault();
-            return;
-          }
-          onClose();
-        }}
-        onFocusOutside={(e) => {
-          // Prevent focus changes within other calendar popovers from closing this
-          const related = e.detail?.originalEvent?.relatedTarget as HTMLElement | null;
-          if (related?.closest?.('[data-calendar-popover="more"]')) {
-            e.preventDefault();
-          }
-        }}
+        onPointerDownOutside={onClose}
         onEscapeKeyDown={onClose}
         className="z-110 flex w-[min(calc(100vw-1.5rem),20rem)] max-h-[min(calc(100dvh-1.5rem),28rem)] flex-col overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-2xl ring-1 ring-foreground/10"
         data-calendar-popover="preview"

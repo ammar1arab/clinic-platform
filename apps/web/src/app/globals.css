@@ -770,6 +770,8 @@
 .fc .fc-daygrid-more-link,
 .fc .fc-timegrid-more-link {
   display: flex !important;
+  align-items: center;
+  justify-content: center;
   width: 100% !important;
   max-width: 100%;
   margin: 0;
@@ -783,8 +785,6 @@
 
 .fc .fc-daygrid-more-link .fc-more-badge,
 .fc .fc-timegrid-more-link .fc-more-badge {
-  display: flex;
-  width: 100%;
   box-sizing: border-box;
 }
 
@@ -799,8 +799,56 @@
 
 .fc .fc-daygrid-more-link:hover .fc-more-badge,
 .fc .fc-timegrid-more-link:hover .fc-more-badge {
-  background: color-mix(in oklch, var(--color-primary) 16%, transparent);
+  background: color-mix(in oklch, var(--color-primary) 18%, transparent);
   border-color: color-mix(in oklch, var(--color-primary) 50%, transparent);
+}
+
+.fc .fc-popover {
+  z-index: 30;
+  width: min(18rem, calc(100vw - 1.5rem));
+  max-height: min(70dvh, 28rem);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-popover);
+  color: var(--color-popover-foreground);
+  box-shadow: 0 20px 45px -18px color-mix(in oklch, black 45%, transparent);
+}
+
+.fc .fc-popover-header {
+  min-height: 2.75rem;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in oklch, var(--color-muted) 55%, transparent);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.fc .fc-popover-close {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: 0;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted-foreground);
+  opacity: 1;
+}
+
+.fc .fc-popover-close:hover {
+  background: var(--color-muted);
+  color: var(--color-foreground);
+}
+
+.fc .fc-popover-body {
+  max-height: min(58dvh, 23rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.5rem;
+}
+
+.fc .fc-popover-body .fc-daygrid-event-harness {
+  margin-bottom: 0.35rem;
 }
 
 .fc-timegrid-now-indicator-line {

@@ -17,17 +17,14 @@ interface ViewFocusApi {
   focused: boolean;
   enter: () => void;
   exit: () => void;
-  toggle: () => void;
 }
 
 const ViewFocusContext = createContext<ViewFocusApi | null>(null);
 
-/** True when the nearest ViewFocus shell is in focus (full-page) mode. */
 export function useViewFocused() {
   return useContext(ViewFocusContext)?.focused ?? false;
 }
 
-/** Focus controls for header toggles — null outside a ViewFocus shell. */
 export function useViewFocusControls() {
   return useContext(ViewFocusContext);
 }
@@ -44,7 +41,20 @@ function isFocusRender(children: ReactNode | FocusRender): children is FocusRend
   return typeof children === 'function';
 }
 
-/** Compact header control — place inside calendar / timeline / queue headers. */
+function hasOpenOverlay() {
+  return Boolean(
+    document.querySelector(
+      [
+        '[data-calendar-popover="preview"]',
+        '[data-slot="dropdown-menu-content"][data-state="open"]',
+        '[data-slot="dialog-content"][data-state="open"]',
+        '[data-slot="select-content"][data-state="open"]',
+        '.fc-popover',
+      ].join(','),
+    ),
+  );
+}
+
 export function ViewFocusToggle({ className }: { className?: string }) {
   const api = useViewFocusControls();
   if (!api || api.focused) return null;
@@ -68,22 +78,23 @@ export function ViewFocusToggle({ className }: { className?: string }) {
   );
 }
 
-/**
- * Full-page focus shell. Keeps one React tree via fixed positioning.
- * Put `<ViewFocusToggle />` in each view header — no floating overlay button.
- */
 export function ViewFocus({ label, children, className }: ViewFocusProps) {
   const [focused, setFocused] = useState(false);
 
   const enter = useCallback(() => setFocused(true), []);
   const exit = useCallback(() => setFocused(false), []);
-  const toggle = useCallback(() => setFocused((v) => !v), []);
 
-  useKeyboardShortcut('escape', exit, { enabled: focused, ignoreInputs: false });
+  useKeyboardShortcut(
+    'escape',
+    () => {
+      if (!hasOpenOverlay()) exit();
+    },
+    { enabled: focused, ignoreInputs: false },
+  );
 
   const api = useMemo(
-    () => ({ focused, enter, exit, toggle }),
-    [focused, enter, exit, toggle],
+    () => ({ focused, enter, exit }),
+    [focused, enter, exit],
   );
 
   const content = isFocusRender(children) ? children(focused) : children;
@@ -97,7 +108,7 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
         className={cn(
           focused
             ? [
-                'fixed inset-0 z-200 flex flex-col overflow-hidden overscroll-none bg-background',
+                'fixed inset-0 z-40 flex flex-col overflow-hidden overscroll-none bg-background',
                 'animate-in fade-in-0 zoom-in-[0.985] duration-300 ease-out',
               ]
             : cn('relative', className),

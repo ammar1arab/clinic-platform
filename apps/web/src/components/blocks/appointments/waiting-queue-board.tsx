@@ -43,7 +43,6 @@ type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
 interface Props {
   appointments: Appointment[] | undefined;
   isLoading: boolean;
-  /** When true, board fills the focus shell height. */
   focused?: boolean;
   onEventClick: (appointment: Appointment) => void;
 }
@@ -226,7 +225,6 @@ export function WaitingQueueBoard({
           focused && 'min-h-0 flex-1 overflow-y-auto overscroll-contain lg:items-stretch',
         )}
       >
-        {/* Waiting */}
         {isVisible('waiting') && (
           <StageColumn
             title="Waiting Room"
@@ -296,7 +294,6 @@ export function WaitingQueueBoard({
           </StageColumn>
         )}
 
-        {/* In Progress */}
         {isVisible('in_progress') && (
           <StageColumn
             title="In Consultation"
@@ -364,7 +361,6 @@ export function WaitingQueueBoard({
           </StageColumn>
         )}
 
-        {/* Upcoming */}
         {isVisible('upcoming') && (
           <StageColumn
             title="Upcoming Today"
@@ -420,7 +416,6 @@ export function WaitingQueueBoard({
           </StageColumn>
         )}
 
-        {/* Completed / Closed */}
         {isVisible('completed') && (
           <StageColumn
             title="Done / Closed"
@@ -483,10 +478,6 @@ export function WaitingQueueBoard({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
 
 interface QuickAction {
   label: string;
@@ -578,7 +569,7 @@ function StageColumn({
       <div
         className={cn(
           'flex flex-col gap-2.5 overflow-y-auto overscroll-contain p-3',
-          focused ? 'min-h-0 flex-1' : 'min-h-[360px] max-h-[72vh]',
+          focused ? 'min-h-0 flex-1' : 'min-h-90 max-h-[72vh]',
         )}
       >
         {children}

@@ -23,7 +23,6 @@ import { TimelineSkeleton } from '@/components/primitives/skeleton-presets';
 import { useNow } from '@/hooks/use-now';
 import { ViewFocusToggle } from './view-focus';
 
-/* ─── Constants ──────────────────────────────────────────────────────────────── */
 const START_HOUR = 7;
 const END_HOUR = 21;
 const TOTAL_MINS = (END_HOUR - START_HOUR) * 60;
@@ -37,7 +36,6 @@ const DOCTOR_COLORS = [
   '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6',
 ];
 
-/* ─── Types ──────────────────────────────────────────────────────────────────── */
 interface TimelineDoctor {
   id: string;
   name: string;
@@ -59,13 +57,11 @@ interface Props {
   appointments: Appointment[] | undefined;
   doctors: ClinicStaffMember[] | undefined;
   isLoading: boolean;
-  /** When true, timeline fills the focus shell height. */
   focused?: boolean;
   onSelectSlot: (date: Date, doctorId?: string) => void;
   onEventClick: (appointment: Appointment) => void;
 }
 
-/* ─── Helpers ────────────────────────────────────────────────────────────────── */
 function toMinutes(dateStr: string): number {
   const d = new Date(dateStr);
   return d.getHours() * 60 + d.getMinutes();
@@ -84,10 +80,6 @@ function densityFromHeight(height: number): EventDensity {
   return 'lg';
 }
 
-/**
- * Detect overlap clusters and assign columns within each cluster.
- * Returns appointments with leftPct / widthPct relative to the column area.
- */
 function layoutAppts(appts: Appointment[], doctors: Map<string, TimelineDoctor>): PositionedAppt[] {
   if (!appts.length) return [];
 
@@ -95,9 +87,8 @@ function layoutAppts(appts: Appointment[], doctors: Map<string, TimelineDoctor>)
     (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
   );
 
-  // Assign column index
-  const colEnd: number[] = []; // tracks end minute for each column slot
-  const colMap = new Map<string, number>(); // apptId → column
+  const colEnd: number[] = [];
+  const colMap = new Map<string, number>();
 
   for (const appt of sorted) {
     const startMin = toMinutes(appt.scheduledAt);
@@ -108,13 +99,11 @@ function layoutAppts(appts: Appointment[], doctors: Map<string, TimelineDoctor>)
     colMap.set(appt.id, col);
   }
 
-  // Second pass: compute max concurrent columns at each appointment
   const result: PositionedAppt[] = sorted.map((appt) => {
     const startMin = toMinutes(appt.scheduledAt);
     const endMin = startMin + appt.durationMins;
     const col = colMap.get(appt.id) ?? 0;
 
-    // How many columns overlap with this appointment's time range?
     let maxCols = 1;
     for (const other of sorted) {
       if (other.id === appt.id) continue;
@@ -146,7 +135,6 @@ function hourLabel(h: number): string {
   return h < 12 ? `${h} AM` : `${h - 12} PM`;
 }
 
-/* ─── Timeline event block ───────────────────────────────────────────────────── */
 function TimelineEventBlock({
   appt,
   doctor,
@@ -207,7 +195,6 @@ function TimelineEventBlock({
           density === 'lg' && 'gap-1 px-2.5 py-2',
         )}
       >
-        {/* Primary row: name (+ status for roomier blocks) */}
         <div className="flex min-w-0 items-center gap-1.5">
           <p
             className={cn(
@@ -238,14 +225,12 @@ function TimelineEventBlock({
           )}
         </div>
 
-        {/* Time */}
         {density !== 'xs' && (
           <p className="truncate text-[10px] font-medium tabular-nums text-muted-foreground">
             {timeLabel}
           </p>
         )}
 
-        {/* Doctor */}
         {(density === 'md' || density === 'lg') && (
           <p className="flex min-w-0 items-center gap-1 truncate text-[10px] text-muted-foreground">
             <span
@@ -257,7 +242,6 @@ function TimelineEventBlock({
           </p>
         )}
 
-        {/* Extra meta — only when tall enough */}
         {density === 'lg' && (
           <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
             {appt.service && (
@@ -280,7 +264,6 @@ function TimelineEventBlock({
           </div>
         )}
 
-        {/* Compact status control for medium blocks — in flow, not overlapping */}
         {density === 'md' && (
           <div
             className="mt-auto pt-0.5"
@@ -291,7 +274,6 @@ function TimelineEventBlock({
           </div>
         )}
 
-        {/* Short blocks: status label only (no overlapping control) */}
         {density === 'sm' && (
           <span
             className={cn(
@@ -307,7 +289,6 @@ function TimelineEventBlock({
   );
 }
 
-/* ─── Component ──────────────────────────────────────────────────────────────── */
 export function DoctorTimeline({
   appointments,
   doctors,
@@ -324,7 +305,6 @@ export function DoctorTimeline({
   const now = useNow(30_000);
   const isToday = isSameDay(selectedDate, now);
 
-  /* Build doctor colour map */
   const doctorMap = useMemo<Map<string, TimelineDoctor>>(() => {
     const map = new Map<string, TimelineDoctor>();
     let i = 0;
@@ -345,7 +325,6 @@ export function DoctorTimeline({
 
   const allDoctors = useMemo(() => Array.from(doctorMap.values()), [doctorMap]);
 
-  /* Day appointments */
   const dayAppts = useMemo(() => {
     if (!appointments) return [];
     const d = new Date(selectedDate);
@@ -357,16 +336,13 @@ export function DoctorTimeline({
     });
   }, [appointments, selectedDate]);
 
-  /* Filter by active doctor */
   const visibleAppts = useMemo(() =>
     activeDoctorId === 'all' ? dayAppts : dayAppts.filter((a) => a.doctorId === activeDoctorId),
     [dayAppts, activeDoctorId],
   );
 
-  /* Layout */
   const positioned = useMemo(() => layoutAppts(visibleAppts, doctorMap), [visibleAppts, doctorMap]);
 
-  /* Now indicator */
   const nowTop = useMemo(() => {
     if (!isToday) return null;
     const h = now.getHours(), m = now.getMinutes();
@@ -374,7 +350,6 @@ export function DoctorTimeline({
     return ((h - START_HOUR) * 60 + m) * PX_PER_MIN;
   }, [isToday, now]);
 
-  /* Navigation */
   const shiftDate = useCallback((delta: number) => {
     setSelectedDate((prev) => {
       const n = new Date(prev); n.setDate(n.getDate() + delta); return n;
@@ -390,7 +365,6 @@ export function DoctorTimeline({
     [selectedDate],
   );
 
-  /* Click on time grid to book */
   const handleGridClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('[data-appt]')) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -430,11 +404,9 @@ export function DoctorTimeline({
       )}
     >
 
-      {/* ── Toolbar ───────────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-2.5 border-b bg-muted/20 px-3 py-2.5 sm:px-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
 
-          {/* Date navigation */}
           <div className="flex min-w-0 items-center gap-1.5">
             <Button variant="outline" size="sm" onClick={goToday} disabled={isToday}
               className="h-8 px-2.5 text-xs font-semibold active:scale-95">
@@ -469,7 +441,6 @@ export function DoctorTimeline({
           </div>
         </div>
 
-        {/* Doctor filter pills */}
         {allDoctors.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
             <button type="button" onClick={() => setActiveDoctorId('all')}
@@ -489,12 +460,10 @@ export function DoctorTimeline({
                     ? 'bg-foreground text-background shadow-xs'
                     : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
                 )}>
-                {/* Colour dot instead of avatar */}
                 <span
                   className="size-2 shrink-0 rounded-full"
                   style={{ backgroundColor: doc.color }}
                 />
-                {/* Full name on sm+, first name on mobile */}
                 <span className="hidden sm:inline">{doc.name}</span>
                 <span className="sm:hidden">{doc.name.split(' ')[0]}</span>
                 <span className="rounded-full bg-background/25 px-1 text-[10px] font-bold">
@@ -506,7 +475,6 @@ export function DoctorTimeline({
         )}
       </div>
 
-      {/* ── Time Grid ─────────────────────────────────────────────────────────── */}
       <div
         ref={scrollRef}
         onClick={handleGridClick}
@@ -522,7 +490,6 @@ export function DoctorTimeline({
       >
         <div className="relative flex" style={{ height: `${TOTAL_HEIGHT}px` }}>
 
-          {/* Time axis (sticky left) */}
           <div className="sticky left-0 z-10 w-12 shrink-0 border-r bg-card/95 backdrop-blur-md">
             {HOURS.map((h) => (
               <div
@@ -535,9 +502,7 @@ export function DoctorTimeline({
             ))}
           </div>
 
-          {/* Appointment area */}
           <div className="relative flex-1">
-            {/* Hour grid lines */}
             {HOURS.map((h) => (
               <div
                 key={h}
@@ -545,7 +510,6 @@ export function DoctorTimeline({
                 style={{ top: `${(h - START_HOUR) * HOUR_HEIGHT}px` }}
               />
             ))}
-            {/* Half-hour dashed lines */}
             {HOURS.map((h) => (
               <div
                 key={`${h}h`}
@@ -554,7 +518,6 @@ export function DoctorTimeline({
               />
             ))}
 
-            {/* Now indicator */}
             {nowTop !== null && (
               <div
                 className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
@@ -565,7 +528,6 @@ export function DoctorTimeline({
               </div>
             )}
 
-            {/* Hover hint overlay when no appointments */}
             {positioned.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">

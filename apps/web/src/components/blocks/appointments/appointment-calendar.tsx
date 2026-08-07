@@ -10,7 +10,6 @@ import {
   EventClickArg,
   DateSelectArg,
   EventContentArg,
-  MoreLinkArg,
   MoreLinkContentArg,
 } from '@fullcalendar/core';
 import { MapPin, Video } from 'lucide-react';
@@ -18,7 +17,6 @@ import { cn } from '@/lib/utils';
 import { Appointment } from '@/services/appointments.service';
 import { STATUS_COLORS } from './status-colors';
 import { EventPreview, EventPreviewState } from './event-preview';
-import { MoreEventsPopover, MoreEventsState } from './more-events-popover';
 import {
   formatApptStartAmPm,
   formatApptTimeRange,
@@ -85,7 +83,6 @@ interface Props {
   isLoading: boolean;
   isFetching: boolean;
   view: ScheduleView;
-  /** When true, calendar fills the focus shell height. */
   focused?: boolean;
   onViewChange: (view: ScheduleView) => void;
   onVisibleRangeChange?: (start: Date, end: Date) => void;
@@ -128,7 +125,6 @@ export function AppointmentCalendar({
   );
 
   const [preview, setPreview] = useState<EventPreviewState | null>(null);
-  const [moreList, setMoreList] = useState<MoreEventsState | null>(null);
 
   const openPreview = useCallback(
     (
@@ -136,9 +132,7 @@ export function AppointmentCalendar({
       x: number,
       y: number,
       anchor?: AnchorRect,
-      keepMoreList?: boolean,
     ) => {
-      if (!keepMoreList) setMoreList(null);
       setPreview({ appointment: appt, x, y, anchor });
     },
     [],
@@ -164,7 +158,6 @@ export function AppointmentCalendar({
   const handleDateSelect = useCallback(
     (arg: DateSelectArg) => {
       setPreview(null);
-      setMoreList(null);
       onSelectSlot(arg.start);
     },
     [onSelectSlot],
@@ -270,41 +263,9 @@ export function AppointmentCalendar({
     [updateMutation],
   );
 
-  const handleMoreLinkClick = useCallback((arg: MoreLinkArg) => {
-    const jsEvent = arg.jsEvent;
-    jsEvent.preventDefault();
-    jsEvent.stopPropagation();
-
-    const dayAppts = arg.allSegs
-      .map((seg) => readAppointment(seg.event.extendedProps))
-      .filter((a): a is Appointment => a !== null)
-      .sort(
-        (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
-      );
-
-    const point = jsEvent instanceof MouseEvent
-      ? { x: jsEvent.clientX, y: jsEvent.clientY }
-      : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-
-    const target = jsEvent.target;
-    const el =
-      target instanceof Element
-        ? target.closest('.fc-more-link, .fc-daygrid-more-link, .fc-timegrid-more-link')
-        : null;
-
-    setPreview(null);
-    setMoreList({
-      date: arg.date,
-      appointments: dayAppts,
-      x: point.x,
-      y: point.y,
-      anchor: rectFromElement(el, point.x, point.y),
-    });
-  }, []);
-
   const renderMoreLinkContent = useCallback(
     (arg: MoreLinkContentArg) => (
-      <span className="fc-more-badge flex w-full min-h-6 items-center justify-center gap-1 rounded-md border border-dashed border-primary/35 bg-primary/8 px-1.5 py-0.5 text-[10px] font-semibold leading-tight tracking-wide text-primary dark:bg-primary/15 dark:text-primary">
+      <span className="fc-more-badge inline-flex h-5 items-center justify-center rounded-full border border-primary/25 bg-primary/10 px-2 text-[10px] font-semibold leading-none text-primary shadow-2xs transition-colors dark:bg-primary/15">
         +{arg.num} more
       </span>
     ),
@@ -399,7 +360,6 @@ export function AppointmentCalendar({
         e.preventDefault();
         e.stopPropagation();
         setPreview(null);
-        setMoreList(null);
         const slot = new Date(arg.date);
         if (slot.getHours() === 0 && slot.getMinutes() === 0) {
           slot.setHours(9, 0, 0, 0);
@@ -466,50 +426,42 @@ export function AppointmentCalendar({
           eventResizableFromStart
           nowIndicator
           events={events}
-        eventDisplay="block"
-        eventDidMount={handleEventDidMount}
-        dayCellDidMount={handleDayCellDidMount}
-        eventClick={handleEventClick}
-        eventDrop={handleEventDrop as never}
-        eventResize={handleEventResize as never}
-        select={handleDateSelect}
-        datesSet={handleDatesSet}
-        eventContent={renderEventContent}
-        dayMaxEvents={4}
-        eventMaxStack={4}
-        moreLinkClick={handleMoreLinkClick}
-        moreLinkContent={renderMoreLinkContent}
-        expandRows
-        stickyHeaderDates
-        views={{
-          timeGridDay: {
-            slotMinTime: '07:00:00',
-            slotMaxTime: '21:00:00',
-            eventMaxStack: 4,
-          },
-          timeGridWeek: {
-            eventMaxStack: 4,
-          },
-          dayGridMonth: {
-            dayMaxEvents: 4,
-            eventDisplay: 'block',
-          },
-        }}
-        businessHours={{
-          daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-          startTime: '08:00',
-          endTime: '20:00',
-        }}
-      />
-      </div>
-
-      {moreList && (
-        <MoreEventsPopover
-          state={moreList}
-          onClose={() => { setMoreList(null); setPreview(null); }}
-          onSelect={(appt, x, y, anchor) => openPreview(appt, x, y, anchor, true)}
+          eventDisplay="block"
+          eventDidMount={handleEventDidMount}
+          dayCellDidMount={handleDayCellDidMount}
+          eventClick={handleEventClick}
+          eventDrop={handleEventDrop as never}
+          eventResize={handleEventResize as never}
+          select={handleDateSelect}
+          datesSet={handleDatesSet}
+          eventContent={renderEventContent}
+          dayMaxEvents={4}
+          eventMaxStack={4}
+          moreLinkClick="popover"
+          moreLinkContent={renderMoreLinkContent}
+          expandRows
+          stickyHeaderDates
+          views={{
+            timeGridDay: {
+              slotMinTime: '07:00:00',
+              slotMaxTime: '21:00:00',
+              eventMaxStack: 4,
+            },
+            timeGridWeek: {
+              eventMaxStack: 4,
+            },
+            dayGridMonth: {
+              dayMaxEvents: 4,
+              eventDisplay: 'block',
+            },
+          }}
+          businessHours={{
+            daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+            startTime: '08:00',
+            endTime: '20:00',
+          }}
         />
-      )}
+      </div>
 
       {preview && (
         <EventPreview
@@ -518,7 +470,6 @@ export function AppointmentCalendar({
           onClose={() => setPreview(null)}
           onExpand={(appt) => {
             setPreview(null);
-            setMoreList(null);
             onEventClick(appt);
           }}
         />
