@@ -160,28 +160,32 @@ export function WaitingQueueBoard({
   }
 
   const stageTabs = [
-    { key: 'all' as const, label: 'All', icon: null, cls: 'bg-primary text-primary-foreground' },
+    { key: 'all' as const, label: 'All', short: 'All', icon: null, cls: 'bg-primary text-primary-foreground' },
     {
       key: 'waiting' as const,
       label: `Waiting (${waitingList.length})`,
+      short: `Wait (${waitingList.length})`,
       icon: <Timer className="size-3" />,
       cls: 'bg-amber-600 text-white',
     },
     {
       key: 'in_progress' as const,
       label: `Consulting (${inProgressList.length})`,
+      short: `Live (${inProgressList.length})`,
       icon: <Stethoscope className="size-3" />,
       cls: 'bg-blue-600 text-white',
     },
     {
       key: 'upcoming' as const,
       label: `Upcoming (${upcomingList.length})`,
+      short: `Next (${upcomingList.length})`,
       icon: <Users className="size-3" />,
       cls: 'bg-slate-700 text-white dark:bg-slate-600',
     },
     {
       key: 'completed' as const,
       label: `Done (${completedList.length})`,
+      short: `Done (${completedList.length})`,
       icon: <CheckCircle2 className="size-3" />,
       cls: 'bg-emerald-600 text-white',
     },
@@ -193,25 +197,27 @@ export function WaitingQueueBoard({
         'flex flex-col overflow-hidden border bg-card shadow-xs',
         focused
           ? 'h-full min-h-0 rounded-none border-0'
-          : 'card-aura rounded-2xl',
+          : 'card-aura rounded-xl sm:rounded-2xl',
       )}
     >
-      <div className="flex items-center justify-between gap-2 border-b bg-muted/20 px-2.5 py-2 sm:px-3">
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto scrollbar-none">
-          {stageTabs.map(({ key, label, icon, cls }) => (
+      <div className="flex items-center justify-between gap-1.5 border-b bg-muted/20 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
+        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none sm:gap-1.5">
+          {stageTabs.map(({ key, label, short, icon, cls }) => (
             <button
               key={key}
               type="button"
+              title={label}
               onClick={() => setStageTab(key)}
               className={cn(
-                'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-all duration-150 active:scale-95',
+                'inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold shadow-2xs transition-all duration-150 active:scale-95 sm:gap-1.5 sm:px-2.5 sm:text-xs',
                 stageTab === key
                   ? cls
                   : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
               )}
             >
               {icon}
-              {label}
+              <span className="sm:hidden">{short}</span>
+              <span className="hidden sm:inline">{label}</span>
             </button>
           ))}
         </div>
@@ -220,10 +226,10 @@ export function WaitingQueueBoard({
 
       <div
         className={cn(
-          'grid grid-cols-1 gap-3 p-3 sm:gap-4 sm:p-4',
+          'grid grid-cols-1 gap-2.5 p-2.5 sm:gap-3 sm:p-3 md:gap-4 md:p-4',
           stageTab === 'all' ? 'lg:grid-cols-4' : 'lg:grid-cols-1',
           focused &&
-            'min-h-0 flex-1 overflow-y-auto lg:grid-rows-1 lg:items-stretch lg:overflow-hidden',
+            'min-h-0 flex-1 overflow-y-auto overscroll-contain lg:grid-rows-1 lg:items-stretch lg:overflow-hidden',
         )}
       >
         {isVisible('waiting') && (
@@ -550,12 +556,12 @@ function StageColumn({
   return (
     <div
       className={cn(
-        'card-aura flex flex-col overflow-hidden rounded-2xl border bg-card/75 shadow-xs backdrop-blur-xs',
+        'card-aura flex flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs sm:rounded-2xl',
         focused && 'min-h-0 h-full',
       )}
     >
-      <div className="flex items-center justify-between border-b p-3 bg-muted/25">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between border-b bg-muted/25 p-2.5 sm:p-3">
+        <div className="flex min-w-0 items-center gap-2">
           <span
             className="size-2 rounded-full ring-2 ring-background"
             style={{ backgroundColor: accentColor }}
@@ -594,7 +600,7 @@ function QueueCard({
   return (
     <div
       onClick={onClick}
-      className="card-aura group relative flex flex-col rounded-xl border bg-card p-3.5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/50 hover:ring-1 hover:ring-primary/25 active:scale-[0.985] cursor-pointer"
+      className="card-aura group relative flex flex-col rounded-xl border bg-card p-3 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/50 hover:ring-1 hover:ring-primary/25 active:scale-[0.985] cursor-pointer sm:p-3.5"
       style={{ borderLeftWidth: '4px', borderLeftColor: accent }}
     >
       <div className="mb-2 flex items-start justify-between gap-2">

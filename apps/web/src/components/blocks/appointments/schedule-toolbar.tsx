@@ -35,7 +35,7 @@ const ALL_DEPARTMENTS = '__all__';
 const VIEW_TABS: {
   id: ScheduleView | 'calendar';
   label: string;
-  short?: string;
+  short: string;
   icon: typeof Calendar;
   match: (view: ScheduleView) => boolean;
   target: (view: ScheduleView) => ScheduleView;
@@ -43,6 +43,7 @@ const VIEW_TABS: {
   {
     id: 'calendar',
     label: 'Calendar',
+    short: 'Cal',
     icon: Calendar,
     match: (v) => v === 'month' || v === 'week' || v === 'day',
     target: (v) => (v === 'month' || v === 'week' || v === 'day' ? v : 'month'),
@@ -50,7 +51,7 @@ const VIEW_TABS: {
   {
     id: 'doctors',
     label: 'Doctor Timeline',
-    short: 'Timeline',
+    short: 'Doctors',
     icon: Users,
     match: (v) => v === 'doctors',
     target: () => 'doctors',
@@ -101,22 +102,23 @@ function StatusFilterDropdown({
           variant="outline"
           size="sm"
           className={cn(
-            'h-9 shrink-0 gap-1.5 border-border/70 bg-background/50 px-2.5 font-semibold shadow-2xs',
+            'h-9 min-w-0 flex-1 gap-1 border-border/70 bg-background/50 px-2.5 font-semibold shadow-2xs sm:flex-none',
             count > 0 && 'border-primary/35 bg-primary/5 text-foreground',
           )}
         >
-          <span className="text-muted-foreground">Status</span>
+          <span className="truncate text-muted-foreground">Status</span>
           {count > 0 ? (
-            <span className="inline-flex size-5 items-center justify-center rounded-md bg-primary/15 text-[10px] font-bold text-primary">
+            <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/15 text-[10px] font-bold text-primary">
               {count}
             </span>
-          ) : (
-            <span className="hidden text-muted-foreground sm:inline">All</span>
-          )}
-          <ChevronDown className="size-3.5 text-muted-foreground" />
+          ) : null}
+          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="z-[80] w-52 p-1.5">
+      <DropdownMenuContent
+        align="start"
+        className="z-[80] w-[min(100vw-1.5rem,13rem)] p-1.5"
+      >
         <DropdownMenuLabel className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Filter by status
         </DropdownMenuLabel>
@@ -175,17 +177,18 @@ export function ScheduleToolbar({
 }: Props) {
   return (
     <div className="card-aura flex flex-col gap-2 rounded-xl border bg-card/90 p-2 shadow-xs backdrop-blur-md sm:rounded-2xl sm:p-2.5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center overflow-x-auto rounded-lg border bg-muted/50 p-0.5 shadow-2xs scrollbar-none">
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex min-w-0 flex-1 items-center overflow-x-auto rounded-lg border bg-muted/50 p-0.5 shadow-2xs scrollbar-none">
           {VIEW_TABS.map(({ id, label, short, icon: Icon, match, target }) => {
             const active = match(view);
             return (
               <button
                 key={id}
                 type="button"
+                title={label}
                 onClick={() => onViewChange(target(view))}
                 className={cn(
-                  'flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95 sm:flex-initial sm:px-2.5',
+                  'flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1.5 text-[11px] font-semibold transition-all duration-150 cursor-pointer active:scale-95 sm:flex-initial sm:gap-1.5 sm:px-2.5 sm:text-xs',
                   active
                     ? 'bg-background font-bold text-foreground shadow-xs ring-1 ring-border/50'
                     : 'text-muted-foreground hover:bg-background/40 hover:text-foreground',
@@ -197,86 +200,88 @@ export function ScheduleToolbar({
                     id === 'queue' ? 'text-amber-500' : 'text-primary',
                   )}
                 />
-                <span className={short ? 'hidden sm:inline' : undefined}>{label}</span>
-                {short ? <span className="sm:hidden">{short}</span> : null}
+                <span className="truncate sm:hidden">{short}</span>
+                <span className="hidden truncate sm:inline">{label}</span>
               </button>
             );
           })}
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           <Button
             variant="outline"
             size="sm"
             onClick={onNewPatient}
-            className="h-8 flex-1 gap-1.5 px-2.5 font-semibold shadow-2xs active:scale-95 sm:flex-initial"
+            title="Add patient"
+            aria-label="Add patient"
+            className="size-8 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
           >
             <IconNewPatient className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="hidden sm:inline">Add Patient</span>
-            <span className="sm:hidden">Patient</span>
+            <span className="hidden font-semibold sm:inline">Patient</span>
           </Button>
           <Button
             size="sm"
             onClick={onNewAppointment}
-            className="h-8 flex-1 gap-1.5 px-2.5 font-semibold active:scale-95 sm:flex-initial"
+            title="Add appointment"
+            aria-label="Add appointment"
+            className="size-8 shrink-0 px-0 active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
           >
             <Plus className="size-3.5 shrink-0" />
-            <span className="hidden sm:inline">Add Appointment</span>
-            <span className="sm:hidden">Appointment</span>
+            <span className="hidden font-semibold sm:inline">Appointment</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 border-t border-border/40 pt-2 sm:gap-2">
+      <div className="flex flex-col gap-1.5 border-t border-border/40 pt-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
         <SearchInput
           value={search}
           onChange={onSearchChange}
-          placeholder="Search patient, doctor, service…"
-          className="min-w-0 flex-1 basis-40 sm:max-w-64 sm:flex-none"
-        />
-        <Select
-          value={departmentId || ALL_DEPARTMENTS}
-          onValueChange={(v) => onDepartmentChange(v === ALL_DEPARTMENTS ? '' : v)}
-        >
-          <SelectTrigger
-            size="sm"
-            className="h-9 w-auto min-w-36 max-w-48 shrink-0 bg-background/50 sm:w-44"
-          >
-            <SelectValue placeholder="All departments" />
-          </SelectTrigger>
-          <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
-            <SelectItem value={ALL_DEPARTMENTS}>All departments</SelectItem>
-            {departments?.map((d) => (
-              <SelectItem key={d.id} value={d.id} textValue={d.name} title={d.name}>
-                {d.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <StatusFilterDropdown
-          active={statusFilters}
-          onToggle={onToggleStatus}
-          onClear={onClearStatuses}
+          placeholder="Search patients, doctors…"
+          className="min-w-0 w-full sm:max-w-64 sm:flex-1 lg:max-w-72"
         />
 
-        {isLoading ? (
-          <span className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg border border-border/50 bg-muted/50 px-2 text-[11px] font-medium text-muted-foreground">
-            <Spinner size="sm" className="text-primary" />
-            <span className="hidden sm:inline">Loading…</span>
-          </span>
-        ) : (
-          <span
-            className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg border border-border/50 bg-muted/40 px-2 tabular-nums text-[11px] font-semibold text-foreground/85 shadow-2xs"
-            title={`${count} appointment${count === 1 ? '' : 's'}`}
+        <div className="flex min-w-0 items-center gap-1.5 sm:contents">
+          <Select
+            value={departmentId || ALL_DEPARTMENTS}
+            onValueChange={(v) => onDepartmentChange(v === ALL_DEPARTMENTS ? '' : v)}
           >
-            <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
-            <span className="sm:hidden">{count}</span>
-            <span className="hidden sm:inline">
-              {count} appt{count === 1 ? '' : 's'}
+            <SelectTrigger
+              size="sm"
+              className="h-9 min-w-0 flex-1 bg-background/50 sm:w-44 sm:flex-none"
+            >
+              <SelectValue placeholder="Department" />
+            </SelectTrigger>
+            <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
+              <SelectItem value={ALL_DEPARTMENTS}>All departments</SelectItem>
+              {departments?.map((d) => (
+                <SelectItem key={d.id} value={d.id} textValue={d.name} title={d.name}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <StatusFilterDropdown
+            active={statusFilters}
+            onToggle={onToggleStatus}
+            onClear={onClearStatuses}
+          />
+
+          {isLoading ? (
+            <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border/50 bg-muted/50 px-2 text-[11px] font-medium text-muted-foreground sm:ml-auto">
+              <Spinner size="sm" className="text-primary" />
             </span>
-          </span>
-        )}
+          ) : (
+            <span
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border/50 bg-muted/40 px-2 tabular-nums text-[11px] font-semibold text-foreground/85 shadow-2xs sm:ml-auto"
+              title={`${count} appointment${count === 1 ? '' : 's'}`}
+            >
+              <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+              <span>{count}</span>
+              <span className="hidden sm:inline">appt{count === 1 ? '' : 's'}</span>
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

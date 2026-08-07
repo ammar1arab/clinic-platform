@@ -19,7 +19,7 @@ export function SearchInput({ value, onChange, placeholder = 'Search…', classN
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="h-9 pl-8 pr-8"
+        className="h-9 pl-8 pr-8 text-base sm:text-sm"
       />
       {value && (
         <button

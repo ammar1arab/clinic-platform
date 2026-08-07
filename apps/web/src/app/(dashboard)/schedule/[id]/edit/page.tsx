@@ -22,11 +22,11 @@ function EditAppointmentInner({ id }: { id: string }) {
   const doctorName = appointment?.doctor?.name ?? user?.name ?? 'You';
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="mx-auto max-w-3xl space-y-3 sm:space-y-4">
       <PageBack backHref={backHref} backLabel="Back to Schedule" />
 
       {isLoading || !appointment ? (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <Skeleton className="h-40 w-full" />
           <Skeleton className="h-56 w-full" />
           <Skeleton className="h-40 w-full" />

@@ -32,6 +32,7 @@ import { CalendarSkeleton } from './calendar-skeleton';
 import { ViewFocusToggle } from './view-focus';
 import { useUpdateAppointment } from '@/hooks/use-appointments';
 import { useResizeObserver } from '@/hooks/use-resize-observer';
+import { useIsMobile } from '@/hooks/use-media-query';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 
@@ -103,6 +104,7 @@ export function AppointmentCalendar({
 }: Props) {
   const calendarRef = useRef<FullCalendar>(null);
   const updateMutation = useUpdateAppointment();
+  const isMobile = useIsMobile();
 
   const events = useMemo(
     () =>
@@ -394,7 +396,7 @@ export function AppointmentCalendar({
       <div
         ref={sizeHostRef}
         className={cn(
-          'relative [&_.fc-header-toolbar]:pr-10',
+          'relative [&_.fc-header-toolbar]:pr-9 sm:[&_.fc-header-toolbar]:pr-10',
           focused && 'flex h-full min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-view-harness]:min-h-0',
         )}
       >
@@ -438,8 +440,8 @@ export function AppointmentCalendar({
           select={handleDateSelect}
           datesSet={handleDatesSet}
           eventContent={renderEventContent}
-          dayMaxEvents={4}
-          eventMaxStack={4}
+          dayMaxEvents={isMobile ? 2 : 4}
+          eventMaxStack={isMobile ? 2 : 4}
           moreLinkClick="popover"
           moreLinkContent={renderMoreLinkContent}
           expandRows
@@ -448,13 +450,13 @@ export function AppointmentCalendar({
             timeGridDay: {
               slotMinTime: '07:00:00',
               slotMaxTime: '21:00:00',
-              eventMaxStack: 4,
+              eventMaxStack: isMobile ? 2 : 4,
             },
             timeGridWeek: {
-              eventMaxStack: 4,
+              eventMaxStack: isMobile ? 2 : 4,
             },
             dayGridMonth: {
-              dayMaxEvents: 4,
+              dayMaxEvents: isMobile ? 2 : 4,
               eventDisplay: 'block',
             },
           }}
@@ -469,7 +471,7 @@ export function AppointmentCalendar({
       {preview && (
         <EventPreview
           preview={preview}
-          preferVertical={view === 'day'}
+          preferVertical={view === 'day' || isMobile}
           onClose={() => setPreview(null)}
           onExpand={(appt) => {
             setPreview(null);

@@ -480,16 +480,16 @@ export function DoctorTimeline({
         ref={scrollRef}
         onClick={handleGridClick}
         className={cn(
-          'relative overflow-y-auto overscroll-contain cursor-pointer',
+          'relative overflow-auto overscroll-contain cursor-pointer',
           focused && 'min-h-0 flex-1',
         )}
         style={
           focused
             ? undefined
-            : { maxHeight: 'calc(100vh - 16rem)', minHeight: '360px' }
+            : { maxHeight: 'min(70dvh, calc(100dvh - 14rem))', minHeight: 'min(360px, 55dvh)' }
         }
       >
-        <div className="relative flex" style={{ height: `${TOTAL_HEIGHT}px` }}>
+        <div className="relative flex min-w-[20rem]" style={{ height: `${TOTAL_HEIGHT}px` }}>
 
           <div className="sticky left-0 z-10 w-12 shrink-0 border-r bg-card/95 backdrop-blur-md">
             {HOURS.map((h) => (
@@ -530,10 +530,11 @@ export function DoctorTimeline({
             )}
 
             {positioned.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
-                  <Plus className="size-3.5" />
-                  Click anywhere to book
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-3">
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-center text-[11px] font-semibold text-primary sm:px-4 sm:text-xs">
+                  <Plus className="size-3.5 shrink-0" />
+                  <span className="sm:hidden">Tap to book</span>
+                  <span className="hidden sm:inline">Click anywhere to book</span>
                 </span>
               </div>
             )}

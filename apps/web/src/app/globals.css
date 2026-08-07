@@ -905,23 +905,18 @@
 }
 
 @media (max-width: 768px) {
-  
   .fc .fc-toolbar {
-    flex-direction: row;
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'nav title'
+      'views views';
     align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
+    column-gap: 0.35rem;
+    row-gap: 0.4rem;
     width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
-  }
-
-  .fc .fc-toolbar::-webkit-scrollbar {
-    display: none;
+    overflow: visible;
+    padding-bottom: 0;
   }
 
   .fc .fc-toolbar-chunk {
@@ -930,59 +925,77 @@
     flex-wrap: nowrap;
     align-items: center;
     gap: 0.25rem;
+    min-width: 0;
   }
 
-  .fc .fc-toolbar-chunk:nth-child(1),
-  .fc .fc-toolbar-chunk:nth-child(3) {
+  .fc .fc-toolbar-chunk:nth-child(1) {
+    grid-area: nav;
     flex-shrink: 0;
   }
 
   .fc .fc-toolbar-chunk:nth-child(2) {
-    flex: 1 1 auto;
+    grid-area: title;
+    justify-content: flex-start;
     min-width: 0;
+  }
+
+  .fc .fc-toolbar-chunk:nth-child(3) {
+    grid-area: views;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .fc .fc-toolbar-chunk:nth-child(3) .fc-button-group {
+    display: flex;
+    width: 100%;
+  }
+
+  .fc .fc-toolbar-chunk:nth-child(3) .fc-button-group > .fc-button {
+    flex: 1 1 0;
     justify-content: center;
   }
 
   .fc .fc-toolbar-title {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .fc .fc-button {
-    padding: 0.3rem 0.45rem;
+    padding: 0.35rem 0.4rem;
     font-size: 0.6875rem;
-    min-height: 1.75rem;
+    min-height: 2rem;
   }
 
   .fc .fc-prev-button,
   .fc .fc-next-button {
-    padding-inline: 0.4rem;
+    padding-inline: 0.45rem;
   }
 
   .fc-col-header-cell-cushion {
     font-size: 0.65rem;
+    padding: 0.25rem 0;
   }
 
   .fc .fc-timegrid-slot {
-    height: 2.75rem;
+    height: 2.5rem;
   }
 
   .fc-timeGridWeek-view .fc-timegrid-slot {
-    height: 2.85rem;
+    height: 2.6rem;
   }
 
   .fc-timeGridDay-view .fc-timegrid-slot {
-    height: 3.75rem;
+    height: 3.25rem;
   }
 
   .fc .fc-daygrid-day-frame {
-    min-height: 6.5rem;
+    min-height: 5.25rem;
   }
 
   .fc .fc-daygrid-day-events {
-    min-height: 4.25rem;
+    min-height: 3.25rem;
   }
 
   .fc-daygrid-event {
@@ -990,7 +1003,16 @@
   }
 
   .fc-event-month {
-    min-height: 1.25rem;
+    min-height: 1.15rem;
+  }
+
+  .fc .fc-more-link {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.3rem;
+  }
+
+  .fc-popover {
+    max-width: min(18rem, calc(100vw - 1rem));
   }
 }
 
