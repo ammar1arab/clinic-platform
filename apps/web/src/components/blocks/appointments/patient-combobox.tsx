@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { formatPersonName } from './appointment-display';
 import type { Patient } from '@/services/patients.service';
 
 interface Props {
@@ -34,7 +35,7 @@ export function PatientCombobox({
     const term = query.trim().toLowerCase();
     if (!term) return patients ?? [];
     return (patients ?? []).filter((p) =>
-      `${p.firstNameEn} ${p.lastNameEn}`.toLowerCase().includes(term),
+      formatPersonName(p).toLowerCase().includes(term),
     );
   }, [patients, query]);
 
@@ -56,7 +57,7 @@ export function PatientCombobox({
           >
             <UserRound className="mt-0.5 size-4 shrink-0 opacity-70" />
             <span className="min-w-0 break-words line-clamp-2">
-              {selected ? `${selected.firstNameEn} ${selected.lastNameEn}` : placeholder}
+              {selected ? formatPersonName(selected) : placeholder}
             </span>
           </span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
@@ -110,7 +111,7 @@ export function PatientCombobox({
               )}
             >
               <span className="min-w-0 flex-1 break-words line-clamp-2">
-                {p.firstNameEn} {p.lastNameEn}
+                {formatPersonName(p)}
               </span>
               {p.id === value && <Check className="size-4 shrink-0 text-primary" />}
             </button>

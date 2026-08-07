@@ -20,44 +20,29 @@ import {
   patientDisplayName,
   patientShortName,
   doctorDisplayName,
-  doctorShortName,
   formatApptStartAmPm,
   formatApptTip,
+  formatDoctorLabel,
+  formatHourLabel,
   densityFromHeight,
-} from './calendar-time';
+  isSameDay,
+} from './appointment-display';
+import {
+  layoutTimelineAppts,
+  TIMELINE_DOCTOR_COLORS,
+  TIMELINE_HOUR_HEIGHT,
+  TIMELINE_HOURS,
+  TIMELINE_START_HOUR,
+  TIMELINE_END_HOUR,
+  TIMELINE_TOTAL_HEIGHT,
+  type PositionedAppt,
+  type TimelineDoctor,
+} from './timeline-layout';
 import { SoftTip } from '@/components/primitives/soft-tip';
 import { cn } from '@/lib/utils';
 import { TimelineSkeleton } from '@/components/primitives/skeleton-presets';
 import { useNow } from '@/hooks/use-now';
 import { ViewFocusToggle } from './view-focus';
-
-const START_HOUR = 7;
-const END_HOUR = 21;
-const TOTAL_MINS = (END_HOUR - START_HOUR) * 60;
-const PX_PER_MIN = 2;
-const TOTAL_HEIGHT = TOTAL_MINS * PX_PER_MIN;
-const HOUR_HEIGHT = 60 * PX_PER_MIN;
-const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => i + START_HOUR);
-
-const DOCTOR_COLORS = [
-  '#6366f1', '#0ea5e9', '#10b981', '#f59e0b',
-  '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6',
-];
-
-interface TimelineDoctor {
-  id: string;
-  name: string;
-  color: string;
-}
-
-interface PositionedAppt {
-  appt: Appointment;
-  doctor: TimelineDoctor | undefined;
-  top: number;
-  height: number;
-  leftPct: number;
-  widthPct: number;
-}
 
 interface Props {
   appointments: Appointment[] | undefined;
@@ -66,73 +51,6 @@ interface Props {
   focused?: boolean;
   onSelectSlot: (date: Date, doctorId?: string) => void;
   onEventClick: (appointment: Appointment) => void;
-}
-
-function toMinutes(dateStr: string): number {
-  const d = new Date(dateStr);
-  return d.getHours() * 60 + d.getMinutes();
-}
-
-function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-}
-
-function layoutAppts(appts: Appointment[], doctors: Map<string, TimelineDoctor>): PositionedAppt[] {
-  if (!appts.length) return [];
-
-  const sorted = [...appts].sort(
-    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
-  );
-
-  const colEnd: number[] = [];
-  const colMap = new Map<string, number>();
-
-  for (const appt of sorted) {
-    const startMin = toMinutes(appt.scheduledAt);
-    const endMin = startMin + appt.durationMins;
-    let col = colEnd.findIndex((end) => end <= startMin);
-    if (col === -1) col = colEnd.length;
-    colEnd[col] = endMin;
-    colMap.set(appt.id, col);
-  }
-
-  const result: PositionedAppt[] = sorted.map((appt) => {
-    const startMin = toMinutes(appt.scheduledAt);
-    const endMin = startMin + appt.durationMins;
-    const col = colMap.get(appt.id) ?? 0;
-
-    let maxCols = 1;
-    for (const other of sorted) {
-      if (other.id === appt.id) continue;
-      const oStart = toMinutes(other.scheduledAt);
-      const oEnd = oStart + other.durationMins;
-      if (oStart < endMin && oEnd > startMin) {
-        maxCols = Math.max(maxCols, (colMap.get(other.id) ?? 0) + 1, col + 1);
-      }
-    }
-
-    const top = Math.max(0, (startMin - START_HOUR * 60)) * PX_PER_MIN;
-    const height = Math.max(26, appt.durationMins * PX_PER_MIN);
-    const gutter = maxCols > 1 ? 1.5 : 0;
-
-    return {
-      appt,
-      doctor: doctors.get(appt.doctorId),
-      top,
-      height,
-      leftPct: (col / maxCols) * 100 + gutter / 2,
-      widthPct: (1 / maxCols) * 100 - gutter,
-    };
-  });
-
-  return result;
-}
-
-function hourLabel(h: number): string {
-  if (h === 0 || h === 12) return `12 ${h === 0 ? 'AM' : 'PM'}`;
-  return h < 12 ? `${h} AM` : `${h - 12} PM`;
 }
 
 function TimelineEventBlock({
@@ -149,7 +67,6 @@ function TimelineEventBlock({
   const density = densityFromHeight(height);
   const isCancelled = appt.status === 'cancelled';
   const doctorName = doctorDisplayName(doctor?.name ?? appt.doctor?.name);
-  const doctorShort = doctorShortName(doctorName);
   const fullName = patientDisplayName(appt);
   const shortName = patientShortName(appt);
   const timeLabel = `${formatApptStartAmPm(appt)} · ${appt.durationMins}m`;
@@ -240,7 +157,7 @@ function TimelineEventBlock({
         {(density === 'md' || density === 'lg') && !narrow && (
           <p
             className="flex min-w-0 items-center gap-1 truncate text-[10px] text-muted-foreground"
-            title={`Dr. ${doctorName}`}
+            title={formatDoctorLabel(doctorName)}
           >
             <span
               className="size-1.5 shrink-0 rounded-full"
@@ -248,7 +165,7 @@ function TimelineEventBlock({
               aria-hidden
             />
             <span className="truncate font-medium text-foreground/80">
-              Dr. {density === 'md' ? doctorShort : doctorName}
+              {formatDoctorLabel(doctorName, { short: density === 'md' })}
             </span>
           </p>
         )}
@@ -327,14 +244,18 @@ export function DoctorTimeline({
     const map = new Map<string, TimelineDoctor>();
     let i = 0;
     doctors?.forEach((d) => {
-      map.set(d.id, { id: d.id, name: d.name, color: DOCTOR_COLORS[i++ % DOCTOR_COLORS.length] });
+      map.set(d.id, {
+        id: d.id,
+        name: d.name,
+        color: TIMELINE_DOCTOR_COLORS[i++ % TIMELINE_DOCTOR_COLORS.length],
+      });
     });
     appointments?.forEach((a) => {
       if (a.doctor && !map.has(a.doctorId)) {
         map.set(a.doctorId, {
           id: a.doctorId,
           name: a.doctor.name ?? 'Doctor',
-          color: DOCTOR_COLORS[map.size % DOCTOR_COLORS.length],
+          color: TIMELINE_DOCTOR_COLORS[map.size % TIMELINE_DOCTOR_COLORS.length],
         });
       }
     });
@@ -354,44 +275,69 @@ export function DoctorTimeline({
     });
   }, [appointments, selectedDate]);
 
-  const visibleAppts = useMemo(() =>
-    activeDoctorId === 'all' ? dayAppts : dayAppts.filter((a) => a.doctorId === activeDoctorId),
+  const visibleAppts = useMemo(
+    () =>
+      activeDoctorId === 'all'
+        ? dayAppts
+        : dayAppts.filter((a) => a.doctorId === activeDoctorId),
     [dayAppts, activeDoctorId],
   );
 
-  const positioned = useMemo(() => layoutAppts(visibleAppts, doctorMap), [visibleAppts, doctorMap]);
+  const positioned = useMemo(
+    () => layoutTimelineAppts(visibleAppts, doctorMap),
+    [visibleAppts, doctorMap],
+  );
 
   const nowTop = useMemo(() => {
     if (!isToday) return null;
-    const h = now.getHours(), m = now.getMinutes();
-    if (h < START_HOUR || h >= END_HOUR) return null;
-    return ((h - START_HOUR) * 60 + m) * PX_PER_MIN;
+    const h = now.getHours();
+    const m = now.getMinutes();
+    if (h < TIMELINE_START_HOUR || h >= TIMELINE_END_HOUR) {
+      return null;
+    }
+    return ((h - TIMELINE_START_HOUR) * 60 + m) * (TIMELINE_HOUR_HEIGHT / 60);
   }, [isToday, now]);
 
   const shiftDate = useCallback((delta: number) => {
     setSelectedDate((prev) => {
-      const n = new Date(prev); n.setDate(n.getDate() + delta); return n;
+      const n = new Date(prev);
+      n.setDate(n.getDate() + delta);
+      return n;
     });
   }, []);
 
   const goToday = useCallback(() => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); setSelectedDate(d);
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    setSelectedDate(d);
   }, []);
 
-  const dateLabel = useMemo(() =>
-    selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }),
+  const dateLabel = useMemo(
+    () =>
+      selectedDate.toLocaleDateString(undefined, {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+      }),
     [selectedDate],
   );
 
-  const handleGridClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('[data-appt]')) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const offsetY = e.clientY - rect.top + e.currentTarget.scrollTop;
-    const totalMin = START_HOUR * 60 + Math.max(0, Math.min(Math.floor(offsetY / PX_PER_MIN), TOTAL_MINS - 1));
-    const slot = new Date(selectedDate);
-    slot.setHours(Math.floor(totalMin / 60), totalMin % 60, 0, 0);
-    onSelectSlot(slot, activeDoctorId === 'all' ? undefined : activeDoctorId);
-  }, [selectedDate, activeDoctorId, onSelectSlot]);
+  const handleGridClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if ((e.target as HTMLElement).closest('[data-appt]')) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top + e.currentTarget.scrollTop;
+      const pxPerMin = TIMELINE_HOUR_HEIGHT / 60;
+      const maxMins = TIMELINE_HOURS.length * 60 - 1;
+      const totalMin =
+        TIMELINE_START_HOUR * 60 +
+        Math.max(0, Math.min(Math.floor(offsetY / pxPerMin), maxMins));
+      const slot = new Date(selectedDate);
+      slot.setHours(Math.floor(totalMin / 60), totalMin % 60, 0, 0);
+      onSelectSlot(slot, activeDoctorId === 'all' ? undefined : activeDoctorId);
+    },
+    [selectedDate, activeDoctorId, onSelectSlot],
+  );
 
   if (isLoading) return <TimelineSkeleton columns={3} />;
 
@@ -477,14 +423,13 @@ export function DoctorTimeline({
             </button>
             {allDoctors.map((doc) => {
               const full = doctorDisplayName(doc.name);
-              const short = doctorShortName(full);
               const count = dayAppts.filter((a) => a.doctorId === doc.id).length;
               return (
-                <SoftTip key={doc.id} label={`Dr. ${full}`} side="bottom">
+                <SoftTip key={doc.id} label={formatDoctorLabel(full)} side="bottom">
                   <button
                     type="button"
                     onClick={() => setActiveDoctorId(doc.id)}
-                    aria-label={`Dr. ${full}`}
+                    aria-label={formatDoctorLabel(full)}
                     className={cn(
                       'inline-flex max-w-[9.5rem] shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-150 cursor-pointer active:scale-95 sm:max-w-[12rem]',
                       activeDoctorId === doc.id
@@ -497,7 +442,9 @@ export function DoctorTimeline({
                       style={{ backgroundColor: doc.color }}
                     />
                     <span className="hidden truncate sm:inline">{full}</span>
-                    <span className="truncate sm:hidden">{short}</span>
+                    <span className="truncate sm:hidden">
+                      {formatDoctorLabel(full, { short: true }).replace(/^Dr\.\s/, '')}
+                    </span>
                     <span className="rounded-full bg-background/25 px-1 text-[10px] font-bold">
                       {count}
                     </span>
@@ -522,33 +469,33 @@ export function DoctorTimeline({
             : { maxHeight: 'min(70dvh, calc(100dvh - 14rem))', minHeight: 'min(360px, 55dvh)' }
         }
       >
-        <div className="relative flex min-w-[20rem]" style={{ height: `${TOTAL_HEIGHT}px` }}>
+        <div className="relative flex min-w-[20rem]" style={{ height: `${TIMELINE_TOTAL_HEIGHT}px` }}>
 
           <div className="sticky left-0 z-10 w-12 shrink-0 border-r bg-card/95 backdrop-blur-md">
-            {HOURS.map((h) => (
+            {TIMELINE_HOURS.map((h) => (
               <div
                 key={h}
                 className="absolute right-0 flex w-12 items-start justify-end pr-1.5 text-[10px] font-semibold text-muted-foreground/60"
-                style={{ top: `${(h - START_HOUR) * HOUR_HEIGHT}px`, height: `${HOUR_HEIGHT}px` }}
+                style={{ top: `${(h - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT}px`, height: `${TIMELINE_HOUR_HEIGHT}px` }}
               >
-                <span className="mt-0.5">{hourLabel(h)}</span>
+                <span className="mt-0.5">{formatHourLabel(h)}</span>
               </div>
             ))}
           </div>
 
           <div className="relative flex-1">
-            {HOURS.map((h) => (
+            {TIMELINE_HOURS.map((h) => (
               <div
                 key={h}
                 className="absolute left-0 right-0 border-t border-border/30"
-                style={{ top: `${(h - START_HOUR) * HOUR_HEIGHT}px` }}
+                style={{ top: `${(h - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT}px` }}
               />
             ))}
-            {HOURS.map((h) => (
+            {TIMELINE_HOURS.map((h) => (
               <div
                 key={`${h}h`}
                 className="absolute left-0 right-0 border-t border-border/15 border-dashed"
-                style={{ top: `${(h - START_HOUR) * HOUR_HEIGHT + HOUR_HEIGHT / 2}px` }}
+                style={{ top: `${(h - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT + TIMELINE_HOUR_HEIGHT / 2}px` }}
               />
             ))}
 

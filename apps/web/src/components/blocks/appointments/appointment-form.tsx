@@ -22,7 +22,7 @@ import { FormField } from '@/components/primitives/form-field';
 import { FormActions } from '@/components/primitives/form-actions';
 import { DatePicker } from '@/components/primitives/date-picker';
 import { TimePicker } from '@/components/primitives/time-picker';
-import { StatusBadgeBlock, STATUS_CONFIG } from './status-badge';
+import { StatusBadgeBlock, STATUS_CONFIG, STATUS_OPTIONS } from './status-badge';
 import { PatientCombobox } from './patient-combobox';
 import { useDepartments } from '@/hooks/use-departments';
 import { useRooms } from '@/hooks/use-rooms';
@@ -51,20 +51,10 @@ import { extractErrorMessage } from '@/lib/api';
 import { Switch } from '@/components/ui/switch';
 import { formatWaitingMins, resolveWaitingMins } from '@/lib/waiting-time';
 import { PatientBalancePanel } from './patient-balance-panel';
+import { toDateParam, toTimeParam } from './appointment-display';
 
 const NONE = '__none__';
 const CURRENCY = 'JOD';
-
-const STATUS_OPTIONS: AppointmentStatus[] = [
-  'unconfirmed',
-  'confirmed',
-  'checked_in',
-  'waiting',
-  'in_progress',
-  'completed',
-  'no_show',
-  'cancelled',
-];
 
 interface Props {
   appointment?: Appointment;
@@ -96,15 +86,14 @@ const EMPTY_VALUES: AppointmentFormData = {
 
 function toFormValues(appt: Appointment): AppointmentFormData {
   const dt = new Date(appt.scheduledAt);
-  const pad = (n: number) => String(n).padStart(2, '0');
   return {
     patientId: appt.patientId,
     doctorId: appt.doctorId,
     departmentId: appt.departmentId ?? '',
     roomId: appt.roomId ?? '',
     serviceId: appt.serviceId ?? '',
-    date: `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`,
-    time: `${pad(dt.getHours())}:${pad(dt.getMinutes())}`,
+    date: toDateParam(dt),
+    time: toTimeParam(dt),
     durationMins: String(appt.durationMins),
     sessionType: appt.sessionType,
     meetingUrl: appt.meetingUrl ?? '',

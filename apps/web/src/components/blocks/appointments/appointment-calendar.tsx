@@ -9,28 +9,17 @@ import {
   DatesSetArg,
   EventClickArg,
   DateSelectArg,
-  EventContentArg,
   EventDropArg,
   EventMountArg,
   MoreLinkContentArg,
 } from '@fullcalendar/core';
-import { MapPin, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Appointment } from '@/services/appointments.service';
 import { STATUS_COLORS } from './status-badge';
-import {
-  formatApptTimeRange,
-  formatApptTip,
-  formatCompactTime,
-  doctorShortName,
-  patientDisplayName,
-  patientShortName,
-} from './calendar-time';
-import {
-  FC_TO_VIEW,
-  ScheduleView,
-  VIEW_TO_FC,
-} from './schedule-nav';
+import { formatApptTip, patientDisplayName } from './appointment-display';
+import { hasScheduleConflict } from './appointment-conflict';
+import { CalendarEventChip, readCalendarAppointment } from './calendar-event-chip';
+import { FC_TO_VIEW, ScheduleView, VIEW_TO_FC } from './schedule-nav';
 import { CalendarSkeleton } from './calendar-skeleton';
 import { ViewFocusToggle } from './view-focus';
 import { useUpdateAppointment } from '@/hooks/use-appointments';
@@ -40,45 +29,6 @@ import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
-
-function isAppointment(value: object): value is Appointment {
-  return (
-    'id' in value &&
-    'scheduledAt' in value &&
-    'status' in value &&
-    'patient' in value &&
-    'doctor' in value
-  );
-}
-
-function readAppointment(extendedProps: object): Appointment | null {
-  if (!('appointment' in extendedProps)) return null;
-  const value = extendedProps.appointment;
-  if (typeof value !== 'object' || value === null) return null;
-  return isAppointment(value) ? value : null;
-}
-
-function hasScheduleConflict(
-  appointments: Appointment[] | undefined,
-  appt: Appointment,
-  startTime: number,
-  durationMins: number,
-) {
-  const endTime = startTime + durationMins * 60000;
-  return Boolean(
-    appointments?.some((other) => {
-      if (other.id === appt.id) return false;
-      if (other.status === 'cancelled' || other.status === 'no_show') return false;
-      const otherStart = new Date(other.scheduledAt).getTime();
-      const otherEnd = otherStart + other.durationMins * 60000;
-      if (!(startTime < otherEnd && endTime > otherStart)) return false;
-      return (
-        other.doctorId === appt.doctorId ||
-        Boolean(appt.roomId && other.roomId && other.roomId === appt.roomId)
-      );
-    }),
-  );
-}
 
 interface Props {
   appointments: Appointment[] | undefined;
@@ -129,17 +79,14 @@ export function AppointmentCalendar({
 
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
-      const appt = readAppointment(arg.event.extendedProps);
-      if (!appt) return;
-      onEventClick(appt);
+      const appt = readCalendarAppointment(arg.event.extendedProps);
+      if (appt) onEventClick(appt);
     },
     [onEventClick],
   );
 
   const handleDateSelect = useCallback(
-    (arg: DateSelectArg) => {
-      onSelectSlot(arg.start);
-    },
+    (arg: DateSelectArg) => onSelectSlot(arg.start),
     [onSelectSlot],
   );
 
@@ -154,7 +101,7 @@ export function AppointmentCalendar({
 
   const handleEventDrop = useCallback(
     (info: EventDropArg) => {
-      const appt = readAppointment(info.event.extendedProps);
+      const appt = readCalendarAppointment(info.event.extendedProps);
       if (!appt || !info.event.start) {
         info.revert();
         return;
@@ -174,12 +121,7 @@ export function AppointmentCalendar({
         : appt.durationMins;
 
       if (
-        hasScheduleConflict(
-          appointments,
-          appt,
-          info.event.start.getTime(),
-          durationMins,
-        )
+        hasScheduleConflict(appointments, appt, info.event.start.getTime(), durationMins)
       ) {
         toast.warning('Conflict detected: Doctor or room has overlapping appointment');
       }
@@ -199,7 +141,7 @@ export function AppointmentCalendar({
 
   const handleEventResize = useCallback(
     (info: EventResizeDoneArg) => {
-      const appt = readAppointment(info.event.extendedProps);
+      const appt = readCalendarAppointment(info.event.extendedProps);
       if (!appt || !info.event.start || !info.event.end) {
         info.revert();
         return;
@@ -236,67 +178,8 @@ export function AppointmentCalendar({
     [],
   );
 
-  const renderEventContent = useCallback((arg: EventContentArg) => {
-    const appt = readAppointment(arg.event.extendedProps);
-    const isMonth = arg.view.type === 'dayGridMonth';
-    const fullName = appt ? patientDisplayName(appt) : arg.event.title;
-    const shortName = appt ? patientShortName(appt) : arg.event.title;
-    const compactStart = appt ? formatCompactTime(appt.scheduledAt) : arg.timeText;
-    const rangeLabel = appt ? formatApptTimeRange(appt) : arg.timeText;
-    const doctorName = appt?.doctor?.name;
-    const doctorLabel = doctorName ? doctorShortName(doctorName) : '';
-    const tip = appt ? formatApptTip(appt, { rangeLabel, doctorName }) : fullName;
-    const Icon = appt?.sessionType === 'online' ? Video : MapPin;
-    const fill = appt
-      ? STATUS_COLORS[appt.status]
-      : arg.event.backgroundColor || '#64748b';
-
-    if (isMonth) {
-      return (
-        <div
-          className="fc-event-chip fc-event-chip--month"
-          title={tip}
-          style={{ backgroundColor: fill, color: '#fff' }}
-        >
-          <span className="fc-event-chip__time">{compactStart}</span>
-          <span className="fc-event-chip__name">{shortName}</span>
-        </div>
-      );
-    }
-
-    return (
-      <div className="fc-event-chip fc-event-chip--time" title={tip}>
-        <div className="fc-event-chip__primary">
-          <Icon className="fc-event-chip__icon" aria-hidden />
-          <span className="fc-event-chip__time fc-event-chip__time--compact">
-            {compactStart}
-          </span>
-          <span className="fc-event-chip__name fc-event-chip__name--short">
-            {shortName}
-          </span>
-          <span className="fc-event-chip__name fc-event-chip__name--full">
-            {fullName}
-          </span>
-        </div>
-        <div className="fc-event-chip__secondary">
-          <span className="fc-event-chip__range">{rangeLabel}</span>
-          {doctorLabel ? (
-            <span className="fc-event-chip__doctor" title={doctorName}>
-              Dr. {doctorLabel}
-            </span>
-          ) : null}
-          {appt?.service?.name ? (
-            <span className="fc-event-chip__service" title={appt.service.name}>
-              {appt.service.name}
-            </span>
-          ) : null}
-        </div>
-      </div>
-    );
-  }, []);
-
   const handleEventDidMount = useCallback((info: EventMountArg) => {
-    const appt = readAppointment(info.event.extendedProps);
+    const appt = readCalendarAppointment(info.event.extendedProps);
     const color = appt
       ? STATUS_COLORS[appt.status]
       : info.event.backgroundColor || '#64748b';
@@ -397,7 +280,7 @@ export function AppointmentCalendar({
           eventResize={handleEventResize}
           select={handleDateSelect}
           datesSet={handleDatesSet}
-          eventContent={renderEventContent}
+          eventContent={(arg) => <CalendarEventChip arg={arg} />}
           dayMaxEvents={isMobile ? 2 : 4}
           eventMaxStack={isMobile ? 2 : 4}
           slotEventOverlap={false}

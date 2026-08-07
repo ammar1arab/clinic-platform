@@ -18,10 +18,17 @@ import { DoctorTimeline } from '@/components/blocks/appointments/doctor-timeline
 import { WaitingQueueBoard } from '@/components/blocks/appointments/waiting-queue-board';
 import { ViewFocus } from '@/components/blocks/appointments/view-focus';
 import {
+  initialScheduleRange,
   parseScheduleView,
+  rangeFromVisible,
   schedulePath,
   type ScheduleView,
 } from '@/components/blocks/appointments/schedule-nav';
+import {
+  matchesAppointmentSearch,
+  toDateParam,
+  toTimeParam,
+} from '@/components/blocks/appointments/appointment-display';
 
 const AppointmentCalendar = dynamic(
   () =>
@@ -31,31 +38,11 @@ const AppointmentCalendar = dynamic(
   { ssr: false, loading: () => <CalendarSkeleton /> },
 );
 
-function rangeFromVisible(start: Date, end: Date) {
-  return {
-    startDate: new Date(start.getFullYear(), start.getMonth() - 1, 1).toISOString(),
-    endDate: new Date(end.getFullYear(), end.getMonth() + 2, 0).toISOString(),
-  };
-}
-
-function initialRange() {
-  const now = new Date();
-  return rangeFromVisible(
-    new Date(now.getFullYear(), now.getMonth(), 1),
-    new Date(now.getFullYear(), now.getMonth() + 1, 0),
-  );
-}
-
-function matchesSearch(appt: Appointment, term: string) {
-  const haystack = `${appt.patient.firstNameEn} ${appt.patient.lastNameEn} ${appt.service?.name ?? ''} ${appt.doctor.name ?? ''}`;
-  return haystack.toLowerCase().includes(term);
-}
-
 function SchedulePageInner() {
   const clinicId = useClinicId();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [range, setRange] = useState(initialRange);
+  const [range, setRange] = useState(initialScheduleRange);
 
   const { data: clinic } = useClinic(clinicId);
   const { data: staff } = useClinicStaff(clinicId);
@@ -121,9 +108,7 @@ function SchedulePageInner() {
     if (statusFilters.size > 0) {
       list = list?.filter((appt) => statusFilters.has(appt.status));
     }
-    const term = debouncedSearch.trim().toLowerCase();
-    if (!term) return list;
-    return list?.filter((appt) => matchesSearch(appt, term));
+    return list?.filter((appt) => matchesAppointmentSearch(appt, debouncedSearch));
   }, [appointments, debouncedSearch, statusFilters]);
 
   const returnTo = schedulePath(view);
@@ -132,12 +117,8 @@ function SchedulePageInner() {
     (date?: Date, doctorId?: string) => {
       const params = new URLSearchParams({ view });
       if (date) {
-        const pad = (n: number) => String(n).padStart(2, '0');
-        params.set(
-          'date',
-          `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
-        );
-        params.set('time', `${pad(date.getHours())}:${pad(date.getMinutes())}`);
+        params.set('date', toDateParam(date));
+        params.set('time', toTimeParam(date));
       }
       if (doctorId) params.set('doctorId', doctorId);
       router.push(`${ROUTES.SCHEDULE_NEW}?${params.toString()}`);

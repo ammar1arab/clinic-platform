@@ -27,7 +27,7 @@ import { useUpdateAppointment } from '@/hooks/use-appointments';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { patientDisplayName } from './calendar-time';
+import { patientDisplayName } from './appointment-display';
 
 interface Props {
   appointment: Appointment;

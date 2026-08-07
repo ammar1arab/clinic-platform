@@ -30,13 +30,14 @@ import {
 import { Appointment, AppointmentStatus } from '@/services/appointments.service';
 import { useUpdateAppointment, useMarkAppointmentPaid } from '@/hooks/use-appointments';
 import { AppointmentStatusSelect } from './appointment-status-select';
-import { formatApptTimeRange, patientDisplayName } from './calendar-time';
+import { formatApptTimeRange, patientDisplayName } from './appointment-display';
 import { STATUS_COLORS } from './status-badge';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { CardGridSkeleton } from '@/components/primitives/skeleton-presets';
 import { useViewFocused, ViewFocusToggle } from './view-focus';
+import { elapsedMinutesSince, formatElapsedMins } from '@/lib/waiting-time';
 
 type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
 
@@ -45,21 +46,6 @@ interface Props {
   isLoading: boolean;
   focused?: boolean;
   onEventClick: (appointment: Appointment) => void;
-}
-
-function calculateElapsedMinutes(dateString: string | null | undefined, now: Date): number {
-  if (!dateString) return 0;
-  const start = new Date(dateString).getTime();
-  const current = now.getTime();
-  return Math.max(0, Math.floor((current - start) / 60000));
-}
-
-function formatElapsed(minutes: number): string {
-  if (minutes < 1) return '< 1m';
-  if (minutes < 60) return `${minutes}m`;
-  const hrs = Math.floor(minutes / 60);
-  const rem = minutes % 60;
-  return `${hrs}h ${rem}m`;
 }
 
 export function WaitingQueueBoard({
@@ -244,7 +230,7 @@ export function WaitingQueueBoard({
               <EmptyStageMessage icon={<Timer className="size-6 text-amber-500/40" />} text="No patients waiting right now" />
             ) : (
               waitingList.map((appt) => {
-                const waitMins = calculateElapsedMinutes(
+                const waitMins = elapsedMinutesSince(
                   appt.waitingStartedAt || appt.statusUpdatedAt || appt.scheduledAt,
                   now,
                 );
@@ -261,7 +247,7 @@ export function WaitingQueueBoard({
                     <div className="flex items-center justify-between gap-2">
                       <span className={cn('inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold shadow-2xs', timerStyle)}>
                         <Clock className="size-3" />
-                        {formatElapsed(waitMins)} · {waitLabel}
+                        {formatElapsedMins(waitMins)} · {waitLabel}
                       </span>
                       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />
@@ -313,7 +299,7 @@ export function WaitingQueueBoard({
               <EmptyStageMessage icon={<Stethoscope className="size-6 text-blue-500/40" />} text="No consultations currently in session" />
             ) : (
               inProgressList.map((appt) => {
-                const sessionMins = calculateElapsedMinutes(
+                const sessionMins = elapsedMinutesSince(
                   appt.inProgressAt || appt.statusUpdatedAt || appt.scheduledAt,
                   now,
                 );
@@ -329,7 +315,7 @@ export function WaitingQueueBoard({
                           : 'border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-300',
                       )}>
                         <Timer className="size-3 animate-spin" />
-                        {formatElapsed(sessionMins)} / {appt.durationMins}m
+                        {formatElapsedMins(sessionMins)} / {appt.durationMins}m
                       </span>
                       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />

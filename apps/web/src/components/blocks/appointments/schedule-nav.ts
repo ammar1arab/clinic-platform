@@ -43,3 +43,18 @@ export function resolveReturnTo(
   if (!returnTo.startsWith('/') || returnTo.startsWith('//')) return fallback;
   return returnTo;
 }
+
+export function rangeFromVisible(start: Date, end: Date) {
+  return {
+    startDate: new Date(start.getFullYear(), start.getMonth() - 1, 1).toISOString(),
+    endDate: new Date(end.getFullYear(), end.getMonth() + 2, 0).toISOString(),
+  };
+}
+
+export function initialScheduleRange() {
+  const now = new Date();
+  return rangeFromVisible(
+    new Date(now.getFullYear(), now.getMonth(), 1),
+    new Date(now.getFullYear(), now.getMonth() + 1, 0),
+  );
+}
