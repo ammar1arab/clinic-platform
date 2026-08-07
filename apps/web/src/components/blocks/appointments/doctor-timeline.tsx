@@ -16,7 +16,12 @@ import { Appointment } from '@/services/appointments.service';
 import { ClinicStaffMember } from '@/services/clinics.service';
 import { STATUS_COLORS, STATUS_CONFIG } from './status-badge';
 import { AppointmentStatusSelect } from './appointment-status-select';
-import { patientDisplayName, formatApptStartAmPm } from './calendar-time';
+import {
+  patientDisplayName,
+  patientShortName,
+  formatApptStartAmPm,
+  densityFromHeight,
+} from './calendar-time';
 import { cn } from '@/lib/utils';
 import { TimelineSkeleton } from '@/components/primitives/skeleton-presets';
 import { useNow } from '@/hooks/use-now';
@@ -50,8 +55,6 @@ interface PositionedAppt {
   widthPct: number;
 }
 
-type EventDensity = 'xs' | 'sm' | 'md' | 'lg';
-
 interface Props {
   appointments: Appointment[] | undefined;
   doctors: ClinicStaffMember[] | undefined;
@@ -70,13 +73,6 @@ function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
-}
-
-function densityFromHeight(height: number): EventDensity {
-  if (height < 36) return 'xs';
-  if (height < 56) return 'sm';
-  if (height < 96) return 'md';
-  return 'lg';
 }
 
 function layoutAppts(appts: Appointment[], doctors: Map<string, TimelineDoctor>): PositionedAppt[] {
@@ -148,7 +144,10 @@ function TimelineEventBlock({
   const density = densityFromHeight(height);
   const isCancelled = appt.status === 'cancelled';
   const doctorName = doctor?.name ?? appt.doctor?.name ?? 'Doctor';
+  const fullName = patientDisplayName(appt);
+  const shortName = patientShortName(appt);
   const timeLabel = `${formatApptStartAmPm(appt)} · ${appt.durationMins}m`;
+  const narrow = widthPct < 34;
 
   return (
     <div
@@ -176,25 +175,25 @@ function TimelineEventBlock({
       )}
       style={{
         top: `${top + 1}px`,
-        height: `${Math.max(height - 2, 24)}px`,
+        height: `${Math.max(height - 2, 22)}px`,
         left: `calc(${leftPct}% + 2px)`,
         width: `calc(${widthPct}% - 4px)`,
         borderLeftWidth: 3,
         borderLeftColor: accent,
         backgroundColor: `color-mix(in oklch, ${accent} 9%, var(--card))`,
       }}
-      title={`${patientDisplayName(appt)} · ${timeLabel} · ${doctorName}`}
+      title={`${fullName} · ${timeLabel} · ${doctorName}`}
     >
       <div
         className={cn(
           'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
           density === 'xs' && 'justify-center px-1.5 py-0.5',
-          density === 'sm' && 'justify-center gap-0.5 px-2 py-1',
+          density === 'sm' && 'justify-center gap-0.5 px-1.5 py-1',
           density === 'md' && 'gap-0.5 px-2 py-1.5',
           density === 'lg' && 'gap-1 px-2.5 py-2',
         )}
       >
-        <div className="flex min-w-0 items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1">
           <p
             className={cn(
               'min-w-0 flex-1 truncate font-semibold leading-tight text-foreground',
@@ -202,7 +201,7 @@ function TimelineEventBlock({
               isCancelled && 'line-through',
             )}
           >
-            {patientDisplayName(appt)}
+            {density === 'xs' || narrow ? shortName : fullName}
           </p>
 
           {density === 'xs' && (
@@ -213,7 +212,7 @@ function TimelineEventBlock({
             />
           )}
 
-          {density === 'lg' && (
+          {density === 'lg' && !narrow && (
             <div
               className="shrink-0"
               onClick={(e) => e.stopPropagation()}
@@ -230,7 +229,7 @@ function TimelineEventBlock({
           </p>
         )}
 
-        {(density === 'md' || density === 'lg') && (
+        {(density === 'md' || density === 'lg') && !narrow && (
           <p className="flex min-w-0 items-center gap-1 truncate text-[10px] text-muted-foreground">
             <span
               className="size-1.5 shrink-0 rounded-full"
@@ -241,7 +240,7 @@ function TimelineEventBlock({
           </p>
         )}
 
-        {density === 'lg' && (
+        {density === 'lg' && !narrow && (
           <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
             {appt.service && (
               <span className="flex min-w-0 max-w-full items-center gap-1 truncate font-medium text-foreground/75">
@@ -263,7 +262,7 @@ function TimelineEventBlock({
           </div>
         )}
 
-        {density === 'md' && (
+        {density === 'md' && !narrow && (
           <div
             className="mt-auto pt-0.5"
             onClick={(e) => e.stopPropagation()}
@@ -273,7 +272,7 @@ function TimelineEventBlock({
           </div>
         )}
 
-        {density === 'sm' && (
+        {(density === 'sm' || (density === 'md' && narrow)) && (
           <span
             className={cn(
               'w-fit max-w-full truncate rounded-md border px-1 py-px text-[9px] font-semibold leading-tight',

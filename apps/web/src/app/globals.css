@@ -559,22 +559,194 @@
   height: 3rem;
 }
 
-
 .fc-timeGridWeek-view .fc-timegrid-slot {
   height: 3.25rem;
 }
-
-.fc-timeGridWeek-view .fc-event {
-  min-height: 2.5rem;
-}
-
 
 .fc-timeGridDay-view .fc-timegrid-slot {
   height: 4.5rem;
 }
 
-.fc-timeGridDay-view .fc-event {
-  min-height: 3.5rem;
+.fc-timegrid-event {
+  min-height: 0 !important;
+  container-type: size;
+  overflow: hidden !important;
+}
+
+.fc-timegrid-event .fc-event-main {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.fc-timegrid-event .fc-event-main-frame {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.fc-event-chip {
+  box-sizing: border-box;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  overflow: hidden;
+  color: #fff !important;
+  line-height: 1.15;
+}
+
+.fc-event-chip--month {
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  min-height: 1.2rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 5px;
+}
+
+.fc-event-chip--time {
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0;
+  height: 100%;
+  padding: 0.15rem 0.3rem;
+}
+
+.fc-event-chip__primary,
+.fc-event-chip__secondary {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.fc-event-chip__secondary {
+  display: none;
+  margin-top: 0.15rem;
+  opacity: 0.92;
+}
+
+.fc-event-chip__icon {
+  display: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.fc-event-chip__time,
+.fc-event-chip__name,
+.fc-event-chip__range,
+.fc-event-chip__service {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-event-chip__time {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.fc-event-chip__name {
+  flex: 1 1 auto;
+  font-size: 0.625rem;
+  font-weight: 600;
+}
+
+.fc-event-chip__name--full {
+  display: none;
+}
+
+.fc-event-chip__range,
+.fc-event-chip__service {
+  font-size: 0.6rem;
+  font-weight: 500;
+}
+
+.fc-event-chip__service {
+  display: none;
+  opacity: 0.9;
+}
+
+@container (min-height: 40px) {
+  .fc-event-chip--time {
+    padding: 0.25rem 0.4rem;
+    gap: 0.1rem;
+  }
+
+  .fc-event-chip__icon {
+    display: block;
+  }
+
+  .fc-event-chip__name {
+    font-size: 0.6875rem;
+  }
+
+  .fc-event-chip__secondary {
+    display: flex;
+  }
+
+  .fc-event-chip__time--compact {
+    display: none;
+  }
+
+  .fc-event-chip__name--short {
+    display: none;
+  }
+
+  .fc-event-chip__name--full {
+    display: inline;
+  }
+}
+
+@container (min-height: 64px) {
+  .fc-event-chip--time {
+    padding: 0.35rem 0.45rem;
+    gap: 0.2rem;
+  }
+
+  .fc-event-chip__icon {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
+
+  .fc-event-chip__name--full {
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .fc-event-chip__range {
+    font-size: 0.625rem;
+  }
+
+  .fc-event-chip__service {
+    display: inline;
+    max-width: 45%;
+  }
+}
+
+@container (max-width: 64px) {
+  .fc-event-chip__icon,
+  .fc-event-chip__time,
+  .fc-event-chip__secondary {
+    display: none !important;
+  }
+
+  .fc-event-chip__name--short {
+    display: inline !important;
+  }
+
+  .fc-event-chip__name--full {
+    display: none !important;
+  }
 }
 
 .fc-timegrid-slot-label-cushion,
@@ -622,7 +794,8 @@
 }
 
 .fc-daygrid-event .fc-event-inner,
-.fc-event-month {
+.fc-event-month,
+.fc-event-chip--month {
   color: #fff !important;
   width: 100%;
 }
@@ -868,9 +1041,13 @@
   border-radius: var(--radius-md) !important;
 }
 
-.fc .fc-popover-body .fc-event-month {
-  min-height: 2.25rem;
-  padding: 0.45rem 0.6rem;
+.fc .fc-popover-body .fc-event-chip--month {
+  min-height: 1.75rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.fc .fc-popover-body .fc-event-chip--month .fc-event-chip__name {
+  font-size: 0.75rem;
 }
 
 @keyframes fcPopoverIn {
@@ -1002,8 +1179,14 @@
     margin: 1px 1px !important;
   }
 
-  .fc-event-month {
-    min-height: 1.15rem;
+  .fc-event-chip--month {
+    min-height: 1.1rem;
+    padding: 0.1rem 0.3rem;
+  }
+
+  .fc-event-chip--month .fc-event-chip__time,
+  .fc-event-chip--month .fc-event-chip__name {
+    font-size: 0.6rem;
   }
 
   .fc .fc-more-link {

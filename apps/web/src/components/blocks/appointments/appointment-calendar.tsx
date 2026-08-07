@@ -18,7 +18,6 @@ import { Appointment } from '@/services/appointments.service';
 import { STATUS_COLORS } from './status-badge';
 import { EventPreview, EventPreviewState } from './event-preview';
 import {
-  formatApptStartAmPm,
   formatApptTimeRange,
   formatCompactTime,
   patientDisplayName,
@@ -282,7 +281,6 @@ export function AppointmentCalendar({
     const isMonth = viewType === 'dayGridMonth';
     const fullName = appt ? patientDisplayName(appt) : arg.event.title;
     const shortName = appt ? patientShortName(appt) : arg.event.title;
-    const startLabel = appt ? formatApptStartAmPm(appt) : arg.timeText;
     const compactStart = appt
       ? formatCompactTime(appt.scheduledAt)
       : arg.timeText;
