@@ -125,16 +125,16 @@ export function ScheduleToolbar({
           value={search}
           onChange={onSearchChange}
           placeholder="Search patient, doctor, service…"
-          className="min-w-0 flex-1 basis-[12rem] sm:max-w-72 sm:flex-none"
+          className="min-w-0 flex-1 basis-48 sm:max-w-72 sm:flex-none"
         />
         <Select
           value={departmentId || ALL_DEPARTMENTS}
           onValueChange={(v) => onDepartmentChange(v === ALL_DEPARTMENTS ? '' : v)}
         >
-          <SelectTrigger size="sm" className="h-9 w-auto min-w-[9.5rem] max-w-[14rem] shrink-0 bg-background/50 sm:w-48">
+          <SelectTrigger size="sm" className="h-9 w-auto min-w-38 max-w-56 shrink-0 bg-background/50 sm:w-48">
             <SelectValue placeholder="All departments" />
           </SelectTrigger>
-          <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
+          <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
             <SelectItem value={ALL_DEPARTMENTS}>All departments</SelectItem>
             {departments?.map((d) => (
               <SelectItem
