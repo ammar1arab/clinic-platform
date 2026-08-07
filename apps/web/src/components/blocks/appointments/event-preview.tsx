@@ -67,6 +67,21 @@ function formatDayLabel(appt: Appointment) {
   });
 }
 
+function isNestedOverlay(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    Boolean(
+      target.closest(
+        [
+          '[data-slot="dropdown-menu-content"]',
+          '[data-slot="dialog-content"]',
+          '[data-slot="select-content"]',
+        ].join(','),
+      ),
+    )
+  );
+}
+
 export function EventPreview({
   preview,
   preferVertical = false,
@@ -130,10 +145,26 @@ export function EventPreview({
         align="center"
         sideOffset={10}
         avoidCollisions
-        collisionPadding={12}
-        onPointerDownOutside={onClose}
+        collisionPadding={8}
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onPointerDownOutside={(event) => {
+          if (isNestedOverlay(event.target)) {
+            event.preventDefault();
+            return;
+          }
+          onClose();
+        }}
+        onFocusOutside={(event) => {
+          const originalEvent = event.detail.originalEvent;
+          if (
+            originalEvent instanceof FocusEvent &&
+            isNestedOverlay(originalEvent.relatedTarget)
+          ) {
+            event.preventDefault();
+          }
+        }}
         onEscapeKeyDown={onClose}
-        className="z-110 flex w-[min(calc(100vw-1.5rem),20rem)] max-h-[min(calc(100dvh-1.5rem),28rem)] flex-col overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-2xl ring-1 ring-foreground/10"
+        className="z-110 flex w-[min(calc(100vw-1rem),20rem)] max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem),28rem)] flex-col overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-2xl ring-1 ring-foreground/10"
         data-calendar-popover="preview"
       >
         <div
