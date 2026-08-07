@@ -110,8 +110,9 @@ export function AppointmentCalendar({
       x: number,
       y: number,
       anchor?: AnchorRect,
+      keepMoreList?: boolean,
     ) => {
-      setMoreList(null);
+      if (!keepMoreList) setMoreList(null);
       setPreview({ appointment: appt, x, y, anchor });
     },
     [],
@@ -455,8 +456,8 @@ export function AppointmentCalendar({
       {moreList && (
         <MoreEventsPopover
           state={moreList}
-          onClose={() => setMoreList(null)}
-          onSelect={(appt, x, y, anchor) => openPreview(appt, x, y, anchor)}
+          onClose={() => { setMoreList(null); setPreview(null); }}
+          onSelect={(appt, x, y, anchor) => openPreview(appt, x, y, anchor, true)}
         />
       )}
 

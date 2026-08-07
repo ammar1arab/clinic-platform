@@ -71,6 +71,7 @@ export function MoreEventsPopover({ state, onClose, onSelect }: Props) {
         collisionPadding={16}
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement | null;
+          // Don't close if clicking inside the event preview
           if (target?.closest('[data-calendar-popover="preview"]')) {
             return;
           }

@@ -66,6 +66,15 @@ export function EventPreview({ preview, onClose, onExpand }: Props) {
     return clickAnchor(preview.x, preview.y, preview.anchor);
   }, [preview.x, preview.y, preview.anchor]);
 
+  // Smart side: if click is in the right 60% of viewport, open to the left
+  const side = useMemo<'left' | 'right' | 'bottom'>(() => {
+    if (typeof window === 'undefined') return 'right';
+    const vw = window.innerWidth;
+    if (preview.x > vw * 0.6) return 'left';
+    if (preview.x < vw * 0.25) return 'right';
+    return 'bottom';
+  }, [preview.x]);
+
   if (!mounted) return null;
 
   return (
@@ -92,9 +101,9 @@ export function EventPreview({ preview, onClose, onExpand }: Props) {
       </PopoverAnchor>
 
       <PopoverContent
-        side="right"
+        side={side}
         align="center"
-        sideOffset={8}
+        sideOffset={10}
         avoidCollisions={true}
         collisionPadding={16}
         onInteractOutside={(e) => {
@@ -106,6 +115,7 @@ export function EventPreview({ preview, onClose, onExpand }: Props) {
         }}
         onEscapeKeyDown={onClose}
         className="w-[min(calc(100vw-2rem),310px)] p-0 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-2xl ring-1 ring-foreground/10 z-[110]"
+        data-calendar-popover="preview"
       >
         <div
           className="h-1 w-full transition-colors duration-200"
