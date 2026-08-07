@@ -464,6 +464,7 @@ export function AppointmentCalendar({
       {preview && (
         <EventPreview
           preview={preview}
+          preferVertical={view === 'day'}
           onClose={() => setPreview(null)}
           onExpand={(appt) => {
             setPreview(null);

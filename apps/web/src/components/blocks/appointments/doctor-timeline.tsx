@@ -4,7 +4,6 @@ import React, { useMemo, useState, useRef, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
-  Clock,
   DoorOpen,
   Plus,
   Stethoscope,
@@ -16,8 +15,9 @@ import { Button } from '@/components/ui/button';
 import { Appointment } from '@/services/appointments.service';
 import { ClinicStaffMember } from '@/services/clinics.service';
 import { STATUS_COLORS } from './status-colors';
+import { STATUS_CONFIG } from './status-badge';
 import { AppointmentStatusSelect } from './appointment-status-select';
-import { patientDisplayName, formatApptTimeRange, formatApptStartAmPm } from './calendar-time';
+import { patientDisplayName, formatApptStartAmPm } from './calendar-time';
 import { cn } from '@/lib/utils';
 import { TimelineSkeleton } from '@/components/primitives/skeleton-presets';
 import { useNow } from '@/hooks/use-now';
@@ -52,6 +52,8 @@ interface PositionedAppt {
   widthPct: number;
 }
 
+type EventDensity = 'xs' | 'sm' | 'md' | 'lg';
+
 interface Props {
   appointments: Appointment[] | undefined;
   doctors: ClinicStaffMember[] | undefined;
@@ -70,6 +72,13 @@ function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
+}
+
+function densityFromHeight(height: number): EventDensity {
+  if (height < 36) return 'xs';
+  if (height < 56) return 'sm';
+  if (height < 96) return 'md';
+  return 'lg';
 }
 
 /**
@@ -114,7 +123,7 @@ function layoutAppts(appts: Appointment[], doctors: Map<string, TimelineDoctor>)
     }
 
     const top = Math.max(0, (startMin - START_HOUR * 60)) * PX_PER_MIN;
-    const height = Math.max(30, appt.durationMins * PX_PER_MIN);
+    const height = Math.max(28, appt.durationMins * PX_PER_MIN);
 
     return {
       appt,
@@ -132,6 +141,167 @@ function layoutAppts(appts: Appointment[], doctors: Map<string, TimelineDoctor>)
 function hourLabel(h: number): string {
   if (h === 0 || h === 12) return `12 ${h === 0 ? 'AM' : 'PM'}`;
   return h < 12 ? `${h} AM` : `${h - 12} PM`;
+}
+
+/* ─── Timeline event block ───────────────────────────────────────────────────── */
+function TimelineEventBlock({
+  appt,
+  doctor,
+  top,
+  height,
+  leftPct,
+  widthPct,
+  onEventClick,
+}: PositionedAppt & { onEventClick: (appointment: Appointment) => void }) {
+  const accent = STATUS_COLORS[appt.status];
+  const statusCfg = STATUS_CONFIG[appt.status];
+  const density = densityFromHeight(height);
+  const isCancelled = appt.status === 'cancelled';
+  const doctorName = doctor?.name ?? appt.doctor?.name ?? 'Doctor';
+  const timeLabel = `${formatApptStartAmPm(appt)} · ${appt.durationMins}m`;
+
+  return (
+    <div
+      data-appt
+      role="button"
+      tabIndex={0}
+      onClick={(e) => {
+        e.stopPropagation();
+        onEventClick(appt);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          onEventClick(appt);
+        }
+      }}
+      className={cn(
+        'group absolute z-10 flex overflow-hidden rounded-lg border border-border/70 bg-card shadow-xs',
+        'cursor-pointer outline-none transition-[box-shadow,transform,border-color] duration-150',
+        'hover:z-20 hover:border-primary/40 hover:shadow-md',
+        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+        'active:scale-[0.985]',
+        isCancelled && 'opacity-55',
+      )}
+      style={{
+        top: `${top + 1}px`,
+        height: `${Math.max(height - 2, 24)}px`,
+        left: `calc(${leftPct}% + 2px)`,
+        width: `calc(${widthPct}% - 4px)`,
+        borderLeftWidth: 3,
+        borderLeftColor: accent,
+        backgroundColor: `color-mix(in oklch, ${accent} 9%, var(--card))`,
+      }}
+      title={`${patientDisplayName(appt)} · ${timeLabel} · ${doctorName}`}
+    >
+      <div
+        className={cn(
+          'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+          density === 'xs' && 'justify-center px-1.5 py-0.5',
+          density === 'sm' && 'justify-center gap-0.5 px-2 py-1',
+          density === 'md' && 'gap-0.5 px-2 py-1.5',
+          density === 'lg' && 'gap-1 px-2.5 py-2',
+        )}
+      >
+        {/* Primary row: name (+ status for roomier blocks) */}
+        <div className="flex min-w-0 items-center gap-1.5">
+          <p
+            className={cn(
+              'min-w-0 flex-1 truncate font-semibold leading-tight text-foreground',
+              density === 'xs' ? 'text-[10px]' : 'text-[11px] sm:text-xs',
+              isCancelled && 'line-through',
+            )}
+          >
+            {patientDisplayName(appt)}
+          </p>
+
+          {density === 'xs' && (
+            <span
+              className={cn('size-1.5 shrink-0 rounded-full', statusCfg.dotClassName)}
+              title={statusCfg.label}
+              aria-hidden
+            />
+          )}
+
+          {density === 'lg' && (
+            <div
+              className="shrink-0"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <AppointmentStatusSelect appointment={appt} compact />
+            </div>
+          )}
+        </div>
+
+        {/* Time */}
+        {density !== 'xs' && (
+          <p className="truncate text-[10px] font-medium tabular-nums text-muted-foreground">
+            {timeLabel}
+          </p>
+        )}
+
+        {/* Doctor */}
+        {(density === 'md' || density === 'lg') && (
+          <p className="flex min-w-0 items-center gap-1 truncate text-[10px] text-muted-foreground">
+            <span
+              className="size-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: doctor?.color ?? accent }}
+              aria-hidden
+            />
+            <span className="truncate font-medium text-foreground/80">{doctorName}</span>
+          </p>
+        )}
+
+        {/* Extra meta — only when tall enough */}
+        {density === 'lg' && (
+          <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+            {appt.service && (
+              <span className="flex min-w-0 max-w-full items-center gap-1 truncate font-medium text-foreground/75">
+                <Stethoscope className="size-2.5 shrink-0 text-primary" />
+                <span className="truncate">{appt.service.name}</span>
+              </span>
+            )}
+            {appt.sessionType === 'online' ? (
+              <span className="inline-flex items-center gap-1 font-medium text-primary">
+                <Video className="size-2.5 shrink-0" />
+                Online
+              </span>
+            ) : appt.room ? (
+              <span className="inline-flex min-w-0 items-center gap-1 truncate font-medium">
+                <DoorOpen className="size-2.5 shrink-0" />
+                <span className="truncate">{appt.room.name}</span>
+              </span>
+            ) : null}
+          </div>
+        )}
+
+        {/* Compact status control for medium blocks — in flow, not overlapping */}
+        {density === 'md' && (
+          <div
+            className="mt-auto pt-0.5"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <AppointmentStatusSelect appointment={appt} compact />
+          </div>
+        )}
+
+        {/* Short blocks: status label only (no overlapping control) */}
+        {density === 'sm' && (
+          <span
+            className={cn(
+              'w-fit max-w-full truncate rounded-md border px-1 py-px text-[9px] font-semibold leading-tight',
+              statusCfg.className,
+            )}
+          >
+            {statusCfg.short}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /* ─── Component ──────────────────────────────────────────────────────────────── */
@@ -379,97 +549,13 @@ export function DoctorTimeline({ appointments, doctors, isLoading, onSelectSlot,
               </div>
             )}
 
-            {/* Appointment cards */}
-            {positioned.map(({ appt, doctor, top, height, leftPct, widthPct }) => {
-              const accent = STATUS_COLORS[appt.status];
-              const docColor = doctor?.color ?? accent;
-              const isCancelled = appt.status === 'cancelled';
-              const isTiny = height < 32;
-              const isShort = height < 56;
-
-              return (
-                <div
-                  key={appt.id}
-                  data-appt
-                  onClick={(e) => { e.stopPropagation(); onEventClick(appt); }}
-                  className={cn(
-                    'card-aura absolute z-10 flex flex-col overflow-hidden rounded-lg border bg-card shadow-xs',
-                    'cursor-pointer transition-all duration-150',
-                    'hover:z-20 hover:shadow-lg hover:ring-2 hover:ring-primary/30 hover:-translate-y-0.5',
-                    'active:scale-[0.985]',
-                    isCancelled && 'opacity-50',
-                  )}
-                  style={{
-                    top: `${top + 2}px`,
-                    height: `${height - 4}px`,
-                    left: `calc(${leftPct}% + 2px)`,
-                    width: `calc(${widthPct}% - 4px)`,
-                    borderLeftWidth: '3px',
-                    borderLeftColor: accent,
-                  }}
-                >
-                  {/* Top accent bar */}
-                  <div className="h-0.5 w-full shrink-0" style={{ backgroundColor: accent }} />
-
-                  <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden px-1.5 py-1">
-                    {/* Patient name */}
-                    <p className={cn(
-                      'truncate font-bold leading-tight text-foreground transition-colors group-hover:text-primary',
-                      isTiny ? 'text-[9px]' : 'text-[10px] sm:text-xs',
-                      isCancelled && 'line-through',
-                    )}>
-                      {patientDisplayName(appt)}
-                    </p>
-
-                    {/* Time + duration */}
-                    {!isTiny && (
-                      <p className="truncate text-[9px] text-muted-foreground font-medium">
-                        {formatApptStartAmPm(appt)} · {appt.durationMins}m
-                      </p>
-                    )}
-
-                    {/* Doctor name with colour dot */}
-                    {!isShort && (
-                      <p className="flex items-center gap-1 truncate text-[9px] font-semibold" style={{ color: docColor }}>
-                        <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: docColor }} />
-                        {doctor?.name ?? appt.doctor?.name}
-                      </p>
-                    )}
-
-                    {/* Service / room / session — only if space */}
-                    {!isShort && (
-                      <div className="hidden sm:flex flex-wrap items-center gap-1 text-[9px] text-muted-foreground mt-0.5">
-                        {appt.service && (
-                          <span className="flex items-center gap-0.5 truncate font-medium text-foreground/80">
-                            <Stethoscope className="size-2 text-primary shrink-0" />
-                            {appt.service.name}
-                          </span>
-                        )}
-                        {appt.sessionType === 'online' ? (
-                          <span className="flex items-center gap-0.5 text-primary font-medium">
-                            <Video className="size-2.5" /> Online
-                          </span>
-                        ) : appt.room ? (
-                          <span className="flex items-center gap-0.5 font-medium">
-                            <DoorOpen className="size-2.5" /> {appt.room.name}
-                          </span>
-                        ) : null}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Status select — only if tall enough */}
-                  {!isTiny && (
-                    <div
-                      className="absolute bottom-1 right-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <AppointmentStatusSelect appointment={appt} compact />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {positioned.map((item) => (
+              <TimelineEventBlock
+                key={item.appt.id}
+                {...item}
+                onEventClick={onEventClick}
+              />
+            ))}
           </div>
         </div>
       </div>
