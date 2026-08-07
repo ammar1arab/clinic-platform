@@ -20,7 +20,9 @@ import { EventPreview, EventPreviewState } from './event-preview';
 import {
   formatApptStartAmPm,
   formatApptTimeRange,
+  formatCompactTime,
   patientDisplayName,
+  patientShortName,
 } from './calendar-time';
 import {
   FC_TO_VIEW,
@@ -278,55 +280,54 @@ export function AppointmentCalendar({
     const appt = readAppointment(arg.event.extendedProps);
     const viewType = arg.view.type;
     const isMonth = viewType === 'dayGridMonth';
-    const isDay = viewType === 'timeGridDay';
-    const isWeek = viewType === 'timeGridWeek';
+    const fullName = appt ? patientDisplayName(appt) : arg.event.title;
+    const shortName = appt ? patientShortName(appt) : arg.event.title;
+    const startLabel = appt ? formatApptStartAmPm(appt) : arg.timeText;
+    const compactStart = appt
+      ? formatCompactTime(appt.scheduledAt)
+      : arg.timeText;
+    const rangeLabel = appt ? formatApptTimeRange(appt) : arg.timeText;
+    const tip = appt
+      ? `${fullName} · ${rangeLabel}${appt.service?.name ? ` · ${appt.service.name}` : ''}`
+      : fullName;
+    const Icon = appt?.sessionType === 'online' ? Video : MapPin;
+    const fill = appt
+      ? STATUS_COLORS[appt.status]
+      : arg.event.backgroundColor || '#64748b';
 
     if (isMonth) {
-      const fill = appt
-        ? STATUS_COLORS[appt.status]
-        : arg.event.backgroundColor || '#64748b';
       return (
         <div
-          className="fc-event-inner fc-event-month flex min-h-[1.35rem] min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-white"
+          className="fc-event-chip fc-event-chip--month"
+          title={tip}
           style={{ backgroundColor: fill, color: '#fff' }}
         >
-          <span className="shrink-0 text-[10px] font-semibold tabular-nums text-white">
-            {appt ? formatApptStartAmPm(appt) : arg.timeText}
-          </span>
-          <span className="min-w-0 truncate text-[10px] font-medium leading-tight text-white">
-            {arg.event.title}
-          </span>
-        </div>
-      );
-    }
-
-    const Icon = appt?.sessionType === 'online' ? Video : MapPin;
-    const timeLabel = appt ? formatApptTimeRange(appt) : arg.timeText;
-
-    if (isDay) {
-      return (
-        <div className="fc-event-inner flex h-full min-h-0 flex-col gap-1 overflow-hidden px-2 py-1.5 text-left">
-          <Icon className="size-3.5 shrink-0 opacity-90" aria-hidden />
-          <span className="text-[11px] font-semibold leading-tight tracking-wide opacity-95">
-            {timeLabel}
-          </span>
-          <span className="truncate text-sm font-semibold leading-tight">
-            {arg.event.title}
-          </span>
+          <span className="fc-event-chip__time">{compactStart}</span>
+          <span className="fc-event-chip__name">{shortName}</span>
         </div>
       );
     }
 
     return (
-      <div
-        className={cn(
-          'fc-event-inner flex h-full min-h-0 flex-col overflow-hidden px-1.5 py-1 text-left leading-tight',
-          isWeek ? 'gap-0.5' : 'gap-0',
-        )}
-      >
-        <Icon className="size-3 shrink-0 opacity-90" aria-hidden />
-        <span className="truncate text-[10px] font-semibold opacity-95">{timeLabel}</span>
-        <span className="truncate text-[11px] font-semibold">{arg.event.title}</span>
+      <div className="fc-event-chip fc-event-chip--time" title={tip}>
+        <div className="fc-event-chip__primary">
+          <Icon className="fc-event-chip__icon" aria-hidden />
+          <span className="fc-event-chip__time fc-event-chip__time--compact">
+            {compactStart}
+          </span>
+          <span className="fc-event-chip__name fc-event-chip__name--short">
+            {shortName}
+          </span>
+          <span className="fc-event-chip__name fc-event-chip__name--full">
+            {fullName}
+          </span>
+        </div>
+        <div className="fc-event-chip__secondary">
+          <span className="fc-event-chip__range">{rangeLabel}</span>
+          {appt?.service?.name ? (
+            <span className="fc-event-chip__service">{appt.service.name}</span>
+          ) : null}
+        </div>
       </div>
     );
   }, []);
