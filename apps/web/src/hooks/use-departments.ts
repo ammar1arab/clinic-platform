@@ -17,10 +17,15 @@ const {
 } = createCrudHooks<Department, CreateDepartmentInput, UpdateDepartmentInput>({
   keys: QUERY_KEYS.departments,
   entity: 'Department',
-  labels: {
-    removed: 'Department permanently deleted',
+  labels: { removed: 'Department permanently deleted' },
+  service: {
+    getAll: departmentsService.getAll,
+    create: departmentsService.create,
+    update: departmentsService.update,
+    remove: departmentsService.remove,
+    deactivate: departmentsService.deactivate,
+    reactivate: departmentsService.reactivate,
   },
-  service: departmentsService,
 });
 
 export {

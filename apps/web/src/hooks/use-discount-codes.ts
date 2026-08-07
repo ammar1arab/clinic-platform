@@ -8,7 +8,7 @@ import {
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { createCrudHooks } from './create-crud-hooks';
 import { useApiMutation } from './use-api-mutation';
-import { toast } from 'sonner';
+import type { TResponseError } from './use-fetch-data';
 
 const {
   useList: useDiscountCodes,
@@ -30,9 +30,9 @@ const {
 });
 
 export function useValidateDiscountCode(clinicId: string) {
-  return useApiMutation<ValidatedDiscountCode, unknown, string>({
-    request: (code: string) => discountCodesService.validate(clinicId, code),
-    onError: () => toast.error('Invalid promocode'),
+  return useApiMutation<ValidatedDiscountCode, TResponseError, string>({
+    request: (code) => discountCodesService.validate(clinicId, code),
+    errorMessage: 'Invalid promocode',
   });
 }
 

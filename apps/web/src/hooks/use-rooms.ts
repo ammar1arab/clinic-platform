@@ -17,10 +17,15 @@ const {
 } = createCrudHooks<Room, CreateRoomInput, UpdateRoomInput>({
   keys: QUERY_KEYS.rooms,
   entity: 'Room',
-  labels: {
-    removed: 'Room permanently deleted',
+  labels: { removed: 'Room permanently deleted' },
+  service: {
+    getAll: roomsService.getAll,
+    create: roomsService.create,
+    update: roomsService.update,
+    remove: roomsService.remove,
+    deactivate: roomsService.deactivate,
+    reactivate: roomsService.reactivate,
   },
-  service: roomsService,
 });
 
 export {

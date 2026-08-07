@@ -1,5 +1,3 @@
-import { useQueryClient, type QueryKey } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import {
   appointmentsService,
   AppointmentFilters,
@@ -8,19 +6,18 @@ import {
   UpdateAppointmentInput,
 } from '@/services/appointments.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData } from './use-fetch-data';
+import { useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { useFetchData, type TResponseError } from './use-fetch-data';
 import { useApiMutation } from './use-api-mutation';
+import { INVALIDATE, LIVE_LIST_OPTIONS } from './query-presets';
 
 export function useAppointments(filters: AppointmentFilters, enabled = true) {
   return useFetchData<Appointment[]>({
     queryKey: QUERY_KEYS.appointments.list(filters),
     request: () => appointmentsService.getAll(filters),
     options: {
+      ...LIVE_LIST_OPTIONS,
       enabled,
-      staleTime: 45_000,
-      gcTime: 5 * 60_000,
-      keepPreviousData: true,
-      refetchOnWindowFocus: false,
     },
   });
 }
@@ -36,16 +33,10 @@ export function useAppointment(id: string) {
 }
 
 export function useCreateAppointment() {
-  return useApiMutation<Appointment, unknown, CreateAppointmentInput>({
-    request: (data: CreateAppointmentInput) => appointmentsService.create(data),
-    invalidateQueries: [
-      QUERY_KEYS.appointments.all,
-      QUERY_KEYS.dashboard.kpisAll,
-      QUERY_KEYS.dashboard.roomUtilizationAll,
-    ],
-    onSuccess: () => {
-      toast.success('Appointment created');
-    },
+  return useApiMutation<Appointment, TResponseError, CreateAppointmentInput>({
+    request: (data) => appointmentsService.create(data),
+    invalidateQueries: [...INVALIDATE.appointmentWrite],
+    successMessage: 'Appointment created',
   });
 }
 
@@ -78,8 +69,8 @@ function applyOptimisticUpdate(
 }
 
 interface UpdateAppointmentContext {
-  previousLists?: [QueryKey, Appointment[] | undefined][];
-  previousDetail?: Appointment;
+  previousLists: [QueryKey, Appointment[] | undefined][];
+  previousDetail: Appointment | undefined;
 }
 
 export function useUpdateAppointment() {
@@ -87,17 +78,18 @@ export function useUpdateAppointment() {
 
   return useApiMutation<
     Appointment,
-    Error,
+    TResponseError,
     { id: string; data: UpdateAppointmentInput },
     UpdateAppointmentContext
   >({
     request: ({ id, data }) => appointmentsService.update(id, data),
+    successMessage: 'Appointment updated',
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.appointments.all });
 
       const previousLists = queryClient.getQueriesData<Appointment[]>({
         queryKey: QUERY_KEYS.appointments.all,
-      }) as [QueryKey, Appointment[] | undefined][];
+      });
       const previousDetail = queryClient.getQueryData<Appointment>(
         QUERY_KEYS.appointments.detail(id),
       );
@@ -122,68 +114,68 @@ export function useUpdateAppointment() {
       return { previousLists, previousDetail };
     },
     onError: (_err, { id }, context) => {
-      if (context?.previousLists) {
-        for (const [queryKey, oldData] of context.previousLists) {
-          queryClient.setQueryData(queryKey, () => oldData);
-        }
+      if (!context) return;
+      for (const [queryKey, oldData] of context.previousLists) {
+        queryClient.setQueryData(queryKey, () => oldData);
       }
-      if (context?.previousDetail) {
+      if (context.previousDetail) {
         queryClient.setQueryData(
           QUERY_KEYS.appointments.detail(id),
           () => context.previousDetail,
         );
       }
     },
-    onSettled: (_, __, variables) => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
-      if (variables?.id) {
-        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.detail(variables.id) });
+    onSettled: (_data, _error, variables) => {
+      for (const key of INVALIDATE.appointmentWrite) {
+        queryClient.invalidateQueries({ queryKey: key });
       }
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.kpisAll });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.roomUtilizationAll });
-    },
-    onSuccess: () => {
-      toast.success('Appointment updated');
+      if (variables?.id) {
+        queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.appointments.detail(variables.id),
+        });
+      }
     },
   });
 }
 
 export function useMarkAppointmentPaid() {
-  return useApiMutation<Appointment, unknown, { id: string; paymentMethodId: string }>({
-    request: ({ id, paymentMethodId }) => appointmentsService.markPaid(id, paymentMethodId),
-    invalidateQueries: [QUERY_KEYS.appointments.all],
-    onSuccess: () => {
-      toast.success('Marked as paid');
-    },
+  return useApiMutation<
+    Appointment,
+    TResponseError,
+    { id: string; paymentMethodId: string }
+  >({
+    request: ({ id, paymentMethodId }) =>
+      appointmentsService.markPaid(id, paymentMethodId),
+    invalidateQueries: [...INVALIDATE.appointmentPayment],
+    successMessage: 'Marked as paid',
   });
 }
 
 export function useMarkAppointmentUnpaid() {
-  return useApiMutation<Appointment, unknown, string>({
+  return useApiMutation<Appointment, TResponseError, string>({
     request: (id) => appointmentsService.markUnpaid(id),
-    invalidateQueries: [QUERY_KEYS.appointments.all],
-    onSuccess: () => {
-      toast.success('Marked as unpaid');
-    },
+    invalidateQueries: [...INVALIDATE.appointmentPayment],
+    successMessage: 'Marked as unpaid',
   });
 }
 
 export function useRedeemAppointmentPackage() {
-  return useApiMutation<Appointment, unknown, { id: string; patientPackageId: string }>({
-    request: ({ id, patientPackageId }) => appointmentsService.redeemPackage(id, patientPackageId),
-    invalidateQueries: [QUERY_KEYS.appointments.all, QUERY_KEYS.patientPackages.all],
-    onSuccess: () => {
-      toast.success('Visit covered by package');
-    },
+  return useApiMutation<
+    Appointment,
+    TResponseError,
+    { id: string; patientPackageId: string }
+  >({
+    request: ({ id, patientPackageId }) =>
+      appointmentsService.redeemPackage(id, patientPackageId),
+    invalidateQueries: [...INVALIDATE.appointmentPackage],
+    successMessage: 'Visit covered by package',
   });
 }
 
 export function useReleaseAppointmentPackage() {
-  return useApiMutation<Appointment, unknown, string>({
+  return useApiMutation<Appointment, TResponseError, string>({
     request: (id) => appointmentsService.releasePackage(id),
-    invalidateQueries: [QUERY_KEYS.appointments.all, QUERY_KEYS.patientPackages.all],
-    onSuccess: () => {
-      toast.success('Package coverage removed');
-    },
+    invalidateQueries: [...INVALIDATE.appointmentPackage],
+    successMessage: 'Package coverage removed',
   });
 }

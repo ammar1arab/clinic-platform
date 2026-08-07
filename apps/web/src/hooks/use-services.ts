@@ -17,10 +17,15 @@ const {
 } = createCrudHooks<ServiceItem, CreateServiceInput, UpdateServiceInput>({
   keys: QUERY_KEYS.services,
   entity: 'Service',
-  labels: {
-    removed: 'Service permanently deleted',
+  labels: { removed: 'Service permanently deleted' },
+  service: {
+    getAll: servicesService.getAll,
+    create: servicesService.create,
+    update: servicesService.update,
+    remove: servicesService.remove,
+    deactivate: servicesService.deactivate,
+    reactivate: servicesService.reactivate,
   },
-  service: servicesService,
 });
 
 export {

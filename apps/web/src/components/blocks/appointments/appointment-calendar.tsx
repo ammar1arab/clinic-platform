@@ -32,17 +32,22 @@ import {
 import { rectFromElement, type AnchorRect } from './popover-position';
 import { CalendarSkeleton } from './calendar-skeleton';
 import { useUpdateAppointment } from '@/hooks/use-appointments';
+import { useResizeObserver } from '@/hooks/use-resize-observer';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
+
+interface CalendarEventProps {
+  appointment: Appointment;
+}
 
 interface CalendarDropInfo {
   event: {
     id: string;
     start: Date | null;
     end: Date | null;
-    extendedProps: Record<string, unknown>;
+    extendedProps: CalendarEventProps;
   };
   revert: () => void;
 }
@@ -52,9 +57,26 @@ interface CalendarResizeInfo {
     id: string;
     start: Date | null;
     end: Date | null;
-    extendedProps: Record<string, unknown>;
+    extendedProps: CalendarEventProps;
   };
   revert: () => void;
+}
+
+function isAppointment(value: object): value is Appointment {
+  return (
+    'id' in value &&
+    'scheduledAt' in value &&
+    'status' in value &&
+    'patient' in value &&
+    'doctor' in value
+  );
+}
+
+function readAppointment(extendedProps: object): Appointment | null {
+  if (!('appointment' in extendedProps)) return null;
+  const value = extendedProps.appointment;
+  if (typeof value !== 'object' || value === null) return null;
+  return isAppointment(value) ? value : null;
 }
 
 interface Props {
@@ -62,6 +84,8 @@ interface Props {
   isLoading: boolean;
   isFetching: boolean;
   view: ScheduleView;
+  /** When true, calendar fills the focus shell height. */
+  focused?: boolean;
   onViewChange: (view: ScheduleView) => void;
   onVisibleRangeChange?: (start: Date, end: Date) => void;
   onEventClick: (appointment: Appointment) => void;
@@ -73,6 +97,7 @@ export function AppointmentCalendar({
   isLoading,
   isFetching,
   view,
+  focused = false,
   onViewChange,
   onVisibleRangeChange,
   onEventClick,
@@ -120,11 +145,11 @@ export function AppointmentCalendar({
 
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
-      const appt = arg.event.extendedProps.appointment as Appointment | undefined;
+      const appt = readAppointment(arg.event.extendedProps);
       if (!appt) return;
-      const el =
-        (arg.el as HTMLElement | undefined) ??
-        (arg.jsEvent.target as HTMLElement | null)?.closest?.('.fc-event');
+      const target = arg.jsEvent.target;
+      const fromEvent = target instanceof Element ? target.closest('.fc-event') : null;
+      const el = arg.el ?? fromEvent;
       openPreview(
         appt,
         arg.jsEvent.clientX,
@@ -157,7 +182,7 @@ export function AppointmentCalendar({
 
   const handleEventDrop = useCallback(
     (info: CalendarDropInfo) => {
-      const appt = info.event.extendedProps.appointment as Appointment | undefined;
+      const appt = info.event.extendedProps.appointment;
       if (!appt || !info.event.start) {
         info.revert();
         return;
@@ -213,7 +238,7 @@ export function AppointmentCalendar({
 
   const handleEventResize = useCallback(
     (info: CalendarResizeInfo) => {
-      const appt = info.event.extendedProps.appointment as Appointment | undefined;
+      const appt = info.event.extendedProps.appointment;
       if (!appt || !info.event.start || !info.event.end) {
         info.revert();
         return;
@@ -245,38 +270,40 @@ export function AppointmentCalendar({
   );
 
   const handleMoreLinkClick = useCallback((arg: MoreLinkArg) => {
-    const jsEvent = arg.jsEvent as MouseEvent;
-    if (typeof jsEvent.preventDefault === 'function') jsEvent.preventDefault();
-    if (typeof jsEvent.stopPropagation === 'function') jsEvent.stopPropagation();
+    const jsEvent = arg.jsEvent;
+    jsEvent.preventDefault();
+    jsEvent.stopPropagation();
 
     const dayAppts = arg.allSegs
-      .map((seg) => seg.event.extendedProps.appointment as Appointment | undefined)
-      .filter((a): a is Appointment => !!a)
+      .map((seg) => readAppointment(seg.event.extendedProps))
+      .filter((a): a is Appointment => a !== null)
       .sort(
         (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
       );
 
-    const x = jsEvent.clientX ?? window.innerWidth / 2;
-    const y = jsEvent.clientY ?? window.innerHeight / 2;
-    const el = (jsEvent.target as HTMLElement | null)?.closest?.(
-      '.fc-more-link, .fc-daygrid-more-link, .fc-timegrid-more-link',
-    );
+    const point = jsEvent instanceof MouseEvent
+      ? { x: jsEvent.clientX, y: jsEvent.clientY }
+      : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+    const target = jsEvent.target;
+    const el =
+      target instanceof Element
+        ? target.closest('.fc-more-link, .fc-daygrid-more-link, .fc-timegrid-more-link')
+        : null;
 
     setPreview(null);
     setMoreList({
       date: arg.date,
       appointments: dayAppts,
-      x,
-      y,
-      anchor: rectFromElement(el, x, y),
+      x: point.x,
+      y: point.y,
+      anchor: rectFromElement(el, point.x, point.y),
     });
-
-    return true as unknown as 'popover';
   }, []);
 
   const renderMoreLinkContent = useCallback(
     (arg: MoreLinkContentArg) => (
-      <span className="fc-more-badge flex w-full min-h-[1.5rem] items-center justify-center gap-1 rounded-md border border-dashed border-primary/35 bg-primary/8 px-1.5 py-0.5 text-[10px] font-semibold leading-tight tracking-wide text-primary dark:bg-primary/15 dark:text-primary">
+      <span className="fc-more-badge flex w-full min-h-6 items-center justify-center gap-1 rounded-md border border-dashed border-primary/35 bg-primary/8 px-1.5 py-0.5 text-[10px] font-semibold leading-tight tracking-wide text-primary dark:bg-primary/15 dark:text-primary">
         +{arg.num} more
       </span>
     ),
@@ -284,7 +311,7 @@ export function AppointmentCalendar({
   );
 
   const renderEventContent = useCallback((arg: EventContentArg) => {
-    const appt = arg.event.extendedProps.appointment as Appointment | undefined;
+    const appt = readAppointment(arg.event.extendedProps);
     const viewType = arg.view.type;
     const isMonth = viewType === 'dayGridMonth';
     const isDay = viewType === 'timeGridDay';
@@ -341,8 +368,11 @@ export function AppointmentCalendar({
   }, []);
 
   const handleEventDidMount = useCallback(
-    (info: { event: { extendedProps: Record<string, unknown>; backgroundColor?: string }; el: HTMLElement }) => {
-      const appt = info.event.extendedProps.appointment as Appointment | undefined;
+    (info: {
+      event: { extendedProps: object; backgroundColor?: string };
+      el: HTMLElement;
+    }) => {
+      const appt = readAppointment(info.event.extendedProps);
       const color = appt
         ? STATUS_COLORS[appt.status]
         : info.event.backgroundColor || '#64748b';
@@ -380,43 +410,55 @@ export function AppointmentCalendar({
     [onSelectSlot],
   );
 
+  const syncCalendarSize = useCallback(() => {
+    calendarRef.current?.getApi().updateSize();
+  }, []);
+
+  const sizeHostRef = useResizeObserver(syncCalendarSize);
+
   if (isLoading && !appointments) {
     return <CalendarSkeleton />;
   }
 
   return (
     <div
-      className="card-aura relative rounded-xl bg-card p-2 sm:p-3 lg:p-4 [&_.fc]:text-sm"
+      className={cn(
+        'card-aura relative bg-card [&_.fc]:text-sm',
+        focused
+          ? 'flex h-full min-h-0 flex-col rounded-xl border p-2 sm:p-3 [&_.fc-header-toolbar]:pr-0'
+          : 'rounded-xl p-2 pr-11 sm:p-3 sm:pr-12 lg:p-4 lg:pr-12',
+      )}
       aria-busy={isFetching || undefined}
     >
-      <FullCalendar
-        key={view}
-        ref={calendarRef}
-        plugins={PLUGINS}
-        initialView={VIEW_TO_FC[view]}
-        headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: 'timeGridDay,timeGridWeek,dayGridMonth',
-        }}
-        buttonText={{
-          today: 'Today',
-          day: 'Day',
-          week: 'Week',
-          month: 'Month',
-        }}
-        height="auto"
-        slotMinTime="07:00:00"
-        slotMaxTime="21:00:00"
-        allDaySlot={false}
-        selectable
-        selectMirror
-        selectAllow={() => view !== 'month'}
-        editable
-        eventDurationEditable
-        eventResizableFromStart
-        nowIndicator
-        events={events}
+      <div ref={sizeHostRef} className={cn(focused && 'min-h-0 flex-1')}>
+        <FullCalendar
+          key={view}
+          ref={calendarRef}
+          plugins={PLUGINS}
+          initialView={VIEW_TO_FC[view]}
+          headerToolbar={{
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridDay,timeGridWeek,dayGridMonth',
+          }}
+          buttonText={{
+            today: 'Today',
+            day: 'Day',
+            week: 'Week',
+            month: 'Month',
+          }}
+          height={focused ? '100%' : 'auto'}
+          slotMinTime="07:00:00"
+          slotMaxTime="21:00:00"
+          allDaySlot={false}
+          selectable
+          selectMirror
+          selectAllow={() => view !== 'month'}
+          editable
+          eventDurationEditable
+          eventResizableFromStart
+          nowIndicator
+          events={events}
         eventDisplay="block"
         eventDidMount={handleEventDidMount}
         dayCellDidMount={handleDayCellDidMount}
@@ -452,6 +494,7 @@ export function AppointmentCalendar({
           endTime: '20:00',
         }}
       />
+      </div>
 
       {moreList && (
         <MoreEventsPopover

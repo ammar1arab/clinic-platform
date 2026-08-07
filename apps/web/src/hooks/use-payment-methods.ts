@@ -7,7 +7,7 @@ import {
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { createCrudHooks } from './create-crud-hooks';
 import { useApiMutation } from './use-api-mutation';
-import { toast } from 'sonner';
+import type { TResponseError } from './use-fetch-data';
 
 const {
   useList: usePaymentMethods,
@@ -29,13 +29,10 @@ const {
 });
 
 export function useReorderPaymentMethods(clinicId: string) {
-  return useApiMutation<PaymentMethod[], unknown, string[]>({
-    request: (orderedIds: string[]) =>
-      paymentMethodsService.reorder(clinicId, orderedIds),
+  return useApiMutation<PaymentMethod[], TResponseError, string[]>({
+    request: (orderedIds) => paymentMethodsService.reorder(clinicId, orderedIds),
     invalidateQueries: [QUERY_KEYS.paymentMethods.list(clinicId)],
-    onSuccess: () => {
-      toast.success('Order updated');
-    },
+    successMessage: 'Order updated',
   });
 }
 

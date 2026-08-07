@@ -17,6 +17,7 @@ import { ScheduleLegend } from '@/components/blocks/appointments/schedule-legend
 import { CalendarSkeleton } from '@/components/blocks/appointments/calendar-skeleton';
 import { DoctorTimeline } from '@/components/blocks/appointments/doctor-timeline';
 import { WaitingQueueBoard } from '@/components/blocks/appointments/waiting-queue-board';
+import { ViewFocus } from '@/components/blocks/appointments/view-focus';
 import {
   parseScheduleView,
   schedulePath,
@@ -183,30 +184,45 @@ function SchedulePageInner() {
       )}
 
       {view === 'doctors' ? (
-        <DoctorTimeline
-          appointments={filteredAppointments}
-          doctors={staff}
-          isLoading={isLoading}
-          onSelectSlot={goNewAppointment}
-          onEventClick={handleEventClick}
-        />
+        <ViewFocus label="Doctor timeline">
+          {(focused) => (
+            <DoctorTimeline
+              appointments={filteredAppointments}
+              doctors={staff}
+              isLoading={isLoading}
+              focused={focused}
+              onSelectSlot={goNewAppointment}
+              onEventClick={handleEventClick}
+            />
+          )}
+        </ViewFocus>
       ) : view === 'queue' ? (
-        <WaitingQueueBoard
-          appointments={filteredAppointments}
-          isLoading={isLoading}
-          onEventClick={handleEventClick}
-        />
+        <ViewFocus label="Waiting board">
+          {(focused) => (
+            <WaitingQueueBoard
+              appointments={filteredAppointments}
+              isLoading={isLoading}
+              focused={focused}
+              onEventClick={handleEventClick}
+            />
+          )}
+        </ViewFocus>
       ) : (
-        <AppointmentCalendar
-          appointments={filteredAppointments}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          view={view}
-          onViewChange={setView}
-          onVisibleRangeChange={handleVisibleRangeChange}
-          onEventClick={handleEventClick}
-          onSelectSlot={goNewAppointment}
-        />
+        <ViewFocus label="Calendar">
+          {(focused) => (
+            <AppointmentCalendar
+              appointments={filteredAppointments}
+              isLoading={isLoading}
+              isFetching={isFetching}
+              view={view}
+              focused={focused}
+              onViewChange={setView}
+              onVisibleRangeChange={handleVisibleRangeChange}
+              onEventClick={handleEventClick}
+              onSelectSlot={goNewAppointment}
+            />
+          )}
+        </ViewFocus>
       )}
     </div>
   );

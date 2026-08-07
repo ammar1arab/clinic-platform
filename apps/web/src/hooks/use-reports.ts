@@ -1,58 +1,49 @@
-import { toast } from 'sonner';
 import { reportsService, ReportFormat } from '@/services/reports.service';
 import { useApiMutation } from './use-api-mutation';
+import type { TResponseError } from './use-fetch-data';
 
 export interface ReportDownloadResult {
   filename: string;
 }
 
+type ReferralsDownloadVars = {
+  format?: ReportFormat;
+  patientId?: string;
+  toDoctorId?: string;
+  from?: string;
+  to?: string;
+};
+
+type FinanceDownloadVars = {
+  format?: ReportFormat;
+  from?: string;
+  to?: string;
+};
+
+const downloaded = (res: ReportDownloadResult) => `Downloaded ${res.filename}`;
+
 export function useDownloadPatientReport(clinicId: string) {
-  return useApiMutation<ReportDownloadResult, unknown, { patientId: string; format?: ReportFormat }>({
-    request: ({
-      patientId,
-      format = 'pdf',
-    }: {
-      patientId: string;
-      format?: ReportFormat;
-    }) => reportsService.downloadPatientMedical(patientId, clinicId, format),
-    onSuccess: (res) => {
-      toast.success(`Downloaded ${res.filename}`);
-    },
+  return useApiMutation<
+    ReportDownloadResult,
+    TResponseError,
+    { patientId: string; format?: ReportFormat }
+  >({
+    request: ({ patientId, format = 'pdf' }) =>
+      reportsService.downloadPatientMedical(patientId, clinicId, format),
+    successMessage: downloaded,
   });
 }
 
 export function useDownloadReferralsReport(clinicId: string) {
-  return useApiMutation<
-    ReportDownloadResult,
-    unknown,
-    {
-      format?: ReportFormat;
-      patientId?: string;
-      toDoctorId?: string;
-      from?: string;
-      to?: string;
-    }
-  >({
+  return useApiMutation<ReportDownloadResult, TResponseError, ReferralsDownloadVars>({
     request: (params) => reportsService.downloadReferrals({ clinicId, ...params }),
-    onSuccess: (res) => {
-      toast.success(`Downloaded ${res.filename}`);
-    },
+    successMessage: downloaded,
   });
 }
 
 export function useDownloadFinanceReport(clinicId: string) {
-  return useApiMutation<
-    ReportDownloadResult,
-    unknown,
-    {
-      format?: ReportFormat;
-      from?: string;
-      to?: string;
-    }
-  >({
+  return useApiMutation<ReportDownloadResult, TResponseError, FinanceDownloadVars>({
     request: (params) => reportsService.downloadFinance({ clinicId, ...params }),
-    onSuccess: (res) => {
-      toast.success(`Downloaded ${res.filename}`);
-    },
+    successMessage: downloaded,
   });
 }

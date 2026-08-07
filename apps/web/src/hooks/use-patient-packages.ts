@@ -1,4 +1,3 @@
-import { toast } from 'sonner';
 import {
   patientPackagesService,
   EnrollPatientPackageInput,
@@ -6,8 +5,9 @@ import {
   PatientBillingSummary,
 } from '@/services/patient-packages.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData } from './use-fetch-data';
+import { useFetchData, type TResponseError } from './use-fetch-data';
 import { useApiMutation } from './use-api-mutation';
+import { BILLING_OPTIONS, INVALIDATE } from './query-presets';
 
 export function usePatientBilling(
   patientId: string,
@@ -18,8 +18,8 @@ export function usePatientBilling(
     queryKey: QUERY_KEYS.patientPackages.summary(patientId, excludeAppointmentId),
     request: () => patientPackagesService.getSummary(patientId, excludeAppointmentId),
     options: {
+      ...BILLING_OPTIONS,
       enabled: enabled && !!patientId,
-      staleTime: 30_000,
     },
   });
 }
@@ -35,21 +35,20 @@ export function usePatientPackages(patientId: string) {
 }
 
 export function useEnrollPatientPackage() {
-  return useApiMutation<PatientPackageDto, unknown, EnrollPatientPackageInput>({
+  return useApiMutation<PatientPackageDto, TResponseError, EnrollPatientPackageInput>({
     request: (data) => patientPackagesService.enroll(data),
-    invalidateQueries: [QUERY_KEYS.patientPackages.all],
-    onSuccess: () => {
-      toast.success('Package added');
-    },
+    invalidateQueries: [...INVALIDATE.patientPackageWrite],
+    successMessage: 'Package added',
   });
 }
 
 export function useDeactivatePatientPackage() {
-  return useApiMutation<unknown, unknown, string>({
-    request: (id) => patientPackagesService.deactivate(id),
-    invalidateQueries: [QUERY_KEYS.patientPackages.all],
-    onSuccess: () => {
-      toast.success('Package removed');
+  return useApiMutation<null, TResponseError, string>({
+    request: async (id) => {
+      await patientPackagesService.deactivate(id);
+      return null;
     },
+    invalidateQueries: [...INVALIDATE.patientPackageWrite],
+    successMessage: 'Package removed',
   });
 }

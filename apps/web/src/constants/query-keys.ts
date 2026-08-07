@@ -35,17 +35,17 @@ export const QUERY_KEYS = {
   },
   patients: {
     all: ['patients'] as const,
-    list: (filters: unknown) => ['patients', filters] as const,
+    list: (filters: object) => ['patients', filters] as const,
     detail: (id: string) => ['patients', 'detail', id] as const,
   },
   appointments: {
     all: ['appointments'] as const,
-    list: (filters: unknown) => ['appointments', filters] as const,
+    list: (filters: object) => ['appointments', filters] as const,
     detail: (id: string) => ['appointments', 'detail', id] as const,
   },
   referrals: {
     all: ['referrals'] as const,
-    list: (filters: unknown) => ['referrals', filters] as const,
+    list: (filters: object) => ['referrals', filters] as const,
   },
   dashboard: {
     kpisAll: ['dashboard-kpis'] as const,

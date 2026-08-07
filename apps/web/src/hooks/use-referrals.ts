@@ -1,4 +1,3 @@
-import { toast } from 'sonner';
 import {
   referralsService,
   CreateReferralInput,
@@ -6,8 +5,9 @@ import {
   Referral,
 } from '@/services/referrals.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData } from './use-fetch-data';
+import { useFetchData, type TResponseError } from './use-fetch-data';
 import { useApiMutation } from './use-api-mutation';
+import { INVALIDATE } from './query-presets';
 
 export function useReferrals(filters: ReferralFilters) {
   return useFetchData<Referral[]>({
@@ -19,46 +19,34 @@ export function useReferrals(filters: ReferralFilters) {
   });
 }
 
-export function useCreateReferral(clinicId?: string) {
-  void clinicId;
-  return useApiMutation<Referral, unknown, CreateReferralInput>({
+export function useCreateReferral(_clinicId?: string) {
+  return useApiMutation<Referral, TResponseError, CreateReferralInput>({
     request: (data) => referralsService.create(data),
-    invalidateQueries: [QUERY_KEYS.referrals.all, QUERY_KEYS.patients.all],
-    onSuccess: () => {
-      toast.success('Request sent');
-    },
+    invalidateQueries: [...INVALIDATE.referralWrite],
+    successMessage: 'Request sent',
   });
 }
 
-export function useAcceptReferral(clinicId?: string) {
-  void clinicId;
-  return useApiMutation<Referral, unknown, string>({
+export function useAcceptReferral(_clinicId?: string) {
+  return useApiMutation<Referral, TResponseError, string>({
     request: (id) => referralsService.accept(id),
-    invalidateQueries: [QUERY_KEYS.referrals.all, QUERY_KEYS.patients.all],
-    onSuccess: () => {
-      toast.success('Referral accepted');
-    },
+    invalidateQueries: [...INVALIDATE.referralWrite],
+    successMessage: 'Referral accepted',
   });
 }
 
-export function useRejectReferral(clinicId?: string) {
-  void clinicId;
-  return useApiMutation<Referral, unknown, string>({
+export function useRejectReferral(_clinicId?: string) {
+  return useApiMutation<Referral, TResponseError, string>({
     request: (id) => referralsService.reject(id),
-    invalidateQueries: [QUERY_KEYS.referrals.all, QUERY_KEYS.patients.all],
-    onSuccess: () => {
-      toast.success('Referral rejected');
-    },
+    invalidateQueries: [...INVALIDATE.referralWrite],
+    successMessage: 'Referral rejected',
   });
 }
 
-export function useReferralOpinion(clinicId?: string) {
-  void clinicId;
-  return useApiMutation<Referral, unknown, { id: string; opinion: string }>({
+export function useReferralOpinion(_clinicId?: string) {
+  return useApiMutation<Referral, TResponseError, { id: string; opinion: string }>({
     request: ({ id, opinion }) => referralsService.setOpinion(id, opinion),
-    invalidateQueries: [QUERY_KEYS.referrals.all, QUERY_KEYS.patients.all],
-    onSuccess: () => {
-      toast.success('Opinion saved');
-    },
+    invalidateQueries: [...INVALIDATE.referralWrite],
+    successMessage: 'Opinion saved',
   });
 }

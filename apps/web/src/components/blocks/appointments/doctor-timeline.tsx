@@ -58,6 +58,8 @@ interface Props {
   appointments: Appointment[] | undefined;
   doctors: ClinicStaffMember[] | undefined;
   isLoading: boolean;
+  /** When true, timeline fills the focus shell height. */
+  focused?: boolean;
   onSelectSlot: (date: Date, doctorId?: string) => void;
   onEventClick: (appointment: Appointment) => void;
 }
@@ -305,7 +307,14 @@ function TimelineEventBlock({
 }
 
 /* ─── Component ──────────────────────────────────────────────────────────────── */
-export function DoctorTimeline({ appointments, doctors, isLoading, onSelectSlot, onEventClick }: Props) {
+export function DoctorTimeline({
+  appointments,
+  doctors,
+  isLoading,
+  focused = false,
+  onSelectSlot,
+  onEventClick,
+}: Props) {
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d;
   });
@@ -413,10 +422,18 @@ export function DoctorTimeline({ appointments, doctors, isLoading, onSelectSlot,
   }
 
   return (
-    <div className="card-aura flex flex-col overflow-hidden rounded-2xl border bg-card shadow-xs">
+    <div
+      className={cn(
+        'card-aura flex flex-col overflow-hidden border bg-card shadow-xs',
+        focused ? 'h-full min-h-0 rounded-xl' : 'rounded-2xl',
+      )}
+    >
 
       {/* ── Toolbar ───────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-2.5 border-b bg-muted/20 px-3 py-2.5 sm:px-4">
+      <div className={cn(
+        'flex flex-col gap-2.5 border-b bg-muted/20 px-3 py-2.5 sm:px-4',
+        !focused && 'pr-12',
+      )}>
         <div className="flex flex-wrap items-center justify-between gap-2">
 
           {/* Date navigation */}
@@ -491,8 +508,15 @@ export function DoctorTimeline({ appointments, doctors, isLoading, onSelectSlot,
       <div
         ref={scrollRef}
         onClick={handleGridClick}
-        className="relative overflow-y-auto overscroll-contain cursor-pointer"
-        style={{ maxHeight: 'calc(100vh - 16rem)', minHeight: '360px' }}
+        className={cn(
+          'relative overflow-y-auto overscroll-contain cursor-pointer',
+          focused && 'min-h-0 flex-1',
+        )}
+        style={
+          focused
+            ? undefined
+            : { maxHeight: 'calc(100vh - 16rem)', minHeight: '360px' }
+        }
       >
         <div className="relative flex" style={{ height: `${TOTAL_HEIGHT}px` }}>
 

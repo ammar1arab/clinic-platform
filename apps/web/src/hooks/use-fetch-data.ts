@@ -5,6 +5,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 import axios from 'axios';
+import { toQueryOptions } from './query-presets';
 
 export interface IMessageError {
   message?: string | string[];
@@ -40,12 +41,29 @@ export interface IUseFetchData<T> {
   request: () => Promise<TResponse<T>> | Promise<T>;
   options?: IFetchDataOptions;
   callback?: (_data: T) => void;
-  errorCallback?: (__error: IMessageError) => void;
+  errorCallback?: (_error: IMessageError) => void;
 }
 
 export type TUseFetchDataResult<T> = UseQueryResult<T, TResponseError> & {
   isNotFound: boolean;
 };
+
+function isWrappedData<T>(response: TResponse<T>): response is { data: T } {
+  return typeof response === 'object' && response !== null && 'data' in response;
+}
+
+function toMessageError(error: object | string | null | undefined): IMessageError {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+    if (typeof data === 'object' && data !== null) {
+      return data as IMessageError;
+    }
+  }
+  if (typeof error === 'object' && error !== null) {
+    return error as IMessageError;
+  }
+  return { message: 'Something went wrong. Please try again.' };
+}
 
 export const useFetchData = <T>({
   queryKey,
@@ -56,50 +74,50 @@ export const useFetchData = <T>({
 }: IUseFetchData<T>): TUseFetchDataResult<T> => {
   const queryClient = useQueryClient();
   const initialData = options?.cacheEnabled
-    ? (queryClient.getQueryData(queryKey) as T)
+    ? queryClient.getQueryData<T>(queryKey)
     : undefined;
-
-  const queryOptions = {
-    retry: options?.retry ?? false,
-    refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
-    ...(options ?? {}),
-  };
 
   const queryResult = useQuery<T, TResponseError>({
     queryKey,
     ...(initialData !== undefined ? { initialData } : {}),
     queryFn: async () => {
       try {
-        let response!: Awaited<T | { data: T }>;
+        let response: TResponse<T> | undefined;
+
         if (options?.cacheEnabled) {
-          response = queryClient.getQueryData(queryKey) as Awaited<T>;
+          response = queryClient.getQueryData<T>(queryKey);
         }
 
-        if (
-          (options?.cacheEnabled && (!response || JSON.stringify(response) === '{}')) ||
-          !options?.cacheEnabled
-        ) {
-          response = (await request()) as Awaited<T | { data: T }>;
+        const cacheMiss =
+          options?.cacheEnabled &&
+          (!response || (typeof response === 'object' && JSON.stringify(response) === '{}'));
+
+        if (!options?.cacheEnabled || cacheMiss) {
+          response = await request();
         }
 
-        if (response && typeof response === 'object' && 'data' in response && !options?.skipNormalization) {
-          const data = (response as { data: T }).data;
-          callback?.(data);
-          return data;
+        if (!response) {
+          throw new Error('Empty response');
         }
 
-        callback?.(response as T);
-        return response as T;
+        if (!options?.skipNormalization && isWrappedData(response)) {
+          callback?.(response.data);
+          return response.data;
+        }
+
+        const data = response as T;
+        callback?.(data);
+        return data;
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          errorCallback?.(error.response?.data as IMessageError);
+        if (typeof error === 'object' || typeof error === 'string' || error == null) {
+          errorCallback?.(toMessageError(error));
         } else {
-          errorCallback?.(error as IMessageError);
+          errorCallback?.({ message: 'Something went wrong. Please try again.' });
         }
         throw error;
       }
     },
-    ...queryOptions,
+    ...toQueryOptions(options),
   });
 
   return {

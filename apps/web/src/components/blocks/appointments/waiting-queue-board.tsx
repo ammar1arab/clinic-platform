@@ -36,12 +36,15 @@ import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { StatGridSkeleton, CardGridSkeleton } from '@/components/primitives/skeleton-presets';
+import { useViewFocused } from './view-focus';
 
 type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
 
 interface Props {
   appointments: Appointment[] | undefined;
   isLoading: boolean;
+  /** When true, board fills the focus shell height. */
+  focused?: boolean;
   onEventClick: (appointment: Appointment) => void;
 }
 
@@ -60,7 +63,12 @@ function formatElapsed(minutes: number): string {
   return `${hrs}h ${rem}m`;
 }
 
-export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Props) {
+export function WaitingQueueBoard({
+  appointments,
+  isLoading,
+  focused = false,
+  onEventClick,
+}: Props) {
   const [stageTab, setStageTab] = useState<StageTab>('all');
   const now = useNow(10_000);
   const updateMutation = useUpdateAppointment();
@@ -158,9 +166,15 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
   }
 
   return (
-    <div className="space-y-4">
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+    <div
+      className={cn(
+        'relative space-y-4',
+        focused && 'flex h-full min-h-0 flex-col overflow-y-auto overscroll-contain pr-1',
+        !focused && 'pr-1',
+      )}
+    >
+      {/* Focus control clearance on the first row */}
+      <div className={cn('grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4', !focused && 'pr-10')}>
         <StatCard
           icon={<Timer className="size-4 text-amber-500" />}
           label="In Waiting Room"
@@ -222,7 +236,12 @@ export function WaitingQueueBoard({ appointments, isLoading, onEventClick }: Pro
       </div>
 
       {/* Stage columns */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-4 lg:grid-cols-4',
+          focused && 'min-h-0 flex-1 lg:items-stretch',
+        )}
+      >
         {/* Waiting */}
         {isVisible('waiting') && (
           <StageColumn
@@ -586,8 +605,15 @@ function StageColumn({
   icon: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const focused = useViewFocused();
+
   return (
-    <div className="card-aura flex flex-col rounded-2xl border bg-card/75 shadow-xs backdrop-blur-xs overflow-hidden">
+    <div
+      className={cn(
+        'card-aura flex flex-col overflow-hidden rounded-2xl border bg-card/75 shadow-xs backdrop-blur-xs',
+        focused && 'min-h-0 h-full',
+      )}
+    >
       <div className="flex items-center justify-between border-b p-3 bg-muted/25">
         <div className="flex items-center gap-2">
           <span
@@ -601,7 +627,12 @@ function StageColumn({
           {count}
         </span>
       </div>
-      <div className="flex flex-col gap-2.5 p-3 min-h-[360px] max-h-[72vh] overflow-y-auto overscroll-contain">
+      <div
+        className={cn(
+          'flex flex-col gap-2.5 overflow-y-auto overscroll-contain p-3',
+          focused ? 'min-h-0 flex-1' : 'min-h-[360px] max-h-[72vh]',
+        )}
+      >
         {children}
       </div>
     </div>

@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSocket } from '@/lib/socket';
 import { QUERY_KEYS } from '@/constants/query-keys';
+import { INVALIDATE } from './query-presets';
 
 export type ClinicRealtimeOptions = {
   notifyOnAppointmentChange?: boolean;
@@ -32,12 +33,10 @@ export function useClinicRealtime(
       socket.on('disconnect', onDisconnect);
 
       const refreshAppointments = () => {
-        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments.all });
+        for (const key of INVALIDATE.appointmentWrite) {
+          queryClient.invalidateQueries({ queryKey: key });
+        }
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.patientPackages.all });
-        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.dashboard.kpisAll });
-        queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.dashboard.roomUtilizationAll,
-        });
         if (notify) {
           toast.message('Schedule updated', {
             description: 'Dashboard refreshed from live clinic changes.',

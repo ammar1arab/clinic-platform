@@ -1,4 +1,3 @@
-import { toast } from 'sonner';
 import {
   patientsService,
   PatientFilters,
@@ -8,8 +7,9 @@ import {
   PatientDetail,
 } from '@/services/patients.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData } from './use-fetch-data';
+import { useFetchData, type TResponseError } from './use-fetch-data';
 import { useApiMutation } from './use-api-mutation';
+import { INVALIDATE } from './query-presets';
 
 export function usePatients(filters: PatientFilters) {
   return useFetchData<Patient[]>({
@@ -31,47 +31,50 @@ export function usePatient(id: string) {
   });
 }
 
-export function useCreatePatient(clinicId?: string) {
-  void clinicId;
-  return useApiMutation<PatientDetail, unknown, CreatePatientInput>({
+export function useCreatePatient(_clinicId?: string) {
+  return useApiMutation<PatientDetail, TResponseError, CreatePatientInput>({
     request: (data) => patientsService.create(data),
-    invalidateQueries: [QUERY_KEYS.patients.all, QUERY_KEYS.patientPackages.all],
-    onSuccess: () => {
-      toast.success('Patient added');
-    },
+    invalidateQueries: [...INVALIDATE.patientWrite],
+    successMessage: 'Patient added',
   });
 }
 
-export function useUpdatePatient(clinicId?: string) {
-  void clinicId;
-  return useApiMutation<PatientDetail, unknown, { id: string; data: UpdatePatientInput }>({
+export function useUpdatePatient(_clinicId?: string) {
+  return useApiMutation<
+    PatientDetail,
+    TResponseError,
+    { id: string; data: UpdatePatientInput }
+  >({
     request: ({ id, data }) => patientsService.update(id, data),
-    invalidateQueries: [QUERY_KEYS.patients.all, QUERY_KEYS.patientPackages.all],
-    onSuccess: () => {
-      toast.success('Patient updated');
-    },
+    invalidateQueries: [...INVALIDATE.patientWrite],
+    successMessage: 'Patient updated',
   });
 }
 
-export function useTogglePatientStatus(clinicId?: string) {
-  void clinicId;
-  return useApiMutation<unknown, unknown, { id: string; isActive: boolean }>({
-    request: ({ id, isActive }) =>
-      isActive ? patientsService.reactivate(id) : patientsService.deactivate(id),
-    invalidateQueries: [QUERY_KEYS.patients.all],
-    onSuccess: (_, variables) => {
-      toast.success(variables.isActive ? 'Patient reactivated' : 'Patient deactivated');
+export function useTogglePatientStatus(_clinicId?: string) {
+  return useApiMutation<
+    null,
+    TResponseError,
+    { id: string; isActive: boolean }
+  >({
+    request: async ({ id, isActive }) => {
+      if (isActive) await patientsService.reactivate(id);
+      else await patientsService.deactivate(id);
+      return null;
     },
+    invalidateQueries: [...INVALIDATE.patientStatus],
+    successMessage: (_data, variables) =>
+      variables.isActive ? 'Patient reactivated' : 'Patient deactivated',
   });
 }
 
-export function useDeletePatient(clinicId?: string) {
-  void clinicId;
-  return useApiMutation<unknown, unknown, string>({
-    request: (id) => patientsService.remove(id),
-    invalidateQueries: [QUERY_KEYS.patients.all],
-    onSuccess: () => {
-      toast.success('Patient deleted');
+export function useDeletePatient(_clinicId?: string) {
+  return useApiMutation<null, TResponseError, string>({
+    request: async (id) => {
+      await patientsService.remove(id);
+      return null;
     },
+    invalidateQueries: [...INVALIDATE.patientStatus],
+    successMessage: 'Patient deleted',
   });
 }

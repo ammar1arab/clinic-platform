@@ -1,21 +1,22 @@
 'use client';
 
-import { toast } from 'sonner';
-import { useFetchData } from './use-fetch-data';
+import type { QueryKey } from '@tanstack/react-query';
+import { useFetchData, type TResponseError } from './use-fetch-data';
 import { useApiMutation } from './use-api-mutation';
+import { clinicListOptions } from './query-presets';
 
 type QueryKeyFactory = {
-  all: readonly unknown[];
-  list: (clinicId: string) => readonly unknown[];
+  all: QueryKey;
+  list: (clinicId: string) => QueryKey;
 };
 
 export interface CrudService<TEntity, TCreate, TUpdate> {
   getAll: (clinicId: string) => Promise<TEntity[]>;
   create: (data: TCreate) => Promise<TEntity>;
   update: (id: string, data: TUpdate) => Promise<TEntity>;
-  remove?: (id: string) => Promise<unknown>;
-  deactivate?: (id: string) => Promise<unknown>;
-  reactivate?: (id: string) => Promise<unknown>;
+  remove?: (id: string) => Promise<void | TEntity | null>;
+  deactivate?: (id: string) => Promise<void | TEntity | null>;
+  reactivate?: (id: string) => Promise<void | TEntity | null>;
 }
 
 export interface CrudHooksConfig<TEntity, TCreate, TUpdate> {
@@ -29,6 +30,21 @@ export interface CrudHooksConfig<TEntity, TCreate, TUpdate> {
     reactivated?: string;
   };
   service: CrudService<TEntity, TCreate, TUpdate>;
+  /** Extra keys to invalidate on every write (defaults to list only). */
+  invalidateOnWrite?: (clinicId: string) => QueryKey[];
+}
+
+async function runSideEffect<TEntity>(
+  fn: ((id: string) => Promise<void | TEntity | null>) | undefined,
+  entity: string,
+  action: string,
+  id: string,
+): Promise<null> {
+  if (!fn) {
+    throw new Error(`createCrudHooks(${entity}): service.${action} is not configured`);
+  }
+  await fn(id);
+  return null;
 }
 
 export function createCrudHooks<TEntity, TCreate, TUpdate>(
@@ -43,78 +59,54 @@ export function createCrudHooks<TEntity, TCreate, TUpdate>(
     reactivated: config.labels?.reactivated ?? `${entity} reactivated`,
   };
 
+  const invalidateFor = (clinicId: string): QueryKey[] =>
+    config.invalidateOnWrite?.(clinicId) ?? [keys.list(clinicId)];
+
   function useList(clinicId: string) {
     return useFetchData<TEntity[]>({
       queryKey: keys.list(clinicId),
       request: () => service.getAll(clinicId),
-      options: {
-        enabled: !!clinicId,
-      },
+      options: clinicListOptions(clinicId),
     });
   }
 
   function useCreate(clinicId: string) {
-    return useApiMutation<TEntity, unknown, TCreate>({
-      request: (data: TCreate) => service.create(data),
-      invalidateQueries: keys.list(clinicId),
-      onSuccess: () => {
-        toast.success(labels.created);
-      },
+    return useApiMutation<TEntity, TResponseError, TCreate>({
+      request: (data) => service.create(data),
+      invalidateQueries: invalidateFor(clinicId),
+      successMessage: labels.created,
     });
   }
 
   function useUpdate(clinicId: string) {
-    return useApiMutation<TEntity, unknown, { id: string; data: TUpdate }>({
-      request: ({ id, data }: { id: string; data: TUpdate }) => service.update(id, data),
-      invalidateQueries: keys.list(clinicId),
-      onSuccess: () => {
-        toast.success(labels.updated);
-      },
+    return useApiMutation<TEntity, TResponseError, { id: string; data: TUpdate }>({
+      request: ({ id, data }) => service.update(id, data),
+      invalidateQueries: invalidateFor(clinicId),
+      successMessage: labels.updated,
     });
   }
 
   function useRemove(clinicId: string) {
-    return useApiMutation<unknown, unknown, string>({
-      request: (id: string) => {
-        if (!service.remove) {
-          throw new Error(`createCrudHooks(${entity}): service.remove is not configured`);
-        }
-        return service.remove(id);
-      },
-      invalidateQueries: keys.list(clinicId),
-      onSuccess: () => {
-        toast.success(labels.removed);
-      },
+    return useApiMutation<null, TResponseError, string>({
+      request: (id) => runSideEffect(service.remove, entity, 'remove', id),
+      invalidateQueries: invalidateFor(clinicId),
+      successMessage: labels.removed,
     });
   }
 
   function useDeactivate(clinicId: string) {
-    return useApiMutation<unknown, unknown, string>({
-      request: (id: string) => {
-        if (!service.deactivate) {
-          throw new Error(`createCrudHooks(${entity}): service.deactivate is not configured`);
-        }
-        return service.deactivate(id);
-      },
-      invalidateQueries: keys.list(clinicId),
-      onSuccess: () => {
-        toast.success(labels.deactivated);
-      },
+    return useApiMutation<null, TResponseError, string>({
+      request: (id) => runSideEffect(service.deactivate, entity, 'deactivate', id),
+      invalidateQueries: invalidateFor(clinicId),
+      successMessage: labels.deactivated,
     });
   }
 
   function useReactivate(clinicId: string) {
-    return useApiMutation<unknown, unknown, string>({
-      request: (id: string) => {
-        if (!service.reactivate) {
-          throw new Error(`createCrudHooks(${entity}): service.reactivate is not configured`);
-        }
-        return service.reactivate(id);
-      },
-      invalidateQueries: keys.list(clinicId),
-      onSuccess: () => {
-        toast.success(labels.reactivated);
-      },
+    return useApiMutation<null, TResponseError, string>({
+      request: (id) => runSideEffect(service.reactivate, entity, 'reactivate', id),
+      invalidateQueries: invalidateFor(clinicId),
+      successMessage: labels.reactivated,
     });
   }
 
