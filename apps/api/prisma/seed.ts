@@ -136,13 +136,6 @@ async function ensureExtraStaff(clinicId: string) {
             .slice(0, 3),
           phone: `+96279${String(1000000 + created.length).slice(0, 7)}`,
           employmentType: e.role === "practitioner" ? "salaried" : null,
-          calendarColor:
-            e.role === "practitioner"
-              ? pick(
-                  ["brand", "accent-teal", "primary", "success"] as const,
-                  created.length,
-                )
-              : null,
           bufferMins: e.role === "practitioner" ? 10 : 0,
         },
       }));
@@ -393,12 +386,6 @@ async function main() {
           employment === "commission" || employment === "mixed"
             ? new Prisma.Decimal(25)
             : null,
-        calendarColor:
-          doctors[i].calendarColor ??
-          pick(
-            ["brand", "accent-teal", "primary", "success", "warning"] as const,
-            i,
-          ),
         bufferMins: doctors[i].bufferMins || 10,
       },
     });

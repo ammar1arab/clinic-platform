@@ -2,7 +2,6 @@ import {
   IsArray,
   IsEmail,
   IsEnum,
-  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
@@ -15,15 +14,6 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 import { EmploymentType } from "@prisma/client";
-
-const CALENDAR_COLORS = [
-  "brand",
-  "accent-teal",
-  "primary",
-  "success",
-  "warning",
-  "destructive",
-] as const;
 
 export class AvailabilitySlotDto {
   @IsInt()
@@ -121,10 +111,6 @@ export class CreatePractitionerDto {
   @Min(0)
   @Max(100)
   commissionPercent?: number | null;
-
-  @IsOptional()
-  @IsIn(CALENDAR_COLORS)
-  calendarColor?: (typeof CALENDAR_COLORS)[number] | null;
 
   @IsOptional()
   @IsInt()

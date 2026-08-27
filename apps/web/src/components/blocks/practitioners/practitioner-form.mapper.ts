@@ -4,7 +4,6 @@ import type {
   UpdatePractitionerInput,
 } from '@/services/practitioners.service';
 import type { PractitionerFormData } from '@/lib/validations';
-import type { PractitionerCalendarColor } from '@/constants/practitioner';
 
 export const EMPTY_PRACTITIONER: PractitionerFormData = {
   name: '',
@@ -23,7 +22,6 @@ export const EMPTY_PRACTITIONER: PractitionerFormData = {
   defaultRoomId: '',
   employmentType: '',
   commissionPercent: '',
-  calendarColor: 'brand',
   bufferMins: '0',
   serviceIds: [],
   availabilities: [
@@ -63,7 +61,6 @@ export function toPractitionerFormValues(
     employmentType: p.employmentType ?? '',
     commissionPercent:
       p.commissionPercent == null ? '' : String(p.commissionPercent),
-    calendarColor: p.calendarColor ?? 'brand',
     bufferMins: String(p.bufferMins ?? 0),
     serviceIds: p.serviceIds ?? [],
     availabilities: p.availabilities.map((a) => ({
@@ -87,10 +84,6 @@ export function toPractitionerPayload(data: PractitionerFormData) {
   const needsCommission =
     employmentType === 'commission' || employmentType === 'mixed';
 
-  const calendarColor = data.calendarColor
-    ? (data.calendarColor as PractitionerCalendarColor)
-    : null;
-
   return {
     name: data.name.trim(),
     nameAr: clean(data.nameAr),
@@ -111,7 +104,6 @@ export function toPractitionerPayload(data: PractitionerFormData) {
     commissionPercent: needsCommission
       ? Number(data.commissionPercent)
       : null,
-    calendarColor,
     bufferMins: Number(data.bufferMins),
     serviceIds: data.serviceIds,
     availabilities: data.availabilities.map((a) => ({
@@ -127,13 +119,3 @@ export function toPractitionerPayload(data: PractitionerFormData) {
   } satisfies Omit<CreatePractitionerInput, 'clinicId' | 'email'> &
     UpdatePractitionerInput;
 }
-
-export const WEEKDAY_OPTIONS = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-] as const;

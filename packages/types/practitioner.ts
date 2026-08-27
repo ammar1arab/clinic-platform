@@ -1,13 +1,5 @@
 import type { EmploymentType, Role } from './enums';
 
-export type PractitionerCalendarColor =
-  | 'brand'
-  | 'accent-teal'
-  | 'primary'
-  | 'success'
-  | 'warning'
-  | 'destructive';
-
 export interface DoctorAvailabilitySlot {
   id?: string;
   dayOfWeek: number;
@@ -55,7 +47,6 @@ export interface Practitioner {
   defaultRoomName: string | null;
   employmentType: EmploymentType | null;
   commissionPercent: number | null;
-  calendarColor: PractitionerCalendarColor | null;
   bufferMins: number;
   isActive: boolean;
   serviceIds: string[];
@@ -87,7 +78,6 @@ export interface CreatePractitionerInput {
   defaultRoomId?: string | null;
   employmentType?: EmploymentType;
   commissionPercent?: number | null;
-  calendarColor?: PractitionerCalendarColor | null;
   bufferMins?: number;
   serviceIds?: string[];
   availabilities?: DoctorAvailabilitySlot[];
@@ -110,7 +100,6 @@ export interface UpdatePractitionerInput {
   defaultRoomId?: string | null;
   employmentType?: EmploymentType | null;
   commissionPercent?: number | null;
-  calendarColor?: PractitionerCalendarColor | null;
   bufferMins?: number;
   isActive?: boolean;
   serviceIds?: string[];

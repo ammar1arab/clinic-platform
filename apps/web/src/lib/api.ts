@@ -15,10 +15,12 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-type ApiErrorBody = {
-  message?: string | string[];
-  error?: string;
-};
+type ApiErrorBody =
+  | string
+  | {
+      message?: string | string[];
+      error?: string;
+    };
 
 export type ApiErrorLike =
   | string
@@ -33,7 +35,7 @@ export type ApiErrorLike =
       };
     };
 
-function readBodyMessage(data: ApiErrorBody | undefined): string | null {
+function readBodyMessage(data: Exclude<ApiErrorBody, string> | undefined): string | null {
   if (!data) return null;
   if (Array.isArray(data.message)) return data.message.join(', ');
   if (typeof data.message === 'string') return data.message;
@@ -48,7 +50,13 @@ function extractErrorMessage(error: ApiErrorLike): string {
     if (error.code === 'ERR_NETWORK') {
       return 'Cannot reach the server. Is the backend running?';
     }
-    const fromBody = readBodyMessage(error.response?.data);
+    const raw = error.response?.data;
+    if (typeof raw === 'string' && raw.trim()) {
+      return raw.trim().slice(0, 200);
+    }
+    const fromBody = readBodyMessage(
+      typeof raw === 'object' && raw !== null ? raw : undefined,
+    );
     if (fromBody) return fromBody;
   }
 
@@ -58,7 +66,11 @@ function extractErrorMessage(error: ApiErrorLike): string {
     if (Array.isArray(error.message)) return error.message.join(', ');
     if (typeof error.message === 'string' && error.message) return error.message;
     if ('response' in error) {
-      const fromBody = readBodyMessage(error.response?.data);
+      const data = error.response?.data;
+      if (typeof data === 'string' && data.trim()) return data.trim().slice(0, 200);
+      const fromBody = readBodyMessage(
+        typeof data === 'object' && data !== null ? data : undefined,
+      );
       if (fromBody) return fromBody;
     }
   }
@@ -79,12 +91,30 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (error.response?.status !== 409) {
+    if (error.response?.status !== 409 && !shouldSkipErrorToast(error)) {
       toast.error(extractErrorMessage(error));
     }
 
     return Promise.reject(error);
   },
 );
+
+function shouldSkipErrorToast(error: AxiosError<ApiErrorBody>): boolean {
+  const method = error.config?.method?.toLowerCase();
+  if (method && method !== 'get' && method !== 'head') return false;
+
+  const message = extractErrorMessage(error);
+  if (/^Cannot (GET|HEAD)\b/i.test(message)) return true;
+
+  if (
+    error.response?.status === 404 &&
+    typeof error.response.data === 'string' &&
+    /^Cannot (GET|HEAD)\b/i.test(error.response.data)
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 export { extractErrorMessage };

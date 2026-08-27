@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { ROUTES } from '@/constants/routes';
 import { schedulePath } from '@/components/blocks/appointments/schedule-nav';
 import { useSidebar } from '@/providers/sidebar-provider';
-import { useAuth } from '@/providers';
 import { PanelLeftClose, X } from 'lucide-react';
 import {
   IconDashboard,
@@ -36,14 +35,7 @@ function isActivePath(pathname: string, href: string) {
 
 export function SidebarBlock() {
   const pathname = usePathname();
-  const { user } = useAuth();
   const { isCollapsed, toggleSidebar, mobileOpen, setMobileOpen } = useSidebar();
-  const initials = (user?.name ?? 'CO')
-    .split(/\s+/)
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
 
   const [prevPathname, setPrevPathname] = useState(pathname);
   if (pathname !== prevPathname) {
@@ -55,85 +47,73 @@ export function SidebarBlock() {
 
   return (
     <>
-      {mobileOpen ? (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background md:hidden">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b from-brand/15 via-accent-teal/10 to-transparent" />
+      <div
+        className={cn(
+          'fixed inset-0 z-50 md:hidden',
+          mobileOpen ? 'pointer-events-auto' : 'pointer-events-none',
+        )}
+        aria-hidden={!mobileOpen}
+      >
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={closeMobile}
+          className={cn(
+            'absolute inset-0 bg-background/70 backdrop-blur-sm transition-opacity duration-300 ease-out',
+            mobileOpen ? 'opacity-100' : 'opacity-0',
+          )}
+        />
 
-          <div className="relative flex items-center justify-between px-5 pb-2 pt-[max(1rem,env(safe-area-inset-top))]">
-            <div className="flex items-center gap-3">
-              <span className="grid size-11 place-items-center rounded-2xl bg-linear-to-br from-brand to-accent-teal text-sm font-bold text-white shadow-md">
-                C
-              </span>
-              <div>
-                <p className="font-heading text-lg font-semibold tracking-tight">Cureva</p>
-                <p className="text-xs text-muted-foreground">Clinic workspace</p>
-              </div>
-            </div>
+        <aside
+          className={cn(
+            'absolute inset-y-0 left-0 flex w-[min(100%,20rem)] flex-col bg-card shadow-xl',
+            'transition-transform duration-300 ease-out',
+            'pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+            mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          )}
+        >
+          <div className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-3.5">
+            <p className="font-heading text-base font-semibold tracking-tight text-foreground">
+              Cureva clinic
+            </p>
             <button
               type="button"
               aria-label="Close menu"
               onClick={closeMobile}
-              className="grid size-11 place-items-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted/80"
+              className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
             >
-              <X className="size-5" />
+              <X className="size-4" />
             </button>
           </div>
 
-          <div className="relative mx-5 mt-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="grid size-12 shrink-0 place-items-center rounded-full bg-linear-to-br from-brand to-accent-teal text-sm font-bold text-white">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-base font-semibold">{user?.name ?? 'User'}</p>
-                <p className="truncate text-sm capitalize text-muted-foreground">
-                  {user?.role ?? 'Staff'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <nav className="relative flex-1 overflow-y-auto px-5 py-6">
-            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Navigate
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {navItems.map(({ label, href, icon: Icon }) => {
-                const active = isActivePath(pathname, href);
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={closeMobile}
-                    className={cn(
-                      'flex min-h-28 flex-col justify-between rounded-2xl border p-4 transition-all',
-                      active
-                        ? 'border-primary/40 bg-primary text-primary-foreground shadow-[0_16px_40px_-24px_color-mix(in_oklch,var(--primary)_80%,transparent)]'
-                        : 'border-border/80 bg-card text-foreground hover:border-primary/30 hover:bg-accent/40',
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'grid size-10 place-items-center rounded-xl',
-                        active ? 'bg-white/15' : 'bg-muted',
-                      )}
-                    >
-                      <Icon className="size-5" />
-                    </span>
-                    <span className="text-sm font-semibold tracking-tight">{label}</span>
-                  </Link>
-                );
-              })}
-            </div>
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+            {navItems.map(({ label, href, icon: Icon }, index) => {
+              const active = isActivePath(pathname, href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={closeMobile}
+                  style={{ transitionDelay: mobileOpen ? `${40 + index * 28}ms` : '0ms' }}
+                  className={cn(
+                    'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium',
+                    'transition-all duration-300 ease-out',
+                    mobileOpen
+                      ? 'translate-x-0 opacity-100'
+                      : '-translate-x-2 opacity-0',
+                    active
+                      ? 'bg-primary text-primary-foreground shadow-[0_10px_28px_-16px_color-mix(in_oklch,var(--primary)_70%,transparent)]'
+                      : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" />
+                  <span>{label}</span>
+                </Link>
+              );
+            })}
           </nav>
-
-          <div className="relative border-t border-border/70 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            <p className="text-center text-xs text-muted-foreground">
-              Tap a destination to continue
-            </p>
-          </div>
-        </div>
-      ) : null}
+        </aside>
+      </div>
 
       <aside
         className={cn(
@@ -151,19 +131,13 @@ export function SidebarBlock() {
         >
           <div
             className={cn(
-              'flex min-w-0 items-center gap-2.5 transition-all duration-200',
+              'min-w-0 transition-all duration-200',
               isCollapsed && 'w-0 overflow-hidden opacity-0',
             )}
           >
-            <span
-              className="grid size-7 shrink-0 place-items-center rounded-lg bg-linear-to-br from-brand to-accent-teal text-[10px] font-bold text-white shadow-sm"
-              aria-hidden
-            >
-              C
-            </span>
-            <span className="truncate font-heading text-sm font-semibold tracking-tight">
-              Cureva
-            </span>
+            <p className="truncate font-heading text-sm font-semibold tracking-tight">
+              Cureva clinic
+            </p>
           </div>
 
           <button
@@ -218,29 +192,6 @@ export function SidebarBlock() {
             );
           })}
         </nav>
-
-        <div className="flex shrink-0 justify-center border-t border-border/70 p-3 transition-all duration-200">
-          {isCollapsed ? (
-            <div
-              className="grid size-8 cursor-default place-items-center rounded-full bg-linear-to-br from-brand/20 to-accent-teal/20 text-xs font-bold text-primary"
-              title={user?.name ?? 'User'}
-            >
-              {initials}
-            </div>
-          ) : (
-            <div className="flex w-full items-center gap-2.5 rounded-xl bg-muted/50 px-3 py-2">
-              <div className="grid size-8 shrink-0 place-items-center rounded-full bg-linear-to-br from-brand to-accent-teal text-[10px] font-bold text-white">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium">{user?.name ?? 'User'}</p>
-                <p className="truncate text-[11px] capitalize text-muted-foreground">
-                  {user?.role ?? 'Staff'}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
       </aside>
     </>
   );

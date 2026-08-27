@@ -185,9 +185,6 @@ export const practitionerSchema = z
     defaultRoomId: z.string().optional().or(z.literal('')),
     employmentType: z.enum(['salaried', 'commission', 'mixed', '']).optional(),
     commissionPercent: z.string().optional().or(z.literal('')),
-    calendarColor: z
-      .enum(['brand', 'accent-teal', 'primary', 'success', 'warning', 'destructive', ''])
-      .optional(),
     bufferMins: z.string().min(1, 'Required'),
     serviceIds: z.array(z.string()),
     availabilities: z.array(availabilitySlotSchema),

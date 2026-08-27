@@ -89,6 +89,18 @@ export default function PatientsPage() {
     );
   };
 
+  const hasActiveFilters =
+    Boolean(debouncedSearch) ||
+    filters.status !== 'all' ||
+    Boolean(filters.gender) ||
+    Boolean(filters.bloodType) ||
+    Boolean(filters.primaryDoctorId) ||
+    Boolean(filters.departmentId) ||
+    Boolean(filters.visitFrom) ||
+    Boolean(filters.visitTo) ||
+    Boolean(filters.dobFrom) ||
+    Boolean(filters.dobTo);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -130,7 +142,17 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      <PatientsList patients={patients} isLoading={isLoading} clinicId={clinicId} />
+      <PatientsList
+        patients={patients}
+        isLoading={isLoading}
+        clinicId={clinicId}
+        hasActiveFilters={hasActiveFilters}
+        emptyAction={
+          <Button asChild>
+            <Link href="/patients/new">Create patient</Link>
+          </Button>
+        }
+      />
     </div>
   );
 }

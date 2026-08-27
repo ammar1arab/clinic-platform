@@ -16,29 +16,25 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TruncatedText } from '@/components/primitives/truncated-text';
 import { Pagination } from '@/components/primitives/pagination';
 import { EmptyState } from '@/components/primitives/empty-state';
+import { MetaStat } from '@/components/primitives/meta-stat';
 import { TableSkeleton } from '@/components/primitives/skeleton-presets';
 import { TableFrame } from '@/components/blocks/data/table-frame';
 import { IconEdit, IconPhone, IconPractitioner } from '@/constants/icons';
-import {
-  PRACTITIONER_CALENDAR_COLOR_CLASS,
-} from '@/constants/practitioner';
+import { PRACTITIONER_EMPLOYMENT_LABEL } from '@/constants/practitioner';
 import { ROUTES } from '@/constants/routes';
-import { cn } from '@/lib/utils';
 import {
   useDeactivatePractitioner,
   useReactivatePractitioner,
 } from '@/hooks/use-practitioners';
 import type { Practitioner } from '@/services/practitioners.service';
 
-const EMPLOYMENT_LABEL: Record<string, string> = {
-  salaried: 'Salaried',
-  commission: 'Commission',
-  mixed: 'Mixed',
-};
-
 function initials(p: Practitioner) {
   if (p.initials?.trim()) return p.initials.slice(0, 2).toUpperCase();
   return p.name.slice(0, 2).toUpperCase() || '?';
+}
+
+function displayName(p: Practitioner) {
+  return p.title ? `${p.title} ${p.name}` : p.name;
 }
 
 interface Props {
@@ -129,21 +125,9 @@ export function PractitionersList({
                         <AvatarFallback>{initials(p)}</AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
-                        <div className="flex min-w-0 items-center gap-2">
-                          {p.calendarColor ? (
-                            <span
-                              className={cn(
-                                'size-2.5 shrink-0 rounded-full',
-                                PRACTITIONER_CALENDAR_COLOR_CLASS[
-                                  p.calendarColor as keyof typeof PRACTITIONER_CALENDAR_COLOR_CLASS
-                                ] ?? 'bg-primary',
-                              )}
-                            />
-                          ) : null}
-                          <TruncatedText className="font-medium">
-                            {p.title ? `${p.title} ${p.name}` : p.name}
-                          </TruncatedText>
-                        </div>
+                        <TruncatedText className="font-medium">
+                          {displayName(p)}
+                        </TruncatedText>
                         <TruncatedText className="text-xs text-muted-foreground">
                           {p.email}
                         </TruncatedText>
@@ -165,7 +149,8 @@ export function PractitionersList({
                   <TableCell className="hidden lg:table-cell">
                     {p.employmentType ? (
                       <Badge variant="secondary" className="font-normal">
-                        {EMPLOYMENT_LABEL[p.employmentType] ?? p.employmentType}
+                        {PRACTITIONER_EMPLOYMENT_LABEL[p.employmentType] ??
+                          p.employmentType}
                       </Badge>
                     ) : (
                       <span className="text-muted-foreground">—</span>
@@ -224,9 +209,7 @@ export function PractitionersList({
                 <AvatarFallback>{initials(p)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <TruncatedText className="font-medium">
-                  {p.title ? `${p.title} ${p.name}` : p.name}
-                </TruncatedText>
+                <TruncatedText className="font-medium">{displayName(p)}</TruncatedText>
                 <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                   <IconPhone className="size-3 shrink-0" />
                   <TruncatedText>{p.phone ?? p.email}</TruncatedText>
@@ -253,19 +236,20 @@ export function PractitionersList({
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs sm:grid-cols-3">
-              <Stat label="Department" value={p.departmentName ?? '—'} />
-              <Stat label="Room" value={p.defaultRoomName ?? '—'} />
-              <Stat label="Services" value={String(p.serviceIds.length)} />
-              <Stat
+              <MetaStat label="Department" value={p.departmentName ?? '—'} />
+              <MetaStat label="Room" value={p.defaultRoomName ?? '—'} />
+              <MetaStat label="Services" value={String(p.serviceIds.length)} />
+              <MetaStat
                 label="Employment"
                 value={
                   p.employmentType
-                    ? EMPLOYMENT_LABEL[p.employmentType] ?? p.employmentType
+                    ? PRACTITIONER_EMPLOYMENT_LABEL[p.employmentType] ??
+                      p.employmentType
                     : '—'
                 }
               />
-              <Stat label="Buffer" value={`${p.bufferMins}m`} />
-              <Stat
+              <MetaStat label="Buffer" value={`${p.bufferMins}m`} />
+              <MetaStat
                 label="Experience"
                 value={
                   p.experienceYears != null ? `${p.experienceYears} yrs` : '—'
@@ -284,16 +268,5 @@ export function PractitionersList({
         onPageChange={onPageChange}
       />
     </>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-        {label}
-      </p>
-      <p className="truncate font-medium">{value}</p>
-    </div>
   );
 }

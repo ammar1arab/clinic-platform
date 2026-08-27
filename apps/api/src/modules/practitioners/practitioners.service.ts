@@ -118,8 +118,6 @@ export class PractitionersService {
         dto.commissionPercent === undefined
           ? undefined
           : dto.commissionPercent,
-      calendarColor:
-        dto.calendarColor === undefined ? undefined : dto.calendarColor,
       bufferMins: dto.bufferMins,
     });
     return mapPractitioner(row);

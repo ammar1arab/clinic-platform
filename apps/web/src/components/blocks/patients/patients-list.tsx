@@ -17,6 +17,7 @@ import { TruncatedText } from '@/components/primitives/truncated-text';
 import { Pagination } from '@/components/primitives/pagination';
 import { TableFrame } from '@/components/blocks/data/table-frame';
 import { EmptyState } from '@/components/primitives/empty-state';
+import { MetaStat } from '@/components/primitives/meta-stat';
 import { TableSkeleton } from '@/components/primitives/skeleton-presets';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import {
@@ -36,6 +37,8 @@ interface Props {
   patients: Patient[] | undefined;
   isLoading: boolean;
   clinicId: string;
+  hasActiveFilters?: boolean;
+  emptyAction?: React.ReactNode;
 }
 
 function initials(p: Patient) {
@@ -50,7 +53,13 @@ function visit(date: string | null) {
   return date ? format(new Date(date), 'MMM d, yyyy') : '—';
 }
 
-export function PatientsList({ patients, isLoading, clinicId }: Props) {
+export function PatientsList({
+  patients,
+  isLoading,
+  clinicId,
+  hasActiveFilters = false,
+  emptyAction,
+}: Props) {
   const router = useRouter();
   const toggleStatus = useTogglePatientStatus(clinicId);
   const deleteMutation = useDeletePatient(clinicId);
@@ -84,8 +93,13 @@ export function PatientsList({ patients, isLoading, clinicId }: Props) {
       <TableFrame>
         <EmptyState
           icon={IconPatients}
-          title="No patients found"
-          description="Try adjusting your search or filters."
+          title={hasActiveFilters ? 'No matches' : 'No patients'}
+          description={
+            hasActiveFilters
+              ? 'Try adjusting your search or filters.'
+              : 'Create a patient to start booking visits and tracking care.'
+          }
+          action={hasActiveFilters ? undefined : emptyAction}
         />
       </TableFrame>
     );
@@ -246,10 +260,10 @@ export function PatientsList({ patients, isLoading, clinicId }: Props) {
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs sm:grid-cols-3">
-                <Stat label="National ID" value={p.nationalId ?? '—'} />
-                <Stat label="Practitioner" value={p.primaryDoctorName ?? '—'} />
-                <Stat label="Sessions" value={String(p.totalSessions)} />
-                <Stat label="Last Visit" value={visit(p.lastVisit)} className="sm:col-span-2" />
+                <MetaStat label="National ID" value={p.nationalId ?? '—'} />
+                <MetaStat label="Practitioner" value={p.primaryDoctorName ?? '—'} />
+                <MetaStat label="Sessions" value={String(p.totalSessions)} />
+                <MetaStat label="Last Visit" value={visit(p.lastVisit)} className="sm:col-span-2" />
               </div>
             </div>
           );
@@ -280,22 +294,5 @@ export function PatientsList({ patients, isLoading, clinicId }: Props) {
         confirmLabel="Yes, delete patient"
       />
     </>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  className,
-}: {
-  label: string;
-  value: string;
-  className?: string;
-}) {
-  return (
-    <div className={`min-w-0 ${className ?? ''}`}>
-      <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="truncate font-medium">{value}</p>
-    </div>
   );
 }

@@ -43,14 +43,6 @@ export function mapPractitioner(row: Row) {
     defaultRoomName: row.defaultRoom?.name ?? null,
     employmentType: row.employmentType,
     commissionPercent: toNumber(row.commissionPercent),
-    calendarColor: (row.calendarColor as
-      | "brand"
-      | "accent-teal"
-      | "primary"
-      | "success"
-      | "warning"
-      | "destructive"
-      | null) ?? null,
     bufferMins: row.bufferMins,
     isActive: row.isActive,
     serviceIds: row.services.map((s) => s.serviceId),

@@ -109,7 +109,6 @@ export class PractitionersRepository {
             dto.commissionPercent === undefined || dto.commissionPercent === null
               ? null
               : dto.commissionPercent,
-          calendarColor: dto.calendarColor ?? null,
           bufferMins: dto.bufferMins ?? 0,
         },
       });
