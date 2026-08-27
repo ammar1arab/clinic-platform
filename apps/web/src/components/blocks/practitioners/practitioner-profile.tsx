@@ -17,10 +17,7 @@ import {
   RowActionsMenu,
 } from '@/components/primitives';
 import { GENDERS } from '@/constants/patient';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
 import {
   ProfileEmpty,
   ProfileHero,
@@ -38,14 +35,9 @@ import {
   useReactivatePractitioner,
 } from '@/hooks/api/use-practitioners';
 import { calcAge } from '@/lib/age';
-import { formatTimeRange } from '@/lib/datetime';
+import { formatDate, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
-import {
-  IconActivate,
-  IconDeactivate,
-  IconDelete,
-  IconEdit,
-} from '@/constants/icons';
+import { IconActivate, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
 
 function employmentLabel(type: string | null | undefined) {
   if (!type) return null;
@@ -71,13 +63,10 @@ export function PractitionerProfile({
     : practitioner.name;
   const languages = languageLabelList(practitioner.languages);
   const genderLabel =
-    GENDERS.find((g) => g.value === practitioner.gender)?.label ??
-    practitioner.gender;
+    GENDERS.find((g) => g.value === practitioner.gender)?.label ?? practitioner.gender;
   const age = calcAge(practitioner.dob);
   const dobText = practitioner.dob
-    ? `${format(new Date(practitioner.dob), 'MMM d, yyyy')}${
-        age != null ? ` (${age} yrs)` : ''
-      }`
+    ? `${format(new Date(practitioner.dob), 'MMM d, yyyy')}${age != null ? ` (${age} yrs)` : ''}`
     : null;
 
   return (
@@ -127,10 +116,7 @@ export function PractitionerProfile({
             <ProfileStatusBadge active={practitioner.isActive} />
             {practitioner.employmentType ? (
               <Badge
-                variant={
-                  PRACTITIONER_EMPLOYMENT_VARIANT[practitioner.employmentType] ??
-                  'outline'
-                }
+                variant={PRACTITIONER_EMPLOYMENT_VARIANT[practitioner.employmentType] ?? 'outline'}
                 className="font-normal"
               >
                 {employmentLabel(practitioner.employmentType)}
@@ -138,12 +124,8 @@ export function PractitionerProfile({
             ) : null}
           </>
         }
-        subtitle={
-          practitioner.specialty ? <p>{practitioner.specialty}</p> : null
-        }
-        meta={
-          <ContactLine phone={practitioner.phone} email={practitioner.email} />
-        }
+        subtitle={practitioner.specialty ? <p>{practitioner.specialty}</p> : null}
+        meta={<ContactLine phone={practitioner.phone} email={practitioner.email} />}
         stats={[
           {
             label: 'Services',
@@ -156,9 +138,7 @@ export function PractitionerProfile({
           {
             label: 'Experience',
             value:
-              practitioner.experienceYears != null
-                ? `${practitioner.experienceYears} yrs`
-                : '—',
+              practitioner.experienceYears != null ? `${practitioner.experienceYears} yrs` : '—',
           },
         ]}
       />
@@ -166,14 +146,8 @@ export function PractitionerProfile({
       <ProfileSection title="Overview">
         <ProfileInfoGrid className="lg:grid-cols-3">
           <ProfileInfoField label="Specialty" value={practitioner.specialty} />
-          <ProfileInfoField
-            label="Department"
-            value={practitioner.departmentName}
-          />
-          <ProfileInfoField
-            label="Default room"
-            value={practitioner.defaultRoomName}
-          />
+          <ProfileInfoField label="Department" value={practitioner.departmentName} />
+          <ProfileInfoField label="Default room" value={practitioner.defaultRoomName} />
           <ProfileInfoField
             label="Employment"
             value={employmentLabel(practitioner.employmentType)}
@@ -181,15 +155,10 @@ export function PractitionerProfile({
           <ProfileInfoField
             label="Commission"
             value={
-              practitioner.commissionPercent != null
-                ? `${practitioner.commissionPercent}%`
-                : null
+              practitioner.commissionPercent != null ? `${practitioner.commissionPercent}%` : null
             }
           />
-          <ProfileInfoField
-            label="Nationality"
-            value={countryLabel(practitioner.nationality)}
-          />
+          <ProfileInfoField label="Nationality" value={countryLabel(practitioner.nationality)} />
           <ProfileInfoField label="Gender" value={genderLabel} />
           <ProfileInfoField label="Date of birth" value={dobText} />
           {languages.length > 0 ? (
@@ -205,10 +174,7 @@ export function PractitionerProfile({
           ) : null}
           {practitioner.whatsapp ? (
             <ProfileInfoField label="WhatsApp" value={practitioner.whatsapp}>
-              <PhoneLink
-                value={practitioner.whatsapp}
-                className="block text-sm font-medium"
-              />
+              <PhoneLink value={practitioner.whatsapp} className="block text-sm font-medium" />
             </ProfileInfoField>
           ) : null}
           <ProfileInfoField label="License" value={practitioner.licenseNumber} />
@@ -239,9 +205,7 @@ export function PractitionerProfile({
         <ProfileSection
           title="Services"
           description={
-            practitioner.services.length
-              ? `${practitioner.services.length} assigned`
-              : undefined
+            practitioner.services.length ? `${practitioner.services.length} assigned` : undefined
           }
           className="h-full"
         >
@@ -269,13 +233,13 @@ export function PractitionerProfile({
             <ProfileEmpty>No weekly patterns.</ProfileEmpty>
           ) : (
             <div className="space-y-1.5">
-              {practitioner.availabilities.map((a, i) => (
+              {practitioner.availabilities.map((slot, index) => (
                 <ProfileSoftRow
-                  key={a.id ?? `${a.dayOfWeek}-${i}`}
-                  title={WEEKDAY_OPTIONS[a.dayOfWeek] ?? `Day ${a.dayOfWeek}`}
+                  key={slot.id ?? `${slot.dayOfWeek}-${index}`}
+                  title={WEEKDAY_OPTIONS[slot.dayOfWeek] ?? `Day ${slot.dayOfWeek}`}
                 >
                   <span className="shrink-0 tabular-nums text-muted-foreground">
-                    {formatTimeRange(a.startTime, a.endTime)}
+                    {formatTimeRange(slot.startTime, slot.endTime)}
                   </span>
                 </ProfileSoftRow>
               ))}
@@ -288,11 +252,11 @@ export function PractitionerProfile({
             <ProfileEmpty>No leave blocks.</ProfileEmpty>
           ) : (
             <div className="space-y-1.5">
-              {practitioner.timeOffs.map((t, i) => (
+              {practitioner.timeOffs.map((block, index) => (
                 <ProfileSoftRow
-                  key={t.id ?? `${t.startDate}-${i}`}
-                  title={`${format(new Date(t.startDate), 'MMM d, yyyy')} – ${format(new Date(t.endDate), 'MMM d, yyyy')}`}
-                  detail={t.reason}
+                  key={block.id ?? `${block.startDate}-${index}`}
+                  title={`${formatDate(block.startDate)} - ${formatDate(block.endDate)}`}
+                  detail={block.reason}
                 />
               ))}
             </div>

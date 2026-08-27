@@ -19,7 +19,7 @@ function NewPatientInner() {
   const backLabel = fromSchedule ? 'Back to Schedule' : 'Back to Patients';
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">
       <PageBack backHref={backHref} backLabel={backLabel} />
 
       <PatientForm

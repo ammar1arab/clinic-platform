@@ -30,7 +30,7 @@ export default function EditPatientPage({ params }: { params: Promise<{ id: stri
     : '';
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">
       <PageBack
         backHref={`/patients/${id}`}
         backLabel="Back to Patient"
