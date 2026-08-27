@@ -1,11 +1,4 @@
-/**
- * Clinic-scoped demo seed for the live DB.
- * Keeps Clinic / User / ClinicUser; wipes and recreates operational data.
- *
- *   cd apps/api && npm run seed
- *   SEED_CLINIC_ID=<uuid> npm run seed
- */
-import 'dotenv/config';
+import "dotenv/config";
 import {
   PrismaClient,
   Prisma,
@@ -17,16 +10,16 @@ import {
   type Patient,
   type PatientPackage,
   type Appointment,
-} from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool } from 'pg';
-import * as bcrypt from 'bcrypt';
+} from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+import * as bcrypt from "bcrypt";
 
-const DEMO_PASSWORD = 'Demo123!';
+const DEMO_PASSWORD = "Demo123!";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('localhost')
+  ssl: process.env.DATABASE_URL?.includes("localhost")
     ? undefined
     : { rejectUnauthorized: false },
 });
@@ -41,7 +34,10 @@ function daysFromNow(offset: number, hour = 9, minute = 0) {
 }
 
 function pick<T>(arr: readonly T[], i: number): T {
-  return arr[i % arr.length]!;
+  if (arr.length === 0) throw new Error("pick: empty array");
+  const item = arr[i % arr.length];
+  if (item === undefined) throw new Error("pick: missing item");
+  return item;
 }
 
 async function resetClinicOperationalData(clinicId: string) {
@@ -60,7 +56,9 @@ async function resetClinicOperationalData(clinicId: string) {
     await prisma.clinicUserService.deleteMany({
       where: { clinicUserId: { in: staffIds } },
     });
-    await prisma.doctorTimeOff.deleteMany({ where: { doctorId: { in: staffIds } } });
+    await prisma.doctorTimeOff.deleteMany({
+      where: { doctorId: { in: staffIds } },
+    });
     await prisma.doctorAvailability.deleteMany({
       where: { doctorId: { in: staffIds } },
     });
@@ -79,15 +77,27 @@ async function ensureExtraStaff(clinicId: string) {
     where: { clinicId, isActive: true },
   });
   const practitioners = existing.filter((u) =>
-    ['owner', 'admin', 'practitioner'].includes(u.role),
+    ["owner", "admin", "practitioner"].includes(u.role),
   );
   if (practitioners.length >= 3) return practitioners;
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const extras = [
-    { email: 'dr.sara.demo@clinic.local', name: 'Dr. Sara Haddad', role: 'practitioner' as const },
-    { email: 'dr.omar.demo@clinic.local', name: 'Dr. Omar Nasser', role: 'practitioner' as const },
-    { email: 'finance.demo@clinic.local', name: 'Lina Finance', role: 'financial' as const },
+    {
+      email: "dr.sara.demo@clinic.local",
+      name: "Dr. Sara Haddad",
+      role: "practitioner" as const,
+    },
+    {
+      email: "dr.omar.demo@clinic.local",
+      name: "Dr. Omar Nasser",
+      role: "practitioner" as const,
+    },
+    {
+      email: "finance.demo@clinic.local",
+      name: "Lina Finance",
+      role: "financial" as const,
+    },
   ];
 
   const created = [...practitioners];
@@ -118,22 +128,22 @@ async function ensureExtraStaff(clinicId: string) {
           clinicId,
           role: e.role,
           name: e.name,
-          title: e.role === 'practitioner' ? 'Dr' : null,
+          title: e.role === "practitioner" ? "Dr" : null,
           initials: e.name
-            .split(' ')
+            .split(" ")
             .map((p) => p[0])
-            .join('')
+            .join("")
             .slice(0, 3),
           phone: `+96279${String(1000000 + created.length).slice(0, 7)}`,
-          employmentType: e.role === 'practitioner' ? 'salaried' : null,
+          employmentType: e.role === "practitioner" ? "salaried" : null,
           calendarColor:
-            e.role === 'practitioner'
+            e.role === "practitioner"
               ? pick(
-                  ['brand', 'accent-teal', 'primary', 'success'] as const,
+                  ["brand", "accent-teal", "primary", "success"] as const,
                   created.length,
                 )
               : null,
-          bufferMins: e.role === 'practitioner' ? 10 : 0,
+          bufferMins: e.role === "practitioner" ? 10 : 0,
         },
       }));
     if (!created.find((c) => c.id === cu.id)) created.push(cu);
@@ -147,7 +157,9 @@ async function resolveClinic() {
       where: { id: process.env.SEED_CLINIC_ID },
     });
     if (!byId) {
-      throw new Error(`SEED_CLINIC_ID not found: ${process.env.SEED_CLINIC_ID}`);
+      throw new Error(
+        `SEED_CLINIC_ID not found: ${process.env.SEED_CLINIC_ID}`,
+      );
     }
     return byId;
   }
@@ -157,14 +169,14 @@ async function resolveClinic() {
       users: { include: { user: { select: { email: true } } } },
       _count: { select: { users: true, patients: true } },
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: { createdAt: "asc" },
   });
 
   if (clinics.length === 0) return null;
 
-  console.log('Available clinics:');
+  console.log("Available clinics:");
   for (const c of clinics) {
-    const emails = c.users.map((u) => u.user.email).join(', ');
+    const emails = c.users.map((u) => u.user.email).join(", ");
     console.log(
       `  - ${c.name} (${c.id}) staff=${c._count.users} patients=${c._count.patients} [${emails}]`,
     );
@@ -172,9 +184,8 @@ async function resolveClinic() {
 
   const preferred =
     clinics.find((c) =>
-      c.users.some((u) => u.user.email.toLowerCase() === 'owner@clinic.com'),
-    ) ??
-    [...clinics].sort((a, b) => b._count.users - a._count.users)[0];
+      c.users.some((u) => u.user.email.toLowerCase() === "owner@clinic.com"),
+    ) ?? [...clinics].sort((a, b) => b._count.users - a._count.users)[0];
 
   return preferred;
 }
@@ -184,34 +195,39 @@ async function main() {
 
   if (!clinic) {
     throw new Error(
-      'No clinic found. Register/login once to create a clinic, then re-run: npm run seed',
+      "No clinic found. Register/login once to create a clinic, then re-run: npm run seed",
     );
   }
 
   console.log(`\nSeeding clinic: ${clinic.name} (${clinic.id})`);
   await resetClinicOperationalData(clinic.id);
-  console.log('Cleared operational data');
+  console.log("Cleared operational data");
 
   const staff = await ensureExtraStaff(clinic.id);
   const doctors = staff.filter((s) =>
-    ['owner', 'admin', 'practitioner'].includes(s.role),
+    ["owner", "admin", "practitioner"].includes(s.role),
   );
-  const payer = staff.find((s) => s.role === 'financial') ?? staff[0];
+  const payer = staff.find((s) => s.role === "financial") ?? staff[0];
   console.log(`Staff ready: ${staff.length} (doctors: ${doctors.length})`);
 
   const deptDefs = [
-    { name: 'General Medicine', nameAr: 'الطب العام' },
-    { name: 'Pediatrics', nameAr: 'طب الأطفال' },
-    { name: 'Dermatology', nameAr: 'الأمراض الجلدية' },
-    { name: 'Physiotherapy', nameAr: 'العلاج الطبيعي' },
-    { name: 'Cardiology', nameAr: 'أمراض القلب' },
-    { name: 'Archive (inactive)', nameAr: 'الأرشيف', isActive: false },
+    { name: "General Medicine", nameAr: "الطب العام" },
+    { name: "Pediatrics", nameAr: "طب الأطفال" },
+    { name: "Dermatology", nameAr: "الأمراض الجلدية" },
+    { name: "Physiotherapy", nameAr: "العلاج الطبيعي" },
+    { name: "Cardiology", nameAr: "أمراض القلب" },
+    { name: "Archive (inactive)", nameAr: "الأرشيف", isActive: false },
   ];
   const departments: Department[] = [];
   for (const d of deptDefs) {
     departments.push(
       await prisma.department.create({
-        data: { clinicId: clinic.id, name: d.name, nameAr: d.nameAr, isActive: d.isActive ?? true },
+        data: {
+          clinicId: clinic.id,
+          name: d.name,
+          nameAr: d.nameAr,
+          isActive: d.isActive ?? true,
+        },
       }),
     );
   }
@@ -240,20 +256,104 @@ async function main() {
     dept: number;
     durationMins: number;
     fee: number;
-    modes: ('in_person' | 'online')[];
+    modes: ("in_person" | "online")[];
   }> = [
-    { name: 'General Consultation', nameAr: 'استشارة عامة', dept: 0, durationMins: 30, fee: 25, modes: ['in_person', 'online'] },
-    { name: 'Follow-up Visit', nameAr: 'مراجعة', dept: 0, durationMins: 20, fee: 15, modes: ['in_person', 'online'] },
-    { name: 'Child Checkup', nameAr: 'فحص طفل', dept: 1, durationMins: 30, fee: 30, modes: ['in_person'] },
-    { name: 'Vaccination', nameAr: 'تطعيم', dept: 1, durationMins: 15, fee: 20, modes: ['in_person'] },
-    { name: 'Skin Assessment', nameAr: 'تقييم جلدي', dept: 2, durationMins: 40, fee: 40, modes: ['in_person', 'online'] },
-    { name: 'Acne Treatment', nameAr: 'علاج حب الشباب', dept: 2, durationMins: 45, fee: 55, modes: ['in_person'] },
-    { name: 'Physio Session', nameAr: 'جلسة علاج طبيعي', dept: 3, durationMins: 45, fee: 35, modes: ['in_person'] },
-    { name: 'Rehab Package Visit', nameAr: 'جلسة تأهيل', dept: 3, durationMins: 60, fee: 45, modes: ['in_person'] },
-    { name: 'ECG', nameAr: 'تخطيط قلب', dept: 4, durationMins: 25, fee: 50, modes: ['in_person'] },
-    { name: 'Cardio Consult', nameAr: 'استشارة قلب', dept: 4, durationMins: 40, fee: 60, modes: ['in_person', 'online'] },
-    { name: 'Telehealth Quick', nameAr: 'استشارة سريعة', dept: 0, durationMins: 15, fee: 12, modes: ['online'] },
-    { name: 'Full Physical', nameAr: 'فحص شامل', dept: 0, durationMins: 60, fee: 70, modes: ['in_person'] },
+    {
+      name: "General Consultation",
+      nameAr: "استشارة عامة",
+      dept: 0,
+      durationMins: 30,
+      fee: 25,
+      modes: ["in_person", "online"],
+    },
+    {
+      name: "Follow-up Visit",
+      nameAr: "مراجعة",
+      dept: 0,
+      durationMins: 20,
+      fee: 15,
+      modes: ["in_person", "online"],
+    },
+    {
+      name: "Child Checkup",
+      nameAr: "فحص طفل",
+      dept: 1,
+      durationMins: 30,
+      fee: 30,
+      modes: ["in_person"],
+    },
+    {
+      name: "Vaccination",
+      nameAr: "تطعيم",
+      dept: 1,
+      durationMins: 15,
+      fee: 20,
+      modes: ["in_person"],
+    },
+    {
+      name: "Skin Assessment",
+      nameAr: "تقييم جلدي",
+      dept: 2,
+      durationMins: 40,
+      fee: 40,
+      modes: ["in_person", "online"],
+    },
+    {
+      name: "Acne Treatment",
+      nameAr: "علاج حب الشباب",
+      dept: 2,
+      durationMins: 45,
+      fee: 55,
+      modes: ["in_person"],
+    },
+    {
+      name: "Physio Session",
+      nameAr: "جلسة علاج طبيعي",
+      dept: 3,
+      durationMins: 45,
+      fee: 35,
+      modes: ["in_person"],
+    },
+    {
+      name: "Rehab Package Visit",
+      nameAr: "جلسة تأهيل",
+      dept: 3,
+      durationMins: 60,
+      fee: 45,
+      modes: ["in_person"],
+    },
+    {
+      name: "ECG",
+      nameAr: "تخطيط قلب",
+      dept: 4,
+      durationMins: 25,
+      fee: 50,
+      modes: ["in_person"],
+    },
+    {
+      name: "Cardio Consult",
+      nameAr: "استشارة قلب",
+      dept: 4,
+      durationMins: 40,
+      fee: 60,
+      modes: ["in_person", "online"],
+    },
+    {
+      name: "Telehealth Quick",
+      nameAr: "استشارة سريعة",
+      dept: 0,
+      durationMins: 15,
+      fee: 12,
+      modes: ["online"],
+    },
+    {
+      name: "Full Physical",
+      nameAr: "فحص شامل",
+      dept: 0,
+      durationMins: 60,
+      fee: 70,
+      modes: ["in_person"],
+    },
   ];
 
   const services: Service[] = [];
@@ -281,22 +381,22 @@ async function main() {
       .filter((s) => s.departmentId === dept.id)
       .slice(0, 3);
     const employment =
-      doctors[i].employmentType ?? (i % 3 === 0 ? 'commission' : 'salaried');
+      doctors[i].employmentType ?? (i % 3 === 0 ? "commission" : "salaried");
     await prisma.clinicUser.update({
       where: { id: doctors[i].id },
       data: {
-        title: doctors[i].title ?? 'Dr',
+        title: doctors[i].title ?? "Dr",
         departmentId: dept.id,
         defaultRoomId: room?.id ?? null,
         employmentType: employment,
         commissionPercent:
-          employment === 'commission' || employment === 'mixed'
+          employment === "commission" || employment === "mixed"
             ? new Prisma.Decimal(25)
             : null,
         calendarColor:
           doctors[i].calendarColor ??
           pick(
-            ['brand', 'accent-teal', 'primary', 'success', 'warning'] as const,
+            ["brand", "accent-teal", "primary", "success", "warning"] as const,
             i,
           ),
         bufferMins: doctors[i].bufferMins || 10,
@@ -314,7 +414,7 @@ async function main() {
   }
 
   const payMethods: PaymentMethod[] = [];
-  const payNames = ['Cash', 'Card', 'Transfer', 'Insurance', 'Other'] as const;
+  const payNames = ["Cash", "Card", "Transfer", "Insurance", "Other"] as const;
   for (let i = 0; i < payNames.length; i++) {
     payMethods.push(
       await prisma.paymentMethod.create({
@@ -327,8 +427,8 @@ async function main() {
     prisma.package.create({
       data: {
         clinicId: clinic.id,
-        name: '10-Session Bundle',
-        description: 'Ten physio/general sessions',
+        name: "10-Session Bundle",
+        description: "Ten physio/general sessions",
         sessionCount: 10,
         price: new Prisma.Decimal(300),
         sortOrder: 0,
@@ -337,11 +437,11 @@ async function main() {
     prisma.package.create({
       data: {
         clinicId: clinic.id,
-        name: '5-Visit Cardio Pack',
-        description: 'Five cardiology visits',
+        name: "5-Visit Cardio Pack",
+        description: "Five cardiology visits",
         sessionCount: 5,
         price: new Prisma.Decimal(250),
-        discountType: 'percentage',
+        discountType: "percentage",
         discountValue: new Prisma.Decimal(10),
         sortOrder: 1,
       },
@@ -349,8 +449,8 @@ async function main() {
     prisma.package.create({
       data: {
         clinicId: clinic.id,
-        name: 'Prepaid Credit 100 JOD',
-        description: 'Credit wallet for any visit',
+        name: "Prepaid Credit 100 JOD",
+        description: "Credit wallet for any visit",
         sessionCount: null,
         price: new Prisma.Decimal(100),
         sortOrder: 2,
@@ -359,8 +459,8 @@ async function main() {
     prisma.package.create({
       data: {
         clinicId: clinic.id,
-        name: 'Prepaid Credit 50 JOD',
-        description: 'Smaller credit pot',
+        name: "Prepaid Credit 50 JOD",
+        description: "Smaller credit pot",
         sessionCount: null,
         price: new Prisma.Decimal(50),
         sortOrder: 3,
@@ -373,8 +473,8 @@ async function main() {
     prisma.discountCode.create({
       data: {
         clinicId: clinic.id,
-        code: 'WELCOME10',
-        discountType: 'percentage',
+        code: "WELCOME10",
+        discountType: "percentage",
         discountValue: new Prisma.Decimal(10),
         maxUses: 100,
         usedCount: 3,
@@ -385,8 +485,8 @@ async function main() {
     prisma.discountCode.create({
       data: {
         clinicId: clinic.id,
-        code: 'FLAT5',
-        discountType: 'fixed',
+        code: "FLAT5",
+        discountType: "fixed",
         discountValue: new Prisma.Decimal(5),
         maxUses: 50,
         usedCount: 1,
@@ -397,8 +497,8 @@ async function main() {
     prisma.discountCode.create({
       data: {
         clinicId: clinic.id,
-        code: 'SUMMER20',
-        discountType: 'percentage',
+        code: "SUMMER20",
+        discountType: "percentage",
         discountValue: new Prisma.Decimal(20),
         maxUses: 20,
         usedCount: 0,
@@ -409,8 +509,8 @@ async function main() {
     prisma.discountCode.create({
       data: {
         clinicId: clinic.id,
-        code: 'EXPIRED15',
-        discountType: 'percentage',
+        code: "EXPIRED15",
+        discountType: "percentage",
         discountValue: new Prisma.Decimal(15),
         validFrom: daysFromNow(-90),
         validTo: daysFromNow(-1),
@@ -420,8 +520,8 @@ async function main() {
     prisma.discountCode.create({
       data: {
         clinicId: clinic.id,
-        code: 'MAXED',
-        discountType: 'fixed',
+        code: "MAXED",
+        discountType: "fixed",
         discountValue: new Prisma.Decimal(8),
         maxUses: 2,
         usedCount: 2,
@@ -432,8 +532,8 @@ async function main() {
     prisma.discountCode.create({
       data: {
         clinicId: clinic.id,
-        code: 'STAFF25',
-        discountType: 'percentage',
+        code: "STAFF25",
+        discountType: "percentage",
         discountValue: new Prisma.Decimal(25),
         validFrom: daysFromNow(-1),
         validTo: daysFromNow(365),
@@ -442,17 +542,51 @@ async function main() {
   ]);
 
   const firstNames = [
-    'Ahmad', 'Layla', 'Yousef', 'Noor', 'Khaled', 'Maya', 'Tariq', 'Hala',
-    'Rami', 'Sara', 'Fadi', 'Dina', 'Zaid', 'Rana', 'Samir', 'Lina',
-    'Hasan', 'Farah', 'Basel', 'Nadia', 'Omar', 'Jana', 'Walid', 'Reem',
-    'Issa', 'Dana',
+    "Ahmad",
+    "Layla",
+    "Yousef",
+    "Noor",
+    "Khaled",
+    "Maya",
+    "Tariq",
+    "Hala",
+    "Rami",
+    "Sara",
+    "Fadi",
+    "Dina",
+    "Zaid",
+    "Rana",
+    "Samir",
+    "Lina",
+    "Hasan",
+    "Farah",
+    "Basel",
+    "Nadia",
+    "Omar",
+    "Jana",
+    "Walid",
+    "Reem",
+    "Issa",
+    "Dana",
   ];
   const lastNames = [
-    'Al-Masri', 'Haddad', 'Nasser', 'Khoury', 'Saleh', 'Qasim', 'Farouq',
-    'Barakat', 'Awad', 'Hamdan', 'Zoubi', 'Taha', 'Jaber', 'Mansour',
+    "Al-Masri",
+    "Haddad",
+    "Nasser",
+    "Khoury",
+    "Saleh",
+    "Qasim",
+    "Farouq",
+    "Barakat",
+    "Awad",
+    "Hamdan",
+    "Zoubi",
+    "Taha",
+    "Jaber",
+    "Mansour",
   ];
-  const genders = ['male', 'female'];
-  const bloods = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+  const genders = ["male", "female"];
+  const bloods = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
 
   const patients: Patient[] = [];
   for (let i = 0; i < 52; i++) {
@@ -471,14 +605,14 @@ async function main() {
           firstNameAr: fn,
           lastNameAr: ln,
           nationalId: `99${String(100000000 + i).slice(0, 9)}`,
-          phone: `+96279${String(2000000 + i).padStart(7, '0')}`,
-          email: `${fn.toLowerCase()}.${ln.toLowerCase().replace(/[^a-z]/g, '')}${i}@demo.local`,
+          phone: `+96279${String(2000000 + i).padStart(7, "0")}`,
+          email: `${fn.toLowerCase()}.${ln.toLowerCase().replace(/[^a-z]/g, "")}${i}@demo.local`,
           dob: new Date(1980 + (i % 30), i % 12, (i % 27) + 1),
           gender: pick(genders, i),
           bloodType: pick(bloods, i),
-          allergies: i % 4 === 0 ? 'Penicillin' : i % 7 === 0 ? 'Dust' : null,
+          allergies: i % 4 === 0 ? "Penicillin" : i % 7 === 0 ? "Dust" : null,
           emergencyContactName: `EC ${fn}`,
-          emergencyContactPhone: `+96278${String(3000000 + i).padStart(7, '0')}`,
+          emergencyContactPhone: `+96278${String(3000000 + i).padStart(7, "0")}`,
           address: `Amman — Street ${(i % 40) + 1}, Building ${(i % 12) + 1}`,
           primaryDoctorId: doctor.id,
           packageId: pkg?.id ?? null,
@@ -504,21 +638,21 @@ async function main() {
           packageId: pkg.id,
           sessionsTotal: isSession ? pkg.sessionCount : null,
           creditTotal: isSession ? null : pkg.price,
-          notes: 'Demo enrollment',
+          notes: "Demo enrollment",
         },
       }),
     );
   }
 
   const statuses: AppointmentStatus[] = [
-    'unconfirmed',
-    'confirmed',
-    'checked_in',
-    'waiting',
-    'in_progress',
-    'completed',
-    'no_show',
-    'cancelled',
+    "unconfirmed",
+    "confirmed",
+    "checked_in",
+    "waiting",
+    "in_progress",
+    "completed",
+    "no_show",
+    "cancelled",
   ];
 
   let apptCount = 0;
@@ -532,62 +666,70 @@ async function main() {
       const service = pick(services, apptCount);
       const deptId = service.departmentId ?? departments[0].id;
       const roomCandidates = rooms.filter((r) => r.departmentId === deptId);
-      const online = service.supportedModes.includes('online') && slot % 5 === 0;
+      const online =
+        service.supportedModes.includes("online") && slot % 5 === 0;
       const hour = 8 + (slot % 10);
       const minute = slot % 2 === 0 ? 0 : 30;
       const scheduledAt = daysFromNow(day, hour, minute);
       const status = pick(statuses, apptCount + day + 3);
-      const isTerminalMiss = status === 'cancelled' || status === 'no_show';
+      const isTerminalMiss = status === "cancelled" || status === "no_show";
       const enrollment =
         enrollments.find((e) => e.patientId === patient.id) ?? null;
 
       const fee = Number(service.fee);
       let discount: number | null = null;
-      let discountType: 'fixed' | 'percentage' | null = null;
+      let discountType: "fixed" | "percentage" | null = null;
       let discountReason: string | null = null;
       let discountCodeId: string | null = null;
       if (apptCount % 6 === 0) {
         discount = 10;
-        discountType = 'percentage';
-        discountReason = 'Demo loyalty';
+        discountType = "percentage";
+        discountReason = "Demo loyalty";
       } else if (apptCount % 9 === 0) {
         discount = 5;
-        discountType = 'fixed';
-        discountReason = 'Code: FLAT5';
+        discountType = "fixed";
+        discountReason = "Code: FLAT5";
         discountCodeId = codes[1].id;
       }
 
       const payable =
-        discountType === 'percentage'
+        discountType === "percentage"
           ? Math.max(fee - (fee * (discount ?? 0)) / 100, 0)
           : Math.max(fee - (discount ?? 0), 0);
 
       let waitingStartedAt: Date | null = null;
       let inProgressAt: Date | null = null;
       let waitingMins: number | null = null;
-      if (status === 'waiting' || status === 'checked_in') {
+      if (status === "waiting" || status === "checked_in") {
         waitingStartedAt = scheduledAt;
       }
-      if (status === 'in_progress' || status === 'completed') {
+      if (status === "in_progress" || status === "completed") {
         waitingStartedAt = scheduledAt;
-        inProgressAt = new Date(scheduledAt.getTime() + (15 + (apptCount % 40)) * 60_000);
+        inProgressAt = new Date(
+          scheduledAt.getTime() + (15 + (apptCount % 40)) * 60_000,
+        );
         waitingMins = Math.max(
           0,
-          Math.floor((inProgressAt.getTime() - waitingStartedAt.getTime()) / 60_000),
+          Math.floor(
+            (inProgressAt.getTime() - waitingStartedAt.getTime()) / 60_000,
+          ),
         );
       }
 
-      const usePackage =
-        !!enrollment &&
-        (status === 'completed' || status === 'in_progress') &&
-        apptCount % 4 === 0;
+      const activeEnrollment =
+        enrollment &&
+        (status === "completed" || status === "in_progress") &&
+        apptCount % 4 === 0
+          ? enrollment
+          : null;
+      const usePackage = activeEnrollment != null;
       const isPaid =
         usePackage ||
-        status === 'completed' ||
-        (status === 'in_progress' && apptCount % 2 === 0);
+        status === "completed" ||
+        (status === "in_progress" && apptCount % 2 === 0);
       const recordPayment = isPaid && !isTerminalMiss;
 
-      const isSessionEnrollment = enrollment?.sessionsTotal != null;
+      const isSessionEnrollment = activeEnrollment?.sessionsTotal != null;
 
       appointments.push(
         await prisma.appointment.create({
@@ -596,36 +738,41 @@ async function main() {
             patientId: patient.id,
             doctorId: doctor.id,
             departmentId: deptId,
-            roomId: online ? null : pick(roomCandidates.length ? roomCandidates : rooms, slot).id,
+            roomId: online
+              ? null
+              : pick(roomCandidates.length ? roomCandidates : rooms, slot).id,
             serviceId: service.id,
             scheduledAt,
             durationMins: service.durationMins,
-            sessionType: online ? 'online' : 'in_person',
-            meetingUrl: online ? 'https://meet.example.com/demo-room' : null,
+            sessionType: online ? "online" : "in_person",
+            meetingUrl: online ? "https://meet.example.com/demo-room" : null,
             status,
             statusUpdatedAt: now,
             statusUpdatedBy: doctor.userId,
             waitingStartedAt,
             inProgressAt,
             waitingMins,
-            cancelReason: status === 'cancelled' ? 'Patient requested reschedule' : null,
-            notes: apptCount % 7 === 0 ? 'Demo clinical note' : null,
+            cancelReason:
+              status === "cancelled" ? "Patient requested reschedule" : null,
+            notes: apptCount % 7 === 0 ? "Demo clinical note" : null,
             fee: new Prisma.Decimal(fee),
             discount: discount != null ? new Prisma.Decimal(discount) : null,
             discountType,
             discountReason,
             discountCodeId,
             isPaid: recordPayment,
-            paidAt: recordPayment ? inProgressAt ?? now : null,
+            paidAt: recordPayment ? (inProgressAt ?? now) : null,
             paidById: recordPayment ? payer.id : null,
             paymentMethodId:
-              recordPayment && !usePackage ? pick(payMethods, apptCount).id : null,
-            paymentMethod: usePackage
-              ? `Package: ${packages.find((p) => p.id === enrollment!.packageId)?.name ?? 'Demo'}`
+              recordPayment && !usePackage
+                ? pick(payMethods, apptCount).id
+                : null,
+            paymentMethod: activeEnrollment
+              ? `Package: ${packages.find((p) => p.id === activeEnrollment.packageId)?.name ?? "Demo"}`
               : null,
-            patientPackageId: usePackage ? enrollment!.id : null,
+            patientPackageId: activeEnrollment?.id ?? null,
             packageCredit:
-              usePackage && !isSessionEnrollment
+              activeEnrollment && !isSessionEnrollment
                 ? new Prisma.Decimal(payable)
                 : null,
           },
@@ -649,11 +796,11 @@ async function main() {
         appointmentId: appt.id,
         fromDoctorId: from.id,
         toDoctorId: to.id,
-        type: i % 2 === 0 ? 'referral' : 'consultation',
-        urgency: pick(['normal', 'high', 'urgent'] as const, i),
-        reason: 'Demo referral for specialist review',
-        opinion: i % 3 === 0 ? 'Agree with plan' : null,
-        status: pick(['pending', 'accepted', 'rejected'] as const, i),
+        type: i % 2 === 0 ? "referral" : "consultation",
+        urgency: pick(["normal", "high", "urgent"] as const, i),
+        reason: "Demo referral for specialist review",
+        opinion: i % 3 === 0 ? "Agree with plan" : null,
+        status: pick(["pending", "accepted", "rejected"] as const, i),
       },
     });
     referralCount++;
@@ -666,8 +813,8 @@ async function main() {
         data: {
           doctorId: doc.id,
           dayOfWeek,
-          startTime: '08:00',
-          endTime: '17:00',
+          startTime: "08:00",
+          endTime: "17:00",
           isActive: true,
         },
       });
@@ -677,7 +824,7 @@ async function main() {
         doctorId: doc.id,
         startDate: daysFromNow(20, 0, 0),
         endDate: daysFromNow(21, 23, 59),
-        reason: 'Conference',
+        reason: "Conference",
       },
     });
   }
@@ -690,17 +837,17 @@ async function main() {
         data: {
           clinicId: clinic.id,
           userId: user.id,
-          type: pick(['appointment', 'referral', 'system'] as const, i),
+          type: pick(["appointment", "referral", "system"] as const, i),
           title: pick(
             [
-              'New appointment booked',
-              'Referral awaiting response',
-              'Patient checked in',
-              'Package almost empty',
+              "New appointment booked",
+              "Referral awaiting response",
+              "Patient checked in",
+              "Package almost empty",
             ],
             i + notifCount,
           ),
-          body: 'Demo notification for UI coverage',
+          body: "Demo notification for UI coverage",
           readAt: i % 2 === 0 ? now : null,
         },
       });
@@ -708,7 +855,7 @@ async function main() {
     }
   }
 
-  console.log('--- Seed complete ---');
+  console.log("--- Seed complete ---");
   console.log(`Departments: ${departments.length}`);
   console.log(`Rooms: ${rooms.length}`);
   console.log(`Services: ${services.length}`);
@@ -721,7 +868,9 @@ async function main() {
   console.log(`Referrals: ${referralCount}`);
   console.log(`Notifications: ${notifCount}`);
   console.log(`Demo staff password (if created): ${DEMO_PASSWORD}`);
-  console.log('Emails: dr.sara.demo@clinic.local, dr.omar.demo@clinic.local, finance.demo@clinic.local');
+  console.log(
+    "Emails: dr.sara.demo@clinic.local, dr.omar.demo@clinic.local, finance.demo@clinic.local",
+  );
 }
 
 main()
