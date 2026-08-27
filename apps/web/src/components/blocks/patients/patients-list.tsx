@@ -9,27 +9,32 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { TruncatedText } from '@/components/primitives/truncated-text';
-import { Pagination } from '@/components/primitives/pagination';
-import { TableFrame } from '@/components/blocks/data/table-frame';
-import { EmptyState } from '@/components/primitives/empty-state';
-import { MetaStat } from '@/components/primitives/meta-stat';
-import { TableSkeleton } from '@/components/primitives/skeleton-presets';
-import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
+  Switch,
+  Badge,
+} from '@/components/ui';
 import {
-  IconDelete,
-  IconEdit,
-  IconLoyal,
-  IconPatients,
-  IconPhone,
-} from '@/constants/icons';
+  PreviewableAvatar,
+  isRowControlClick,
+  PhoneLink,
+  EmailLink,
+  TruncatedText,
+  Pagination,
+  EmptyState,
+  MetaStat,
+  TableSkeleton,
+  RowActionsMenu,
+  SoftTip,
+} from '@/components/primitives';
+import { TableFrame } from '@/components/blocks/data';
+import {
+  TwoStepDeleteDialogs,
+  useTwoStepDelete,
+} from '@/components/blocks/feedback';
 import { format } from 'date-fns';
-import { useTogglePatientStatus, useDeletePatient } from '@/hooks/use-patients';
+import { useTogglePatientStatus, useDeletePatient } from '@/hooks/api/use-patients';
 import type { Patient } from '@/services/patients.service';
+import { genderLabel, patientAgeLabel } from '@/constants/patient';
+import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconLoyal, IconPatients, IconPhone, IconView } from '@/constants/icons';
 
 const PAGE_SIZE = 15;
 
@@ -39,10 +44,6 @@ interface Props {
   clinicId: string;
   hasActiveFilters?: boolean;
   emptyAction?: React.ReactNode;
-}
-
-function initials(p: Patient) {
-  return `${p.firstNameEn?.[0] ?? ''}${p.lastNameEn?.[0] ?? ''}`.toUpperCase() || '?';
 }
 
 function patientName(p: Patient) {
@@ -84,6 +85,28 @@ export function PatientsList({
 
   const openPatient = (id: string) => router.push(`/patients/${id}`);
 
+  const rowMenu = (p: Patient, fullName: string) => (
+    <RowActionsMenu
+      items={[
+        { label: 'View', icon: IconView, href: `/patients/${p.id}` },
+        { label: 'Edit', icon: IconEdit, href: `/patients/${p.id}/edit` },
+        {
+          label: p.isActive ? 'Deactivate' : 'Reactivate',
+          icon: p.isActive ? IconDeactivate : IconActivate,
+          disabled: toggleStatus.isPending,
+          onSelect: () =>
+            toggleStatus.mutate({ id: p.id, isActive: !p.isActive }),
+        },
+        {
+          label: 'Delete',
+          icon: IconDelete,
+          variant: 'destructive',
+          onSelect: () => del.ask({ id: p.id, name: fullName }),
+        },
+      ]}
+    />
+  );
+
   if (isLoading) {
     return <TableSkeleton rows={8} cols={6} hasHeader={false} />;
   }
@@ -112,14 +135,16 @@ export function PatientsList({
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[24%]">Patient</TableHead>
-                <TableHead className="hidden md:table-cell w-[14%]">National ID</TableHead>
-                <TableHead className="w-[14%]">Phone</TableHead>
-                <TableHead className="hidden lg:table-cell w-[16%]">Practitioner</TableHead>
-                <TableHead className="w-[10%]">Sessions</TableHead>
-                <TableHead className="hidden xl:table-cell w-[12%]">Last Visit</TableHead>
-                <TableHead className="w-[10%]">Active</TableHead>
-                <TableHead className="w-[10%]" />
+                <TableHead className="w-[20%]">Patient</TableHead>
+                <TableHead className="hidden lg:table-cell w-[12%]">National ID</TableHead>
+                <TableHead className="w-[13%]">Phone</TableHead>
+                <TableHead className="w-[8%]">Gender</TableHead>
+                <TableHead className="w-[8%]">Age</TableHead>
+                <TableHead className="hidden lg:table-cell w-[14%]">Practitioner</TableHead>
+                <TableHead className="w-[8%]">Sessions</TableHead>
+                <TableHead className="hidden xl:table-cell w-[11%]">Last Visit</TableHead>
+                <TableHead className="w-[8%]">Active</TableHead>
+                <TableHead className="w-[8%]" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -129,26 +154,51 @@ export function PatientsList({
                   <TableRow
                     key={p.id}
                     className={`cursor-pointer ${!p.isActive ? 'opacity-60' : ''}`}
-                    onClick={() => openPatient(p.id)}
+                    onClick={(e) => {
+                      if (isRowControlClick(e)) return;
+                      openPatient(p.id);
+                    }}
                   >
                     <TableCell className="max-w-0 overflow-hidden">
                       <div className="flex min-w-0 items-center gap-2.5">
-                        <Avatar size="sm">
-                          <AvatarFallback>{initials(p)}</AvatarFallback>
-                        </Avatar>
+                        <PreviewableAvatar
+                          src={p.imageUrl}
+                          seed={p.id}
+                          alt={fullName}
+                          size="sm"
+                        />
                         <span className="flex min-w-0 items-center gap-1.5 font-medium">
                           <TruncatedText className="font-medium">{fullName}</TruncatedText>
                           {p.isLoyal && (
-                            <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
+                            <SoftTip label="Loyal patient">
+                              <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
+                            </SoftTip>
                           )}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell max-w-0 overflow-hidden text-muted-foreground">
+                    <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden text-muted-foreground">
                       <TruncatedText>{p.nationalId ?? '—'}</TruncatedText>
                     </TableCell>
-                    <TableCell className="max-w-0 overflow-hidden text-muted-foreground">
-                      <TruncatedText>{p.phone ?? '—'}</TruncatedText>
+                    <TableCell
+                      className="max-w-0 overflow-hidden text-muted-foreground"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <PhoneLink value={p.phone} className="block" />
+                    </TableCell>
+                    <TableCell>
+                      {genderLabel(p.gender) ? (
+                        <SoftTip label={genderLabel(p.gender)}>
+                          <Badge variant="outline" className="font-normal">
+                            {genderLabel(p.gender)}
+                          </Badge>
+                        </SoftTip>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {patientAgeLabel(p.dob) || '—'}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden text-muted-foreground">
                       <TruncatedText>{p.primaryDoctorName ?? '—'}</TruncatedText>
@@ -167,24 +217,7 @@ export function PatientsList({
                       />
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7"
-                          onClick={() => router.push(`/patients/${p.id}/edit`)}
-                        >
-                          <IconEdit className="size-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7 text-destructive hover:text-destructive"
-                          onClick={() => del.ask({ id: p.id, name: fullName })}
-                        >
-                          <IconDelete className="size-3.5" />
-                        </Button>
-                      </div>
+                      {rowMenu(p, fullName)}
                     </TableCell>
                   </TableRow>
                 );
@@ -202,7 +235,10 @@ export function PatientsList({
               key={p.id}
               role="button"
               tabIndex={0}
-              onClick={() => openPatient(p.id)}
+              onClick={(e) => {
+                if (isRowControlClick(e)) return;
+                openPatient(p.id);
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
@@ -214,19 +250,38 @@ export function PatientsList({
               }`}
             >
               <div className="flex items-start gap-3">
-                <Avatar>
-                  <AvatarFallback>{initials(p)}</AvatarFallback>
-                </Avatar>
+                <PreviewableAvatar src={p.imageUrl} seed={p.id} alt={fullName} />
                 <div className="min-w-0 flex-1">
                   <div className="flex min-w-0 items-center gap-1.5 font-medium">
                     <TruncatedText className="font-medium">{fullName}</TruncatedText>
                     {p.isLoyal && (
-                      <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
+                      <SoftTip label="Loyal patient">
+                        <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
+                      </SoftTip>
                     )}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <IconPhone className="size-3" />
-                    <TruncatedText>{p.phone ?? 'No phone'}</TruncatedText>
+                  {genderLabel(p.gender) || patientAgeLabel(p.dob) ? (
+                    <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                      {genderLabel(p.gender) ? (
+                        <SoftTip label={genderLabel(p.gender)}>
+                          <Badge variant="outline" className="font-normal">
+                            {genderLabel(p.gender)}
+                          </Badge>
+                        </SoftTip>
+                      ) : null}
+                      {patientAgeLabel(p.dob) ? (
+                        <span className="text-xs text-muted-foreground">
+                          {patientAgeLabel(p.dob)}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  <div
+                    className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <IconPhone className="size-3 shrink-0" />
+                    <PhoneLink value={p.phone} empty="No phone" className="min-w-0" />
                   </div>
                 </div>
                 <div
@@ -240,30 +295,15 @@ export function PatientsList({
                       toggleStatus.mutate({ id: p.id, isActive: checked })
                     }
                   />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7"
-                    onClick={() => router.push(`/patients/${p.id}/edit`)}
-                  >
-                    <IconEdit className="size-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 text-destructive hover:text-destructive"
-                    onClick={() => del.ask({ id: p.id, name: fullName })}
-                  >
-                    <IconDelete className="size-3.5" />
-                  </Button>
+                  {rowMenu(p, fullName)}
                 </div>
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs sm:grid-cols-3">
+              <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs">
                 <MetaStat label="National ID" value={p.nationalId ?? '—'} />
                 <MetaStat label="Practitioner" value={p.primaryDoctorName ?? '—'} />
                 <MetaStat label="Sessions" value={String(p.totalSessions)} />
-                <MetaStat label="Last Visit" value={visit(p.lastVisit)} className="sm:col-span-2" />
+                <MetaStat label="Last visit" value={visit(p.lastVisit)} />
               </div>
             </div>
           );
@@ -289,7 +329,7 @@ export function PatientsList({
           deleteMutation.mutate(del.step2.id, { onSuccess: del.clear });
         }}
         isPending={deleteMutation.isPending}
-        warning="This permanently removes the patient and their visit history. This cannot be undone. To just hide the patient, use the Active toggle instead."
+        warning="This permanently removes the patient and their visit history. This cannot be undone. To just hide the patient, use Deactivate instead."
         finalWarning="This permanently deletes the patient and every appointment linked to them. This action cannot be undone."
         confirmLabel="Yes, delete patient"
       />

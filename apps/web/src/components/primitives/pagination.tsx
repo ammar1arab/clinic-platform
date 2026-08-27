@@ -1,7 +1,7 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
+import { IconChevronLeft, IconChevronRight } from '@/constants/icons';
 
 interface Props {
   page: number;
@@ -30,7 +30,7 @@ export function Pagination({ page, pageCount, totalItems, pageSize, onPageChange
           onClick={() => onPageChange(page - 1)}
           aria-label="Previous page"
         >
-          <ChevronLeft className="size-4" />
+          <IconChevronLeft className="size-4" />
         </Button>
         <span className="min-w-16 text-center text-xs text-muted-foreground">
           Page {page} of {pageCount}
@@ -42,7 +42,7 @@ export function Pagination({ page, pageCount, totalItems, pageSize, onPageChange
           onClick={() => onPageChange(page + 1)}
           aria-label="Next page"
         >
-          <ChevronRight className="size-4" />
+          <IconChevronRight className="size-4" />
         </Button>
       </div>
     </div>

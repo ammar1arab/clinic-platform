@@ -1,50 +1,51 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { ArrowLeft, Pencil, UserCheck, UserX } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui';
 import {
+  languageLabelList,
   PRACTITIONER_EMPLOYMENT_LABEL,
+  PRACTITIONER_EMPLOYMENT_VARIANT,
   WEEKDAY_OPTIONS,
 } from '@/constants/practitioner';
+import {
+  countryLabel,
+  ContactLine,
+  PhoneLink,
+  PreviewableAvatar,
+  RowActionsMenu,
+} from '@/components/primitives';
+import { GENDERS } from '@/constants/patient';
+import {
+  TwoStepDeleteDialogs,
+  useTwoStepDelete,
+} from '@/components/blocks/feedback';
+import {
+  ProfileEmpty,
+  ProfileHero,
+  ProfileInfoField,
+  ProfileInfoGrid,
+  ProfileSection,
+  ProfileShell,
+  ProfileSoftRow,
+  ProfileStatusBadge,
+} from '@/components/blocks/profile';
 import { ROUTES } from '@/constants/routes';
 import {
+  useDeletePractitioner,
   useDeactivatePractitioner,
   useReactivatePractitioner,
-} from '@/hooks/use-practitioners';
+} from '@/hooks/api/use-practitioners';
+import { calcAge } from '@/lib/age';
+import { formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
-
-function InfoField({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | null | undefined;
-}) {
-  return (
-    <div className="min-w-0 space-y-0.5">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="truncate" title={value ?? undefined}>
-        {value?.trim() ? value : '—'}
-      </p>
-    </div>
-  );
-}
-
-function HeaderStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex-1 text-center">
-      <p className="text-lg font-semibold tracking-tight">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
-  );
-}
+import {
+  IconActivate,
+  IconDeactivate,
+  IconDelete,
+  IconEdit,
+} from '@/constants/icons';
 
 function employmentLabel(type: string | null | undefined) {
   if (!type) return null;
@@ -61,248 +62,264 @@ export function PractitionerProfile({
   const router = useRouter();
   const deactivate = useDeactivatePractitioner(clinicId);
   const reactivate = useReactivatePractitioner(clinicId);
+  const remove = useDeletePractitioner(clinicId);
+  const del = useTwoStepDelete<{ id: string; name: string }>();
 
-  const inits =
-    practitioner.initials?.slice(0, 2).toUpperCase() ||
-    practitioner.name.slice(0, 2).toUpperCase() ||
-    '?';
   const toggling = deactivate.isPending || reactivate.isPending;
   const titleName = practitioner.title
     ? `${practitioner.title} ${practitioner.name}`
     : practitioner.name;
+  const languages = languageLabelList(practitioner.languages);
+  const genderLabel =
+    GENDERS.find((g) => g.value === practitioner.gender)?.label ??
+    practitioner.gender;
+  const age = calcAge(practitioner.dob);
+  const dobText = practitioner.dob
+    ? `${format(new Date(practitioner.dob), 'MMM d, yyyy')}${
+        age != null ? ` (${age} yrs)` : ''
+      }`
+    : null;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-2"
-          onClick={() => router.push(ROUTES.PRACTITIONERS)}
-        >
-          <ArrowLeft className="mr-1.5 size-4" />
-          Back to Practitioners
-        </Button>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={toggling}
-            onClick={() =>
-              practitioner.isActive
-                ? deactivate.mutate(practitioner.id)
-                : reactivate.mutate(practitioner.id)
-            }
-          >
-            {practitioner.isActive ? (
-              <>
-                <UserX className="mr-1.5 size-3.5" />
-                Deactivate
-              </>
-            ) : (
-              <>
-                <UserCheck className="mr-1.5 size-3.5" />
-                Reactivate
-              </>
-            )}
-          </Button>
-          <Button size="sm" asChild>
-            <Link href={ROUTES.PRACTITIONERS_EDIT(practitioner.id)}>
-              <Pencil className="mr-1.5 size-3.5" />
-              Edit
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      <Card>
-        <CardContent className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
-          <Avatar className="size-20" size="lg">
-            {practitioner.imageUrl ? (
-              <AvatarImage src={practitioner.imageUrl} alt={practitioner.name} />
-            ) : null}
-            <AvatarFallback className="bg-primary/10 text-lg font-medium text-primary">
-              {inits}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate font-heading text-xl font-semibold tracking-tight">
-                {titleName}
-              </h2>
-              <Badge variant={practitioner.isActive ? 'secondary' : 'outline'}>
-                {practitioner.isActive ? 'Active' : 'Inactive'}
+    <ProfileShell
+      backHref={ROUTES.PRACTITIONERS}
+      backLabel="Back to Practitioners"
+      actions={
+        <RowActionsMenu
+          items={[
+            {
+              label: 'Edit',
+              icon: IconEdit,
+              href: ROUTES.PRACTITIONERS_EDIT(practitioner.id),
+            },
+            {
+              label: practitioner.isActive ? 'Deactivate' : 'Reactivate',
+              icon: practitioner.isActive ? IconDeactivate : IconActivate,
+              disabled: toggling,
+              onSelect: () =>
+                practitioner.isActive
+                  ? deactivate.mutate(practitioner.id)
+                  : reactivate.mutate(practitioner.id),
+            },
+            {
+              label: 'Delete',
+              icon: IconDelete,
+              variant: 'destructive',
+              onSelect: () => del.ask({ id: practitioner.id, name: titleName }),
+            },
+          ]}
+        />
+      }
+    >
+      <ProfileHero
+        avatar={
+          <PreviewableAvatar
+            src={practitioner.imageUrl}
+            seed={practitioner.id}
+            alt={practitioner.name}
+            size="xl"
+            priority
+          />
+        }
+        title={titleName}
+        badges={
+          <>
+            <ProfileStatusBadge active={practitioner.isActive} />
+            {practitioner.employmentType ? (
+              <Badge
+                variant={
+                  PRACTITIONER_EMPLOYMENT_VARIANT[practitioner.employmentType] ??
+                  'outline'
+                }
+                className="font-normal"
+              >
+                {employmentLabel(practitioner.employmentType)}
               </Badge>
-              {practitioner.employmentType ? (
-                <Badge variant="outline" className="font-normal">
-                  {employmentLabel(practitioner.employmentType)}
-                </Badge>
-              ) : null}
-            </div>
-            {practitioner.nameAr ? (
-              <p className="text-sm text-muted-foreground" dir="rtl">
-                {practitioner.nameAr}
-              </p>
             ) : null}
-            <p className="truncate text-sm text-muted-foreground">
-              {practitioner.email}
-              {practitioner.phone ? ` · ${practitioner.phone}` : ''}
-            </p>
-          </div>
-        </CardContent>
-        <Separator />
-        <div className="flex divide-x divide-border/70">
-          <HeaderStat label="Services" value={String(practitioner.services.length)} />
-          <HeaderStat label="Buffer" value={`${practitioner.bufferMins}m`} />
-          <HeaderStat
-            label="Experience"
-            value={
+          </>
+        }
+        subtitle={
+          practitioner.specialty ? <p>{practitioner.specialty}</p> : null
+        }
+        meta={
+          <ContactLine phone={practitioner.phone} email={practitioner.email} />
+        }
+        stats={[
+          {
+            label: 'Services',
+            value: String(practitioner.services.length),
+          },
+          {
+            label: 'Buffer',
+            value: `${practitioner.bufferMins}m`,
+          },
+          {
+            label: 'Experience',
+            value:
               practitioner.experienceYears != null
                 ? `${practitioner.experienceYears} yrs`
-                : '—'
+                : '—',
+          },
+        ]}
+      />
+
+      <ProfileSection title="Overview">
+        <ProfileInfoGrid className="lg:grid-cols-3">
+          <ProfileInfoField label="Specialty" value={practitioner.specialty} />
+          <ProfileInfoField
+            label="Department"
+            value={practitioner.departmentName}
+          />
+          <ProfileInfoField
+            label="Default room"
+            value={practitioner.defaultRoomName}
+          />
+          <ProfileInfoField
+            label="Employment"
+            value={employmentLabel(practitioner.employmentType)}
+          />
+          <ProfileInfoField
+            label="Commission"
+            value={
+              practitioner.commissionPercent != null
+                ? `${practitioner.commissionPercent}%`
+                : null
             }
           />
-        </div>
-      </Card>
+          <ProfileInfoField
+            label="Nationality"
+            value={countryLabel(practitioner.nationality)}
+          />
+          <ProfileInfoField label="Gender" value={genderLabel} />
+          <ProfileInfoField label="Date of birth" value={dobText} />
+          {languages.length > 0 ? (
+            <ProfileInfoField label="Languages" value={languages.join(', ')}>
+              <div className="flex flex-wrap gap-1">
+                {languages.map((label) => (
+                  <Badge key={label} variant="outline" className="font-normal">
+                    {label}
+                  </Badge>
+                ))}
+              </div>
+            </ProfileInfoField>
+          ) : null}
+          {practitioner.whatsapp ? (
+            <ProfileInfoField label="WhatsApp" value={practitioner.whatsapp}>
+              <PhoneLink
+                value={practitioner.whatsapp}
+                className="block text-sm font-medium"
+              />
+            </ProfileInfoField>
+          ) : null}
+          <ProfileInfoField label="License" value={practitioner.licenseNumber} />
+          <ProfileInfoField
+            label="License expiry"
+            value={
+              practitioner.licenseExpiry
+                ? format(new Date(practitioner.licenseExpiry), 'MMM d, yyyy')
+                : null
+            }
+          />
+          <ProfileInfoField
+            label="Joined"
+            value={format(new Date(practitioner.createdAt), 'MMM d, yyyy')}
+          />
+        </ProfileInfoGrid>
+      </ProfileSection>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Details</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <InfoField label="Department" value={practitioner.departmentName} />
-            <InfoField label="Default room" value={practitioner.defaultRoomName} />
-            <InfoField
-              label="Employment"
-              value={employmentLabel(practitioner.employmentType)}
-            />
-            <InfoField
-              label="Commission"
-              value={
-                practitioner.commissionPercent != null
-                  ? `${practitioner.commissionPercent}%`
-                  : null
-              }
-            />
-            <InfoField label="License" value={practitioner.licenseNumber} />
-            <InfoField
-              label="License expiry"
-              value={
-                practitioner.licenseExpiry
-                  ? format(new Date(practitioner.licenseExpiry), 'MMM d, yyyy')
-                  : null
-              }
-            />
-            <InfoField
-              label="Date of birth"
-              value={
-                practitioner.dob
-                  ? format(new Date(practitioner.dob), 'MMM d, yyyy')
-                  : null
-              }
-            />
-            <InfoField
-              label="Joined"
-              value={format(new Date(practitioner.createdAt), 'MMM d, yyyy')}
-            />
-          </CardContent>
-        </Card>
+      {practitioner.bio?.trim() ? (
+        <ProfileSection title="Bio">
+          <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+            {practitioner.bio}
+          </p>
+        </ProfileSection>
+      ) : null}
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Bio</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-              {practitioner.bio?.trim() || '—'}
-            </p>
-            {practitioner.bioAr?.trim() ? (
-              <p
-                className="text-sm whitespace-pre-wrap text-muted-foreground"
-                dir="rtl"
-              >
-                {practitioner.bioAr}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Services</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <ProfileSection
+          title="Services"
+          description={
+            practitioner.services.length
+              ? `${practitioner.services.length} assigned`
+              : undefined
+          }
+          className="h-full"
+        >
           {practitioner.services.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No services assigned.</p>
+            <ProfileEmpty>No services assigned.</ProfileEmpty>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <ul className="space-y-1.5">
               {practitioner.services.map((s) => (
-                <Badge key={s.id} variant="secondary" className="font-normal">
-                  {s.name}
-                  <span className="ml-1.5 text-muted-foreground">
+                <li
+                  key={s.id}
+                  className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2.5 text-sm"
+                >
+                  <span className="min-w-0 truncate font-medium">{s.name}</span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">
                     {s.durationMins}m
                   </span>
-                </Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+        </ProfileSection>
+
+        <ProfileSection title="Weekly availability" className="h-full">
+          {practitioner.availabilities.length === 0 ? (
+            <ProfileEmpty>No weekly patterns.</ProfileEmpty>
+          ) : (
+            <div className="space-y-1.5">
+              {practitioner.availabilities.map((a, i) => (
+                <ProfileSoftRow
+                  key={a.id ?? `${a.dayOfWeek}-${i}`}
+                  title={WEEKDAY_OPTIONS[a.dayOfWeek] ?? `Day ${a.dayOfWeek}`}
+                >
+                  <span className="shrink-0 tabular-nums text-muted-foreground">
+                    {formatTimeRange(a.startTime, a.endTime)}
+                  </span>
+                </ProfileSoftRow>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </ProfileSection>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Weekly availability</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {practitioner.availabilities.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No weekly patterns.</p>
-            ) : (
-              practitioner.availabilities.map((a, i) => (
-                <div
-                  key={a.id ?? `${a.dayOfWeek}-${i}`}
-                  className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-sm"
-                >
-                  <span className="font-medium">
-                    {WEEKDAY_OPTIONS[a.dayOfWeek] ?? `Day ${a.dayOfWeek}`}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {a.startTime} – {a.endTime}
-                  </span>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Leave</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {practitioner.timeOffs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No leave blocks.</p>
-            ) : (
-              practitioner.timeOffs.map((t, i) => (
-                <div
+        <ProfileSection title="Leave" className="h-full">
+          {practitioner.timeOffs.length === 0 ? (
+            <ProfileEmpty>No leave blocks.</ProfileEmpty>
+          ) : (
+            <div className="space-y-1.5">
+              {practitioner.timeOffs.map((t, i) => (
+                <ProfileSoftRow
                   key={t.id ?? `${t.startDate}-${i}`}
-                  className="rounded-lg bg-muted/40 px-3 py-2 text-sm"
-                >
-                  <p className="font-medium">
-                    {format(new Date(t.startDate), 'MMM d, yyyy')} –{' '}
-                    {format(new Date(t.endDate), 'MMM d, yyyy')}
-                  </p>
-                  {t.reason ? (
-                    <p className="text-muted-foreground">{t.reason}</p>
-                  ) : null}
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
+                  title={`${format(new Date(t.startDate), 'MMM d, yyyy')} – ${format(new Date(t.endDate), 'MMM d, yyyy')}`}
+                  detail={t.reason}
+                />
+              ))}
+            </div>
+          )}
+        </ProfileSection>
       </div>
-    </div>
+
+      <TwoStepDeleteDialogs
+        step1={del.step1}
+        step2={del.step2}
+        onStep1OpenChange={(open) => !open && del.cancelStep1()}
+        onStep2OpenChange={(open) => !open && del.cancelStep2()}
+        onContinue={del.advance}
+        onConfirm={() => {
+          if (!del.step2) return;
+          remove.mutate(del.step2.id, {
+            onSuccess: () => {
+              del.clear();
+              router.push(ROUTES.PRACTITIONERS);
+            },
+          });
+        }}
+        isPending={remove.isPending}
+        warning="This permanently removes the practitioner, their schedule, and their appointments. This cannot be undone. To just hide them, use Deactivate instead."
+        finalWarning="This permanently deletes the practitioner and every appointment assigned to them. This action cannot be undone."
+        confirmLabel="Yes, delete practitioner"
+      />
+    </ProfileShell>
   );
 }

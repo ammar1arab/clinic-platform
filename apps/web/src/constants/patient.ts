@@ -1,9 +1,19 @@
 import type { PatientSortBy, SortOrder } from '@/services/patients.service';
+import { ageLabel } from '@/lib/age';
 
 export const GENDERS = [
   { value: 'male', label: 'Male' },
   { value: 'female', label: 'Female' },
 ] as const;
+
+export function genderLabel(value: string | null | undefined): string {
+  if (!value) return '';
+  return GENDERS.find((g) => g.value === value)?.label ?? value;
+}
+
+export function patientAgeLabel(dob: string | null | undefined): string {
+  return ageLabel(dob);
+}
 
 export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as const;
 

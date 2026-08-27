@@ -2,28 +2,34 @@
 
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { FormField } from '@/components/primitives/form-field';
-import { FormActions } from '@/components/primitives/form-actions';
-import { PhoneInputField } from '@/components/primitives/phone-input';
-import { DatePicker } from '@/components/primitives/date-picker';
+  Input,
+  Textarea,
+} from '@/components/ui';
+import {
+  FormField,
+  FormActions,
+  PhoneInputField,
+  DatePicker,
+  AvatarUpload,
+} from '@/components/primitives';
+import { FORM_NONE } from '@/constants/form';
 import { GENDERS, BLOOD_TYPES } from '@/constants/patient';
 import { patientSchema, PatientFormData } from '@/lib/validations';
-import { useCreatePatient, useUpdatePatient } from '@/hooks/use-patients';
-import { usePackages } from '@/hooks/use-packages';
-import { useDiscountCodes } from '@/hooks/use-discount-codes';
+import { useCreatePatient, useUpdatePatient } from '@/hooks/api/use-patients';
+import { usePackages } from '@/hooks/api/use-packages';
+import { useDiscountCodes } from '@/hooks/api/use-discount-codes';
 import type { PatientDetail, CreatePatientInput } from '@/services/patients.service';
-
-const NONE = '__none__';
+import { pickRandomAvatarUrl, persistableImageUrl, resolveAvatarUrl } from '@/lib/avatars';
 
 interface Props {
   clinicId: string;
@@ -32,24 +38,27 @@ interface Props {
   onSuccess: (id: string) => void;
 }
 
-const EMPTY_VALUES: PatientFormData = {
-  firstNameEn: '',
-  lastNameEn: '',
-  firstNameAr: '',
-  lastNameAr: '',
-  nationalId: '',
-  phone: '',
-  email: '',
-  dob: '',
-  gender: '',
-  bloodType: '',
-  allergies: '',
-  emergencyContactName: '',
-  emergencyContactPhone: '',
-  address: '',
-  packageId: '',
-  discountCodeId: '',
-};
+function emptyPatientValues(): PatientFormData {
+  return {
+    firstNameEn: '',
+    lastNameEn: '',
+    firstNameAr: '',
+    lastNameAr: '',
+    nationalId: '',
+    phone: '',
+    email: '',
+    dob: '',
+    gender: '',
+    bloodType: '',
+    allergies: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    address: '',
+    imageUrl: pickRandomAvatarUrl(),
+    packageId: '',
+    discountCodeId: '',
+  };
+}
 
 function toFormValues(patient: PatientDetail): PatientFormData {
   return {
@@ -67,6 +76,7 @@ function toFormValues(patient: PatientDetail): PatientFormData {
     emergencyContactName: patient.emergencyContactName ?? '',
     emergencyContactPhone: patient.emergencyContactPhone ?? '',
     address: patient.address ?? '',
+    imageUrl: resolveAvatarUrl(patient.imageUrl, patient.id),
     packageId: patient.packageId ?? '',
     discountCodeId: patient.discountCodeId ?? '',
   };
@@ -93,6 +103,7 @@ function toPayload(data: PatientFormData): Omit<CreatePatientInput, 'clinicId'> 
     emergencyContactName: clean(data.emergencyContactName),
     emergencyContactPhone: clean(data.emergencyContactPhone),
     address: clean(data.address),
+    imageUrl: persistableImageUrl(data.imageUrl),
     packageId: data.packageId?.trim() ? data.packageId.trim() : null,
     discountCodeId: data.discountCodeId?.trim() ? data.discountCodeId.trim() : null,
   };
@@ -113,10 +124,12 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
     register,
     handleSubmit,
     control,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<PatientFormData>({
     resolver: zodResolver(patientSchema),
-    defaultValues: patient ? toFormValues(patient) : EMPTY_VALUES,
+    defaultValues: patient ? toFormValues(patient) : emptyPatientValues(),
   });
 
   const onSubmit = (data: PatientFormData) => {
@@ -141,6 +154,17 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
           <CardTitle className="text-sm">Personal Information</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField error={errors.imageUrl?.message} className="sm:col-span-2">
+            <AvatarUpload
+              value={watch('imageUrl')}
+              onChange={(url) =>
+                setValue('imageUrl', url, { shouldValidate: true, shouldDirty: true })
+              }
+              fallbackLabel={`${watch('firstNameEn') || 'P'}${watch('lastNameEn') || ''}`}
+              disabled={isPending}
+              alt="Patient photo"
+            />
+          </FormField>
           <FormField label="First Name (English)" required error={errors.firstNameEn?.message}>
             <Input maxLength={50} {...register('firstNameEn')} placeholder="First name" />
           </FormField>
@@ -188,14 +212,14 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               name="gender"
               render={({ field }) => (
                 <Select
-                  value={field.value || NONE}
-                  onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+                  value={field.value || FORM_NONE}
+                  onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NONE}>Not specified</SelectItem>
+                    <SelectItem value={FORM_NONE}>Not specified</SelectItem>
                     {GENDERS.map((g) => (
                       <SelectItem key={g.value} value={g.value}>
                         {g.label}
@@ -264,14 +288,14 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               name="bloodType"
               render={({ field }) => (
                 <Select
-                  value={field.value || NONE}
-                  onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+                  value={field.value || FORM_NONE}
+                  onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select blood type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NONE}>Not specified</SelectItem>
+                    <SelectItem value={FORM_NONE}>Not specified</SelectItem>
                     {BLOOD_TYPES.map((b) => (
                       <SelectItem key={b} value={b}>
                         {b}
@@ -309,14 +333,14 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                 name="packageId"
                 render={({ field }) => (
                   <Select
-                    value={field.value || NONE}
-                    onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+                    value={field.value || FORM_NONE}
+                    onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="None — optional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE}>None</SelectItem>
+                      <SelectItem value={FORM_NONE}>None</SelectItem>
                       {activePackages.map((pkg) => (
                         <SelectItem key={pkg.id} value={pkg.id}>
                           {pkg.name}
@@ -338,14 +362,14 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               name="discountCodeId"
               render={({ field }) => (
                 <Select
-                  value={field.value || NONE}
-                  onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+                  value={field.value || FORM_NONE}
+                  onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="None — optional" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NONE}>None</SelectItem>
+                    <SelectItem value={FORM_NONE}>None</SelectItem>
                     {activeCodes.map((code) => (
                       <SelectItem key={code.id} value={code.id}>
                         {code.code} ·{' '}

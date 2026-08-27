@@ -1,20 +1,21 @@
 'use client';
 
 import { useTheme } from 'next-themes';
-import { Sun, Moon, Monitor } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useMounted } from '@/hooks/use-mounted';
+} from '@/components/ui';
+import { useMounted } from '@/hooks/shared/use-mounted';
+import { SoftTip } from '@/components/primitives';
+import { IconMoon, IconSun, IconSystem } from '@/constants/icons';
 
 const OPTIONS = [
-  { value: 'light', label: 'Light', icon: Sun },
-  { value: 'dark', label: 'Dark', icon: Moon },
-  { value: 'system', label: 'System', icon: Monitor },
+  { value: 'light', label: 'Light', icon: IconSun },
+  { value: 'dark', label: 'Dark', icon: IconMoon },
+  { value: 'system', label: 'System', icon: IconSystem },
 ] as const;
 
 export function ThemeToggle() {
@@ -23,12 +24,14 @@ export function ThemeToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Toggle theme">
-          <Sun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        </Button>
-      </DropdownMenuTrigger>
+      <SoftTip label="Theme">
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label="Toggle theme">
+            <IconSun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <IconMoon className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          </Button>
+        </DropdownMenuTrigger>
+      </SoftTip>
       <DropdownMenuContent align="end" className="w-36">
         {OPTIONS.map(({ value, label, icon: Icon }) => (
           <DropdownMenuItem

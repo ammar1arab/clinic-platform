@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
@@ -11,23 +10,23 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { StatusBadgeBlock, STATUS_CONFIG, STATUS_OPTIONS } from './status-badge';
+  Textarea,
+} from '@/components/ui';
+import { StatusBadgeBlock, STATUS_OPTIONS } from './status-badge';
+import { SoftTip } from '@/components/primitives';
 import { Appointment, AppointmentStatus } from '@/services/appointments.service';
-import { useUpdateAppointment } from '@/hooks/use-appointments';
+import { useUpdateAppointment } from '@/hooks/api/use-appointments';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { patientDisplayName } from './appointment-display';
+import { IconChevronDown, IconSpinner } from '@/constants/icons';
 
 interface Props {
   appointment: Appointment;
@@ -109,48 +108,47 @@ export function AppointmentStatusSelect({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger
-          disabled={isDisabled}
-          className={cn(
-            'group inline-flex items-center gap-1 rounded-md transition-all outline-none select-none',
-            'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-            isCancelled
-              ? 'cursor-not-allowed opacity-80'
-              : 'cursor-pointer hover:opacity-85 hover:shadow-xs active:scale-[0.98]',
-            className,
-          )}
-          title={
+        <SoftTip
+          label={
             isCancelled
               ? 'Cancelled appointments cannot be modified'
               : 'Click to change appointment status'
           }
         >
-          <StatusBadgeBlock status={appt.status} compact={compact} />
+          <DropdownMenuTrigger
+            disabled={isDisabled}
+            className={cn(
+              'group inline-flex items-center gap-1 rounded-md transition-all outline-none select-none',
+              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
+              isCancelled
+                ? 'cursor-not-allowed opacity-80'
+                : 'cursor-pointer hover:opacity-85 hover:shadow-xs active:scale-[0.98]',
+              className,
+            )}
+          >
+            <StatusBadgeBlock status={appt.status} compact={compact} tip={false} />
           {isPending ? (
-            <Loader2 className="size-3 animate-spin text-muted-foreground" />
+            <IconSpinner className="size-3 animate-spin text-muted-foreground" />
           ) : !isCancelled ? (
-            <ChevronDown className="size-3 text-muted-foreground/80 transition-transform duration-150 group-data-[state=open]:rotate-180" />
+            <IconChevronDown className="size-3 text-muted-foreground/80 transition-transform duration-150 group-data-[state=open]:rotate-180" />
           ) : null}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="z-[120] w-44 p-1">
+        </SoftTip>
+        <DropdownMenuContent align="end" className="z-[120] w-52 p-1">
           <DropdownMenuLabel className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Update Status
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="my-1" />
           <DropdownMenuRadioGroup value={appt.status} onValueChange={handleSelectStatus}>
-            {STATUS_OPTIONS.map((s) => {
-              const cfg = STATUS_CONFIG[s];
-              return (
-                <DropdownMenuRadioItem
-                  key={s}
-                  value={s}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors"
-                >
-                  <span className={cn('size-2 shrink-0 rounded-full', cfg.dotClassName)} />
-                  <span className="flex-1 font-medium">{cfg.label}</span>
-                </DropdownMenuRadioItem>
-              );
-            })}
+            {STATUS_OPTIONS.map((s) => (
+              <DropdownMenuRadioItem
+                key={s}
+                value={s}
+                className="cursor-pointer rounded-md px-2 py-1.5"
+              >
+                <StatusBadgeBlock status={s} />
+              </DropdownMenuRadioItem>
+            ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>

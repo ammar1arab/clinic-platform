@@ -1,8 +1,8 @@
 'use client';
 
-import { Package, Wallet } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
+import { Button } from '@/components/ui';
+import { SoftTip } from '@/components/primitives';
+import { ButtonSpinner } from '@/components/blocks/feedback';
 import { cn } from '@/lib/utils';
 import type { PatientBillingSummary, PatientPackageDto } from '@clinic/types';
 import {
@@ -11,6 +11,7 @@ import {
   formatPackageBalance,
   formatPackageRedeemCost,
 } from '@/lib/package-balance';
+import { IconPackage, IconPayment } from '@/constants/icons';
 
 interface Props {
   billing: PatientBillingSummary | undefined;
@@ -64,12 +65,12 @@ export function PatientBalancePanel({
     <div className="space-y-3 rounded-lg border border-border/80 bg-card p-3">
       <div className="flex items-center gap-2">
         <span className="grid size-7 place-items-center rounded-md bg-muted text-muted-foreground">
-          <Wallet className="size-3.5" strokeWidth={1.75} />
+          <IconPayment className="size-3.5" strokeWidth={1.75} />
         </span>
         <div className="min-w-0">
           <p className="text-sm font-medium">Patient balance</p>
           <p className="text-[11px] text-muted-foreground">
-            Package credit & previous dues for this visit
+            IconPackage credit & previous dues for this visit
           </p>
         </div>
       </div>
@@ -155,7 +156,7 @@ function PackageRow({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex items-start gap-2">
           <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-md bg-background text-muted-foreground">
-            <Package className="size-3.5" strokeWidth={1.75} />
+            <IconPackage className="size-3.5" strokeWidth={1.75} />
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{pkg.packageName}</p>
@@ -190,35 +191,41 @@ function PackageRow({
               {releasePending ? <ButtonSpinner className="mr-0" /> : 'Remove'}
             </Button>
           ) : canRedeem ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              disabled={busy || !covers}
-              title={!covers ? 'Insufficient balance' : undefined}
-              onClick={() => onRedeem(pkg.id)}
-            >
-              {redeemPending ? <ButtonSpinner className="mr-0" /> : 'Use package'}
-            </Button>
+            <SoftTip label={!covers ? 'Insufficient balance' : 'Use package'}>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={busy || !covers}
+                onClick={() => onRedeem(pkg.id)}
+              >
+                {redeemPending ? <ButtonSpinner className="mr-0" /> : 'Use package'}
+              </Button>
+            </SoftTip>
           ) : onSelectPending ? (
-            <Button
-              type="button"
-              variant={pending ? 'default' : 'secondary'}
-              size="sm"
-              disabled={!covers || busy}
-              title={
+            <SoftTip
+              label={
                 !covers
                   ? 'Insufficient balance'
                   : disabledReason ?? 'Will apply after you create the appointment'
               }
-              onClick={() => onSelectPending(pending ? null : pkg.id)}
             >
-              {pending ? 'Selected' : 'Use package'}
-            </Button>
+              <Button
+                type="button"
+                variant={pending ? 'default' : 'secondary'}
+                size="sm"
+                disabled={!covers || busy}
+                onClick={() => onSelectPending(pending ? null : pkg.id)}
+              >
+                {pending ? 'Selected' : 'Use package'}
+              </Button>
+            </SoftTip>
           ) : (
-            <Button type="button" variant="secondary" size="sm" disabled title={disabledReason ?? undefined}>
-              Use package
-            </Button>
+            <SoftTip label={disabledReason ?? 'Use package'}>
+              <Button type="button" variant="secondary" size="sm" disabled>
+                Use package
+              </Button>
+            </SoftTip>
           )}
         </div>
       </div>

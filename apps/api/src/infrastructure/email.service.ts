@@ -1,5 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import { Resend } from "resend";
+import { createLogger } from "./logger";
 
 export interface SendEmailInput {
   to: string | string[];
@@ -8,21 +9,16 @@ export interface SendEmailInput {
   from?: string;
 }
 
-/**
- * FUTURE: Resend for custom + automated transactional emails
- * (reminders, receipts, referral updates, etc.).
- * No-ops when RESEND_API_KEY is unset.
- */
 @Injectable()
 export class EmailService implements OnModuleInit {
-  private readonly logger = new Logger(EmailService.name);
+  private readonly log = createLogger(EmailService.name);
   private client: Resend | null = null;
   private fromAddress = "Clinic Platform <onboarding@resend.dev>";
 
   onModuleInit() {
     const key = process.env.RESEND_API_KEY;
     if (!key) {
-      this.logger.warn("Resend not configured — emails are no-ops");
+      this.log.warn("not_configured");
       return;
     }
     this.client = new Resend(key);
@@ -37,9 +33,10 @@ export class EmailService implements OnModuleInit {
 
   async send(input: SendEmailInput) {
     if (!this.client) {
-      this.logger.debug(
-        `Email skipped (no Resend key): ${input.subject} → ${Array.isArray(input.to) ? input.to.join(", ") : input.to}`,
-      );
+      this.log.debug("skipped", {
+        subject: input.subject,
+        to: Array.isArray(input.to) ? input.to.join(",") : input.to,
+      });
       return { id: null, skipped: true as const };
     }
 
@@ -51,10 +48,14 @@ export class EmailService implements OnModuleInit {
     });
 
     if (error) {
-      this.logger.error(`Resend error: ${error.message}`);
+      this.log.error("send_failed", { message: error.message });
       throw new Error(error.message);
     }
 
+    this.log.info("sent", {
+      id: data?.id ?? undefined,
+      subject: input.subject,
+    });
     return { id: data?.id ?? null, skipped: false as const };
   }
 }

@@ -2,16 +2,11 @@
 
 import { useMemo, useState, type ReactNode } from 'react';
 import {
-  Clock,
-  DoorOpen,
-  Maximize2,
-  Stethoscope,
-  UserRound,
-  Video,
-  X,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+  Button,
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from '@/components/ui';
 import { STATUS_COLORS } from './status-badge';
 import {
   Appointment,
@@ -26,8 +21,10 @@ import {
 import { type AnchorRect, clickAnchor } from './popover-position';
 import { formatWaitingMins, resolveWaitingMins } from '@/lib/waiting-time';
 import { AppointmentStatusSelect } from './appointment-status-select';
-import { useNow } from '@/hooks/use-now';
-import { useMounted } from '@/hooks/use-mounted';
+import { useNow } from '@/hooks/shared/use-now';
+import { useMounted } from '@/hooks/shared/use-mounted';
+import { IconClose, IconMaximize, IconOnline, IconPerson, IconRoom, IconService, IconTime } from '@/constants/icons';
+import { SoftTip } from '@/components/primitives';
 
 export interface EventPreviewState {
   appointment: Appointment;
@@ -199,12 +196,11 @@ export function EventPreview({
 
         <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border/60 px-3.5 py-3">
           <div className="min-w-0">
-            <p
-              className="truncate text-sm font-semibold tracking-tight text-foreground"
-              title={patientDisplayName(appt)}
-            >
-              {patientDisplayName(appt)}
-            </p>
+            <SoftTip label={patientDisplayName(appt)}>
+              <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+                {patientDisplayName(appt)}
+              </p>
+            </SoftTip>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {formatDayLabel(appt)} · {formatApptTimeRange(appt)}
             </p>
@@ -214,34 +210,36 @@ export function EventPreview({
               appointment={{ ...appt, status: currentStatus }}
               onStatusChange={setCurrentStatus}
             />
-            <button
-              type="button"
-              aria-label="Close preview"
-              onClick={onClose}
-              className="grid size-7 cursor-pointer place-items-center rounded-md text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground active:scale-95"
-            >
-              <X className="size-3.5" />
-            </button>
+            <SoftTip label="Close preview">
+              <button
+                type="button"
+                aria-label="Close preview"
+                onClick={onClose}
+                className="grid size-7 cursor-pointer place-items-center rounded-md text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground active:scale-95"
+              >
+                <IconClose className="size-3.5" />
+              </button>
+            </SoftTip>
           </div>
         </div>
 
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-3.5">
           <div className="space-y-2.5 rounded-lg border bg-muted/30 p-2.5 text-xs">
             <Row
-              icon={<UserRound className="size-3.5" />}
+              icon={<IconPerson className="size-3.5" />}
               label="Doctor"
               value={formatDoctorLabel(appt.doctor?.name)}
             />
             {appt.service ? (
               <Row
-                icon={<Stethoscope className="size-3.5" />}
+                icon={<IconService className="size-3.5" />}
                 label="Service"
                 value={appt.service.name}
               />
             ) : null}
             {appt.sessionType === 'online' ? (
               <Row
-                icon={<Video className="size-3.5" />}
+                icon={<IconOnline className="size-3.5" />}
                 label="Session"
                 value={
                   appt.meetingUrl ? (
@@ -259,16 +257,16 @@ export function EventPreview({
                 }
               />
             ) : appt.room ? (
-              <Row icon={<DoorOpen className="size-3.5" />} label="Room" value={appt.room.name} />
+              <Row icon={<IconRoom className="size-3.5" />} label="Room" value={appt.room.name} />
             ) : null}
             <Row
-              icon={<Clock className="size-3.5" />}
+              icon={<IconTime className="size-3.5" />}
               label="Details"
               value={`${appt.durationMins} min · ${pricing.payable.toFixed(3)} JOD`}
             />
             {waitingMins != null ? (
               <Row
-                icon={<Clock className="size-3.5" />}
+                icon={<IconTime className="size-3.5" />}
                 label="Waiting time"
                 value={formatWaitingMins(waitingMins)}
               />
@@ -285,7 +283,7 @@ export function EventPreview({
             onClick={() => onExpand({ ...appt, status: currentStatus })}
             className="active:scale-95"
           >
-            <Maximize2 className="mr-1.5 size-3.5" />
+            <IconMaximize className="mr-1.5 size-3.5" />
             Open appointment
           </Button>
         </div>
@@ -313,9 +311,11 @@ function Row({
         <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </p>
-        <p className="truncate font-medium text-foreground" title={title}>
-          {value}
-        </p>
+        <SoftTip label={title}>
+          <p className="truncate font-medium text-foreground">
+            {value}
+          </p>
+        </SoftTip>
       </div>
     </div>
   );

@@ -64,7 +64,7 @@ page / block  →  hooks/*  →  services/*.service.ts  →  api (Axios)  →  N
 
 - Pages and UI do not call Axios.
 - Services use `api` from `@/lib/api` only.
-- Hooks follow `useFetchData` / `useApiMutation` / `useInfiniteFetchData` / `create-crud-hooks`.
+- Hooks: `hooks/query` (TanStack), `hooks/shared` (UI utils), `hooks/api` (domain); Axios + QueryClient stay in `lib/`.
 
 ## Shared types and routes
 

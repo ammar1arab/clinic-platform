@@ -1,10 +1,13 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Card,
+  CardContent,
+  Skeleton,
+} from '@/components/ui';
 import {
   IconWell,
   type IconWellAccent,
-} from '@/components/primitives/icon-well';
-import type { LucideIcon } from 'lucide-react';
+} from '@/components/primitives';
+import type { LucideIcon } from '@/constants/icons';
 
 interface Props {
   label: string;
@@ -22,7 +25,7 @@ export function KpiCardBlock({
   isLoading = false,
 }: Props) {
   return (
-    <Card className="transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-primary/40 active:scale-[0.99] cursor-default">
+    <Card className="transition-all duration-200 cursor-default">
       <CardContent className="flex flex-col gap-3 p-4 md:p-5">
         <IconWell icon={icon} size="md" accent={accent} />
         <div className="min-w-0 space-y-1">

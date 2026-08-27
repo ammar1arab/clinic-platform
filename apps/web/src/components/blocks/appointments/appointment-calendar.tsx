@@ -13,6 +13,7 @@ import {
   EventMountArg,
   MoreLinkContentArg,
 } from '@fullcalendar/core';
+import { Badge } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { Appointment } from '@/services/appointments.service';
 import { STATUS_COLORS } from './status-badge';
@@ -24,11 +25,12 @@ import { rectFromElement } from './popover-position';
 import { FC_TO_VIEW, ScheduleView, VIEW_TO_FC } from './schedule-nav';
 import { CalendarSkeleton } from './calendar-skeleton';
 import { ViewFocusToggle } from './view-focus';
-import { useUpdateAppointment } from '@/hooks/use-appointments';
-import { useResizeObserver } from '@/hooks/use-resize-observer';
-import { useIsMobile } from '@/hooks/use-media-query';
+import { useUpdateAppointment } from '@/hooks/api/use-appointments';
+import { useResizeObserver } from '@/hooks/shared/use-resize-observer';
+import { useIsMobile } from '@/hooks/shared/use-media-query';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
+import { formatTime } from '@/lib/datetime';
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
 
@@ -183,9 +185,9 @@ export function AppointmentCalendar({
 
   const renderMoreLinkContent = useCallback(
     (arg: MoreLinkContentArg) => (
-      <span className="fc-more-badge inline-flex h-5 items-center justify-center rounded-full border border-primary/25 bg-primary/10 px-2 text-[10px] font-semibold leading-none text-primary shadow-2xs transition-colors dark:bg-primary/15">
+      <Badge variant="info" className="fc-more-badge text-[10px] font-semibold">
         +{arg.num} more
-      </span>
+      </Badge>
     ),
     [],
   );
@@ -194,10 +196,9 @@ export function AppointmentCalendar({
     const appt = readCalendarAppointment(info.event.extendedProps);
     const color = appt
       ? STATUS_COLORS[appt.status]
-      : info.event.backgroundColor || '#64748b';
+      : info.event.backgroundColor || 'var(--color-muted-foreground)';
     info.el.style.setProperty('background-color', color, 'important');
     info.el.style.setProperty('border-color', color, 'important');
-    info.el.style.setProperty('color', '#ffffff', 'important');
     info.el.setAttribute('title', appt ? formatApptTip(appt) : info.event.title);
   }, []);
 
@@ -287,6 +288,14 @@ export function AppointmentCalendar({
           eventDurationEditable
           eventResizableFromStart
           nowIndicator
+          slotLabelContent={(arg) => formatTime(arg.date)}
+          eventTimeFormat={{
+            hour: 'numeric',
+            minute: '2-digit',
+            omitZeroMinute: true,
+            meridiem: 'short',
+            hour12: true,
+          }}
           events={events}
           eventDisplay="block"
           eventDidMount={handleEventDidMount}

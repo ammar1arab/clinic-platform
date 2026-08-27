@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { PageBack } from '@/components/primitives/page-back';
-import { PractitionerForm } from '@/components/blocks/practitioners/practitioner-form';
-import { useClinicId } from '@/hooks/use-clinic-id';
+import { PageBack } from '@/components/primitives';
+import { PractitionerForm } from '@/components/blocks/practitioners';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { ROUTES } from '@/constants/routes';
 
 export default function NewPractitionerPage() {

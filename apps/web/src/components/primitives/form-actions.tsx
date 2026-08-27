@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
 import { cn } from '@/lib/utils';
 

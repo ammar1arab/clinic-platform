@@ -35,6 +35,7 @@ export interface PatientProfileFields {
   emergencyContactName: string | null;
   emergencyContactPhone: string | null;
   address: string | null;
+  imageUrl: string | null;
   packageId: string | null;
   discountCodeId: string | null;
 }
@@ -134,6 +135,7 @@ export interface CreatePatientInput {
   emergencyContactName?: string;
   emergencyContactPhone?: string;
   address?: string;
+  imageUrl?: string;
   packageId?: string | null;
   discountCodeId?: string | null;
 }

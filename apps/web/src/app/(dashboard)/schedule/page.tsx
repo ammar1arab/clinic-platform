@@ -3,32 +3,29 @@
 import { Suspense, useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAppointments } from '@/hooks/use-appointments';
-import { useClinicId } from '@/hooks/use-clinic-id';
-import { useClinic } from '@/hooks/use-clinic';
-import { useClinicStaff } from '@/hooks/use-clinic-staff';
-import { useClinicRealtime } from '@/hooks/use-clinic-realtime';
-import { useDepartments } from '@/hooks/use-departments';
-import { useDebounce } from '@/hooks/use-debounce';
+import { useAppointments } from '@/hooks/api/use-appointments';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useClinic } from '@/hooks/api/use-clinic';
+import { useClinicStaff } from '@/hooks/api/use-clinic-staff';
+import { useClinicRealtime } from '@/hooks/api/use-clinic-realtime';
+import { useDepartments } from '@/hooks/api/use-departments';
+import { useDebounce } from '@/hooks/shared/use-debounce';
 import { Appointment, AppointmentStatus } from '@/services/appointments.service';
 import { ROUTES } from '@/constants/routes';
-import { ScheduleToolbar } from '@/components/blocks/appointments/schedule-toolbar';
-import { CalendarSkeleton } from '@/components/blocks/appointments/calendar-skeleton';
-import { DoctorTimeline } from '@/components/blocks/appointments/doctor-timeline';
-import { WaitingQueueBoard } from '@/components/blocks/appointments/waiting-queue-board';
-import { ViewFocus } from '@/components/blocks/appointments/view-focus';
 import {
+  ScheduleToolbar,
+  CalendarSkeleton,
+  DoctorTimeline,
+  WaitingQueueBoard,
+  ViewFocus,
   initialScheduleRange,
   parseScheduleView,
   rangeFromVisible,
   schedulePath,
   type ScheduleView,
-} from '@/components/blocks/appointments/schedule-nav';
-import {
   matchesAppointmentSearch,
-  toDateParam,
-  toTimeParam,
-} from '@/components/blocks/appointments/appointment-display';
+} from '@/components/blocks/appointments';
+import { toDateParam, toTimeParam } from '@/lib/datetime';
 
 const AppointmentCalendar = dynamic(
   () =>
@@ -63,7 +60,7 @@ function SchedulePageInner() {
   const [statusFilters, setStatusFilters] = useState<Set<AppointmentStatus>>(
     () => new Set(),
   );
-  const debouncedSearch = useDebounce(search, 250);
+  const debouncedSearch = useDebounce(search);
 
   useClinicRealtime(clinicId);
 

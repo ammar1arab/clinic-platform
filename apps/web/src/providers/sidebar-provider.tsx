@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState } from 'react';
-import { useMounted } from '@/hooks/use-mounted';
+import { useMounted } from '@/hooks/shared/use-mounted';
 
 interface SidebarContextType {
   isCollapsed: boolean;

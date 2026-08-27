@@ -1,6 +1,6 @@
-import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandMark, LoadingDots } from '@/components/blocks/feedback/brand-mark';
+import { IconSpinner } from '@/constants/icons';
 
 const sizeMap = {
   sm: 'size-4',
@@ -16,7 +16,7 @@ export function Spinner({
   className?: string;
 }) {
   return (
-    <Loader2
+    <IconSpinner
       className={cn('animate-spin text-primary', sizeMap[size], className)}
       aria-hidden
     />

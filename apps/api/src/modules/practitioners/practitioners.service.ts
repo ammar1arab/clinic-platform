@@ -2,12 +2,11 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { randomBytes } from "crypto";
 import * as bcrypt from "bcrypt";
-import { EmailService } from "@/infrastructure";
+import { EmailService, createLogger, defaultAvatarUrl, persistableImageUrl } from "@/infrastructure";
 import { PractitionersRepository } from "./practitioners.repository";
 import {
   AssignServicesDto,
@@ -25,7 +24,7 @@ import {
 
 @Injectable()
 export class PractitionersService {
-  private readonly logger = new Logger(PractitionersService.name);
+  private readonly log = createLogger(PractitionersService.name);
 
   constructor(
     private repo: PractitionersRepository,
@@ -43,7 +42,12 @@ export class PractitionersService {
 
     const temporaryPassword = randomBytes(9).toString("base64url").slice(0, 12);
     const row = await this.repo.createWithUser({
-      dto: { ...dto, email },
+      dto: {
+        ...dto,
+        email,
+        imageUrl:
+          persistableImageUrl(dto.imageUrl) || defaultAvatarUrl(email),
+      },
       passwordHash: await bcrypt.hash(temporaryPassword, 10),
       initials: initialsFromName(dto.name),
     });
@@ -95,12 +99,26 @@ export class PractitionersService {
       nameAr: optStr(dto.nameAr),
       title: optStr(dto.title),
       phone: optStr(dto.phone),
+      whatsapp: optStr(dto.whatsapp),
+      nationality:
+        dto.nationality === undefined
+          ? undefined
+          : dto.nationality?.trim()
+            ? dto.nationality.trim().toUpperCase()
+            : null,
+      specialty: optStr(dto.specialty),
+      specialtyAr: optStr(dto.specialtyAr),
+      languages: dto.languages,
       initials: dto.name ? initialsFromName(dto.name) : undefined,
       dob: optDate(dto.dob),
+      gender: optStr(dto.gender),
       bio: optStr(dto.bio),
       bioAr: optStr(dto.bioAr),
       experienceYears: dto.experienceYears,
-      imageUrl: optStr(dto.imageUrl),
+      imageUrl:
+        dto.imageUrl === undefined
+          ? undefined
+          : (persistableImageUrl(dto.imageUrl) ?? undefined),
       licenseNumber: optStr(dto.licenseNumber),
       licenseExpiry: optDate(dto.licenseExpiry),
       department:
@@ -151,6 +169,11 @@ export class PractitionersService {
     return mapPractitioner(await this.repo.reactivate(id));
   }
 
+  async remove(id: string) {
+    await this.findOne(id);
+    await this.repo.hardDelete(id);
+  }
+
   private assertCommission(
     employmentType?: string | null,
     commissionPercent?: number | null,
@@ -188,9 +211,10 @@ export class PractitionersService {
       });
       return !result.skipped;
     } catch (err) {
-      this.logger.warn(
-        `Welcome email failed for ${input.to}: ${err instanceof Error ? err.message : String(err)}`,
-      );
+      this.log.warn("welcome_email_failed", {
+        to: input.to,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return false;
     }
   }

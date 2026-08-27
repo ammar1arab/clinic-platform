@@ -1,42 +1,40 @@
 import type { Appointment } from '@/services/appointments.service';
+import {
+  TIMELINE_DOCTOR_COLORS,
+  TIMELINE_END_HOUR,
+  TIMELINE_HOUR_HEIGHT,
+  TIMELINE_HOURS,
+  TIMELINE_PX_PER_MIN,
+  TIMELINE_START_HOUR,
+  TIMELINE_TOTAL_HEIGHT,
+  TIMELINE_TOTAL_MINS,
+} from '@/constants/appointment';
 
-export interface TimelineDoctor {
+export {
+  TIMELINE_DOCTOR_COLORS,
+  TIMELINE_END_HOUR,
+  TIMELINE_HOUR_HEIGHT,
+  TIMELINE_HOURS,
+  TIMELINE_PX_PER_MIN,
+  TIMELINE_START_HOUR,
+  TIMELINE_TOTAL_HEIGHT,
+  TIMELINE_TOTAL_MINS,
+};
+
+export type TimelineDoctor = {
   id: string;
   name: string;
   color: string;
-}
+};
 
-export interface PositionedAppt {
+export type PositionedAppt = {
   appt: Appointment;
   doctor: TimelineDoctor | undefined;
   top: number;
   height: number;
   leftPct: number;
   widthPct: number;
-}
-
-export const TIMELINE_START_HOUR = 7;
-export const TIMELINE_END_HOUR = 21;
-export const TIMELINE_PX_PER_MIN = 2;
-export const TIMELINE_TOTAL_MINS =
-  (TIMELINE_END_HOUR - TIMELINE_START_HOUR) * 60;
-export const TIMELINE_TOTAL_HEIGHT = TIMELINE_TOTAL_MINS * TIMELINE_PX_PER_MIN;
-export const TIMELINE_HOUR_HEIGHT = 60 * TIMELINE_PX_PER_MIN;
-export const TIMELINE_HOURS = Array.from(
-  { length: TIMELINE_END_HOUR - TIMELINE_START_HOUR },
-  (_, i) => i + TIMELINE_START_HOUR,
-);
-
-export const TIMELINE_DOCTOR_COLORS = [
-  '#6366f1',
-  '#0ea5e9',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#14b8a6',
-];
+};
 
 function toMinutes(dateStr: string): number {
   const d = new Date(dateStr);
@@ -48,7 +46,8 @@ export function layoutTimelineAppts(
   doctors: Map<string, TimelineDoctor>,
 ): PositionedAppt[] {
   const sorted = [...appts].sort(
-    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+    (a, b) =>
+      new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
   );
 
   const colEnd: number[] = [];
@@ -77,7 +76,8 @@ export function layoutTimelineAppts(
       }
     }
 
-    const top = Math.max(0, startMin - TIMELINE_START_HOUR * 60) * TIMELINE_PX_PER_MIN;
+    const top =
+      Math.max(0, startMin - TIMELINE_START_HOUR * 60) * TIMELINE_PX_PER_MIN;
     const height = Math.max(32, appt.durationMins * TIMELINE_PX_PER_MIN);
     const gutter = maxCols > 1 ? 1.5 : 0;
 

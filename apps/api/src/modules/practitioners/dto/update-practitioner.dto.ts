@@ -34,7 +34,32 @@ export class UpdatePractitionerDto {
 
   @IsOptional()
   @IsString()
+  whatsapp?: string | null;
+
+  @IsOptional()
+  @IsString()
+  nationality?: string | null;
+
+  @IsOptional()
+  @IsString()
+  specialty?: string | null;
+
+  @IsOptional()
+  @IsString()
+  specialtyAr?: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  languages?: string[];
+
+  @IsOptional()
+  @IsString()
   dob?: string | null;
+
+  @IsOptional()
+  @IsString()
+  gender?: string | null;
 
   @IsOptional()
   @IsString()

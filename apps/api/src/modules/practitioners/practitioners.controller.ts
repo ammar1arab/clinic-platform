@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -50,6 +51,11 @@ export class PractitionersController {
   @Patch(":id/reactivate")
   reactivate(@Param("id") id: string) {
     return this.practitionersService.reactivate(id);
+  }
+
+  @Delete(":id")
+  remove(@Param("id") id: string) {
+    return this.practitionersService.remove(id);
   }
 
   @Patch(":id")

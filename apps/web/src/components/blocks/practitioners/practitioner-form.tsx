@@ -4,28 +4,34 @@ import { useMemo, useState } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Copy, Plus } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  Input,
+  Textarea,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { FormField } from '@/components/primitives/form-field';
-import { FormActions } from '@/components/primitives/form-actions';
-import { BilingualNameFields } from '@/components/primitives/bilingual-name-fields';
-import { PhoneInputField } from '@/components/primitives/phone-input';
-import { DatePicker } from '@/components/primitives/date-picker';
-import { TimePicker } from '@/components/primitives/time-picker';
-import { MultiSelect } from '@/components/primitives/multi-select';
-import { AvatarUpload } from '@/components/primitives/avatar-upload';
-import { IconDelete } from '@/constants/icons';
-import { WEEKDAY_OPTIONS } from '@/constants/practitioner';
+} from '@/components/ui';
+import {
+  FormField,
+  FormActions,
+  BilingualNameFields,
+  PhoneInputField,
+  CountrySelect,
+  DatePicker,
+  TimePicker,
+  MultiSelect,
+  AvatarUpload,
+} from '@/components/primitives';
+import { FORM_NONE } from '@/constants/form';
+import { PRACTITIONER_LANGUAGES, WEEKDAY_OPTIONS } from '@/constants/practitioner';
+import { GENDERS } from '@/constants/patient';
 import {
   practitionerSchema,
   type PractitionerFormData,
@@ -33,19 +39,18 @@ import {
 import {
   useCreatePractitioner,
   useUpdatePractitioner,
-} from '@/hooks/use-practitioners';
-import { useDepartments } from '@/hooks/use-departments';
-import { useRooms } from '@/hooks/use-rooms';
-import { useServices } from '@/hooks/use-services';
+} from '@/hooks/api/use-practitioners';
+import { useDepartments } from '@/hooks/api/use-departments';
+import { useRooms } from '@/hooks/api/use-rooms';
+import { useServices } from '@/hooks/api/use-services';
 import { useConfirm } from '@/providers';
 import type { PractitionerDetail } from '@/services/practitioners.service';
 import {
-  EMPTY_PRACTITIONER,
+  emptyPractitionerValues,
   toPractitionerFormValues,
   toPractitionerPayload,
 } from './practitioner-form.mapper';
-
-const NONE = '__none__';
+import { IconAdd, IconCopy, IconDelete } from '@/constants/icons';
 
 type Props = {
   clinicId: string;
@@ -84,7 +89,7 @@ export function PractitionerForm({
     resolver: zodResolver(practitionerSchema) as never,
     defaultValues: practitioner
       ? toPractitionerFormValues(practitioner)
-      : EMPTY_PRACTITIONER,
+      : emptyPractitionerValues(),
   });
 
   const availabilities = useFieldArray({ control, name: 'availabilities' });
@@ -158,8 +163,8 @@ export function PractitionerForm({
           setWelcomeEmailSent(res.welcomeEmailSent);
           toast.message(
             res.welcomeEmailSent
-              ? 'Welcome email sent. Copy the password as backup.'
-              : 'Copy the temporary password - shown once only.',
+              ? 'Welcome email sent. IconCopy the password as backup.'
+              : 'IconCopy the temporary password - shown once only.',
           );
         },
       },
@@ -198,7 +203,7 @@ export function PractitionerForm({
                   toast.success('Copied');
                 }}
               >
-                <Copy className="size-3.5" />
+                <IconCopy className="size-3.5" />
               </Button>
             </p>
           </div>
@@ -225,6 +230,7 @@ export function PractitionerForm({
               }
               fallbackLabel={name || 'DR'}
               disabled={pending}
+              alt="Practitioner photo"
             />
           </FormField>
 
@@ -241,8 +247,41 @@ export function PractitionerForm({
             <FormField label="Title" error={errors.title?.message}>
               <Input placeholder="Dr, Consultant, Therapist…" {...register('title')} />
             </FormField>
+            <FormField label="Nationality" error={errors.nationality?.message}>
+              <Controller
+                control={control}
+                name="nationality"
+                render={({ field }) => (
+                  <CountrySelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Select nationality"
+                    disabled={pending}
+                  />
+                )}
+              />
+            </FormField>
+            <FormField label="Specialty" error={errors.specialty?.message}>
+              <Input placeholder="Dermatology, Orthodontics…" {...register('specialty')} />
+            </FormField>
+            <FormField label="Specialty (Arabic)" error={errors.specialtyAr?.message}>
+              <Input
+                dir="rtl"
+                placeholder="التخصص"
+                {...register('specialtyAr')}
+              />
+            </FormField>
             <FormField label="Email" required={!isEdit} error={errors.email?.message}>
               <Input type="email" disabled={isEdit} {...register('email')} />
+            </FormField>
+            <FormField label="Date of birth" error={errors.dob?.message}>
+              <Controller
+                control={control}
+                name="dob"
+                render={({ field }) => (
+                  <DatePicker value={field.value} onChange={field.onChange} withDropdown />
+                )}
+              />
             </FormField>
             <FormField label="Phone" error={errors.phone?.message}>
               <Controller
@@ -252,16 +291,40 @@ export function PractitionerForm({
                   <PhoneInputField
                     value={field.value || ''}
                     onChange={(v) => field.onChange(v || '')}
+                    disabled={pending}
                   />
                 )}
               />
             </FormField>
-            <FormField label="Date of birth" error={errors.dob?.message}>
+            <FormField label="WhatsApp" error={errors.whatsapp?.message}>
               <Controller
                 control={control}
-                name="dob"
+                name="whatsapp"
                 render={({ field }) => (
-                  <DatePicker value={field.value} onChange={field.onChange} withDropdown />
+                  <PhoneInputField
+                    value={field.value || ''}
+                    onChange={(v) => field.onChange(v || '')}
+                    disabled={pending}
+                  />
+                )}
+              />
+            </FormField>
+            <FormField label="Languages" error={errors.languages?.message} className="sm:col-span-2">
+              <Controller
+                control={control}
+                name="languages"
+                render={({ field }) => (
+                  <MultiSelect
+                    options={PRACTITIONER_LANGUAGES.map((l) => ({
+                      value: l.value,
+                      label: l.label,
+                    }))}
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Select languages spoken"
+                    emptyText="No languages"
+                    disabled={pending}
+                  />
                 )}
               />
             </FormField>
@@ -277,6 +340,31 @@ export function PractitionerForm({
                 name="licenseExpiry"
                 render={({ field }) => (
                   <DatePicker value={field.value} onChange={field.onChange} />
+                )}
+              />
+            </FormField>
+            <FormField label="Gender" error={errors.gender?.message}>
+              <Controller
+                control={control}
+                name="gender"
+                render={({ field }) => (
+                  <Select
+                    value={field.value || FORM_NONE}
+                    onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
+                    disabled={pending}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={FORM_NONE}>Not specified</SelectItem>
+                      {GENDERS.map((g) => (
+                        <SelectItem key={g.value} value={g.value}>
+                          {g.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
               />
             </FormField>
@@ -331,14 +419,14 @@ export function PractitionerForm({
                 name="defaultRoomId"
                 render={({ field }) => (
                   <Select
-                    value={field.value || NONE}
-                    onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+                    value={field.value || FORM_NONE}
+                    onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="No default room" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE}>No default room</SelectItem>
+                      <SelectItem value={FORM_NONE}>No default room</SelectItem>
                       {roomOptions.map((r) => (
                         <SelectItem key={r.id} value={r.id}>
                           {r.name}
@@ -356,9 +444,9 @@ export function PractitionerForm({
                 name="employmentType"
                 render={({ field }) => (
                   <Select
-                    value={field.value || NONE}
+                    value={field.value || FORM_NONE}
                     onValueChange={(v) => {
-                      const next = v === NONE ? '' : v;
+                      const next = v === FORM_NONE ? '' : v;
                       field.onChange(next);
                       if (next !== 'commission' && next !== 'mixed') {
                         setValue('commissionPercent', '', { shouldValidate: true });
@@ -369,7 +457,7 @@ export function PractitionerForm({
                       <SelectValue placeholder="Not set" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE}>Not set</SelectItem>
+                      <SelectItem value={FORM_NONE}>Not set</SelectItem>
                       <SelectItem value="salaried">Salaried</SelectItem>
                       <SelectItem value="commission">Commission</SelectItem>
                       <SelectItem value="mixed">Mixed</SelectItem>
@@ -435,7 +523,7 @@ export function PractitionerForm({
               availabilities.append({ dayOfWeek: 1, startTime: '09:00', endTime: '17:00' })
             }
           >
-            <Plus className="size-3.5" />
+            <IconAdd className="size-3.5" />
             Add
           </Button>
         </CardHeader>
@@ -517,7 +605,7 @@ export function PractitionerForm({
             className="h-8 text-primary"
             onClick={() => timeOffs.append({ startDate: '', endDate: '', reason: '' })}
           >
-            <Plus className="size-3.5" />
+            <IconAdd className="size-3.5" />
             Add
           </Button>
         </CardHeader>

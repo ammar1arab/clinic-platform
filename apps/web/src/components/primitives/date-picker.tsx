@@ -2,19 +2,21 @@
 
 import * as React from "react"
 import { format, setMonth as setDateMonth, setYear, addMonths, subMonths } from "date-fns"
-import { CalendarIcon, ChevronLeft, ChevronRight, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
+  Button,
+  Calendar,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui"
+import { IconCalendar, IconChevronLeft, IconChevronRight, IconClose } from '@/constants/icons'
 
 interface Props {
 
@@ -125,7 +127,7 @@ export function DatePicker({
             className,
           )}
         >
-          <CalendarIcon className="size-4 opacity-70" />
+          <IconCalendar className="size-4 opacity-70" />
           <span className="flex-1 truncate text-left">
             {selected ? format(selected, "MMM d, yyyy") : placeholder}
           </span>
@@ -141,7 +143,7 @@ export function DatePicker({
                 onChange("")
               }}
             >
-              <X className="size-3.5" />
+              <IconClose className="size-3.5" />
             </span>
           )}
         </Button>
@@ -172,7 +174,7 @@ export function DatePicker({
                 onClick={() => goMonth(-1)}
                 aria-label="Previous month"
               >
-                <ChevronLeft className="size-4" />
+                <IconChevronLeft className="size-4" />
               </Button>
 
               <Select value={String(month.getMonth())} onValueChange={onMonthSelect}>
@@ -209,7 +211,7 @@ export function DatePicker({
                 onClick={() => goMonth(1)}
                 aria-label="Next month"
               >
-                <ChevronRight className="size-4" />
+                <IconChevronRight className="size-4" />
               </Button>
             </div>
           ) : null}

@@ -1,7 +1,5 @@
 import { cn } from '@/lib/utils';
 
-
-
 export function TableFrame({
   children,
   className,

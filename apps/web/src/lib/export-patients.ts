@@ -1,4 +1,5 @@
 import type { Patient } from '@/services/patients.service';
+import { formatPhoneDisplay } from '@/lib/contact';
 
 export type PatientExportFormat = 'csv' | 'xlsx' | 'pdf' | 'docx';
 
@@ -59,7 +60,7 @@ function rowValues(p: Patient): (string | number)[] {
   return [
     p.firstNameEn ?? '',
     p.lastNameEn ?? '',
-    p.phone ?? '',
+    formatPhoneDisplay(p.phone) || p.phone || '',
     p.email ?? '',
     p.nationalId ?? '',
     p.gender ?? '',

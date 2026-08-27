@@ -5,8 +5,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/providers';
 import { ROUTES } from '@/constants/routes';
 import { useSidebar } from '@/providers/sidebar-provider';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -16,9 +16,10 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { ThemeToggle } from '@/components/blocks/layout/theme-toggle';
-import { LogOut, Menu } from 'lucide-react';
+} from '@/components/ui';
+import { ThemeToggle } from './theme-toggle';
+import { SoftTip } from '@/components/primitives';
+import { IconLogout, IconMenu } from '@/constants/icons';
 
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -67,13 +68,15 @@ export function TopbarBlock() {
     <>
       <header className="relative z-10 flex h-13 shrink-0 items-center justify-between border-b border-border/70 bg-background/80 px-3 shadow-[0_1px_0_0_color-mix(in_oklch,var(--brand)_12%,transparent)] backdrop-blur-md md:h-14 md:px-5">
         <div className="flex min-w-0 items-center gap-2.5">
-          <button
-            aria-label="Open menu"
-            className="grid size-8 shrink-0 place-items-center rounded-lg border border-border/80 bg-card/80 text-foreground shadow-sm transition-colors hover:bg-muted md:hidden"
-            onClick={() => setMobileOpen(true)}
-          >
-            <Menu className="size-4" />
-          </button>
+          <SoftTip label="Open menu">
+            <button
+              aria-label="Open menu"
+              className="grid size-8 shrink-0 place-items-center rounded-lg border border-border/80 bg-card/80 text-foreground shadow-sm transition-colors hover:bg-muted md:hidden"
+              onClick={() => setMobileOpen(true)}
+            >
+              <IconMenu className="size-4" />
+            </button>
+          </SoftTip>
 
           <div className="flex min-w-0 items-center gap-2.5">
             <span
@@ -88,16 +91,18 @@ export function TopbarBlock() {
 
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Sign out"
-            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => setSignOutOpen(true)}
-          >
-            <LogOut className="size-4" />
-          </Button>
+          <SoftTip label="Sign out">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Sign out"
+              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setSignOutOpen(true)}
+            >
+              <IconLogout className="size-4" />
+            </Button>
+          </SoftTip>
         </div>
       </header>
 
@@ -105,7 +110,7 @@ export function TopbarBlock() {
         <AlertDialogContent size="default">
           <AlertDialogHeader>
             <AlertDialogMedia className="bg-destructive/10 text-destructive">
-              <LogOut />
+              <IconLogout />
             </AlertDialogMedia>
             <AlertDialogTitle>Sign out?</AlertDialogTitle>
             <AlertDialogDescription>

@@ -1,15 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, ChevronsUpDown, Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
+  Input,
+} from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { IconCheck, IconChevronsUpDown, IconClose, IconSearch } from '@/constants/icons';
 
 export type MultiSelectOption = {
   value: string;
@@ -32,7 +32,7 @@ export function MultiSelect({
   value,
   onChange,
   placeholder = 'Select…',
-  searchPlaceholder = 'Search…',
+  searchPlaceholder = 'IconSearch…',
   emptyText = 'No options',
   className,
   disabled,
@@ -96,19 +96,19 @@ export function MultiSelect({
                       }
                     }}
                   >
-                    <X className="size-3" />
+                    <IconClose className="size-3" />
                   </span>
                 </span>
               ))
             )}
           </span>
-          <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+          <IconChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-64 p-0" align="start">
         <div className="border-b border-border p-2">
           <div className="relative">
-            <Search className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <IconSearch className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -147,7 +147,7 @@ export function MultiSelect({
                       isSelected && 'border-primary bg-primary text-primary-foreground',
                     )}
                   >
-                    {isSelected ? <Check className="size-3" /> : null}
+                    {isSelected ? <IconCheck className="size-3" /> : null}
                   </span>
                   <span className="min-w-0 flex-1 truncate">{option.label}</span>
                 </button>

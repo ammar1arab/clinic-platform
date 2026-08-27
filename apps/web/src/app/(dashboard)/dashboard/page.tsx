@@ -1,20 +1,17 @@
 'use client';
 
 import {
-  IconRoom,
-  IconTime,
-  IconTodaysAppointments,
-} from '@/constants/icons';
-import { CheckCircle2, Hourglass, Timer } from 'lucide-react';
-import {
   useDashboardKpis,
   useRoomUtilization,
   useDashboardRealtime,
-} from '@/hooks/use-dashboard';
-import { KpiCardBlock } from '@/components/blocks/dashboard/kpi-card';
-import { RoomUtilizationCardBlock } from '@/components/blocks/dashboard/room-utilization-card';
-import { useClinicId } from '@/hooks/use-clinic-id';
+} from '@/hooks/api/use-dashboard';
+import {
+  KpiCardBlock,
+  RoomUtilizationCardBlock,
+} from '@/components/blocks/dashboard';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { formatWaitingMins } from '@/lib/waiting-time';
+import { IconCheckCircle, IconHourglass, IconRoom, IconTime, IconTimer, IconTodaysAppointments } from '@/constants/icons';
 
 export default function DashboardPage() {
   const clinicId = useClinicId();
@@ -39,7 +36,7 @@ export default function DashboardPage() {
         <KpiCardBlock
           label="Waiting"
           value={kpis?.waitingCount ?? 0}
-          icon={Timer}
+          icon={IconTimer}
           accent="warning"
           isLoading={kpisLoading}
         />
@@ -53,14 +50,14 @@ export default function DashboardPage() {
         <KpiCardBlock
           label="Completed"
           value={kpis?.completed ?? 0}
-          icon={CheckCircle2}
+          icon={IconCheckCircle}
           accent="success"
           isLoading={kpisLoading}
         />
         <KpiCardBlock
           label="Avg Wait"
           value={formatWaitingMins(kpis?.avgWaitingMins)}
-          icon={Hourglass}
+          icon={IconHourglass}
           accent="warning"
           isLoading={kpisLoading}
         />

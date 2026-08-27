@@ -1,40 +1,47 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useNow } from '@/hooks/use-now';
+import { useNow } from '@/hooks/shared/use-now';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Video, MapPin } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
+  Input,
+  Textarea,
+  Button,
+  Switch,
+} from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
-import { FormField } from '@/components/primitives/form-field';
-import { FormActions } from '@/components/primitives/form-actions';
-import { DatePicker } from '@/components/primitives/date-picker';
-import { TimePicker } from '@/components/primitives/time-picker';
-import { StatusBadgeBlock, STATUS_CONFIG, STATUS_OPTIONS } from './status-badge';
+import { ButtonSpinner } from '@/components/blocks/feedback';
+import {
+  FormField,
+  FormActions,
+  DatePicker,
+  TimePicker,
+} from '@/components/primitives';
+import { StatusBadgeBlock } from './status-badge';
+import { CLINIC_CURRENCY, STATUS_CONFIG, STATUS_OPTIONS } from '@/constants/appointment';
+import { FORM_NONE } from '@/constants/form';
 import { PatientCombobox } from './patient-combobox';
-import { useDepartments } from '@/hooks/use-departments';
-import { useRooms } from '@/hooks/use-rooms';
-import { useServices } from '@/hooks/use-services';
-import { usePatients } from '@/hooks/use-patients';
-import { useClinicStaff } from '@/hooks/use-clinic-staff';
-import { useClinicId } from '@/hooks/use-clinic-id';
-import { useCreateAppointment, useUpdateAppointment, useMarkAppointmentPaid, useMarkAppointmentUnpaid, useRedeemAppointmentPackage, useReleaseAppointmentPackage } from '@/hooks/use-appointments';
-import { usePatientBilling } from '@/hooks/use-patient-packages';
-import { usePaymentMethods } from '@/hooks/use-payment-methods';
-import { useValidateDiscountCode, useDiscountCodes } from '@/hooks/use-discount-codes';
-import { usePackages } from '@/hooks/use-packages';
+import { useDepartments } from '@/hooks/api/use-departments';
+import { useRooms } from '@/hooks/api/use-rooms';
+import { useServices } from '@/hooks/api/use-services';
+import { usePatients } from '@/hooks/api/use-patients';
+import { useClinicStaff } from '@/hooks/api/use-clinic-staff';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useCreateAppointment, useUpdateAppointment, useMarkAppointmentPaid, useMarkAppointmentUnpaid, useRedeemAppointmentPackage, useReleaseAppointmentPackage } from '@/hooks/api/use-appointments';
+import { usePatientBilling } from '@/hooks/api/use-patient-packages';
+import { usePaymentMethods } from '@/hooks/api/use-payment-methods';
+import { useValidateDiscountCode, useDiscountCodes } from '@/hooks/api/use-discount-codes';
+import { usePackages } from '@/hooks/api/use-packages';
 import { useConfirm } from '@/providers';
 import { appointmentSchema, AppointmentFormData } from '@/lib/validations';
 import {
@@ -46,15 +53,11 @@ import type { Patient } from '@/services/patients.service';
 import type { ClinicPackage } from '@/services/packages.service';
 import type { DiscountCode, ValidatedDiscountCode } from '@/services/discount-codes.service';
 import { toast } from 'sonner';
-import axios from 'axios';
-import { extractErrorMessage } from '@/lib/api';
-import { Switch } from '@/components/ui/switch';
+import { extractErrorMessage, isHttpStatus } from '@/lib/api';
 import { formatWaitingMins, resolveWaitingMins } from '@/lib/waiting-time';
 import { PatientBalancePanel } from './patient-balance-panel';
-import { toDateParam, toTimeParam } from './appointment-display';
-
-const NONE = '__none__';
-const CURRENCY = 'JOD';
+import { toDateParam, toTimeParam } from '@/lib/datetime';
+import { IconInPerson, IconOnline } from '@/constants/icons';
 
 interface Props {
   appointment?: Appointment;
@@ -279,7 +282,7 @@ export function AppointmentForm({
     };
 
     const showConflict = async (error: Parameters<typeof extractErrorMessage>[0]) => {
-      if (axios.isAxiosError(error) && error.response?.status === 409) {
+      if (isHttpStatus(error, 409)) {
         await confirm({
           title: 'Scheduling conflict',
           description: extractErrorMessage(error),
@@ -393,17 +396,11 @@ export function AppointmentForm({
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                {STATUS_OPTIONS.map((s) => {
-                  const cfg = STATUS_CONFIG[s];
-                  return (
-                    <SelectItem key={s} value={s}>
-                      <span className="flex items-center gap-2">
-                        <span className={cn('size-2.5 shrink-0 rounded-full', cfg.dotClassName)} />
-                        {cfg.label}
-                      </span>
-                    </SelectItem>
-                  );
-                })}
+                {STATUS_OPTIONS.map((s) => (
+                  <SelectItem key={s} value={s} textValue={STATUS_CONFIG[s].label}>
+                    <StatusBadgeBlock status={s} />
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {waitingMins != null && (
@@ -494,14 +491,14 @@ export function AppointmentForm({
               name="departmentId"
               render={({ field }) => (
                 <Select
-                  value={field.value || NONE}
-                  onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+                  value={field.value || FORM_NONE}
+                  onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NONE}>None</SelectItem>
+                    <SelectItem value={FORM_NONE}>None</SelectItem>
                     {departments?.map((d) => (
                       <SelectItem key={d.id} value={d.id}>
                         {d.name}
@@ -519,9 +516,9 @@ export function AppointmentForm({
               name="serviceId"
               render={({ field }) => (
                 <Select
-                  value={field.value || NONE}
+                  value={field.value || FORM_NONE}
                   onValueChange={(v) => {
-                    if (v === NONE) {
+                    if (v === FORM_NONE) {
                       field.onChange('');
                       return;
                     }
@@ -542,10 +539,10 @@ export function AppointmentForm({
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NONE}>None</SelectItem>
+                    <SelectItem value={FORM_NONE}>None</SelectItem>
                     {services?.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
-                        {s.name} · {Number(s.fee).toFixed(3)} {CURRENCY}
+                        {s.name} · {Number(s.fee).toFixed(3)} {CLINIC_CURRENCY}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -613,14 +610,14 @@ export function AppointmentForm({
                   <ModeButton
                     active={field.value === 'in_person'}
                     disabled={!canInPerson}
-                    icon={<MapPin className="size-4" />}
+                    icon={<IconInPerson className="size-4" />}
                     label="In Person"
                     onClick={() => field.onChange('in_person')}
                   />
                   <ModeButton
                     active={field.value === 'online'}
                     disabled={!canOnline}
-                    icon={<Video className="size-4" />}
+                    icon={<IconOnline className="size-4" />}
                     label="Online"
                     onClick={() => field.onChange('online')}
                   />
@@ -636,14 +633,14 @@ export function AppointmentForm({
                 name="roomId"
                 render={({ field }) => (
                   <Select
-                    value={field.value || NONE}
-                    onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+                    value={field.value || FORM_NONE}
+                    onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select a room" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE}>None</SelectItem>
+                      <SelectItem value={FORM_NONE}>None</SelectItem>
                       {rooms?.map((r) => (
                         <SelectItem key={r.id} value={r.id}>
                           {r.name}
@@ -673,7 +670,7 @@ export function AppointmentForm({
         </CardHeader>
         <CardContent className="space-y-4">
           {!!appointment?.patientPackageId && (
-            <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-2.5 py-2 text-xs text-muted-foreground">
+            <p className="rounded-md border border-warning/30 bg-warning/5 px-2.5 py-2 text-xs text-muted-foreground">
               Pricing is locked while this visit is package-covered. Remove package coverage to edit fee or discount.
             </p>
           )}
@@ -719,7 +716,7 @@ export function AppointmentForm({
                     <div className="inline-flex overflow-hidden rounded-md border">
                       <ToggleSeg
                         active={field.value === 'fixed'}
-                        label={CURRENCY}
+                        label={CLINIC_CURRENCY}
                         onClick={() => !appointment?.patientPackageId && field.onChange('fixed')}
                       />
                       <ToggleSeg
@@ -809,25 +806,25 @@ export function AppointmentForm({
           ) : null}
 
           <div className="rounded-lg border bg-muted/40 p-3 text-sm">
-            <Row label="Base fee" value={`${pricing.fee.toFixed(3)} ${CURRENCY}`} />
+            <Row label="Base fee" value={`${pricing.fee.toFixed(3)} ${CLINIC_CURRENCY}`} />
             <Row
               label="Discount"
-              value={`- ${pricing.discountAmount.toFixed(3)} ${CURRENCY}`}
+              value={`- ${pricing.discountAmount.toFixed(3)} ${CLINIC_CURRENCY}`}
               muted
             />
             <div className="mt-2 flex items-center justify-between border-t pt-2 font-semibold">
               <span>Payable</span>
               <span>
                 {appointment?.patientPackageId
-                  ? `0.000 ${CURRENCY}`
-                  : `${pricing.payable.toFixed(3)} ${CURRENCY}`}
+                  ? `0.000 ${CLINIC_CURRENCY}`
+                  : `${pricing.payable.toFixed(3)} ${CLINIC_CURRENCY}`}
               </span>
             </div>
             {appointment?.patientPackageId && (
               <p className="mt-1.5 text-[11px] text-success">
                 Covered by package
                 {appointment.packageCredit != null
-                  ? ` · ${Number(appointment.packageCredit).toFixed(3)} ${CURRENCY} credit used`
+                  ? ` · ${Number(appointment.packageCredit).toFixed(3)} ${CLINIC_CURRENCY} credit used`
                   : ' · 1 session used'}
               </p>
             )}
@@ -885,12 +882,12 @@ export function AppointmentForm({
               </div>
               {!appointment.isPaid && !appointment.patientPackageId && (
                 <FormField label="Payment method">
-                  <Select value={payMethodId || NONE} onValueChange={(v) => setPayMethodId(v === NONE ? '' : v)}>
+                  <Select value={payMethodId || FORM_NONE} onValueChange={(v) => setPayMethodId(v === FORM_NONE ? '' : v)}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select method" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NONE}>Select method</SelectItem>
+                      <SelectItem value={FORM_NONE}>Select method</SelectItem>
                       {activePayMethods.map((m) => (
                         <SelectItem key={m.id} value={m.id}>
                           {m.name}

@@ -60,6 +60,10 @@ export class CreatePatientDto {
 
   @IsOptional()
   @IsString()
+  imageUrl?: string;
+
+  @IsOptional()
+  @IsString()
   packageId?: string | null;
 
   @IsOptional()

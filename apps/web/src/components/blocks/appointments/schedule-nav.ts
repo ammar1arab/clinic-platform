@@ -1,22 +1,15 @@
 import { ROUTES } from '@/constants/routes';
+import {
+  FC_TO_VIEW,
+  VIEW_TO_FC,
+  type ScheduleView,
+} from '@/constants/appointment';
 
-export type ScheduleView = 'day' | 'week' | 'month' | 'doctors' | 'queue';
+export { FC_TO_VIEW, VIEW_TO_FC, type ScheduleView };
 
-export const VIEW_TO_FC: Record<ScheduleView, string> = {
-  day: 'timeGridDay',
-  week: 'timeGridWeek',
-  month: 'dayGridMonth',
-  doctors: 'timeGridDay',
-  queue: 'timeGridDay',
-};
-
-export const FC_TO_VIEW: Record<string, ScheduleView> = {
-  timeGridDay: 'day',
-  timeGridWeek: 'week',
-  dayGridMonth: 'month',
-};
-
-export function parseScheduleView(value: string | null | undefined): ScheduleView {
+export function parseScheduleView(
+  value: string | null | undefined,
+): ScheduleView {
   if (
     value === 'day' ||
     value === 'week' ||

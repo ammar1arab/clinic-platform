@@ -2,10 +2,14 @@
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers';
-import { SidebarBlock } from '@/components/blocks/layout/sidebar';
-import { TopbarBlock } from '@/components/blocks/layout/topbar';
-import { LoadingOverlay } from '@/components/blocks/feedback/loading-overlay';
-import { PageTransition } from '@/components/blocks/feedback/page-transition';
+import {
+  SidebarBlock,
+  TopbarBlock,
+} from '@/components/blocks/layout';
+import {
+  LoadingOverlay,
+  PageTransition,
+} from '@/components/blocks/feedback';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();

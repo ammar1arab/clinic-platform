@@ -1,4 +1,5 @@
 import { formatDisplayDate } from "./report-format";
+import { formatPhoneDisplay } from "@/infrastructure";
 import type { ReportDocument } from "../types/report-document";
 
 /**
@@ -24,7 +25,9 @@ export function letterheadLines(doc: ReportDocument): string[] {
   const { letterhead } = doc;
   const lines: string[] = [letterhead.clinicName];
   if (letterhead.address) lines.push(letterhead.address);
-  if (letterhead.phone) lines.push(letterhead.phone);
+  if (letterhead.phone) {
+    lines.push(formatPhoneDisplay(letterhead.phone) || letterhead.phone);
+  }
   return lines;
 }
 
@@ -39,7 +42,11 @@ export function csvPreface(doc: ReportDocument): string[] {
     `# Generated ${formatDisplayDate(doc.generatedAt)}`,
   ];
   if (doc.letterhead.address) lines.push(`# Address: ${doc.letterhead.address}`);
-  if (doc.letterhead.phone) lines.push(`# Phone: ${doc.letterhead.phone}`);
+  if (doc.letterhead.phone) {
+    lines.push(
+      `# Phone: ${formatPhoneDisplay(doc.letterhead.phone) || doc.letterhead.phone}`,
+    );
+  }
   if (doc.summary?.length) {
     for (const item of doc.summary) {
       lines.push(`# ${item.label}: ${item.value}`);

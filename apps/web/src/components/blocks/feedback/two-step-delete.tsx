@@ -7,8 +7,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -17,10 +15,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
-import { TruncatedText } from '@/components/primitives/truncated-text';
+  Button,
+} from '@/components/ui';
+import { ButtonSpinner } from './button-spinner';
+import { TruncatedText } from '@/components/primitives';
 
 export type TwoStepDeleteTarget = { id: string; name: string } | null;
 
@@ -59,7 +57,7 @@ export function TwoStepDeleteDialogs({
             <DialogTitle>Delete permanently?</DialogTitle>
           </DialogHeader>
           <div className="min-w-0 space-y-3">
-            <p className="rounded-md bg-muted px-2.5 py-1.5 text-sm font-medium" title={step1?.name}>
+            <p className="rounded-md bg-muted px-2.5 py-1.5 text-sm font-medium">
               <TruncatedText>{step1?.name ?? ''}</TruncatedText>
             </p>
             <p className="text-sm text-muted-foreground">{warning}</p>
@@ -81,10 +79,7 @@ export function TwoStepDeleteDialogs({
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="min-w-0 space-y-2 text-sm text-muted-foreground">
-                <p
-                  className="rounded-md bg-muted px-2.5 py-1.5 font-medium text-foreground"
-                  title={step2?.name}
-                >
+                <p className="rounded-md bg-muted px-2.5 py-1.5 font-medium text-foreground">
                   <TruncatedText>{step2?.name ?? ''}</TruncatedText>
                 </p>
                 <p>{finalWarning}</p>

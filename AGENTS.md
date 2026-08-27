@@ -22,7 +22,10 @@ No hardcoded hex/rgb. No parallel palette.
 - Blocks: `apps/web/src/components/blocks/`
 - Primitives: `apps/web/src/components/primitives/`
 - shadcn: `apps/web/src/components/ui/`
-- Data: `services/` → `hooks/` → pages
+- Data: `services/` → `hooks/api/` → pages
+- Query helpers: `hooks/query/`; shared UI hooks: `hooks/shared/`
+- Icons: `@/constants/icons` only (no direct `lucide-react` in UI)
+- Static maps: `@/constants/*` (appointment status, form sentinels, …)
 - Nest: `apps/api/src/modules/<name>/`
 - Routes: `apps/web/src/constants/routes.ts`
 

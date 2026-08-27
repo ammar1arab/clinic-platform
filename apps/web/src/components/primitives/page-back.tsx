@@ -1,9 +1,9 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { IconArrowLeft } from '@/constants/icons';
 
 interface Props {
 
@@ -30,7 +30,7 @@ export function PageBack({
         className="-ml-2 h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
         onClick={() => router.push(backHref)}
       >
-        <ArrowLeft className="size-3.5 mr-1" />
+        <IconArrowLeft className="size-3.5 mr-1" />
         {backLabel}
       </Button>
       {actions}

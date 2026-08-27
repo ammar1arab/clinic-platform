@@ -3,6 +3,9 @@ import { toast } from 'sonner';
 import { env } from './env';
 import { ROUTES } from '@/constants/routes';
 import { getToken, clearToken } from './auth-token';
+import { createLogger } from './logger';
+
+const log = createLogger('api');
 
 export const api = axios.create({
   baseURL: env.NEXT_PUBLIC_API_URL,
@@ -81,7 +84,20 @@ function extractErrorMessage(error: ApiErrorLike): string {
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiErrorBody>) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const method = error.config?.method?.toUpperCase() ?? null;
+    const url = error.config?.url ?? null;
+    const message = extractErrorMessage(error);
+    const meta = {
+      method,
+      url,
+      status: status ?? null,
+      message,
+      code: error.code ?? null,
+    };
+
+    if (status === 401) {
+      log.warn('unauthorized', meta);
       if (typeof window !== 'undefined') {
         clearToken();
         if (!window.location.pathname.startsWith(ROUTES.LOGIN)) {
@@ -91,8 +107,14 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (error.response?.status !== 409 && !shouldSkipErrorToast(error)) {
-      toast.error(extractErrorMessage(error));
+    if (!status || status >= 500) {
+      log.error('response_failed', meta);
+    } else if (status !== 409 && !shouldSkipErrorToast(error)) {
+      log.warn('response_failed', meta);
+    }
+
+    if (status !== 409 && !shouldSkipErrorToast(error)) {
+      toast.error(message);
     }
 
     return Promise.reject(error);
@@ -118,3 +140,7 @@ function shouldSkipErrorToast(error: AxiosError<ApiErrorBody>): boolean {
 }
 
 export { extractErrorMessage };
+
+export function isHttpStatus(error: unknown, status: number): boolean {
+  return axios.isAxiosError(error) && error.response?.status === status;
+}

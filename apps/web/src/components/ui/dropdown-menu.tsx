@@ -4,7 +4,7 @@ import * as React from "react"
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
-import { CheckIcon, ChevronRightIcon } from "lucide-react"
+import { IconCheck, IconChevronRight } from '@/constants/icons'
 
 function DropdownMenu({
   ...props
@@ -34,15 +34,19 @@ function DropdownMenuTrigger({
 function DropdownMenuContent({
   className,
   align = "start",
+  side = "bottom",
   sideOffset = 6,
+  avoidCollisions = false,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
+        side={side}
         sideOffset={sideOffset}
         align={align}
+        avoidCollisions={avoidCollisions}
         className={cn(
           // Layout & sizing
           "z-50 max-h-(--radix-dropdown-menu-content-available-height)",
@@ -149,7 +153,7 @@ function DropdownMenuCheckboxItem({
         data-slot="dropdown-menu-checkbox-item-indicator"
       >
         <DropdownMenuPrimitive.ItemIndicator>
-          <CheckIcon className="size-3.5" />
+          <IconCheck className="size-3.5" />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}
@@ -196,7 +200,7 @@ function DropdownMenuRadioItem({
         data-slot="dropdown-menu-radio-item-indicator"
       >
         <DropdownMenuPrimitive.ItemIndicator>
-          <CheckIcon className="size-3.5" />
+          <IconCheck className="size-3.5" />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
       {children}
@@ -284,7 +288,7 @@ function DropdownMenuSubTrigger({
       {...props}
     >
       {children}
-      <ChevronRightIcon className="ml-auto size-4 text-muted-foreground" />
+      <IconChevronRight className="ml-auto size-4 text-muted-foreground" />
     </DropdownMenuPrimitive.SubTrigger>
   )
 }

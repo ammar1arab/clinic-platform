@@ -1,8 +1,8 @@
 'use client';
 
 import { Suspense } from 'react';
-import { NavigationProgress } from '@/components/blocks/feedback/navigation-progress';
-import { GlobalActivity } from '@/components/blocks/feedback/global-activity';
+import { NavigationProgress } from './navigation-progress';
+import { GlobalActivity } from './global-activity';
 
 export function LoadingChrome() {
   return (

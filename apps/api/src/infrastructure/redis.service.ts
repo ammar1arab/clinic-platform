@@ -1,12 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
+import { createLogger } from "./logger";
 
-/**
- * FUTURE: Upstash Redis for caching (sessions, hot queries, rate limits).
- * Thin REST client. No-ops when UPSTASH_REDIS_REST_URL / TOKEN are unset.
- */
 @Injectable()
 export class RedisService implements OnModuleInit {
-  private readonly logger = new Logger(RedisService.name);
+  private readonly log = createLogger(RedisService.name);
   private baseUrl?: string;
   private token?: string;
   private enabled = false;
@@ -16,7 +13,7 @@ export class RedisService implements OnModuleInit {
     this.token = process.env.UPSTASH_REDIS_REST_TOKEN;
     this.enabled = !!(this.baseUrl && this.token);
     if (!this.enabled) {
-      this.logger.warn("Redis not configured — cache calls are no-ops");
+      this.log.warn("not_configured");
     }
   }
 
@@ -35,7 +32,7 @@ export class RedisService implements OnModuleInit {
       body: JSON.stringify(args),
     });
     if (!res.ok) {
-      this.logger.error(`Redis command failed: ${res.status}`);
+      this.log.error("command_failed", { status: res.status });
       return null;
     }
     const json = (await res.json()) as { result: T };

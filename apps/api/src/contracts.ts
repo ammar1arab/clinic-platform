@@ -1,8 +1,4 @@
-﻿/**
- * Shared HTTP contracts — re-exported from @clinic/types.
- * Prisma remains the DB source of truth; keep packages/types aligned with API responses.
- */
-export type {
+﻿export type {
   Role,
   SessionType,
   DiscountType,

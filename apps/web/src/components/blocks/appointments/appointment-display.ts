@@ -1,4 +1,9 @@
 import type { Appointment } from '@/services/appointments.service';
+import {
+  formatHour,
+  formatTime,
+  formatTimeRange,
+} from '@/lib/datetime';
 
 export type EventDensity = 'xs' | 'sm' | 'md' | 'lg';
 
@@ -14,28 +19,18 @@ export function densityFromHeight(height: number): EventDensity {
   return 'lg';
 }
 
-export function formatTimeAmPm(date: Date | string) {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
-}
-
 export function formatHourLabel(hour: number): string {
-  if (hour === 0 || hour === 12) return `12 ${hour === 0 ? 'AM' : 'PM'}`;
-  return hour < 12 ? `${hour} AM` : `${hour - 12} PM`;
+  return formatHour(hour);
 }
 
 export function formatApptTimeRange(appt: Appointment) {
   const start = new Date(appt.scheduledAt);
   const end = new Date(start.getTime() + appt.durationMins * 60000);
-  return `${formatTimeAmPm(start)} – ${formatTimeAmPm(end)}`;
+  return formatTimeRange(start, end);
 }
 
 export function formatApptStartAmPm(appt: Appointment) {
-  return formatTimeAmPm(appt.scheduledAt);
+  return formatTime(appt.scheduledAt);
 }
 
 export function formatPersonName(person: NameParts) {
@@ -106,18 +101,6 @@ export function matchesAppointmentSearch(appt: Appointment, term: string) {
   const q = term.trim().toLowerCase();
   if (!q) return true;
   return appointmentSearchText(appt).includes(q);
-}
-
-export function pad2(n: number) {
-  return String(n).padStart(2, '0');
-}
-
-export function toDateParam(date: Date) {
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-}
-
-export function toTimeParam(date: Date) {
-  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 }
 
 export function isSameDay(a: Date, b: Date) {

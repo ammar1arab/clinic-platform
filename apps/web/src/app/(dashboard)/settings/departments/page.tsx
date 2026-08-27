@@ -1,35 +1,41 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import {
+  Skeleton,
+  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
-import { EmptyState } from '@/components/primitives/empty-state';
-import { FormActions } from '@/components/primitives/form-actions';
-import { TruncatedText } from '@/components/primitives/truncated-text';
-import { SearchInput } from '@/components/primitives/search-input';
-import { Pagination } from '@/components/primitives/pagination';
-import { TableFrame } from '@/components/blocks/data/table-frame';
+} from '@/components/ui';
 import {
+  TwoStepDeleteDialogs,
+  useTwoStepDelete,
+} from '@/components/blocks/feedback';
+import {
+  RowActionsMenu,
+  EmptyState,
+  FormActions,
+  TruncatedText,
+  SearchInput,
+  Pagination,
+  BilingualNameFields,
+  optionalArabicName,
+} from '@/components/primitives';
+import {
+  TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data/entity-mobile-card';
+} from '@/components/blocks/data';
 import {
   IconAdd,
   IconDelete,
@@ -43,14 +49,10 @@ import {
   useDeactivateDepartment,
   useReactivateDepartment,
   useDeleteDepartment,
-} from '@/hooks/use-departments';
-import { useClinicId } from '@/hooks/use-clinic-id';
-import { useListFilter } from '@/hooks/use-list-filter';
+} from '@/hooks/api/use-departments';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useListFilter } from '@/hooks/shared/use-list-filter';
 import { Department } from '@/services/departments.service';
-import {
-  BilingualNameFields,
-  optionalArabicName,
-} from '@/components/primitives/bilingual-name-fields';
 
 const searchFields = (d: Department) => [d.name];
 
@@ -120,19 +122,17 @@ export default function DepartmentsPage() {
   };
 
   const rowActions = (dept: Department) => (
-    <>
-      <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(dept)}>
-        <IconEdit className="size-3.5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 text-destructive hover:text-destructive"
-        onClick={() => del.ask({ id: dept.id, name: dept.name })}
-      >
-        <IconDelete className="size-3.5" />
-      </Button>
-    </>
+    <RowActionsMenu
+      items={[
+        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(dept) },
+        {
+          label: 'Delete',
+          icon: IconDelete,
+          variant: 'destructive',
+          onSelect: () => del.ask({ id: dept.id, name: dept.name }),
+        },
+      ]}
+    />
   );
 
   return (

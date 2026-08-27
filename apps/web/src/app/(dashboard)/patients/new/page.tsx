@@ -2,11 +2,11 @@
 
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PatientForm } from '@/components/blocks/patients/patient-form';
-import { PageBack } from '@/components/primitives/page-back';
-import { useClinicId } from '@/hooks/use-clinic-id';
+import { PatientForm } from '@/components/blocks/patients';
+import { PageBack } from '@/components/primitives';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { ROUTES } from '@/constants/routes';
-import { resolveReturnTo } from '@/components/blocks/appointments/schedule-nav';
+import { resolveReturnTo } from '@/components/blocks/appointments';
 
 function NewPatientInner() {
   const clinicId = useClinicId();

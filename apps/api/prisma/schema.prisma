@@ -119,8 +119,14 @@ model ClinicUser {
   nameAr           String?
   title            String?
   phone            String?
+  whatsapp         String?
+  nationality      String?
+  specialty        String?
+  specialtyAr      String?
+  languages        String[]        @default([])
   initials         String?
   dob              DateTime?
+  gender           String?
   bio              String?
   bioAr            String?
   experienceYears  Int?
@@ -236,6 +242,7 @@ model Patient {
   emergencyContactName  String?
   emergencyContactPhone String?
   address               String?
+  imageUrl              String?
 
   primaryDoctorId String?
   packageId       String?

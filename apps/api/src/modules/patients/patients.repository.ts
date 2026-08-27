@@ -29,6 +29,7 @@ export class PatientsRepository {
       emergencyContactName: dto.emergencyContactName,
       emergencyContactPhone: dto.emergencyContactPhone,
       address: dto.address,
+      imageUrl: dto.imageUrl,
       dob: dto.dob ? new Date(dto.dob) : null,
       packageId: dto.packageId === "" ? null : (dto.packageId ?? null),
       discountCodeId:
@@ -240,6 +241,7 @@ export class PatientsRepository {
       data.emergencyContactPhone = dto.emergencyContactPhone;
     }
     if (dto.address !== undefined) data.address = dto.address;
+    if (dto.imageUrl !== undefined) data.imageUrl = dto.imageUrl;
 
     if (dto.dob !== undefined) {
       data.dob = dto.dob ? new Date(dto.dob) : null;

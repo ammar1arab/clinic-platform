@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Label } from '@/components/ui/label';
+import { Label } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 type FormFieldProps = {

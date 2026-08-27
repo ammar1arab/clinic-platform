@@ -3,8 +3,11 @@
 import { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { authService, MeResponse } from '@/services/auth.service';
 import { getToken, setToken, clearToken } from '@/lib/auth-token';
-import { useFetchData } from '@/core/api/query';
+import { createLogger } from '@/lib/logger';
+import { useFetchData } from '@/hooks/query/use-fetch-data';
 import { useQueryClient } from '@tanstack/react-query';
+
+const log = createLogger('auth');
 
 interface AuthContextType {
   user: MeResponse | null;
@@ -33,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (newToken: string) => {
     setToken(newToken);
     setTokenState(newToken);
+    log.info('login');
     await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
   }, [queryClient]);
 
@@ -40,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearToken();
     setTokenState(null);
     queryClient.setQueryData(['auth', 'me', token], null);
+    log.info('logout');
   }, [queryClient, token]);
 
   const value = useMemo<AuthContextType>(() => ({

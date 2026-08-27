@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { SearchInput } from '@/components/primitives/search-input';
-import { PractitionersList } from '@/components/blocks/practitioners/practitioners-list';
+import { Button } from '@/components/ui';
+import { SearchInput } from '@/components/primitives';
+import { PractitionersList } from '@/components/blocks/practitioners';
 import { IconAdd } from '@/constants/icons';
 import { ROUTES } from '@/constants/routes';
-import { useClinicId } from '@/hooks/use-clinic-id';
-import { useListFilter } from '@/hooks/use-list-filter';
-import { usePractitioners } from '@/hooks/use-practitioners';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useListFilter } from '@/hooks/shared/use-list-filter';
+import { usePractitioners } from '@/hooks/api/use-practitioners';
 import type { Practitioner } from '@/services/practitioners.service';
 
 const searchFields = (p: Practitioner): string[] =>

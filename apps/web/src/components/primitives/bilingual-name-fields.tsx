@@ -1,7 +1,7 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
-import { FormField } from '@/components/primitives/form-field';
+import { Input } from '@/components/ui';
+import { FormField } from './form-field';
 import { cn } from '@/lib/utils';
 
 type Props = {

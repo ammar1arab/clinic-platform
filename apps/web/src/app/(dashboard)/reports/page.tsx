@@ -1,190 +1,37 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { format } from 'date-fns';
 import {
-  endOfMonth,
-  endOfYear,
-  format,
-  startOfMonth,
-  startOfYear,
-  subMonths,
-} from 'date-fns';
+  DatePicker,
+  FormField,
+} from '@/components/primitives';
+import { PatientCombobox } from '@/components/blocks/appointments';
 import {
-  FileDown,
-  FileSpreadsheet,
-  FileText,
-  GitBranch,
-  File,
-  UserRound,
-  Users,
-  Wallet,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { DatePicker } from '@/components/primitives/date-picker';
-import { FormField } from '@/components/primitives/form-field';
-import { IconWell } from '@/components/primitives/icon-well';
-import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
-import { PatientCombobox } from '@/components/blocks/appointments/patient-combobox';
-import { useClinicId } from '@/hooks/use-clinic-id';
-import { usePatients } from '@/hooks/use-patients';
+  DateRangePresets,
+  ExportFormatButton,
+  ReportCard,
+} from '@/components/blocks/reports';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { usePatients } from '@/hooks/api/use-patients';
 import { useAuth } from '@/providers';
 import {
   useDownloadFinanceReport,
   useDownloadPatientReport,
   useDownloadReferralsReport,
-} from '@/hooks/use-reports';
-import type { ReportFormat } from '@/services/reports.service';
-import { exportPatients, type PatientExportFormat } from '@/lib/export-patients';
+} from '@/hooks/api/use-reports';
+import { currentMonthRange } from '@/constants/report';
+import { IconPatients, IconPayment, IconPerson, IconReferral } from '@/constants/icons';
+import { exportPatients } from '@/lib/export-patients';
 import { toast } from 'sonner';
-import type { LucideIcon } from 'lucide-react';
-
-function currentMonthRange() {
-  const now = new Date();
-  return {
-    from: format(startOfMonth(now), 'yyyy-MM-dd'),
-    to: format(endOfMonth(now), 'yyyy-MM-dd'),
-  };
-}
-
-function FormatDownloadButton({
-  pending,
-  disabled,
-  onDownload,
-  label = 'Download',
-  className,
-}: {
-  pending: boolean;
-  disabled?: boolean;
-  onDownload: (format: ReportFormat) => void;
-  label?: string;
-  className?: string;
-}) {
-  const formats: { key: ReportFormat; label: string; ext: string; desc: string }[] = [
-    { key: 'pdf',  label: 'PDF',   ext: '.pdf',  desc: 'Portable, print-ready' },
-    { key: 'docx', label: 'Word',  ext: '.docx', desc: 'Microsoft Word document' },
-    { key: 'xlsx', label: 'Excel', ext: '.xlsx', desc: 'Spreadsheet with data' },
-    { key: 'csv',  label: 'CSV',   ext: '.csv',  desc: 'Plain comma-separated' },
-  ];
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button size="sm" className={className} disabled={disabled || pending}>
-          {pending ? (
-            <ButtonSpinner />
-          ) : (
-            <FileDown className="size-4 mr-1.5" />
-          )}
-          {label}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuLabel>Export format</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {formats.map(({ key, label, ext, desc }) => (
-          <DropdownMenuItem
-            key={key}
-            onClick={() => onDownload(key)}
-            className="flex-col items-start gap-0 py-2"
-          >
-            <div className="flex w-full items-center justify-between">
-              <span className="font-semibold">{label}</span>
-              <DropdownMenuShortcut>{ext}</DropdownMenuShortcut>
-            </div>
-            <span className="text-[11px] text-muted-foreground group-focus/menu-item:text-accent-foreground/70">{desc}</span>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function DatePresets({
-  onPick,
-}: {
-  onPick: (from: string, to: string) => void;
-}) {
-  const presets = [
-    {
-      label: 'This month',
-      run: () => {
-        const now = new Date();
-        onPick(format(startOfMonth(now), 'yyyy-MM-dd'), format(endOfMonth(now), 'yyyy-MM-dd'));
-      },
-    },
-    {
-      label: 'Last month',
-      run: () => {
-        const d = subMonths(new Date(), 1);
-        onPick(format(startOfMonth(d), 'yyyy-MM-dd'), format(endOfMonth(d), 'yyyy-MM-dd'));
-      },
-    },
-    {
-      label: 'This year',
-      run: () => {
-        const now = new Date();
-        onPick(format(startOfYear(now), 'yyyy-MM-dd'), format(endOfYear(now), 'yyyy-MM-dd'));
-      },
-    },
-  ];
-
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {presets.map((p) => (
-        <Button
-          key={p.label}
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 px-2.5 text-xs"
-          onClick={p.run}
-        >
-          {p.label}
-        </Button>
-      ))}
-    </div>
-  );
-}
-
-function ReportBlock({
-  icon,
-  title,
-  description,
-  children,
-}: {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="card-aura flex flex-col gap-4 rounded-xl bg-card p-4 sm:p-5">
-      <div className="flex items-start gap-3">
-        <IconWell icon={icon} size="md" accent="default" />
-        <div className="min-w-0 pt-0.5">
-          <h2 className="text-sm font-semibold leading-none">{title}</h2>
-          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{description}</p>
-        </div>
-      </div>
-      <div className="flex flex-1 flex-col gap-3">{children}</div>
-    </section>
-  );
-}
 
 export default function ReportsPage() {
   const clinicId = useClinicId();
   const { user } = useAuth();
   const canFinance =
-    user?.role === 'owner' || user?.role === 'admin' || user?.role === 'financial';
+    user?.role === 'owner' ||
+    user?.role === 'admin' ||
+    user?.role === 'financial';
   const month = useMemo(() => currentMonthRange(), []);
 
   const [patientReportId, setPatientReportId] = useState('');
@@ -207,8 +54,8 @@ export default function ReportsPage() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <ReportBlock
-          icon={UserRound}
+        <ReportCard
+          icon={IconPerson}
           title="Patient medical"
           description="Visit history and profile for one patient."
         >
@@ -221,19 +68,19 @@ export default function ReportsPage() {
             />
           </FormField>
           <div className="mt-auto pt-1">
-            <FormatDownloadButton
+            <ExportFormatButton
               className="w-full sm:w-auto"
               pending={downloadPatient.isPending}
               disabled={!patientReportId}
-              onDownload={(format) =>
+              onSelect={(format) =>
                 downloadPatient.mutate({ patientId: patientReportId, format })
               }
             />
           </div>
-        </ReportBlock>
+        </ReportCard>
 
-        <ReportBlock
-          icon={Users}
+        <ReportCard
+          icon={IconPatients}
           title="Patients directory"
           description="Export the active patients roster (A–Z)."
         >
@@ -243,40 +90,32 @@ export default function ReportsPage() {
               : `${patients?.length ?? 0} active patient${(patients?.length ?? 0) === 1 ? '' : 's'}`}
           </p>
           <div className="mt-auto pt-1">
-            <FormatDownloadButton
+            <ExportFormatButton
               className="w-full sm:w-auto"
-              pending={false}
               disabled={patientsLoading || !patients?.length}
-              label="Export"
-              onDownload={(fmt) => {
+              onSelect={(fmt) => {
                 if (!patients?.length) return;
-                const formatMap: Record<ReportFormat, PatientExportFormat> = {
-                  pdf: 'pdf',
-                  xlsx: 'xlsx',
-                  csv: 'csv',
-                  docx: 'docx',
-                };
                 exportPatients(
                   patients,
-                  formatMap[fmt],
+                  fmt,
                   `patients-directory-${format(new Date(), 'yyyy-MM-dd')}`,
                 );
                 toast.success(
                   fmt === 'pdf'
-                    ? 'Print dialog opened — choose Save as PDF'
-                    : `Exported ${patients.length} patients`,
+                    ? 'Print dialog opened - choose Save as PDF'
+                    : `Downloaded ${patients.length} patients`,
                 );
               }}
             />
           </div>
-        </ReportBlock>
+        </ReportCard>
 
-        <ReportBlock
-          icon={GitBranch}
+        <ReportCard
+          icon={IconReferral}
           title="Referrals & consultations"
           description="Referrals in a date range. Optionally filter by patient."
         >
-          <DatePresets
+          <DateRangePresets
             onPick={(from, to) => {
               setReferralsFrom(from);
               setReferralsTo(to);
@@ -291,7 +130,11 @@ export default function ReportsPage() {
               />
             </FormField>
             <FormField label="To" labelClassName="text-xs">
-              <DatePicker value={referralsTo} onChange={setReferralsTo} placeholder="To" />
+              <DatePicker
+                value={referralsTo}
+                onChange={setReferralsTo}
+                placeholder="To"
+              />
             </FormField>
           </div>
           <FormField label="Patient (optional)" labelClassName="text-xs">
@@ -304,10 +147,10 @@ export default function ReportsPage() {
             />
           </FormField>
           <div className="mt-auto pt-1">
-            <FormatDownloadButton
+            <ExportFormatButton
               className="w-full sm:w-auto"
               pending={downloadReferrals.isPending}
-              onDownload={(format) =>
+              onSelect={(format) =>
                 downloadReferrals.mutate({
                   format,
                   patientId: referralsPatientId || undefined,
@@ -317,15 +160,15 @@ export default function ReportsPage() {
               }
             />
           </div>
-        </ReportBlock>
+        </ReportCard>
 
         {canFinance && (
-          <ReportBlock
-            icon={Wallet}
+          <ReportCard
+            icon={IconPayment}
             title="Finance"
             description="Revenue, unpaid balances, by payment method and doctor."
           >
-            <DatePresets
+            <DateRangePresets
               onPick={(from, to) => {
                 setFinanceFrom(from);
                 setFinanceTo(to);
@@ -340,14 +183,18 @@ export default function ReportsPage() {
                 />
               </FormField>
               <FormField label="To" labelClassName="text-xs">
-                <DatePicker value={financeTo} onChange={setFinanceTo} placeholder="To" />
+                <DatePicker
+                  value={financeTo}
+                  onChange={setFinanceTo}
+                  placeholder="To"
+                />
               </FormField>
             </div>
             <div className="mt-auto pt-1">
-              <FormatDownloadButton
+              <ExportFormatButton
                 className="w-full sm:w-auto"
                 pending={downloadFinance.isPending}
-                onDownload={(format) =>
+                onSelect={(format) =>
                   downloadFinance.mutate({
                     format,
                     from: financeFrom || undefined,
@@ -356,7 +203,7 @@ export default function ReportsPage() {
                 }
               />
             </div>
-          </ReportBlock>
+          </ReportCard>
         )}
       </div>
     </div>

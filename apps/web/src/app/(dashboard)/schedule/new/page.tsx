@@ -2,13 +2,13 @@
 
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AppointmentForm } from '@/components/blocks/appointments/appointment-form';
-import { PageBack } from '@/components/primitives/page-back';
-import { useAuth } from '@/providers';
 import {
+  AppointmentForm,
   parseScheduleView,
   schedulePath,
-} from '@/components/blocks/appointments/schedule-nav';
+} from '@/components/blocks/appointments';
+import { PageBack } from '@/components/primitives';
+import { useAuth } from '@/providers';
 
 function NewAppointmentInner() {
   const router = useRouter();

@@ -46,6 +46,9 @@ export const practitionersService = {
   reactivate: (id: string) =>
     api.patch(`/practitioners/${id}/reactivate`).then((r) => r.data),
 
+  remove: (id: string) =>
+    api.delete(`/practitioners/${id}`).then((r) => r.data),
+
   replaceServices: (id: string, data: AssignServicesInput) =>
     api
       .put<PractitionerDetail>(`/practitioners/${id}/services`, data)

@@ -1,44 +1,41 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowDown, ArrowUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import {
+  Skeleton,
+  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
-import { EmptyState } from '@/components/primitives/empty-state';
-import { FormField } from '@/components/primitives/form-field';
-import { FormActions } from '@/components/primitives/form-actions';
-import { TruncatedText } from '@/components/primitives/truncated-text';
-import { SearchInput } from '@/components/primitives/search-input';
-import { Pagination } from '@/components/primitives/pagination';
-import { TableFrame } from '@/components/blocks/data/table-frame';
+  Input,
+} from '@/components/ui';
 import {
+  TwoStepDeleteDialogs,
+  useTwoStepDelete,
+} from '@/components/blocks/feedback';
+import {
+  RowActionsMenu,
+  EmptyState,
+  FormField,
+  FormActions,
+  TruncatedText,
+  SearchInput,
+  Pagination,
+} from '@/components/primitives';
+import {
+  TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data/entity-mobile-card';
-import {
-  IconAdd,
-  IconDelete,
-  IconEdit,
-  IconPayment,
-} from '@/constants/icons';
+} from '@/components/blocks/data';
 import {
   usePaymentMethods,
   useCreatePaymentMethod,
@@ -46,10 +43,11 @@ import {
   useDeactivatePaymentMethod,
   useDeletePaymentMethod,
   useReorderPaymentMethods,
-} from '@/hooks/use-payment-methods';
-import { useClinicId } from '@/hooks/use-clinic-id';
-import { useListFilter } from '@/hooks/use-list-filter';
+} from '@/hooks/api/use-payment-methods';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useListFilter } from '@/hooks/shared/use-list-filter';
 import type { PaymentMethod } from '@/services/payment-methods.service';
+import { IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconEdit, IconPayment } from '@/constants/icons';
 
 const searchFields = (m: PaymentMethod) => [m.name];
 
@@ -136,7 +134,7 @@ export default function PaymentMethodsPage() {
         disabled={reorderMutation.isPending}
         onClick={() => move(m.id, -1)}
       >
-        <ArrowUp className="size-3.5" />
+        <IconArrowUp className="size-3.5" />
       </Button>
       <Button
         variant="ghost"
@@ -145,25 +143,23 @@ export default function PaymentMethodsPage() {
         disabled={reorderMutation.isPending}
         onClick={() => move(m.id, 1)}
       >
-        <ArrowDown className="size-3.5" />
+        <IconArrowDown className="size-3.5" />
       </Button>
     </>
   );
 
   const rowActions = (m: PaymentMethod) => (
-    <>
-      <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(m)}>
-        <IconEdit className="size-3.5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 text-destructive hover:text-destructive"
-        onClick={() => del.ask({ id: m.id, name: m.name })}
-      >
-        <IconDelete className="size-3.5" />
-      </Button>
-    </>
+    <RowActionsMenu
+      items={[
+        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(m) },
+        {
+          label: 'Delete',
+          icon: IconDelete,
+          variant: 'destructive',
+          onSelect: () => del.ask({ id: m.id, name: m.name }),
+        },
+      ]}
+    />
   );
 
   return (

@@ -1,19 +1,10 @@
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import {
   IconWell,
   type IconWellAccent,
-} from '@/components/primitives/icon-well';
-import {
-  IconDepartment,
-  IconDiscount,
-  IconPackage,
-  IconPayment,
-  IconRoom,
-  IconService,
-  IconTime,
-} from '@/constants/icons';
+} from '@/components/primitives';
+import { IconChevronRight, IconDepartment, IconDiscount, IconPackage, IconPayment, IconRoom, IconService, IconTime } from '@/constants/icons';
 
 const settingsLinks: {
   href: string;
@@ -80,7 +71,7 @@ export default function SettingsPage() {
         <Link
           key={href}
           href={href}
-          className="card-aura group flex w-full items-center gap-4 rounded-xl bg-card px-4 py-3.5 transition-transform duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="card-aura group flex w-full items-center gap-4 rounded-xl bg-card px-4 py-3.5"
         >
           <IconWell icon={Icon} size="lg" accent={accent} />
           <span className="min-w-0 flex-1">
@@ -89,7 +80,7 @@ export default function SettingsPage() {
               {description}
             </span>
           </span>
-          <ChevronRight className="size-4 shrink-0 text-muted-foreground/70 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-foreground" />
+          <IconChevronRight className="size-4 shrink-0 text-muted-foreground/70 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-foreground" />
         </Link>
       ))}
     </div>

@@ -1,8 +1,8 @@
 'use client';
 
-import { Spinner } from '@/components/primitives/spinner';
+import { Spinner } from './spinner';
 import { cn } from '@/lib/utils';
-import { Stethoscope } from 'lucide-react';
+import { IconService } from '@/constants/icons';
 
 export function PageLoadingState({
   title = 'Loading Clinic Data…',
@@ -24,7 +24,7 @@ export function PageLoadingState({
     >
       <div className="relative mb-4">
         <div className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary ring-8 ring-primary/5 animate-pulse">
-          <Stethoscope className="size-6 text-primary animate-bounce duration-1000" />
+          <IconService className="size-6 text-primary animate-bounce duration-1000" />
         </div>
         <div className="absolute -bottom-1 -right-1">
           <Spinner size="sm" />

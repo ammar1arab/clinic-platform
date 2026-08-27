@@ -1,4 +1,5 @@
 import { ReportDocument } from "./types/report-document";
+import { formatPhoneDisplay } from "@/infrastructure";
 import {
   formatDisplayDate,
   formatDisplayDateTime,
@@ -131,7 +132,7 @@ export class ReportDocumentFactory {
       letterhead: {
         clinicName: clinic.name,
         address: clinic.address,
-        phone: clinic.phone,
+        phone: formatPhoneDisplay(clinic.phone) || clinic.phone,
         logoUrl: clinic.logoUrl,
         footer: clinic.letterheadFooter,
       },
@@ -139,7 +140,10 @@ export class ReportDocumentFactory {
         { label: "Name (EN)", value: nameEn },
         { label: "Name (AR)", value: nameAr ?? "—" },
         { label: "National ID", value: patient.nationalId ?? "—" },
-        { label: "Phone", value: patient.phone ?? "—" },
+        {
+          label: "Phone",
+          value: formatPhoneDisplay(patient.phone) || patient.phone || "—",
+        },
         { label: "Email", value: patient.email ?? "—" },
         {
           label: "Date of Birth",
@@ -191,7 +195,7 @@ export class ReportDocumentFactory {
       letterhead: {
         clinicName: clinic.name,
         address: clinic.address,
-        phone: clinic.phone,
+        phone: formatPhoneDisplay(clinic.phone) || clinic.phone,
         logoUrl: clinic.logoUrl,
         footer: clinic.letterheadFooter,
       },
@@ -308,7 +312,7 @@ export class ReportDocumentFactory {
       letterhead: {
         clinicName: clinic.name,
         address: clinic.address,
-        phone: clinic.phone,
+        phone: formatPhoneDisplay(clinic.phone) || clinic.phone,
         logoUrl: clinic.logoUrl,
         footer: clinic.letterheadFooter,
       },

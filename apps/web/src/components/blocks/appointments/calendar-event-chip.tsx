@@ -1,9 +1,7 @@
 'use client';
 
-import { MapPin, Video } from 'lucide-react';
 import type { EventContentArg } from '@fullcalendar/core';
 import type { Appointment } from '@/services/appointments.service';
-import { STATUS_COLORS } from './status-badge';
 import {
   formatApptStartAmPm,
   formatApptTimeRange,
@@ -11,6 +9,9 @@ import {
   formatDoctorLabel,
   patientDisplayName,
 } from './appointment-display';
+import { formatTime, formatTimeRange } from '@/lib/datetime';
+import { IconInPerson, IconOnline } from '@/constants/icons';
+import { SoftTip } from '@/components/primitives';
 
 function isAppointment(value: object): value is Appointment {
   return (
@@ -33,50 +34,57 @@ export function CalendarEventChip({ arg }: { arg: EventContentArg }) {
   const appt = readCalendarAppointment(arg.event.extendedProps);
   const isMonth = arg.view.type === 'dayGridMonth';
   const fullName = appt ? patientDisplayName(appt) : arg.event.title;
-  const startLabel = appt ? formatApptStartAmPm(appt) : arg.timeText;
-  const rangeLabel = appt ? formatApptTimeRange(appt) : arg.timeText;
+  const start = arg.event.start;
+  const end = arg.event.end;
+  const startLabel = appt
+    ? formatApptStartAmPm(appt)
+    : start
+      ? formatTime(start)
+      : arg.timeText;
+  const rangeLabel = appt
+    ? formatApptTimeRange(appt)
+    : start && end
+      ? formatTimeRange(start, end)
+      : arg.timeText;
   const doctorName = appt?.doctor?.name;
   const tip = appt ? formatApptTip(appt, { rangeLabel, doctorName }) : fullName;
-  const Icon = appt?.sessionType === 'online' ? Video : MapPin;
-  const fill = appt
-    ? STATUS_COLORS[appt.status]
-    : arg.event.backgroundColor || '#64748b';
+  const Icon = appt?.sessionType === 'online' ? IconOnline : IconInPerson;
 
   if (isMonth) {
     return (
-      <div
-        className="fc-event-chip fc-event-chip--month"
-        title={tip}
-        style={{ backgroundColor: fill, color: '#fff' }}
-      >
-        <span className="fc-event-chip__time">{startLabel}</span>
-        <span className="fc-event-chip__name">{fullName}</span>
-      </div>
+      <SoftTip label={tip}>
+        <div className="fc-event-chip fc-event-chip--month">
+          <span className="fc-event-chip__time">{startLabel}</span>
+          <span className="fc-event-chip__name">{fullName}</span>
+        </div>
+      </SoftTip>
     );
   }
 
   return (
-    <div className="fc-event-chip fc-event-chip--time" title={tip}>
-      <div className="fc-event-chip__primary">
-        <Icon className="fc-event-chip__icon" aria-hidden />
-        <span className="fc-event-chip__time fc-event-chip__time--compact">
-          {startLabel}
-        </span>
-        <span className="fc-event-chip__name">{fullName}</span>
-      </div>
-      <div className="fc-event-chip__secondary">
-        <span className="fc-event-chip__range">{rangeLabel}</span>
-        {doctorName ? (
-          <span className="fc-event-chip__doctor" title={doctorName}>
-            {formatDoctorLabel(doctorName, { short: true })}
+    <SoftTip label={tip}>
+      <div className="fc-event-chip fc-event-chip--time">
+        <div className="fc-event-chip__primary">
+          <Icon className="fc-event-chip__icon" aria-hidden />
+          <span className="fc-event-chip__time fc-event-chip__time--compact">
+            {startLabel}
           </span>
-        ) : null}
-        {appt?.service?.name ? (
-          <span className="fc-event-chip__service" title={appt.service.name}>
-            {appt.service.name}
-          </span>
-        ) : null}
+          <span className="fc-event-chip__name">{fullName}</span>
+        </div>
+        <div className="fc-event-chip__secondary">
+          <span className="fc-event-chip__range">{rangeLabel}</span>
+          {doctorName ? (
+            <span className="fc-event-chip__doctor">
+              {formatDoctorLabel(doctorName, { short: true })}
+            </span>
+          ) : null}
+          {appt?.service?.name ? (
+            <span className="fc-event-chip__service">
+              {appt.service.name}
+            </span>
+          ) : null}
+        </div>
       </div>
-    </div>
+    </SoftTip>
   );
 }

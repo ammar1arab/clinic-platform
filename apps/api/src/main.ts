@@ -1,21 +1,18 @@
 import "dotenv/config";
 import "tsconfig-paths/register";
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe } from "@nestjs/common";
+import { Logger, ValidationPipe } from "@nestjs/common";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
+import { corsOrigin, createLogger } from "./infrastructure";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const log = createLogger("Bootstrap");
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(new Logger());
 
   app.enableCors({
-    origin: [
-      "http://localhost:3000",
-      "http://192.168.8.136:3000",
-      "https://clinic-platform-nine.vercel.app",
-      "https://cureva.clinic",
-      "https://www.cureva.clinic",
-    ],
+    origin: corsOrigin,
     credentials: true,
   });
 
@@ -35,6 +32,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("api", app, document);
 
-  await app.listen(process.env.PORT ?? 4000);
+  const port = process.env.PORT ?? 4000;
+  await app.listen(port);
+  log.info("listening", { port });
 }
 void bootstrap();

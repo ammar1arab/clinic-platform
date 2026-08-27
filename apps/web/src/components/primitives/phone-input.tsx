@@ -6,10 +6,14 @@ import PhoneInput, {
   getCountryCallingCode,
 } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import { Check, ChevronDown, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { IconCheck, IconChevronDown, IconSearch } from '@/constants/icons';
 
 interface Props {
   value: string;
@@ -114,7 +118,7 @@ function PhoneCountrySelect({
           )}
         >
           <Icon aria-hidden country={value} label={selected?.label} />
-          <ChevronDown className="size-3 opacity-60" aria-hidden />
+          <IconChevronDown className="size-3 opacity-60" aria-hidden />
         </button>
       </PopoverTrigger>
 
@@ -125,11 +129,11 @@ function PhoneCountrySelect({
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <div className="flex items-center gap-2 border-b border-border/70 px-2.5 py-2">
-          <Search className="size-3.5 shrink-0 text-muted-foreground" />
+          <IconSearch className="size-3.5 shrink-0 text-muted-foreground" />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search country…"
+            placeholder="IconSearch country…"
             className="h-8 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
           />
         </div>
@@ -171,7 +175,7 @@ function PhoneCountrySelect({
                 {code && (
                   <span className="shrink-0 text-xs text-muted-foreground">{code}</span>
                 )}
-                {active && <Check className="size-3.5 shrink-0 text-primary" />}
+                {active && <IconCheck className="size-3.5 shrink-0 text-primary" />}
               </button>
             );
           })}

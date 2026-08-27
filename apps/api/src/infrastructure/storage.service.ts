@@ -1,5 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import { createHash, createHmac } from "crypto";
+import { createLogger } from "./logger";
 
 export interface UploadObjectInput {
   key: string;
@@ -7,13 +8,9 @@ export interface UploadObjectInput {
   contentType: string;
 }
 
-/**
- * FUTURE: Cloudflare R2 for images, videos, PDF/Excel archives (and logos).
- * S3-compatible SigV4 PUT. No-ops when R2_* env vars are unset.
- */
 @Injectable()
 export class StorageService implements OnModuleInit {
-  private readonly logger = new Logger(StorageService.name);
+  private readonly log = createLogger(StorageService.name);
   private enabled = false;
   private accountId = "";
   private accessKeyId = "";
@@ -37,7 +34,7 @@ export class StorageService implements OnModuleInit {
       this.bucket
     );
     if (!this.enabled) {
-      this.logger.warn("R2 not configured — uploads are no-ops");
+      this.log.warn("not_configured");
     }
   }
 
@@ -45,12 +42,11 @@ export class StorageService implements OnModuleInit {
     return this.enabled;
   }
 
-  /** Returns public URL when configured; otherwise returns a placeholder path. */
   async upload(
     input: UploadObjectInput,
   ): Promise<{ key: string; url: string; skipped?: boolean }> {
     if (!this.enabled) {
-      this.logger.debug(`Upload skipped (no R2): ${input.key}`);
+      this.log.debug("skipped", { key: input.key });
       return { key: input.key, url: input.key, skipped: true };
     }
 
@@ -116,7 +112,7 @@ export class StorageService implements OnModuleInit {
 
     if (!res.ok) {
       const text = await res.text();
-      this.logger.error(`R2 upload failed: ${res.status} ${text}`);
+      this.log.error("upload_failed", { status: res.status, text });
       throw new Error(`R2 upload failed: ${res.status}`);
     }
 

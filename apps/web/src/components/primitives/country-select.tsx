@@ -1,0 +1,187 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import {
+  getCountries,
+  type Country,
+} from 'react-phone-number-input';
+import en from 'react-phone-number-input/locale/en.json';
+import flags from 'react-phone-number-input/flags';
+import {
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui';
+import { cn } from '@/lib/utils';
+import { IconCheck, IconChevronDown, IconSearch } from '@/constants/icons';
+
+export type CountryCode = Country;
+
+type CountryOption = {
+  value: CountryCode;
+  label: string;
+};
+
+const COUNTRY_OPTIONS: CountryOption[] = getCountries()
+  .map((code) => ({
+    value: code,
+    label: (en as Record<string, string>)[code] ?? code,
+  }))
+  .sort((a, b) => a.label.localeCompare(b.label));
+
+export function countryLabel(code: string | null | undefined): string | null {
+  if (!code) return null;
+  return (en as Record<string, string>)[code] ?? code;
+}
+
+function Flag({ country, title }: { country: CountryCode; title: string }) {
+  const Component = flags[country];
+  if (!Component) {
+    return (
+      <span className="grid size-5 place-items-center rounded-[2px] bg-muted text-[0.6rem] text-muted-foreground">
+        {country}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex size-5 shrink-0 overflow-hidden rounded-[2px] [&_svg]:size-full">
+      <Component title={title} />
+    </span>
+  );
+}
+
+type Props = {
+  value?: string | null;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  allowClear?: boolean;
+};
+
+export function CountrySelect({
+  value,
+  onChange,
+  placeholder = 'Select country',
+  disabled,
+  className,
+  allowClear = true,
+}: Props) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const selected = useMemo(
+    () => COUNTRY_OPTIONS.find((option) => option.value === value),
+    [value],
+  );
+
+  const filtered = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return COUNTRY_OPTIONS;
+    return COUNTRY_OPTIONS.filter(
+      (option) =>
+        option.label.toLowerCase().includes(term) ||
+        option.value.toLowerCase().includes(term),
+    );
+  }, [query]);
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (disabled) return;
+        setOpen(next);
+        if (!next) setQuery('');
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          className={cn(
+            'flex h-8 w-full items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm transition-colors',
+            'hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+            'disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30',
+            !selected && 'text-muted-foreground',
+            className,
+          )}
+        >
+          {selected ? (
+            <>
+              <Flag country={selected.value} title={selected.label} />
+              <span className="min-w-0 flex-1 truncate text-left text-foreground">
+                {selected.label}
+              </span>
+            </>
+          ) : (
+            <span className="min-w-0 flex-1 truncate text-left">{placeholder}</span>
+          )}
+          <IconChevronDown className="size-3.5 shrink-0 opacity-60" aria-hidden />
+        </button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="start"
+            className="z-120 w-(--radix-popover-trigger-width) min-w-[16rem] p-0"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
+        <div className="flex items-center gap-2 border-b border-border/70 px-2.5 py-2">
+          <IconSearch className="size-3.5 shrink-0 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="IconSearch country…"
+            className="h-8 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+          />
+        </div>
+
+        <div className="max-h-64 overflow-y-auto overscroll-contain p-1">
+          {allowClear && value ? (
+            <button
+              type="button"
+              onClick={() => {
+                onChange('');
+                setQuery('');
+                setOpen(false);
+              }}
+              className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              Clear selection
+            </button>
+          ) : null}
+
+          {filtered.length === 0 ? (
+            <p className="px-2.5 py-4 text-center text-sm text-muted-foreground">
+              No countries found.
+            </p>
+          ) : (
+            filtered.map((option) => {
+              const active = option.value === value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setQuery('');
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    active && 'bg-accent text-accent-foreground',
+                  )}
+                >
+                  <Flag country={option.value} title={option.label} />
+                  <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                  {active ? <IconCheck className="size-3.5 shrink-0 text-primary" /> : null}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

@@ -1,40 +1,41 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { format } from 'date-fns';
-import { Check, Plus, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  Button,
+  Badge,
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import {
+  Textarea,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { EmptyState } from '@/components/primitives/empty-state';
-import { FormField } from '@/components/primitives/form-field';
-import { FormActions } from '@/components/primitives/form-actions';
-import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
+} from '@/components/ui';
+import {
+  EmptyState,
+  FormField,
+  FormActions,
+} from '@/components/primitives';
+import { ButtonSpinner } from '@/components/blocks/feedback';
+import { ProfileSection } from '@/components/blocks/profile';
 import { useAuth } from '@/providers';
-import { useClinicStaff } from '@/hooks/use-clinic-staff';
+import { useClinicStaff } from '@/hooks/api/use-clinic-staff';
 import {
   useAcceptReferral,
   useCreateReferral,
   useRejectReferral,
   useReferralOpinion,
   useReferrals,
-} from '@/hooks/use-referrals';
+} from '@/hooks/api/use-referrals';
 import type { ReferralType, ReferralUrgency } from '@/services/referrals.service';
+import { REFERRAL_URGENCY_VARIANT } from '@/constants/referral';
+import { IconAdd, IconCheck, IconClose } from '@/constants/icons';
+import { formatDateTime } from '@/lib/datetime';
 
 interface AppointmentOption {
   id: string;
@@ -48,12 +49,6 @@ interface Props {
   patientId: string;
   appointments: AppointmentOption[];
 }
-
-const URGENCY_VARIANT: Record<ReferralUrgency, 'outline' | 'secondary' | 'destructive'> = {
-  normal: 'outline',
-  high: 'secondary',
-  urgent: 'destructive',
-};
 
 export function PatientReferralsBlock({ clinicId, patientId, appointments }: Props) {
   const { user } = useAuth();
@@ -104,136 +99,157 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="min-w-0 text-sm">Referrals & consults</CardTitle>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={openCreate}
-              disabled={appointments.length === 0}
-            >
-              <Plus className="size-4 mr-1.5" />
-              New request
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {!referrals?.length && (
-            <EmptyState
-              title="No referrals yet"
-              description="Send a referral or consultation from an existing appointment."
-              className="py-8"
-            />
-          )}
-          {referrals?.map((ref) => {
-            const isReceiver = ref.toDoctorId === clinicUserId;
-            const canAct = isReceiver && ref.status === 'pending';
-            const canOpinion =
-              isReceiver && ref.status === 'accepted' && ref.type === 'consultation';
+      <ProfileSection
+        title="Referrals & consults"
+        description="Cross-doctor requests for this patient"
+        action={
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            onClick={openCreate}
+            disabled={appointments.length === 0}
+          >
+            <IconAdd className="mr-1.5 size-4" />
+            New request
+          </Button>
+        }
+      >
+        {!referrals?.length ? (
+          <EmptyState
+            title="No referrals yet"
+            description="Send a referral or consultation from an existing appointment."
+            className="py-8"
+          />
+        ) : (
+          <div className="space-y-2">
+            {referrals.map((ref) => {
+              const isReceiver = ref.toDoctorId === clinicUserId;
+              const canAct = isReceiver && ref.status === 'pending';
+              const canOpinion =
+                isReceiver &&
+                ref.status === 'accepted' &&
+                ref.type === 'consultation';
 
-            return (
-              <div key={ref.id} className="min-w-0 space-y-2 border-b py-3 text-sm last:border-0">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <p className="font-medium capitalize">{ref.type}</p>
-                      <Badge variant={URGENCY_VARIANT[ref.urgency]} className="capitalize">
-                        {ref.urgency}
-                      </Badge>
-                      <Badge
-                        variant={
-                          ref.status === 'accepted'
-                            ? 'default'
-                            : ref.status === 'rejected'
-                              ? 'destructive'
-                              : 'secondary'
-                        }
-                        className="capitalize"
-                      >
-                        {ref.status}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground break-words">
-                      {format(new Date(ref.createdAt), 'MMM d, yyyy · h:mm a')}
-                      <br />
-                      {ref.fromDoctor?.name ?? 'Doctor'} → {ref.toDoctor?.name ?? 'Doctor'}
-                    </p>
-                    {ref.appointment?.scheduledAt && (
-                      <p className="text-xs text-muted-foreground break-words">
-                        Visit{' '}
-                        {format(new Date(ref.appointment.scheduledAt), 'MMM d, yyyy · h:mm a')}
+              return (
+                <div
+                  key={ref.id}
+                  className="min-w-0 space-y-2 rounded-xl bg-muted/35 p-3 text-sm"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="font-medium capitalize">{ref.type}</p>
+                        <Badge
+                          variant={REFERRAL_URGENCY_VARIANT[ref.urgency]}
+                          className="capitalize"
+                        >
+                          {ref.urgency}
+                        </Badge>
+                        <Badge
+                          variant={
+                            ref.status === 'accepted'
+                              ? 'default'
+                              : ref.status === 'rejected'
+                                ? 'destructive'
+                                : 'secondary'
+                          }
+                          className="capitalize"
+                        >
+                          {ref.status}
+                        </Badge>
+                      </div>
+                      <p className="break-words text-xs text-muted-foreground">
+                        {formatDateTime(ref.createdAt)}
+                        <br />
+                        {ref.fromDoctor?.name ?? 'Doctor'} →{' '}
+                        {ref.toDoctor?.name ?? 'Doctor'}
                       </p>
-                    )}
+                      {ref.appointment?.scheduledAt ? (
+                        <p className="break-words text-xs text-muted-foreground">
+                          Visit {formatDateTime(ref.appointment.scheduledAt)}
+                        </p>
+                      ) : null}
+                    </div>
+                    {canAct ? (
+                      <div className="flex shrink-0 gap-1.5">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            acceptMutation.isPending || rejectMutation.isPending
+                          }
+                          onClick={() => acceptMutation.mutate(ref.id)}
+                        >
+                          <IconCheck className="mr-1 size-3.5" />
+                          Accept
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            acceptMutation.isPending || rejectMutation.isPending
+                          }
+                          onClick={() => rejectMutation.mutate(ref.id)}
+                        >
+                          <IconClose className="mr-1 size-3.5" />
+                          Reject
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
-                  {canAct && (
-                    <div className="flex shrink-0 gap-1.5">
+                  <p className="break-words whitespace-pre-wrap text-muted-foreground">
+                    {ref.reason}
+                  </p>
+                  {ref.opinion ? (
+                    <p className="break-words rounded-lg bg-background/70 px-2.5 py-2 text-xs whitespace-pre-wrap ring-1 ring-border/50">
+                      <span className="font-medium text-foreground">
+                        Opinion:{' '}
+                      </span>
+                      {ref.opinion}
+                    </p>
+                  ) : null}
+                  {canOpinion && !ref.opinion ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        rows={2}
+                        placeholder="Add your consultation opinion…"
+                        value={opinionDrafts[ref.id] ?? ''}
+                        onChange={(e) =>
+                          setOpinionDrafts((prev) => ({
+                            ...prev,
+                            [ref.id]: e.target.value,
+                          }))
+                        }
+                      />
                       <Button
                         type="button"
                         size="sm"
-                        variant="outline"
-                        disabled={acceptMutation.isPending || rejectMutation.isPending}
-                        onClick={() => acceptMutation.mutate(ref.id)}
+                        disabled={
+                          opinionMutation.isPending ||
+                          !(opinionDrafts[ref.id] ?? '').trim()
+                        }
+                        onClick={() =>
+                          opinionMutation.mutate({
+                            id: ref.id,
+                            opinion: (opinionDrafts[ref.id] ?? '').trim(),
+                          })
+                        }
                       >
-                        <Check className="size-3.5 mr-1" />
-                        Accept
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={acceptMutation.isPending || rejectMutation.isPending}
-                        onClick={() => rejectMutation.mutate(ref.id)}
-                      >
-                        <X className="size-3.5 mr-1" />
-                        Reject
+                        {opinionMutation.isPending && <ButtonSpinner />}
+                        Save opinion
                       </Button>
                     </div>
-                  )}
+                  ) : null}
                 </div>
-                <p className="break-words text-muted-foreground whitespace-pre-wrap">{ref.reason}</p>
-                {ref.opinion && (
-                  <p className="rounded-md bg-muted/50 px-2.5 py-2 text-xs break-words whitespace-pre-wrap">
-                    <span className="font-medium text-foreground">Opinion: </span>
-                    {ref.opinion}
-                  </p>
-                )}
-                {canOpinion && !ref.opinion && (
-                  <div className="space-y-2">
-                    <Textarea
-                      rows={2}
-                      placeholder="Add your consultation opinion…"
-                      value={opinionDrafts[ref.id] ?? ''}
-                      onChange={(e) =>
-                        setOpinionDrafts((prev) => ({ ...prev, [ref.id]: e.target.value }))
-                      }
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={
-                        opinionMutation.isPending || !(opinionDrafts[ref.id] ?? '').trim()
-                      }
-                      onClick={() =>
-                        opinionMutation.mutate({
-                          id: ref.id,
-                          opinion: (opinionDrafts[ref.id] ?? '').trim(),
-                        })
-                      }
-                    >
-                      {opinionMutation.isPending && <ButtonSpinner />}
-                      Save opinion
-                    </Button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
+              );
+            })}
+          </div>
+        )}
+      </ProfileSection>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
@@ -248,10 +264,10 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                 </SelectTrigger>
                 <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
                   {appointments.map((a) => (
-                    <SelectItem key={a.id} value={a.id} textValue={`${format(new Date(a.scheduledAt), 'MMM d, yyyy h:mm a')} ${a.service?.name ?? 'Visit'} ${a.doctor.name}`}>
+                    <SelectItem key={a.id} value={a.id} textValue={`${formatDateTime(a.scheduledAt)} ${a.service?.name ?? 'Visit'} ${a.doctor.name}`}>
                       <span className="flex min-w-0 flex-col gap-0.5 text-left leading-snug">
                         <span className="font-medium">
-                          {format(new Date(a.scheduledAt), 'MMM d, yyyy · h:mm a')}
+                          {formatDateTime(a.scheduledAt)}
                         </span>
                         <span className="text-xs text-muted-foreground break-words whitespace-normal">
                           {a.service?.name ?? 'Visit'} · Dr. {a.doctor.name}

@@ -24,11 +24,13 @@ AGENTS.md          Agent entry overview
 | `components/ui/` | shadcn - keep token-aligned |
 | `components/primitives/` | Shared clinic controls (`form-field`, `date-picker`, `bilingual-name-fields`, …) |
 | `components/blocks/` | Feature UI (`appointments/`, `patients/`, `dashboard/`, `layout/`, …) |
-| `hooks/` | TanStack Query + UI hooks |
+| `hooks/query/` | TanStack Query helpers (`use-fetch-data`, `create-crud-hooks`, presets) - domain hooks import from here |
+| `hooks/shared/` | Reusable non-API hooks (`use-now`, `use-debounce`, `use-clinic-id`, …) |
+| `hooks/api/` | Domain hooks used by pages/blocks (`use-patients`, `use-appointments`, …) |
 | `services/` | Axios wrappers only |
-| `lib/` | `api`, `env`, `auth-token`, `utils`, `validations`, `socket`, … |
+| `lib/` | `api`, `query-client`, `logger`, `env`, `auth-token`, `utils`, `datetime`, `validations`, `socket`, `upload-local`, … |
 | `providers/` | Auth, query, theme (`next-themes`) |
-| `constants/` | `routes.ts` and static maps |
+| `constants/` | `routes`, `icons`, `query-keys`, `appointment`, `form`, `patient`, `practitioner`, … |
 
 ### Route groups today
 

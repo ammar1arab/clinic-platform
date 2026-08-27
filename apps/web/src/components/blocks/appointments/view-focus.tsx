@@ -8,11 +8,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Maximize2, Minimize2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
+import { SoftTip } from '@/components/primitives';
 import { cn } from '@/lib/utils';
-import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut';
+import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
+import { IconMaximize, IconMinimize } from '@/constants/icons';
 
 interface ViewFocusApi {
   focused: boolean;
@@ -61,21 +62,22 @@ export function ViewFocusToggle({ className }: { className?: string }) {
   if (!api) return null;
 
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="icon-sm"
-      onClick={api.focused ? api.exit : api.enter}
-      title={api.focused ? 'Exit focus' : 'Focus view'}
-      aria-label={api.focused ? 'Exit focus' : 'Focus view'}
-      className={cn(
-        'size-8 shrink-0 rounded-lg border-border/70 bg-background/80 text-muted-foreground shadow-2xs',
-        'hover:border-primary/40 hover:bg-card hover:text-foreground active:scale-95',
-        className,
-      )}
-    >
-      {api.focused ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
-    </Button>
+    <SoftTip label={api.focused ? 'Exit focus' : 'Focus view'}>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-sm"
+        onClick={api.focused ? api.exit : api.enter}
+        aria-label={api.focused ? 'Exit focus' : 'Focus view'}
+        className={cn(
+          'size-8 shrink-0 rounded-lg border-border/70 bg-background/80 text-muted-foreground shadow-2xs',
+          'hover:border-primary/40 hover:bg-card hover:text-foreground active:scale-95',
+          className,
+        )}
+      >
+        {api.focused ? <IconMinimize className="size-3.5" /> : <IconMaximize className="size-3.5" />}
+      </Button>
+    </SoftTip>
   );
 }
 

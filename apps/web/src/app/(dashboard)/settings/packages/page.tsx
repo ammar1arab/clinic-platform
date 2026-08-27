@@ -1,59 +1,62 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import {
+  Skeleton,
+  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import {
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
-import { EmptyState } from '@/components/primitives/empty-state';
-import { FormField } from '@/components/primitives/form-field';
-import { FormActions } from '@/components/primitives/form-actions';
-import { TruncatedText } from '@/components/primitives/truncated-text';
-import { SearchInput } from '@/components/primitives/search-input';
-import { Pagination } from '@/components/primitives/pagination';
-import { TableFrame } from '@/components/blocks/data/table-frame';
+} from '@/components/ui';
 import {
+  TwoStepDeleteDialogs,
+  useTwoStepDelete,
+} from '@/components/blocks/feedback';
+import {
+  RowActionsMenu,
+  EmptyState,
+  FormField,
+  FormActions,
+  TruncatedText,
+  SearchInput,
+  Pagination,
+} from '@/components/primitives';
+import {
+  TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data/entity-mobile-card';
+} from '@/components/blocks/data';
 import {
   IconAdd,
   IconDelete,
   IconEdit,
   IconPackage,
 } from '@/constants/icons';
+import { FORM_NONE } from '@/constants/form';
 import {
   usePackages,
   useCreatePackage,
   useUpdatePackage,
   useDeactivatePackage,
   useDeletePackage,
-} from '@/hooks/use-packages';
-import { useClinicId } from '@/hooks/use-clinic-id';
-import { useListFilter } from '@/hooks/use-list-filter';
+} from '@/hooks/api/use-packages';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useListFilter } from '@/hooks/shared/use-list-filter';
 import type { ClinicPackage } from '@/services/packages.service';
 import type { DiscountType } from '@/services/appointments.service';
 
@@ -151,19 +154,17 @@ export default function PackagesPage() {
   };
 
   const rowActions = (p: ClinicPackage) => (
-    <>
-      <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(p)}>
-        <IconEdit className="size-3.5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 text-destructive hover:text-destructive"
-        onClick={() => del.ask({ id: p.id, name: p.name })}
-      >
-        <IconDelete className="size-3.5" />
-      </Button>
-    </>
+    <RowActionsMenu
+      items={[
+        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(p) },
+        {
+          label: 'Delete',
+          icon: IconDelete,
+          variant: 'destructive',
+          onSelect: () => del.ask({ id: p.id, name: p.name }),
+        },
+      ]}
+    />
   );
 
   return (
@@ -357,16 +358,16 @@ export default function PackagesPage() {
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Discount type">
                 <Select
-                  value={discountType || '__none__'}
+                  value={discountType || FORM_NONE}
                   onValueChange={(v) =>
-                    setDiscountType(v === '__none__' ? '' : (v as DiscountType))
+                    setDiscountType(v === FORM_NONE ? '' : (v as DiscountType))
                   }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">None</SelectItem>
+                    <SelectItem value={FORM_NONE}>None</SelectItem>
                     <SelectItem value="fixed">Fixed</SelectItem>
                     <SelectItem value="percentage">Percentage</SelectItem>
                   </SelectContent>

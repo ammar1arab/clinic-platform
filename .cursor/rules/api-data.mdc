@@ -25,6 +25,10 @@ export const patientsService = {
 
 ## Web hooks
 
+- `hooks/query/` - TanStack helpers (`use-fetch-data`, `use-api-mutation`, `create-crud-hooks`, `query-presets`); domain hooks import from here only
+- `hooks/shared/` - non-API reusable hooks
+- `hooks/api/` - domain hooks used by pages/blocks
+- QueryClient: `lib/query-client.ts`; Axios: `lib/api.ts`
 - Reads: `useFetchData` / domain hooks (`use-patients`, `use-appointments`, …)
 - Writes: `useApiMutation` or `create-crud-hooks`
 - Infinite: `useInfiniteFetchData` when the API paginates that way

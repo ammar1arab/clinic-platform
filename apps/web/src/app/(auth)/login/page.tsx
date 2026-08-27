@@ -6,11 +6,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { FormField } from '@/components/primitives/form-field';
-import { ButtonSpinner } from '@/components/blocks/feedback/button-spinner';
+import {
+  Button,
+  Input,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui';
+import { FormField } from '@/components/primitives';
+import { ButtonSpinner } from '@/components/blocks/feedback';
 import { api } from '@/lib/api';
 import { useAuth } from '@/providers';
 import { ROUTES } from '@/constants/routes';

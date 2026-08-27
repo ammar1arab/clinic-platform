@@ -8,33 +8,82 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { TruncatedText } from '@/components/primitives/truncated-text';
-import { Pagination } from '@/components/primitives/pagination';
-import { EmptyState } from '@/components/primitives/empty-state';
-import { MetaStat } from '@/components/primitives/meta-stat';
-import { TableSkeleton } from '@/components/primitives/skeleton-presets';
-import { TableFrame } from '@/components/blocks/data/table-frame';
-import { IconEdit, IconPhone, IconPractitioner } from '@/constants/icons';
-import { PRACTITIONER_EMPLOYMENT_LABEL } from '@/constants/practitioner';
-import { ROUTES } from '@/constants/routes';
+  Switch,
+  Badge,
+} from '@/components/ui';
 import {
+  PreviewableAvatar,
+  isRowControlClick,
+  EmailLink,
+  PhoneLink,
+  TruncatedText,
+  Pagination,
+  EmptyState,
+  MetaStat,
+  TableSkeleton,
+  RowActionsMenu,
+  SoftTip,
+} from '@/components/primitives';
+import { TableFrame } from '@/components/blocks/data';
+import { PRACTITIONER_EMPLOYMENT_LABEL, PRACTITIONER_EMPLOYMENT_VARIANT, languageLabelList, languageLabels } from '@/constants/practitioner';
+import { ROUTES } from '@/constants/routes';
+import { ageLabel } from '@/lib/age';
+import {
+  TwoStepDeleteDialogs,
+  useTwoStepDelete,
+} from '@/components/blocks/feedback';
+import {
+  useDeletePractitioner,
   useDeactivatePractitioner,
   useReactivatePractitioner,
-} from '@/hooks/use-practitioners';
+} from '@/hooks/api/use-practitioners';
 import type { Practitioner } from '@/services/practitioners.service';
-
-function initials(p: Practitioner) {
-  if (p.initials?.trim()) return p.initials.slice(0, 2).toUpperCase();
-  return p.name.slice(0, 2).toUpperCase() || '?';
-}
+import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconPhone, IconPractitioner, IconView } from '@/constants/icons';
 
 function displayName(p: Practitioner) {
   return p.title ? `${p.title} ${p.name}` : p.name;
+}
+
+function CellBadge({
+  value,
+  variant = 'secondary',
+}: {
+  value: string | null | undefined;
+  variant?: 'secondary' | 'outline' | 'warning' | 'info' | 'muted';
+}) {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  return (
+    <SoftTip label={value}>
+      <Badge variant={variant} className="max-w-full font-normal">
+        <span>{value}</span>
+      </Badge>
+    </SoftTip>
+  );
+}
+
+function LanguageBadges({ codes }: { codes: string[] | null | undefined }) {
+  const labels = languageLabelList(codes);
+  if (!labels.length) return <span className="text-muted-foreground">—</span>;
+  const shown = labels.slice(0, 2);
+  const extra = labels.length - shown.length;
+  return (
+    <div className="flex min-w-0 items-center gap-1">
+      {shown.map((label) => (
+        <SoftTip key={label} label={label}>
+          <Badge variant="outline" className="max-w-18 font-normal">
+            <span>{label}</span>
+          </Badge>
+        </SoftTip>
+      ))}
+      {extra > 0 ? (
+        <SoftTip label={labels.join(', ')}>
+          <Badge variant="muted" className="font-normal">
+            +{extra}
+          </Badge>
+        </SoftTip>
+      ) : null}
+    </div>
+  );
 }
 
 interface Props {
@@ -65,12 +114,43 @@ export function PractitionersList({
   const router = useRouter();
   const deactivate = useDeactivatePractitioner(clinicId);
   const reactivate = useReactivatePractitioner(clinicId);
+  const remove = useDeletePractitioner(clinicId);
+  const del = useTwoStepDelete<{ id: string; name: string }>();
 
   const toggling = deactivate.isPending || reactivate.isPending;
   const toggle = (p: Practitioner, on: boolean) =>
     on ? reactivate.mutate(p.id) : deactivate.mutate(p.id);
 
   const openProfile = (id: string) => router.push(ROUTES.PRACTITIONER_DETAIL(id));
+
+  const rowMenu = (p: Practitioner) => (
+    <RowActionsMenu
+      items={[
+        {
+          label: 'View',
+          icon: IconView,
+          href: ROUTES.PRACTITIONER_DETAIL(p.id),
+        },
+        {
+          label: 'Edit',
+          icon: IconEdit,
+          href: ROUTES.PRACTITIONERS_EDIT(p.id),
+        },
+        {
+          label: p.isActive ? 'Deactivate' : 'Reactivate',
+          icon: p.isActive ? IconDeactivate : IconActivate,
+          onSelect: () => toggle(p, !p.isActive),
+          disabled: toggling,
+        },
+        {
+          label: 'Delete',
+          icon: IconDelete,
+          variant: 'destructive',
+          onSelect: () => del.ask({ id: p.id, name: displayName(p) }),
+        },
+      ]}
+    />
+  );
 
   if (isLoading) {
     return <TableSkeleton rows={8} cols={7} hasHeader={false} />;
@@ -100,15 +180,17 @@ export function PractitionersList({
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[22%]">Practitioner</TableHead>
-                <TableHead className="w-[14%]">Phone</TableHead>
-                <TableHead className="hidden lg:table-cell w-[14%]">Department</TableHead>
-                <TableHead className="hidden xl:table-cell w-[12%]">Room</TableHead>
-                <TableHead className="w-[10%]">Services</TableHead>
-                <TableHead className="hidden lg:table-cell w-[12%]">Employment</TableHead>
-                <TableHead className="hidden xl:table-cell w-[8%]">Buffer</TableHead>
-                <TableHead className="w-[8%]">Active</TableHead>
-                <TableHead className="w-[8%]" />
+                <TableHead className="w-[18%]">Practitioner</TableHead>
+                <TableHead className="w-[12%]">Phone</TableHead>
+                <TableHead className="w-[7%]">Age</TableHead>
+                <TableHead className="w-[12%]">Specialty</TableHead>
+                <TableHead className="hidden lg:table-cell w-[11%]">Department</TableHead>
+                <TableHead className="hidden xl:table-cell w-[11%]">Languages</TableHead>
+                <TableHead className="w-[7%]">Services</TableHead>
+                <TableHead className="hidden lg:table-cell w-[10%]">Employment</TableHead>
+                <TableHead className="hidden xl:table-cell w-[6%]">Buffer</TableHead>
+                <TableHead className="w-[7%]">Active</TableHead>
+                <TableHead className="w-[7%]" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -116,42 +198,66 @@ export function PractitionersList({
                 <TableRow
                   key={p.id}
                   className={`cursor-pointer ${!p.isActive ? 'opacity-60' : ''}`}
-                  onClick={() => openProfile(p.id)}
+                  onClick={(e) => {
+                    if (isRowControlClick(e)) return;
+                    openProfile(p.id);
+                  }}
                 >
                   <TableCell className="max-w-0 overflow-hidden">
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <Avatar size="sm">
-                        {p.imageUrl ? <AvatarImage src={p.imageUrl} alt="" /> : null}
-                        <AvatarFallback>{initials(p)}</AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
+                      <PreviewableAvatar
+                        src={p.imageUrl}
+                        seed={p.id}
+                        alt={displayName(p)}
+                        size="sm"
+                      />
+                      <div
+                        className="min-w-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <TruncatedText className="font-medium">
                           {displayName(p)}
                         </TruncatedText>
-                        <TruncatedText className="text-xs text-muted-foreground">
-                          {p.email}
-                        </TruncatedText>
+                        <EmailLink
+                          value={p.email}
+                          className="block text-xs text-muted-foreground"
+                        />
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-0 overflow-hidden text-muted-foreground">
-                    <TruncatedText>{p.phone ?? '—'}</TruncatedText>
+                  <TableCell
+                    className="max-w-0 overflow-hidden text-muted-foreground"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <PhoneLink value={p.phone} className="block" />
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden text-muted-foreground">
-                    <TruncatedText>{p.departmentName ?? '—'}</TruncatedText>
+                  <TableCell className="text-muted-foreground">
+                    {ageLabel(p.dob) || '—'}
                   </TableCell>
-                  <TableCell className="hidden xl:table-cell max-w-0 overflow-hidden text-muted-foreground">
-                    <TruncatedText>{p.defaultRoomName ?? '—'}</TruncatedText>
+                  <TableCell className="max-w-0 overflow-hidden">
+                    <CellBadge value={p.specialty} />
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden">
+                    <CellBadge value={p.departmentName} variant="outline" />
+                  </TableCell>
+                  <TableCell className="hidden xl:table-cell max-w-0 overflow-hidden">
+                    <LanguageBadges codes={p.languages} />
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {p.serviceIds.length}
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell">
+                  <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden">
                     {p.employmentType ? (
-                      <Badge variant="secondary" className="font-normal">
-                        {PRACTITIONER_EMPLOYMENT_LABEL[p.employmentType] ??
-                          p.employmentType}
-                      </Badge>
+                      <CellBadge
+                        value={
+                          PRACTITIONER_EMPLOYMENT_LABEL[p.employmentType] ??
+                          p.employmentType
+                        }
+                        variant={
+                          PRACTITIONER_EMPLOYMENT_VARIANT[p.employmentType] ??
+                          'secondary'
+                        }
+                      />
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
@@ -170,14 +276,7 @@ export function PractitionersList({
                     className="text-right"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7"
-                      onClick={() => router.push(ROUTES.PRACTITIONERS_EDIT(p.id))}
-                    >
-                      <IconEdit className="size-3.5" />
-                    </Button>
+                    {rowMenu(p)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -192,7 +291,10 @@ export function PractitionersList({
             key={p.id}
             role="button"
             tabIndex={0}
-            onClick={() => openProfile(p.id)}
+            onClick={(e) => {
+              if (isRowControlClick(e)) return;
+              openProfile(p.id);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -204,15 +306,24 @@ export function PractitionersList({
             }`}
           >
             <div className="flex items-start gap-3">
-              <Avatar>
-                {p.imageUrl ? <AvatarImage src={p.imageUrl} alt="" /> : null}
-                <AvatarFallback>{initials(p)}</AvatarFallback>
-              </Avatar>
+              <PreviewableAvatar src={p.imageUrl} seed={p.id} alt={displayName(p)} />
               <div className="min-w-0 flex-1">
                 <TruncatedText className="font-medium">{displayName(p)}</TruncatedText>
-                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                {p.specialty ? (
+                  <div className="mt-0.5">
+                    <CellBadge value={p.specialty} />
+                  </div>
+                ) : null}
+                <div
+                  className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <IconPhone className="size-3 shrink-0" />
-                  <TruncatedText>{p.phone ?? p.email}</TruncatedText>
+                  {p.phone ? (
+                    <PhoneLink value={p.phone} className="min-w-0" />
+                  ) : (
+                    <EmailLink value={p.email} className="min-w-0" />
+                  )}
                 </div>
               </div>
               <div
@@ -224,20 +335,13 @@ export function PractitionersList({
                   disabled={toggling}
                   onCheckedChange={(on) => toggle(p, on)}
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7"
-                  onClick={() => router.push(ROUTES.PRACTITIONERS_EDIT(p.id))}
-                >
-                  <IconEdit className="size-3.5" />
-                </Button>
+                {rowMenu(p)}
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs sm:grid-cols-3">
+            <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs">
               <MetaStat label="Department" value={p.departmentName ?? '—'} />
-              <MetaStat label="Room" value={p.defaultRoomName ?? '—'} />
+              <MetaStat label="Languages" value={languageLabels(p.languages) || '—'} />
               <MetaStat label="Services" value={String(p.serviceIds.length)} />
               <MetaStat
                 label="Employment"
@@ -249,6 +353,7 @@ export function PractitionersList({
                 }
               />
               <MetaStat label="Buffer" value={`${p.bufferMins}m`} />
+              <MetaStat label="Age" value={ageLabel(p.dob) || '—'} />
               <MetaStat
                 label="Experience"
                 value={
@@ -266,6 +371,22 @@ export function PractitionersList({
         totalItems={totalItems}
         pageSize={pageSize}
         onPageChange={onPageChange}
+      />
+
+      <TwoStepDeleteDialogs
+        step1={del.step1}
+        step2={del.step2}
+        onStep1OpenChange={(open) => !open && del.cancelStep1()}
+        onStep2OpenChange={(open) => !open && del.cancelStep2()}
+        onContinue={del.advance}
+        onConfirm={() => {
+          if (!del.step2) return;
+          remove.mutate(del.step2.id, { onSuccess: del.clear });
+        }}
+        isPending={remove.isPending}
+        warning="This permanently removes the practitioner, their schedule, and their appointments. This cannot be undone. To just hide them, use Deactivate instead."
+        finalWarning="This permanently deletes the practitioner and every appointment assigned to them. This action cannot be undone."
+        confirmLabel="Yes, delete practitioner"
       />
     </>
   );

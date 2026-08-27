@@ -1,45 +1,47 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import {
+  Skeleton,
+  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import {
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
-import { EmptyState } from '@/components/primitives/empty-state';
-import { FormField } from '@/components/primitives/form-field';
-import { FormActions } from '@/components/primitives/form-actions';
-import { TruncatedText } from '@/components/primitives/truncated-text';
-import { SearchInput } from '@/components/primitives/search-input';
-import { Pagination } from '@/components/primitives/pagination';
-import { TableFrame } from '@/components/blocks/data/table-frame';
-import { DatePicker } from '@/components/primitives/date-picker';
+} from '@/components/ui';
 import {
+  TwoStepDeleteDialogs,
+  useTwoStepDelete,
+} from '@/components/blocks/feedback';
+import {
+  RowActionsMenu,
+  EmptyState,
+  FormField,
+  FormActions,
+  TruncatedText,
+  SearchInput,
+  Pagination,
+  DatePicker,
+} from '@/components/primitives';
+import {
+  TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data/entity-mobile-card';
+} from '@/components/blocks/data';
 import {
   IconAdd,
   IconDelete,
@@ -52,9 +54,9 @@ import {
   useUpdateDiscountCode,
   useDeactivateDiscountCode,
   useDeleteDiscountCode,
-} from '@/hooks/use-discount-codes';
-import { useClinicId } from '@/hooks/use-clinic-id';
-import { useListFilter } from '@/hooks/use-list-filter';
+} from '@/hooks/api/use-discount-codes';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useListFilter } from '@/hooks/shared/use-list-filter';
 import type { DiscountCode } from '@/services/discount-codes.service';
 import type { DiscountType } from '@/services/appointments.service';
 
@@ -162,19 +164,17 @@ export default function DiscountCodesPage() {
   };
 
   const rowActions = (c: DiscountCode) => (
-    <>
-      <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(c)}>
-        <IconEdit className="size-3.5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 text-destructive hover:text-destructive"
-        onClick={() => del.ask({ id: c.id, name: c.code })}
-      >
-        <IconDelete className="size-3.5" />
-      </Button>
-    </>
+    <RowActionsMenu
+      items={[
+        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(c) },
+        {
+          label: 'Delete',
+          icon: IconDelete,
+          variant: 'destructive',
+          onSelect: () => del.ask({ id: c.id, name: c.code }),
+        },
+      ]}
+    />
   );
 
   return (

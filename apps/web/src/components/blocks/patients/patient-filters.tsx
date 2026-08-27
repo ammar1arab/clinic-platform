@@ -1,24 +1,29 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
+  Button,
+  Badge,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { DatePicker } from '@/components/primitives/date-picker';
-import { FormField } from '@/components/primitives/form-field';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+} from '@/components/ui';
+import {
+  DatePicker,
+  FormField,
+  SearchInput,
+} from '@/components/primitives';
+import { FORM_ANY } from '@/constants/form';
 import { GENDERS, BLOOD_TYPES, PATIENT_SORTS } from '@/constants/patient';
 import type { ClinicStaffMember } from '@/services/clinics.service';
 import type { Department } from '@/services/departments.service';
+import { IconClose, IconFilters } from '@/constants/icons';
 
-export interface PatientFilterState {
+export type PatientFilterState = {
   search: string;
   status: string;
   gender: string;
@@ -30,17 +35,18 @@ export interface PatientFilterState {
   dobFrom: string;
   dobTo: string;
   sort: string;
-}
+};
 
-const ANY = '__any__';
-
-interface Props {
+type Props = {
   values: PatientFilterState;
   onChange: (patch: Partial<PatientFilterState>) => void;
   onReset: () => void;
   staff?: ClinicStaffMember[];
   departments?: Department[];
-}
+  trailing?: React.ReactNode;
+};
+
+const controlClass = 'h-8 shrink-0 rounded-lg';
 
 export function PatientFiltersBlock({
   values,
@@ -48,6 +54,7 @@ export function PatientFiltersBlock({
   onReset,
   staff,
   departments,
+  trailing,
 }: Props) {
   const activeCount =
     (values.status !== 'all' ? 1 : 0) +
@@ -61,20 +68,16 @@ export function PatientFiltersBlock({
     (values.dobTo ? 1 : 0);
 
   return (
-    <div className="flex w-full flex-col gap-2 sm:flex-row">
-      <div className="relative flex-1">
-        <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, phone, ID, or email..."
-          className="pl-8"
-          value={values.search}
-          onChange={(e) => onChange({ search: e.target.value })}
-        />
-      </div>
+    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
+      <SearchInput
+        value={values.search}
+        onChange={(search) => onChange({ search })}
+        placeholder="Search by name, phone, ID, or email…"
+      />
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
         <Select value={values.sort} onValueChange={(v) => onChange({ sort: v })}>
-          <SelectTrigger className="w-full sm:w-44">
+          <SelectTrigger className={`${controlClass} w-full sm:w-44`}>
             <SelectValue placeholder="Sort" />
           </SelectTrigger>
           <SelectContent>
@@ -88,14 +91,14 @@ export function PatientFiltersBlock({
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="shrink-0">
-              <SlidersHorizontal className="size-4 sm:mr-1.5" />
+            <Button variant="outline" className={controlClass}>
+              <IconFilters className="size-4" />
               <span className="hidden sm:inline">Filters</span>
-              {activeCount > 0 && (
-                <Badge className="ml-1.5 h-5 min-w-5 justify-center px-1 text-xs">
+              {activeCount > 0 ? (
+                <Badge variant="info" className="ms-0.5 h-5 min-w-5 justify-center px-1 text-xs">
                   {activeCount}
                 </Badge>
-              )}
+              ) : null}
             </Button>
           </PopoverTrigger>
           <PopoverContent
@@ -126,17 +129,20 @@ export function PatientFiltersBlock({
           >
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Filters</p>
-              {activeCount > 0 && (
+              {activeCount > 0 ? (
                 <Button variant="ghost" size="xs" onClick={onReset}>
-                  <X className="size-3.5" />
+                  <IconClose className="size-3.5" />
                   Clear
                 </Button>
-              )}
+              ) : null}
             </div>
 
             <FormField label="Status" labelClassName="text-xs">
-              <Select value={values.status} onValueChange={(v) => onChange({ status: v })}>
-                <SelectTrigger className="w-full">
+              <Select
+                value={values.status}
+                onValueChange={(v) => onChange({ status: v })}
+              >
+                <SelectTrigger className="h-8 w-full rounded-lg">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -149,14 +155,16 @@ export function PatientFiltersBlock({
 
             <FormField label="Practitioner" labelClassName="text-xs">
               <Select
-                value={values.primaryDoctorId || ANY}
-                onValueChange={(v) => onChange({ primaryDoctorId: v === ANY ? '' : v })}
+                value={values.primaryDoctorId || FORM_ANY}
+                onValueChange={(v) =>
+                  onChange({ primaryDoctorId: v === FORM_ANY ? '' : v })
+                }
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-8 w-full rounded-lg">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ANY}>Any</SelectItem>
+                  <SelectItem value={FORM_ANY}>Any</SelectItem>
                   {staff?.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
@@ -168,14 +176,16 @@ export function PatientFiltersBlock({
 
             <FormField label="Department" labelClassName="text-xs">
               <Select
-                value={values.departmentId || ANY}
-                onValueChange={(v) => onChange({ departmentId: v === ANY ? '' : v })}
+                value={values.departmentId || FORM_ANY}
+                onValueChange={(v) =>
+                  onChange({ departmentId: v === FORM_ANY ? '' : v })
+                }
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="h-8 w-full rounded-lg">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={ANY}>Any</SelectItem>
+                  <SelectItem value={FORM_ANY}>Any</SelectItem>
                   {departments?.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
                       {d.name}
@@ -188,14 +198,16 @@ export function PatientFiltersBlock({
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Gender" labelClassName="text-xs">
                 <Select
-                  value={values.gender || ANY}
-                  onValueChange={(v) => onChange({ gender: v === ANY ? '' : v })}
+                  value={values.gender || FORM_ANY}
+                  onValueChange={(v) =>
+                    onChange({ gender: v === FORM_ANY ? '' : v })
+                  }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-8 w-full rounded-lg">
                     <SelectValue placeholder="Any" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={ANY}>Any</SelectItem>
+                    <SelectItem value={FORM_ANY}>Any</SelectItem>
                     {GENDERS.map((g) => (
                       <SelectItem key={g.value} value={g.value}>
                         {g.label}
@@ -207,14 +219,16 @@ export function PatientFiltersBlock({
 
               <FormField label="Blood Type" labelClassName="text-xs">
                 <Select
-                  value={values.bloodType || ANY}
-                  onValueChange={(v) => onChange({ bloodType: v === ANY ? '' : v })}
+                  value={values.bloodType || FORM_ANY}
+                  onValueChange={(v) =>
+                    onChange({ bloodType: v === FORM_ANY ? '' : v })
+                  }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-8 w-full rounded-lg">
                     <SelectValue placeholder="Any" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={ANY}>Any</SelectItem>
+                    <SelectItem value={FORM_ANY}>Any</SelectItem>
                     {BLOOD_TYPES.map((b) => (
                       <SelectItem key={b} value={b}>
                         {b}
@@ -264,6 +278,8 @@ export function PatientFiltersBlock({
             </div>
           </PopoverContent>
         </Popover>
+
+        {trailing}
       </div>
     </div>
   );

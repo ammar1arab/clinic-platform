@@ -1,12 +1,14 @@
 'use client';
 
 import { use } from 'react';
-import { EmptyState } from '@/components/primitives/empty-state';
-import { SectionLoader } from '@/components/primitives/spinner';
-import { PractitionerProfile } from '@/components/blocks/practitioners/practitioner-profile';
+import {
+  EmptyState,
+  SectionLoader,
+} from '@/components/primitives';
+import { PractitionerProfile } from '@/components/blocks/practitioners';
 import { IconPractitioner } from '@/constants/icons';
-import { useClinicId } from '@/hooks/use-clinic-id';
-import { usePractitioner } from '@/hooks/use-practitioners';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { usePractitioner } from '@/hooks/api/use-practitioners';
 
 export default function PractitionerDetailPage({
   params,

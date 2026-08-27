@@ -1,9 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState } from '@/components/primitives/empty-state';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Skeleton,
+} from '@/components/ui';
+import { EmptyState } from '@/components/primitives';
 import { RoomUtilization } from '@/services/dashboard.service';
 import { cn } from '@/lib/utils';
-import { DoorOpen } from 'lucide-react';
+import { IconRoom } from '@/constants/icons';
 
 interface Props {
   rooms: RoomUtilization[] | undefined;
@@ -27,7 +32,7 @@ export function RoomUtilizationCardBlock({ rooms, isLoading }: Props) {
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
 
         {!isLoading && rooms?.length === 0 && (
-          <EmptyState icon={DoorOpen} title="No rooms configured yet" className="py-6" />
+          <EmptyState icon={IconRoom} title="No rooms configured yet" className="py-6" />
         )}
 
         {rooms?.map((room) => (

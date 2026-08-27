@@ -67,7 +67,32 @@ export class CreatePractitionerDto {
 
   @IsOptional()
   @IsString()
+  whatsapp?: string;
+
+  @IsOptional()
+  @IsString()
+  nationality?: string;
+
+  @IsOptional()
+  @IsString()
+  specialty?: string;
+
+  @IsOptional()
+  @IsString()
+  specialtyAr?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  languages?: string[];
+
+  @IsOptional()
+  @IsString()
   dob?: string;
+
+  @IsOptional()
+  @IsString()
+  gender?: string;
 
   @IsOptional()
   @IsString()

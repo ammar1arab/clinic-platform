@@ -1,13 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Check, ChevronsUpDown, Search, UserRound } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Button,
+  Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { formatPersonName } from './appointment-display';
 import type { Patient } from '@/services/patients.service';
+import { IconCheck, IconChevronsUpDown, IconPerson, IconSearch } from '@/constants/icons';
 
 interface Props {
   patients: Patient[] | undefined;
@@ -55,12 +59,12 @@ export function PatientCombobox({
               !selected && 'text-muted-foreground',
             )}
           >
-            <UserRound className="mt-0.5 size-4 shrink-0 opacity-70" />
+            <IconPerson className="mt-0.5 size-4 shrink-0 opacity-70" />
             <span className="min-w-0 break-words line-clamp-2">
               {selected ? formatPersonName(selected) : placeholder}
             </span>
           </span>
-          <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+          <IconChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -68,12 +72,12 @@ export function PatientCombobox({
         align="start"
       >
         <div className="flex items-center gap-2 border-b p-2">
-          <Search className="size-4 shrink-0 text-muted-foreground" />
+          <IconSearch className="size-4 shrink-0 text-muted-foreground" />
           <Input
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search patients…"
+            placeholder="IconSearch patients…"
             className="h-8 border-0 px-0 shadow-none focus-visible:ring-0"
           />
         </div>
@@ -113,7 +117,7 @@ export function PatientCombobox({
               <span className="min-w-0 flex-1 break-words line-clamp-2">
                 {formatPersonName(p)}
               </span>
-              {p.id === value && <Check className="size-4 shrink-0 text-primary" />}
+              {p.id === value && <IconCheck className="size-4 shrink-0 text-primary" />}
             </button>
           ))}
         </div>

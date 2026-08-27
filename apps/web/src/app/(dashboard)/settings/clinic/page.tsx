@@ -1,26 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { TimePicker } from '@/components/primitives/time-picker';
-import { FormField } from '@/components/primitives/form-field';
-import { SectionLoader } from '@/components/primitives/spinner';
+} from '@/components/ui';
+import {
+  TimePicker,
+  FormField,
+  SectionLoader,
+} from '@/components/primitives';
 import { ButtonSpinner } from '@/components/blocks/feedback';
-import { useClinic, useUpdateClinic } from '@/hooks/use-clinic';
-import { useDepartments } from '@/hooks/use-departments';
-import { useClinicId } from '@/hooks/use-clinic-id';
+import { useClinic, useUpdateClinic } from '@/hooks/api/use-clinic';
+import { useDepartments } from '@/hooks/api/use-departments';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { FORM_NONE } from '@/constants/form';
 import type { Clinic } from '@/services/clinics.service';
-
-const NONE = '__none__';
 
 const TIMEZONES = [
   'UTC',
@@ -148,14 +152,14 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
 
           <FormField label="Default department">
             <Select
-              value={defaultDepartmentId || NONE}
-              onValueChange={(v) => setDefaultDepartmentId(v === NONE ? '' : v)}
+              value={defaultDepartmentId || FORM_NONE}
+              onValueChange={(v) => setDefaultDepartmentId(v === FORM_NONE ? '' : v)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="None" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE}>None</SelectItem>
+                <SelectItem value={FORM_NONE}>None</SelectItem>
                 {departments?.map((d) => (
                   <SelectItem key={d.id} value={d.id}>
                     {d.name}

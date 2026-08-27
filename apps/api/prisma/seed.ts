@@ -10,10 +10,17 @@ import {
   type Patient,
   type PatientPackage,
   type Appointment,
+  type ClinicUser,
 } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import * as bcrypt from "bcrypt";
+import {
+  CLINIC_DEPARTMENTS,
+  CLINIC_SERVICES,
+  buildJordanianPractitioners,
+  type SeedPractitioner,
+} from "./jordan-practitioners";
 
 const DEMO_PASSWORD = "Demo123!";
 
@@ -35,7 +42,7 @@ function daysFromNow(offset: number, hour = 9, minute = 0) {
 
 function pick<T>(arr: readonly T[], i: number): T {
   if (arr.length === 0) throw new Error("pick: empty array");
-  const item = arr[i % arr.length];
+  const item = arr[((i % arr.length) + arr.length) % arr.length];
   if (item === undefined) throw new Error("pick: missing item");
   return item;
 }
@@ -64,6 +71,11 @@ async function resetClinicOperationalData(clinicId: string) {
     });
   }
 
+  await prisma.clinicUser.updateMany({
+    where: { clinicId },
+    data: { departmentId: null, defaultRoomId: null },
+  });
+
   await prisma.discountCode.deleteMany({ where: { clinicId } });
   await prisma.package.deleteMany({ where: { clinicId } });
   await prisma.paymentMethod.deleteMany({ where: { clinicId } });
@@ -72,76 +84,110 @@ async function resetClinicOperationalData(clinicId: string) {
   await prisma.department.deleteMany({ where: { clinicId } });
 }
 
-async function ensureExtraStaff(clinicId: string) {
-  const existing = await prisma.clinicUser.findMany({
+async function upsertClinicUserByEmail(
+  clinicId: string,
+  email: string,
+  passwordHash: string,
+  profile: Omit<Prisma.ClinicUserUncheckedCreateInput, "userId" | "clinicId">,
+) {
+  let user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    user = await prisma.user.create({
+      data: { email, passwordHash, mustChangePassword: false },
+    });
+  } else {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, mustChangePassword: false },
+    });
+  }
+
+  const existing = await prisma.clinicUser.findFirst({
+    where: { userId: user.id, clinicId },
+  });
+  if (existing) {
+    return prisma.clinicUser.update({
+      where: { id: existing.id },
+      data: profile,
+    });
+  }
+  return prisma.clinicUser.create({
+    data: { ...profile, userId: user.id, clinicId },
+  });
+}
+
+function practitionerWriteData(
+  seed: SeedPractitioner,
+): Omit<Prisma.ClinicUserUncheckedCreateInput, "userId" | "clinicId"> {
+  return {
+    role: "practitioner",
+    name: seed.name,
+    nameAr: seed.nameAr,
+    title: seed.title,
+    phone: seed.phone,
+    whatsapp: seed.whatsapp,
+    nationality: seed.nationality,
+    specialty: seed.specialty,
+    specialtyAr: seed.specialtyAr,
+    languages: seed.languages,
+    initials: seed.initials,
+    dob: seed.dob,
+    gender: seed.gender,
+    bio: seed.bio,
+    bioAr: seed.bioAr,
+    experienceYears: seed.experienceYears,
+    imageUrl: seed.imageUrl,
+    licenseNumber: seed.licenseNumber,
+    licenseExpiry: seed.licenseExpiry,
+    employmentType: seed.employmentType,
+    commissionPercent:
+      seed.commissionPercent == null
+        ? null
+        : new Prisma.Decimal(seed.commissionPercent),
+    bufferMins: seed.bufferMins,
+    isActive: true,
+  };
+}
+
+async function ensureJordanianStaff(clinicId: string) {
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const roster = buildJordanianPractitioners();
+  const practitioners: ClinicUser[] = [];
+  for (const seed of roster) {
+    practitioners.push(
+      await upsertClinicUserByEmail(
+        clinicId,
+        seed.email,
+        passwordHash,
+        practitionerWriteData(seed),
+      ),
+    );
+  }
+
+  const finance = await upsertClinicUserByEmail(
+    clinicId,
+    "finance.demo@clinic.local",
+    passwordHash,
+    {
+      role: "financial",
+      name: "Lina Al-Qudah",
+      nameAr: "لينا القضاه",
+      title: "Finance",
+      phone: "+962795551234",
+      whatsapp: "+962795551234",
+      nationality: "JO",
+      languages: ["ar", "en"],
+      initials: "LQ",
+      gender: "female",
+      dob: new Date(Date.UTC(1989, 4, 16)),
+      isActive: true,
+    },
+  );
+
+  const staff = await prisma.clinicUser.findMany({
     where: { clinicId, isActive: true },
   });
-  const practitioners = existing.filter((u) =>
-    ["owner", "admin", "practitioner"].includes(u.role),
-  );
-  if (practitioners.length >= 3) return practitioners;
-
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
-  const extras = [
-    {
-      email: "dr.sara.demo@clinic.local",
-      name: "Dr. Sara Haddad",
-      role: "practitioner" as const,
-    },
-    {
-      email: "dr.omar.demo@clinic.local",
-      name: "Dr. Omar Nasser",
-      role: "practitioner" as const,
-    },
-    {
-      email: "finance.demo@clinic.local",
-      name: "Lina Finance",
-      role: "financial" as const,
-    },
-  ];
-
-  const created = [...practitioners];
-  for (const e of extras) {
-    if (created.length >= 4) break;
-    let user = await prisma.user.findUnique({ where: { email: e.email } });
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: e.email,
-          passwordHash,
-          mustChangePassword: false,
-        },
-      });
-    } else {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { passwordHash, mustChangePassword: false },
-      });
-    }
-    const cu =
-      (await prisma.clinicUser.findFirst({
-        where: { userId: user.id, clinicId },
-      })) ??
-      (await prisma.clinicUser.create({
-        data: {
-          userId: user.id,
-          clinicId,
-          role: e.role,
-          name: e.name,
-          title: e.role === "practitioner" ? "Dr" : null,
-          initials: e.name
-            .split(" ")
-            .map((p) => p[0])
-            .join("")
-            .slice(0, 3),
-          phone: `+96279${String(1000000 + created.length).slice(0, 7)}`,
-          employmentType: e.role === "practitioner" ? "salaried" : null,
-          bufferMins: e.role === "practitioner" ? 10 : 0,
-        },
-      }));
-    if (!created.find((c) => c.id === cu.id)) created.push(cu);
-  }
-  return created;
+  return { practitioners, finance, staff, roster };
 }
 
 async function resolveClinic() {
@@ -196,34 +242,30 @@ async function main() {
   await resetClinicOperationalData(clinic.id);
   console.log("Cleared operational data");
 
-  const staff = await ensureExtraStaff(clinic.id);
-  const doctors = staff.filter((s) =>
-    ["owner", "admin", "practitioner"].includes(s.role),
+  const { practitioners, finance, staff, roster } = await ensureJordanianStaff(
+    clinic.id,
   );
-  const payer = staff.find((s) => s.role === "financial") ?? staff[0];
+  const doctors = practitioners;
+  const payer = finance ?? staff[0];
+  const rosterByEmail = new Map(
+    roster.map((seed) => [seed.email, seed] as const),
+  );
   console.log(`Staff ready: ${staff.length} (doctors: ${doctors.length})`);
 
-  const deptDefs = [
-    { name: "General Medicine", nameAr: "الطب العام" },
-    { name: "Pediatrics", nameAr: "طب الأطفال" },
-    { name: "Dermatology", nameAr: "الأمراض الجلدية" },
-    { name: "Physiotherapy", nameAr: "العلاج الطبيعي" },
-    { name: "Cardiology", nameAr: "أمراض القلب" },
-    { name: "Archive (inactive)", nameAr: "الأرشيف", isActive: false },
-  ];
   const departments: Department[] = [];
-  for (const d of deptDefs) {
+  for (const d of CLINIC_DEPARTMENTS) {
     departments.push(
       await prisma.department.create({
         data: {
           clinicId: clinic.id,
           name: d.name,
           nameAr: d.nameAr,
-          isActive: d.isActive ?? true,
+          isActive: d.isActive === true,
         },
       }),
     );
   }
+  const deptByName = new Map(departments.map((d) => [d.name, d]));
 
   const rooms: Room[] = [];
   let roomN = 1;
@@ -243,119 +285,17 @@ async function main() {
     }
   }
 
-  const serviceDefs: Array<{
-    name: string;
-    nameAr: string;
-    dept: number;
-    durationMins: number;
-    fee: number;
-    modes: ("in_person" | "online")[];
-  }> = [
-    {
-      name: "General Consultation",
-      nameAr: "استشارة عامة",
-      dept: 0,
-      durationMins: 30,
-      fee: 25,
-      modes: ["in_person", "online"],
-    },
-    {
-      name: "Follow-up Visit",
-      nameAr: "مراجعة",
-      dept: 0,
-      durationMins: 20,
-      fee: 15,
-      modes: ["in_person", "online"],
-    },
-    {
-      name: "Child Checkup",
-      nameAr: "فحص طفل",
-      dept: 1,
-      durationMins: 30,
-      fee: 30,
-      modes: ["in_person"],
-    },
-    {
-      name: "Vaccination",
-      nameAr: "تطعيم",
-      dept: 1,
-      durationMins: 15,
-      fee: 20,
-      modes: ["in_person"],
-    },
-    {
-      name: "Skin Assessment",
-      nameAr: "تقييم جلدي",
-      dept: 2,
-      durationMins: 40,
-      fee: 40,
-      modes: ["in_person", "online"],
-    },
-    {
-      name: "Acne Treatment",
-      nameAr: "علاج حب الشباب",
-      dept: 2,
-      durationMins: 45,
-      fee: 55,
-      modes: ["in_person"],
-    },
-    {
-      name: "Physio Session",
-      nameAr: "جلسة علاج طبيعي",
-      dept: 3,
-      durationMins: 45,
-      fee: 35,
-      modes: ["in_person"],
-    },
-    {
-      name: "Rehab Package Visit",
-      nameAr: "جلسة تأهيل",
-      dept: 3,
-      durationMins: 60,
-      fee: 45,
-      modes: ["in_person"],
-    },
-    {
-      name: "ECG",
-      nameAr: "تخطيط قلب",
-      dept: 4,
-      durationMins: 25,
-      fee: 50,
-      modes: ["in_person"],
-    },
-    {
-      name: "Cardio Consult",
-      nameAr: "استشارة قلب",
-      dept: 4,
-      durationMins: 40,
-      fee: 60,
-      modes: ["in_person", "online"],
-    },
-    {
-      name: "Telehealth Quick",
-      nameAr: "استشارة سريعة",
-      dept: 0,
-      durationMins: 15,
-      fee: 12,
-      modes: ["online"],
-    },
-    {
-      name: "Full Physical",
-      nameAr: "فحص شامل",
-      dept: 0,
-      durationMins: 60,
-      fee: 70,
-      modes: ["in_person"],
-    },
-  ];
-
   const services: Service[] = [];
-  for (const s of serviceDefs) {
+  for (const s of CLINIC_SERVICES) {
+    const dept = deptByName.get(s.deptName);
+    if (!dept) {
+      throw new Error(`Missing department for service: ${s.deptName}`);
+    }
     services.push(
       await prisma.service.create({
         data: {
           clinicId: clinic.id,
-          departmentId: departments[s.dept].id,
+          departmentId: dept.id,
           name: s.name,
           nameAr: s.nameAr,
           durationMins: s.durationMins,
@@ -366,38 +306,42 @@ async function main() {
     );
   }
 
-  const activeDepartments = departments.filter((d) => d.isActive);
-  for (let i = 0; i < doctors.length; i++) {
-    const dept = pick(activeDepartments, i);
-    const room = rooms.find((r) => r.departmentId === dept.id) ?? rooms[0];
-    const credentialed = services
-      .filter((s) => s.departmentId === dept.id)
-      .slice(0, 3);
-    const employment =
-      doctors[i].employmentType ?? (i % 3 === 0 ? "commission" : "salaried");
+  const doctorUsers = await prisma.clinicUser.findMany({
+    where: { id: { in: doctors.map((d) => d.id) } },
+    include: { user: { select: { email: true } } },
+  });
+  const roomCursor = new Map<string, number>();
+  const doctorsByDept = new Map<string, typeof doctorUsers>();
+  for (const doctor of doctorUsers) {
+    const seed = rosterByEmail.get(doctor.user.email);
+    const dept =
+      (seed ? deptByName.get(seed.departmentName) : undefined) ??
+      departments.find((d) => d.isActive);
+    if (!dept) throw new Error("No active department to assign");
+    const deptRooms = rooms.filter((r) => r.departmentId === dept.id);
+    const cursor = roomCursor.get(dept.id) ?? 0;
+    const room = deptRooms[cursor % Math.max(deptRooms.length, 1)] ?? rooms[0];
+    roomCursor.set(dept.id, cursor + 1);
+    const credentialed = services.filter((s) => s.departmentId === dept.id);
     await prisma.clinicUser.update({
-      where: { id: doctors[i].id },
+      where: { id: doctor.id },
       data: {
-        title: doctors[i].title ?? "Dr",
         departmentId: dept.id,
         defaultRoomId: room?.id ?? null,
-        employmentType: employment,
-        commissionPercent:
-          employment === "commission" || employment === "mixed"
-            ? new Prisma.Decimal(25)
-            : null,
-        bufferMins: doctors[i].bufferMins || 10,
       },
     });
     if (credentialed.length) {
       await prisma.clinicUserService.createMany({
         data: credentialed.map((s) => ({
-          clinicUserId: doctors[i].id,
+          clinicUserId: doctor.id,
           serviceId: s.id,
         })),
         skipDuplicates: true,
       });
     }
+    const inDept = doctorsByDept.get(dept.id) ?? [];
+    inDept.push(doctor);
+    doctorsByDept.set(dept.id, inDept);
   }
 
   const payMethods: PaymentMethod[] = [];
@@ -649,9 +593,15 @@ async function main() {
     const perDay = day === 0 ? 18 : day > 0 ? 8 : 10;
     for (let slot = 0; slot < perDay; slot++) {
       const patient = pick(patients, apptCount);
-      const doctor = pick(doctors, apptCount + slot);
       const service = pick(services, apptCount);
-      const deptId = service.departmentId ?? departments[0].id;
+      const deptId =
+        service.departmentId ?? departments.find((d) => d.isActive)?.id;
+      if (!deptId) throw new Error("No department for appointment");
+      const deptDoctors = doctorsByDept.get(deptId);
+      const doctor = pick(
+        deptDoctors?.length ? deptDoctors : doctors,
+        apptCount + slot,
+      );
       const roomCandidates = rooms.filter((r) => r.departmentId === deptId);
       const online =
         service.supportedModes.includes("online") && slot % 5 === 0;
@@ -793,27 +743,37 @@ async function main() {
     referralCount++;
   }
 
-  // Availability + time off
-  for (const doc of doctors) {
-    for (const dayOfWeek of [0, 1, 2, 3, 4]) {
+  for (const doctor of doctorUsers) {
+    const seed = rosterByEmail.get(doctor.user.email);
+    const slots = seed?.availabilities ?? [
+      { dayOfWeek: 0, startTime: "09:00", endTime: "17:00" },
+      { dayOfWeek: 1, startTime: "09:00", endTime: "17:00" },
+      { dayOfWeek: 2, startTime: "09:00", endTime: "17:00" },
+      { dayOfWeek: 3, startTime: "09:00", endTime: "17:00" },
+      { dayOfWeek: 4, startTime: "09:00", endTime: "17:00" },
+    ];
+    for (const slot of slots) {
       await prisma.doctorAvailability.create({
         data: {
-          doctorId: doc.id,
-          dayOfWeek,
-          startTime: "08:00",
-          endTime: "17:00",
+          doctorId: doctor.id,
+          dayOfWeek: slot.dayOfWeek,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
           isActive: true,
         },
       });
     }
-    await prisma.doctorTimeOff.create({
-      data: {
-        doctorId: doc.id,
-        startDate: daysFromNow(20, 0, 0),
-        endDate: daysFromNow(21, 23, 59),
-        reason: "Conference",
-      },
-    });
+    const offs = seed?.timeOffs ?? [];
+    for (const off of offs) {
+      await prisma.doctorTimeOff.create({
+        data: {
+          doctorId: doctor.id,
+          startDate: daysFromNow(off.startOffset, 0, 0),
+          endDate: daysFromNow(off.endOffset, 23, 59),
+          reason: off.reason,
+        },
+      });
+    }
   }
 
   // Notifications
@@ -854,9 +814,10 @@ async function main() {
   console.log(`Appointments: ${appointments.length}`);
   console.log(`Referrals: ${referralCount}`);
   console.log(`Notifications: ${notifCount}`);
-  console.log(`Demo staff password (if created): ${DEMO_PASSWORD}`);
+  console.log(`Practitioners: ${doctors.length}`);
+  console.log(`Demo staff password: ${DEMO_PASSWORD}`);
   console.log(
-    "Emails: dr.sara.demo@clinic.local, dr.omar.demo@clinic.local, finance.demo@clinic.local",
+    "Login any seeded doctor at <firstname>.<lastname>@clinic.local (example: ahmad.alkhatib@clinic.local) or finance.demo@clinic.local",
   );
 }
 

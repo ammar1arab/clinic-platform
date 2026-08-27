@@ -8,6 +8,7 @@ import { QueryProvider } from './query-provider';
 import { AuthProvider } from './auth-provider';
 import { ConfirmProvider } from './confirm-provider';
 import { SidebarProvider } from './sidebar-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -17,9 +18,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           <AuthProvider>
             <ConfirmProvider>
               <SidebarProvider>
-                {children}
-                <LoadingChrome />
-                <Toaster position="top-right" richColors closeButton />
+                <TooltipProvider>
+                  {children}
+                  <LoadingChrome />
+                  <Toaster position="top-right" richColors closeButton />
+                </TooltipProvider>
               </SidebarProvider>
             </ConfirmProvider>
           </AuthProvider>

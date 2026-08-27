@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma, Role } from "@prisma/client";
+import { AppointmentStatus, Prisma, Role } from "@prisma/client";
 import { PrismaService } from "@/prisma/prisma.service";
 import {
   AvailabilitySlotDto,
@@ -7,6 +7,11 @@ import {
   TimeOffEntryDto,
   UpdatePractitionerDto,
 } from "./dto";
+
+const NON_BILLABLE: AppointmentStatus[] = [
+  AppointmentStatus.cancelled,
+  AppointmentStatus.no_show,
+];
 
 const include = {
   user: { select: { email: true } },
@@ -92,8 +97,14 @@ export class PractitionersRepository {
           nameAr: dto.nameAr?.trim() || null,
           title: dto.title?.trim() || null,
           phone: dto.phone?.trim() || null,
+          whatsapp: dto.whatsapp?.trim() || null,
+          nationality: dto.nationality?.trim().toUpperCase() || null,
+          specialty: dto.specialty?.trim() || null,
+          specialtyAr: dto.specialtyAr?.trim() || null,
+          languages: dto.languages ?? [],
           initials,
           dob: dto.dob ? new Date(dto.dob) : null,
+          gender: dto.gender?.trim() || null,
           bio: dto.bio?.trim() || null,
           bioAr: dto.bioAr?.trim() || null,
           experienceYears: dto.experienceYears ?? null,
@@ -168,6 +179,125 @@ export class PractitionersRepository {
       data: { isActive: true },
       include,
     });
+  }
+
+  hardDelete(id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const appointments = await tx.appointment.findMany({
+        where: { doctorId: id },
+        select: {
+          id: true,
+          status: true,
+          patientPackageId: true,
+          packageCredit: true,
+        },
+      });
+      const appointmentIds = appointments.map((row) => row.id);
+
+      await this.preservePackageUsage(
+        tx,
+        appointments.filter(
+          (row) =>
+            row.patientPackageId &&
+            !NON_BILLABLE.includes(row.status),
+        ),
+      );
+
+      await tx.referral.deleteMany({
+        where: {
+          OR: [
+            { fromDoctorId: id },
+            { toDoctorId: id },
+            ...(appointmentIds.length
+              ? [{ appointmentId: { in: appointmentIds } }]
+              : []),
+          ],
+        },
+      });
+
+      await tx.appointment.updateMany({
+        where: { paidById: id },
+        data: { paidById: null },
+      });
+
+      await tx.patient.updateMany({
+        where: { primaryDoctorId: id },
+        data: { primaryDoctorId: null },
+      });
+
+      await tx.appointment.deleteMany({ where: { doctorId: id } });
+      await tx.doctorAvailability.deleteMany({ where: { doctorId: id } });
+      await tx.doctorTimeOff.deleteMany({ where: { doctorId: id } });
+      await tx.clinicUserService.deleteMany({ where: { clinicUserId: id } });
+      await tx.notification.deleteMany({ where: { userId: id } });
+
+      const row = await tx.clinicUser.delete({ where: { id } });
+      const remaining = await tx.clinicUser.count({
+        where: { userId: row.userId },
+      });
+      if (remaining === 0) {
+        await tx.user.delete({ where: { id: row.userId } });
+      }
+
+      return row;
+    });
+  }
+
+  private async preservePackageUsage(
+    tx: Prisma.TransactionClient,
+    redeemed: Array<{
+      patientPackageId: string | null;
+      packageCredit: Prisma.Decimal | null;
+    }>,
+  ) {
+    const byEnrollment = new Map<
+      string,
+      { sessions: number; credit: Prisma.Decimal }
+    >();
+
+    for (const row of redeemed) {
+      const enrollmentId = row.patientPackageId;
+      if (!enrollmentId) continue;
+      const bucket = byEnrollment.get(enrollmentId) ?? {
+        sessions: 0,
+        credit: new Prisma.Decimal(0),
+      };
+      if (row.packageCredit == null) {
+        bucket.sessions += 1;
+      } else {
+        bucket.credit = bucket.credit.plus(row.packageCredit);
+      }
+      byEnrollment.set(enrollmentId, bucket);
+    }
+
+    for (const [enrollmentId, used] of byEnrollment) {
+      const enrollment = await tx.patientPackage.findUnique({
+        where: { id: enrollmentId },
+        select: { sessionsTotal: true, creditTotal: true },
+      });
+      if (!enrollment) continue;
+
+      if (enrollment.sessionsTotal != null && used.sessions > 0) {
+        await tx.patientPackage.update({
+          where: { id: enrollmentId },
+          data: {
+            sessionsTotal: Math.max(0, enrollment.sessionsTotal - used.sessions),
+          },
+        });
+      }
+
+      if (enrollment.creditTotal != null && used.credit.greaterThan(0)) {
+        await tx.patientPackage.update({
+          where: { id: enrollmentId },
+          data: {
+            creditTotal: Prisma.Decimal.max(
+              enrollment.creditTotal.minus(used.credit),
+              new Prisma.Decimal(0),
+            ),
+          },
+        });
+      }
+    }
   }
 
   private async syncChildren(

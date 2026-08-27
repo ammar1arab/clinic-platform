@@ -1,18 +1,26 @@
 'use client';
 
 import * as React from 'react';
-import { Clock, X } from 'lucide-react';
-
+import { IconClose, IconTime } from '@/constants/icons';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
+  formatClockParts,
+  formatHour,
+  pad2,
+  parseClock,
+  toClockValue,
+} from '@/lib/datetime';
+import {
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui';
 
 interface Props {
 
@@ -25,23 +33,10 @@ interface Props {
   step?: 5 | 10 | 15 | 30;
 }
 
-function pad(n: number) {
-  return String(n).padStart(2, '0');
-}
-
-function parseTime(value?: string): { h: number; m: number } | null {
-  if (!value || !/^\d{1,2}:\d{2}$/.test(value)) return null;
-  const [h, m] = value.split(':').map(Number);
-  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
-  return { h, m };
-}
-
 function formatDisplay(value?: string) {
-  const t = parseTime(value);
+  const t = parseClock(value);
   if (!t) return null;
-  const period = t.h >= 12 ? 'PM' : 'AM';
-  const h12 = t.h % 12 || 12;
-  return `${h12}:${pad(t.m)} ${period}`;
+  return formatClockParts(t.hours, t.minutes);
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -55,7 +50,7 @@ export function TimePicker({
   step = 5,
 }: Props) {
   const [open, setOpen] = React.useState(false);
-  const parsed = parseTime(value);
+  const parsed = parseClock(value);
 
   const minutes = React.useMemo(() => {
     const list: number[] = [];
@@ -63,19 +58,19 @@ export function TimePicker({
     return list;
   }, [step]);
 
-  const hour = parsed?.h ?? 9;
+  const hour = parsed?.hours ?? 9;
   const minute = parsed
-    ? minutes.includes(parsed.m)
-      ? parsed.m
-      : minutes.reduce((best, m) => (Math.abs(m - parsed.m) < Math.abs(best - parsed.m) ? m : best), 0)
+    ? minutes.includes(parsed.minutes)
+      ? parsed.minutes
+      : minutes.reduce((best, m) => (Math.abs(m - parsed.minutes) < Math.abs(best - parsed.minutes) ? m : best), 0)
     : 0;
 
   const setHour = (h: string) => {
-    onChange(`${pad(Number(h))}:${pad(minute)}`);
+    onChange(toClockValue(Number(h), minute));
   };
 
   const setMinute = (m: string) => {
-    onChange(`${pad(hour)}:${pad(Number(m))}`);
+    onChange(toClockValue(hour, Number(m)));
   };
 
   return (
@@ -91,7 +86,7 @@ export function TimePicker({
             className,
           )}
         >
-          <Clock className="size-4 opacity-70" />
+          <IconTime className="size-4 opacity-70" />
           <span className="flex-1 truncate text-left">
             {formatDisplay(value) ?? placeholder}
           </span>
@@ -107,7 +102,7 @@ export function TimePicker({
                 onChange('');
               }}
             >
-              <X className="size-3.5" />
+              <IconClose className="size-3.5" />
             </span>
           )}
         </Button>
@@ -136,7 +131,7 @@ export function TimePicker({
               <SelectContent className="z-200 max-h-56">
                 {HOURS.map((h) => (
                   <SelectItem key={h} value={String(h)} className="cursor-pointer">
-                    {pad(h)}
+                    {formatHour(h)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -151,7 +146,7 @@ export function TimePicker({
               <SelectContent className="z-200 max-h-56">
                 {minutes.map((m) => (
                   <SelectItem key={m} value={String(m)} className="cursor-pointer">
-                    {pad(m)}
+                    {pad2(m)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -183,7 +178,7 @@ export function TimePicker({
                   Math.abs(n - now.getMinutes()) < Math.abs(best - now.getMinutes()) ? n : best,
                 0,
               );
-              onChange(`${pad(now.getHours())}:${pad(m)}`);
+              onChange(toClockValue(now.getHours(), m));
               setOpen(false);
             }}
           >

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { defaultAvatarUrl, persistableImageUrl } from "@/infrastructure";
 import { PatientsRepository } from "./patients.repository";
 import { PatientPackagesService } from "@/modules/patient-packages/patient-packages.service";
 import { CreatePatientDto, UpdatePatientDto, PatientFiltersDto } from "./dto";
@@ -11,7 +12,15 @@ export class PatientsService {
   ) {}
 
   async create(dto: CreatePatientDto) {
-    const patient = await this.patientsRepository.create(dto);
+    const seed =
+      dto.email?.trim() ||
+      dto.phone?.trim() ||
+      `${dto.firstNameEn}-${dto.lastNameEn}-${Date.now()}`;
+    const patient = await this.patientsRepository.create({
+      ...dto,
+      imageUrl:
+        persistableImageUrl(dto.imageUrl) || defaultAvatarUrl(seed),
+    });
     if (patient.packageId) {
       await this.patientPackagesService.ensureEnrollment(
         patient.clinicId,
@@ -49,6 +58,7 @@ export class PatientsService {
         emergencyContactName: patient.emergencyContactName,
         emergencyContactPhone: patient.emergencyContactPhone,
         address: patient.address,
+        imageUrl: patient.imageUrl,
         primaryDoctorId: patient.primaryDoctorId,
         primaryDoctorName: patient.primaryDoctor?.name ?? null,
         packageId: patient.packageId,
@@ -79,7 +89,14 @@ export class PatientsService {
 
   async update(id: string, dto: UpdatePatientDto) {
     await this.findOne(id);
-    const patient = await this.patientsRepository.update(id, dto);
+    const imageUrl =
+      dto.imageUrl === undefined
+        ? undefined
+        : (persistableImageUrl(dto.imageUrl) ?? undefined);
+    const patient = await this.patientsRepository.update(id, {
+      ...dto,
+      imageUrl,
+    });
     // Assigning a package is what grants the balance; an existing one is left untouched.
     if (patient.packageId) {
       await this.patientPackagesService.ensureEnrollment(

@@ -1,10 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Switch } from '@/components/ui/switch';
+import { Switch } from '@/components/ui';
 import { cn } from '@/lib/utils';
-
-
 
 export function EntityMobileCard({
   title,

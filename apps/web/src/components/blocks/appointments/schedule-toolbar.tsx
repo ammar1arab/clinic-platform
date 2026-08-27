@@ -1,42 +1,39 @@
 'use client';
 
-import { Calendar, ChevronDown, Plus, Timer, Users } from 'lucide-react';
-import { IconNewPatient } from '@/constants/icons';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { SearchInput } from '@/components/primitives/search-input';
-import { Spinner } from '@/components/primitives/spinner';
+  Badge,
+} from '@/components/ui';
+import {
+  SearchInput,
+  SoftTip,
+  Spinner,
+} from '@/components/primitives';
 import type { Department } from '@/services/departments.service';
 import type { AppointmentStatus } from '@/services/appointments.service';
 import type { ScheduleView } from './schedule-nav';
-import {
-  SCHEDULE_FILTER_STATUSES,
-  STATUS_COLORS,
-  STATUS_CONFIG,
-} from './status-badge';
+import { StatusBadgeBlock } from './status-badge';
+import { SCHEDULE_FILTER_STATUSES } from '@/constants/appointment';
+import { FORM_ALL } from '@/constants/form';
 import { cn } from '@/lib/utils';
-
-const ALL_DEPARTMENTS = '__all__';
+import { IconAdd, IconChevronDown, IconNewPatient, IconPatients, IconSchedule, IconTimer } from '@/constants/icons';
 
 const VIEW_TABS: {
   id: ScheduleView | 'calendar';
   label: string;
   short: string;
-  icon: typeof Calendar;
+  icon: typeof IconSchedule;
   match: (view: ScheduleView) => boolean;
   target: (view: ScheduleView) => ScheduleView;
 }[] = [
@@ -44,7 +41,7 @@ const VIEW_TABS: {
     id: 'calendar',
     label: 'Calendar',
     short: 'Cal',
-    icon: Calendar,
+    icon: IconSchedule,
     match: (v) => v === 'month' || v === 'week' || v === 'day',
     target: (v) => (v === 'month' || v === 'week' || v === 'day' ? v : 'month'),
   },
@@ -52,7 +49,7 @@ const VIEW_TABS: {
     id: 'doctors',
     label: 'Doctor Timeline',
     short: 'Doctors',
-    icon: Users,
+    icon: IconPatients,
     match: (v) => v === 'doctors',
     target: () => 'doctors',
   },
@@ -60,7 +57,7 @@ const VIEW_TABS: {
     id: 'queue',
     label: 'Waiting Room',
     short: 'Waiting',
-    icon: Timer,
+    icon: IconTimer,
     match: (v) => v === 'queue',
     target: () => 'queue',
   },
@@ -108,40 +105,32 @@ function StatusFilterDropdown({
         >
           <span className="truncate text-muted-foreground">Status</span>
           {count > 0 ? (
-            <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/15 text-[10px] font-bold text-primary">
+            <Badge variant="info" className="h-5 min-h-0 min-w-5 justify-center px-1 font-bold">
               {count}
-            </span>
+            </Badge>
           ) : null}
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+          <IconChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="z-[80] w-[min(100vw-1.5rem,13rem)] p-1.5"
+        className="z-[80] w-[min(100vw-1.5rem,16rem)] p-1.5"
       >
         <DropdownMenuLabel className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Filter by status
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="my-1" />
-        {SCHEDULE_FILTER_STATUSES.map((status) => {
-          const cfg = STATUS_CONFIG[status];
-          return (
-            <DropdownMenuCheckboxItem
-              key={status}
-              checked={active.has(status)}
-              onCheckedChange={() => onToggle(status)}
-              onSelect={(e) => e.preventDefault()}
-              className="gap-2 rounded-md px-2 py-1.5 text-xs font-medium"
-            >
-              <span
-                className="size-2 shrink-0 rounded-full"
-                style={{ backgroundColor: STATUS_COLORS[status] }}
-                aria-hidden
-              />
-              {cfg.label}
-            </DropdownMenuCheckboxItem>
-          );
-        })}
+        {SCHEDULE_FILTER_STATUSES.map((status) => (
+          <DropdownMenuCheckboxItem
+            key={status}
+            checked={active.has(status)}
+            onCheckedChange={() => onToggle(status)}
+            onSelect={(e) => e.preventDefault()}
+            className="gap-2 rounded-md px-2 py-1.5"
+          >
+            <StatusBadgeBlock status={status} />
+          </DropdownMenuCheckboxItem>
+        ))}
         {count > 0 && (
           <>
             <DropdownMenuSeparator className="my-1" />
@@ -182,53 +171,55 @@ export function ScheduleToolbar({
           {VIEW_TABS.map(({ id, label, short, icon: Icon, match, target }) => {
             const active = match(view);
             return (
-              <button
-                key={id}
-                type="button"
-                title={label}
-                onClick={() => onViewChange(target(view))}
-                className={cn(
-                  'flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1.5 text-[11px] font-semibold transition-all duration-150 cursor-pointer active:scale-95 sm:flex-initial sm:gap-1.5 sm:px-2.5 sm:text-xs',
-                  active
-                    ? 'bg-background font-bold text-foreground shadow-xs ring-1 ring-border/50'
-                    : 'text-muted-foreground hover:bg-background/40 hover:text-foreground',
-                )}
-              >
-                <Icon
+              <SoftTip key={id} label={label}>
+                <button
+                  type="button"
+                  onClick={() => onViewChange(target(view))}
                   className={cn(
-                    'size-3.5 shrink-0',
-                    id === 'queue' ? 'text-amber-500' : 'text-primary',
+                    'flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1.5 text-[11px] font-semibold transition-all duration-150 cursor-pointer active:scale-95 sm:flex-initial sm:gap-1.5 sm:px-2.5 sm:text-xs',
+                    active
+                      ? 'bg-background font-bold text-foreground shadow-xs ring-1 ring-border/50'
+                      : 'text-muted-foreground hover:bg-background/40 hover:text-foreground',
                   )}
-                />
-                <span className="truncate sm:hidden">{short}</span>
-                <span className="hidden truncate sm:inline">{label}</span>
-              </button>
+                >
+                  <Icon
+                    className={cn(
+                      'size-3.5 shrink-0',
+                      id === 'queue' ? 'text-warning' : 'text-primary',
+                    )}
+                  />
+                  <span className="truncate sm:hidden">{short}</span>
+                  <span className="hidden truncate sm:inline">{label}</span>
+                </button>
+              </SoftTip>
             );
           })}
         </div>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onNewPatient}
-            title="Add patient"
-            aria-label="Add patient"
-            className="size-8 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
-          >
-            <IconNewPatient className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="hidden font-semibold sm:inline">Patient</span>
-          </Button>
-          <Button
-            size="sm"
-            onClick={onNewAppointment}
-            title="Add appointment"
-            aria-label="Add appointment"
-            className="size-8 shrink-0 px-0 active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
-          >
-            <Plus className="size-3.5 shrink-0" />
-            <span className="hidden font-semibold sm:inline">Appointment</span>
-          </Button>
+          <SoftTip label="Add patient">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onNewPatient}
+              aria-label="Add patient"
+              className="size-8 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
+            >
+              <IconNewPatient className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className="hidden font-semibold sm:inline">Patient</span>
+            </Button>
+          </SoftTip>
+          <SoftTip label="Add appointment">
+            <Button
+              size="sm"
+              onClick={onNewAppointment}
+              aria-label="Add appointment"
+              className="size-8 shrink-0 px-0 active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
+            >
+              <IconAdd className="size-3.5 shrink-0" />
+              <span className="hidden font-semibold sm:inline">Appointment</span>
+            </Button>
+          </SoftTip>
         </div>
       </div>
 
@@ -242,8 +233,8 @@ export function ScheduleToolbar({
 
         <div className="flex min-w-0 items-center gap-1.5 sm:contents">
           <Select
-            value={departmentId || ALL_DEPARTMENTS}
-            onValueChange={(v) => onDepartmentChange(v === ALL_DEPARTMENTS ? '' : v)}
+            value={departmentId || FORM_ALL}
+            onValueChange={(v) => onDepartmentChange(v === FORM_ALL ? '' : v)}
           >
             <SelectTrigger
               size="sm"
@@ -252,7 +243,7 @@ export function ScheduleToolbar({
               <SelectValue placeholder="Department" />
             </SelectTrigger>
             <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
-              <SelectItem value={ALL_DEPARTMENTS}>All departments</SelectItem>
+              <SelectItem value={FORM_ALL}>All departments</SelectItem>
               {departments?.map((d) => (
                 <SelectItem key={d.id} value={d.id} textValue={d.name} title={d.name}>
                   {d.name}
@@ -268,18 +259,20 @@ export function ScheduleToolbar({
           />
 
           {isLoading ? (
-            <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border/50 bg-muted/50 px-2 text-[11px] font-medium text-muted-foreground sm:ml-auto">
+            <Badge variant="muted" className="h-9 sm:ml-auto">
               <Spinner size="sm" className="text-primary" />
-            </span>
+            </Badge>
           ) : (
-            <span
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border/50 bg-muted/40 px-2 tabular-nums text-[11px] font-semibold text-foreground/85 shadow-2xs sm:ml-auto"
-              title={`${count} appointment${count === 1 ? '' : 's'}`}
-            >
-              <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
-              <span>{count}</span>
-              <span className="hidden sm:inline">appt{count === 1 ? '' : 's'}</span>
-            </span>
+            <SoftTip label={`${count} appointment${count === 1 ? '' : 's'}`}>
+              <Badge
+                variant="success"
+                className="h-9 tabular-nums sm:ml-auto"
+              >
+                <span className="size-1.5 shrink-0 rounded-full bg-success" />
+                <span>{count}</span>
+                <span className="hidden sm:inline">appt{count === 1 ? '' : 's'}</span>
+              </Badge>
+            </SoftTip>
           )}
         </div>
       </div>

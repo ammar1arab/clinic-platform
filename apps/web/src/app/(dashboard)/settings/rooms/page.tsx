@@ -1,49 +1,54 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
+  Button,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import {
+  Skeleton,
+  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
-import { EmptyState } from '@/components/primitives/empty-state';
-import { FormField } from '@/components/primitives/form-field';
-import { FormActions } from '@/components/primitives/form-actions';
-import { TruncatedText } from '@/components/primitives/truncated-text';
-import { SearchInput } from '@/components/primitives/search-input';
-import { Pagination } from '@/components/primitives/pagination';
-import { TableFrame } from '@/components/blocks/data/table-frame';
+} from '@/components/ui';
 import {
+  TwoStepDeleteDialogs,
+  useTwoStepDelete,
+} from '@/components/blocks/feedback';
+import {
+  RowActionsMenu,
+  EmptyState,
+  FormField,
+  FormActions,
+  TruncatedText,
+  SearchInput,
+  Pagination,
+  BilingualNameFields,
+  optionalArabicName,
+} from '@/components/primitives';
+import {
+  TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data/entity-mobile-card';
+} from '@/components/blocks/data';
 import {
   IconAdd,
   IconDelete,
   IconEdit,
   IconRoom,
 } from '@/constants/icons';
+import { FORM_NONE } from '@/constants/form';
 import {
   useRooms,
   useCreateRoom,
@@ -51,15 +56,11 @@ import {
   useDeactivateRoom,
   useReactivateRoom,
   useDeleteRoom,
-} from '@/hooks/use-rooms';
-import { useDepartments } from '@/hooks/use-departments';
-import { useClinicId } from '@/hooks/use-clinic-id';
-import { useListFilter } from '@/hooks/use-list-filter';
+} from '@/hooks/api/use-rooms';
+import { useDepartments } from '@/hooks/api/use-departments';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useListFilter } from '@/hooks/shared/use-list-filter';
 import { Room } from '@/services/rooms.service';
-import {
-  BilingualNameFields,
-  optionalArabicName,
-} from '@/components/primitives/bilingual-name-fields';
 
 const searchFields = (r: Room) => [r.name];
 
@@ -137,19 +138,17 @@ export default function RoomsPage() {
   };
 
   const rowActions = (room: Room) => (
-    <>
-      <Button variant="ghost" size="icon" className="size-7" onClick={() => openEdit(room)}>
-        <IconEdit className="size-3.5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 text-destructive hover:text-destructive"
-        onClick={() => del.ask({ id: room.id, name: room.name })}
-      >
-        <IconDelete className="size-3.5" />
-      </Button>
-    </>
+    <RowActionsMenu
+      items={[
+        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(room) },
+        {
+          label: 'Delete',
+          icon: IconDelete,
+          variant: 'destructive',
+          onSelect: () => del.ask({ id: room.id, name: room.name }),
+        },
+      ]}
+    />
   );
 
   return (
@@ -296,14 +295,14 @@ export default function RoomsPage() {
             />
             <FormField label="Department">
               <Select
-                value={departmentId || '__none__'}
-                onValueChange={(v) => setDepartmentId(v === '__none__' ? '' : v)}
+                value={departmentId || FORM_NONE}
+                onValueChange={(v) => setDepartmentId(v === FORM_NONE ? '' : v)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="No department" />
                 </SelectTrigger>
                 <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
-                  <SelectItem value="__none__">No department</SelectItem>
+                  <SelectItem value={FORM_NONE}>No department</SelectItem>
                   {departments?.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
                       <span className="truncate">{d.name}</span>

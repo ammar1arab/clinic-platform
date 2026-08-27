@@ -1,6 +1,7 @@
 export { BrandMark, LoadingDots } from './brand-mark';
 export { BootSplash } from './boot-splash';
 export { ButtonSpinner } from './button-spinner';
+export { ErrorBoundary } from './error-boundary';
 export { LoadingOverlay } from './loading-overlay';
 export { LoadingChrome } from './loading-chrome';
 export { NavigationProgress } from './navigation-progress';
@@ -8,13 +9,5 @@ export { GlobalActivity } from './global-activity';
 export { PageTransition } from './page-transition';
 export { TwoStepDeleteDialogs, useTwoStepDelete } from './two-step-delete';
 export type { TwoStepDeleteTarget } from './two-step-delete';
-export { PageLoadingState, InlineLoading } from '@/components/primitives/loading-state';
-export {
-  StatGridSkeleton,
-  TableSkeleton,
-  CardGridSkeleton,
-  FormSkeleton,
-  TimelineSkeleton,
-  PageHeaderSkeleton,
-} from '@/components/primitives/skeleton-presets';
+
 
