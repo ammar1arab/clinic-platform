@@ -11,7 +11,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       "http://localhost:3000",
-      "http://192.168.8.116:3000",
+      "http://192.168.8.136:3000",
       "https://clinic-platform-nine.vercel.app",
       "https://cureva.clinic",
       "https://www.cureva.clinic",

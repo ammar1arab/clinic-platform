@@ -1,7 +1,6 @@
 import { clinicsService, UpdateClinicInput, Clinic } from '@/services/clinics.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData, type TResponseError } from './use-fetch-data';
-import { useApiMutation } from './use-api-mutation';
+import { useFetchData, type TResponseError, useApiMutation } from '@/core/api/query';
 
 export function useClinic(clinicId: string) {
   return useFetchData<Clinic>({

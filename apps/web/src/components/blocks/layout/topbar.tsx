@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -26,6 +26,8 @@ const pageTitles: Record<string, string> = {
   '/schedule/new': 'New Appointment',
   '/patients': 'Patients',
   '/patients/new': 'New Patient',
+  '/practitioners': 'Practitioners',
+  '/practitioners/new': 'New practitioner',
   '/reports': 'Reports',
   '/settings': 'Settings',
   '/settings/departments': 'Departments',
@@ -39,6 +41,10 @@ const pageTitles: Record<string, string> = {
 
 function resolveTitle(pathname: string): string {
   if (pageTitles[pathname]) return pageTitles[pathname];
+  if (pathname.startsWith('/practitioners/') && pathname.endsWith('/edit')) {
+    return 'Edit practitioner';
+  }
+  if (pathname.startsWith('/practitioners/')) return 'Practitioner';
   if (pathname.startsWith('/schedule/')) return 'Appointment';
   if (pathname.startsWith('/patients/')) return 'Patient';
   return 'Clinic Platform';

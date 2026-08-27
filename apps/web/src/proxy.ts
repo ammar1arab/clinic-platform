@@ -7,8 +7,9 @@ const PROTECTED_PREFIXES = [
   ROUTES.DASHBOARD,
   ROUTES.SCHEDULE,
   ROUTES.PATIENTS,
+  ROUTES.REPORTS,
   ROUTES.SETTINGS,
-];
+] as const;
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -25,16 +26,15 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (hasToken && (pathname === ROUTES.LOGIN || pathname === '/')) {
-    const url = request.nextUrl.clone();
-    url.pathname = ROUTES.DASHBOARD;
-    url.search = '';
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
+  return NextResponse.next({ request });
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
+  matcher: [
+    '/dashboard/:path*',
+    '/schedule/:path*',
+    '/patients/:path*',
+    '/reports/:path*',
+    '/settings/:path*',
+  ],
 };

@@ -19,6 +19,7 @@ import {
   DiscountCodesModule,
   ReferralsModule,
   NotificationsModule,
+  PractitionersModule,
 } from "@/modules";
 
 @Module({
@@ -36,9 +37,11 @@ import {
     ReportsModule,
     PaymentMethodsModule,
     PackagesModule,
+    PatientPackagesModule,
     DiscountCodesModule,
     ReferralsModule,
     NotificationsModule,
+    PractitionersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

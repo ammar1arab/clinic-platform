@@ -7,9 +7,7 @@ import {
   PatientDetail,
 } from '@/services/patients.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData, type TResponseError } from './use-fetch-data';
-import { useApiMutation } from './use-api-mutation';
-import { INVALIDATE } from './query-presets';
+import { useFetchData, type TResponseError, useApiMutation, INVALIDATE } from '@/core/api/query';
 
 export function usePatients(filters: PatientFilters) {
   return useFetchData<Patient[]>({

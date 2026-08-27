@@ -46,5 +46,9 @@ Thumbs.db
 tmp/
 temp/
 uploads/
+!apps/web/public/uploads/
+!apps/web/public/uploads/.gitkeep
+apps/web/public/uploads/**
+!apps/web/public/uploads/.gitkeep
 *.sqlite
 *.db

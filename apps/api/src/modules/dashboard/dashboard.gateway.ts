@@ -11,7 +11,7 @@ import { Server, Socket } from "socket.io";
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: ["http://localhost:3000", "http://192.168.8.116:3000"],
+    origin: ["http://localhost:3000", "http://192.168.8.136:3000"],
     credentials: true,
   },
 })

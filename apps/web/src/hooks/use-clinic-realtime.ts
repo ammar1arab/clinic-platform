@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSocket } from '@/lib/socket';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { INVALIDATE } from './query-presets';
+import { INVALIDATE } from '@/core/api/query';
 
 export type ClinicRealtimeOptions = {
   notifyOnAppointmentChange?: boolean;

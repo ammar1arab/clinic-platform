@@ -1,9 +1,6 @@
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 
-
-
-
 export const personName = (max = 50) =>
   z
     .string()
@@ -36,7 +33,6 @@ export const optionalEmail = z
   .optional()
   .or(z.literal(''));
 
-
 export const optionalPastDate = z
   .string()
   .optional()
@@ -44,8 +40,6 @@ export const optionalPastDate = z
   .refine((val) => !val || new Date(val) <= new Date(), 'Date cannot be in the future');
 
 export const positiveNumber = (max = 100000) => z.coerce.number().min(0).max(max);
-
-
 
 export const patientSchema = z.object({
   firstNameEn: personName(50),
@@ -161,10 +155,100 @@ export const appointmentSchema = z
     }
   });
 
+const availabilitySlotSchema = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),
+  startTime: z.string().min(1, 'Required'),
+  endTime: z.string().min(1, 'Required'),
+});
 
+const timeOffSchema = z.object({
+  startDate: z.string().min(1, 'Required'),
+  endDate: z.string().min(1, 'Required'),
+  reason: z.string().optional().or(z.literal('')),
+});
+
+export const practitionerSchema = z
+  .object({
+    name: requiredText(80),
+    nameAr: optionalText(80),
+    title: optionalText(40),
+    email: z.string().trim().email('Enter a valid email').optional().or(z.literal('')),
+    phone: internationalPhone,
+    dob: optionalPastDate,
+    bio: optionalText(2000),
+    bioAr: optionalText(2000),
+    experienceYears: z.string().optional().or(z.literal('')),
+    imageUrl: optionalText(500),
+    licenseNumber: optionalText(80),
+    licenseExpiry: z.string().optional().or(z.literal('')),
+    departmentId: z.string().min(1, 'Select a department'),
+    defaultRoomId: z.string().optional().or(z.literal('')),
+    employmentType: z.enum(['salaried', 'commission', 'mixed', '']).optional(),
+    commissionPercent: z.string().optional().or(z.literal('')),
+    calendarColor: z
+      .enum(['brand', 'accent-teal', 'primary', 'success', 'warning', 'destructive', ''])
+      .optional(),
+    bufferMins: z.string().min(1, 'Required'),
+    serviceIds: z.array(z.string()),
+    availabilities: z.array(availabilitySlotSchema),
+    timeOffs: z.array(timeOffSchema),
+  })
+  .superRefine((v, ctx) => {
+    if (v.experienceYears?.trim()) {
+      const years = Number(v.experienceYears);
+      if (!Number.isFinite(years) || years < 0 || years > 80) {
+        ctx.addIssue({
+          path: ['experienceYears'],
+          code: 'custom',
+          message: 'Enter years between 0 and 80',
+        });
+      }
+    }
+
+    const buffer = Number(v.bufferMins);
+    if (!Number.isFinite(buffer) || buffer < 0 || buffer > 240) {
+      ctx.addIssue({
+        path: ['bufferMins'],
+        code: 'custom',
+        message: 'Buffer must be 0-240 minutes',
+      });
+    }
+
+    if (v.employmentType === 'commission' || v.employmentType === 'mixed') {
+      const pct = Number(v.commissionPercent);
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+        ctx.addIssue({
+          path: ['commissionPercent'],
+          code: 'custom',
+          message: 'Enter commission percent 0-100',
+        });
+      }
+    }
+
+    v.availabilities.forEach((slot, index) => {
+      if (slot.startTime && slot.endTime && slot.startTime >= slot.endTime) {
+        ctx.addIssue({
+          path: ['availabilities', index, 'endTime'],
+          code: 'custom',
+          message: 'End must be after start',
+        });
+      }
+    });
+
+    v.timeOffs.forEach((entry, index) => {
+      if (entry.startDate && entry.endDate && entry.startDate > entry.endDate) {
+        ctx.addIssue({
+          path: ['timeOffs', index, 'endDate'],
+          code: 'custom',
+          message: 'End must be on or after start',
+        });
+      }
+    });
+  });
 
 export type PatientFormData = z.infer<typeof patientSchema>;
 export type DepartmentFormData = z.infer<typeof departmentSchema>;
 export type RoomFormData = z.infer<typeof roomSchema>;
 export type ServiceFormData = z.infer<typeof serviceSchema>;
 export type AppointmentFormData = z.infer<typeof appointmentSchema>;
+export type PractitionerFormData = z.infer<typeof practitionerSchema>;

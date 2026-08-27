@@ -1,6 +1,5 @@
 import { reportsService, ReportFormat } from '@/services/reports.service';
-import { useApiMutation } from './use-api-mutation';
-import type { TResponseError } from './use-fetch-data';
+import { useApiMutation, type TResponseError } from '@/core/api/query';
 
 export interface ReportDownloadResult {
   filename: string;

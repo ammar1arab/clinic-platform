@@ -27,4 +27,6 @@ export {
   Pencil as IconEdit,
   Trash2 as IconDelete,
   Star as IconLoyal,
+  UserRoundCog as IconPractitioner,
+  Upload as IconUpload,
 } from 'lucide-react';

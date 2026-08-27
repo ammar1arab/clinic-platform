@@ -1,10 +1,12 @@
-/** Shared enums — single source for web + api HTTP contracts. */
+/** Shared enums - single source for web + api HTTP contracts. */
 
 export type Role = 'owner' | 'admin' | 'practitioner' | 'financial';
 
 export type SessionType = 'in_person' | 'online';
 
 export type DiscountType = 'fixed' | 'percentage';
+
+export type EmploymentType = 'salaried' | 'commission' | 'mixed';
 
 export type AppointmentStatus =
   | 'unconfirmed'

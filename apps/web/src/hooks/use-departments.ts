@@ -5,7 +5,7 @@ import {
   Department,
 } from '@/services/departments.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { createCrudHooks } from './create-crud-hooks';
+import { createCrudHooks } from '@/core/api/query';
 
 const {
   useList: useDepartments,

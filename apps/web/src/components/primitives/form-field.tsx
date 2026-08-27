@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 type FormFieldProps = {
-  label: ReactNode;
+  label?: ReactNode;
   error?: string;
   required?: boolean;
   htmlFor?: string;
@@ -27,10 +27,12 @@ export function FormField({
 }: FormFieldProps) {
   return (
     <div className={cn('min-w-0 space-y-1.5', className)}>
-      <Label htmlFor={htmlFor} className={labelClassName}>
-        {label}
-        {required ? <span className="ml-0.5 text-destructive">*</span> : null}
-      </Label>
+      {label != null && label !== '' ? (
+        <Label htmlFor={htmlFor} className={labelClassName}>
+          {label}
+          {required ? <span className="ml-0.5 text-destructive">*</span> : null}
+        </Label>
+      ) : null}
       {children}
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
       {!error && hint ? (

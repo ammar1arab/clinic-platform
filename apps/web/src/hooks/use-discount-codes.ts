@@ -6,9 +6,11 @@ import {
   ValidatedDiscountCode,
 } from '@/services/discount-codes.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { createCrudHooks } from './create-crud-hooks';
-import { useApiMutation } from './use-api-mutation';
-import type { TResponseError } from './use-fetch-data';
+import {
+  createCrudHooks,
+  useApiMutation,
+  type TResponseError,
+} from '@/core/api/query';
 
 const {
   useList: useDiscountCodes,

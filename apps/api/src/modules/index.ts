@@ -13,3 +13,4 @@ export * from "./patient-packages/patient-packages.module";
 export * from "./discount-codes/discount-codes.module";
 export * from "./referrals/referrals.module";
 export * from "./notifications/notifications.module";
+export * from "./practitioners/practitioners.module";

@@ -1,8 +1,7 @@
 import { dashboardService, DashboardKpis, RoomUtilization } from '@/services/dashboard.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { useClinicRealtime, type ClinicRealtimeOptions } from './use-clinic-realtime';
-import { useFetchData } from './use-fetch-data';
-import { clinicListOptions, DASHBOARD_OPTIONS } from './query-presets';
+import { useFetchData, clinicListOptions, DASHBOARD_OPTIONS } from '@/core/api/query';
 
 export function useDashboardKpis(clinicId: string) {
   return useFetchData<DashboardKpis>({

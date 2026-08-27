@@ -5,9 +5,7 @@ import {
   PatientBillingSummary,
 } from '@/services/patient-packages.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData, type TResponseError } from './use-fetch-data';
-import { useApiMutation } from './use-api-mutation';
-import { BILLING_OPTIONS, INVALIDATE } from './query-presets';
+import { useFetchData, type TResponseError, useApiMutation, BILLING_OPTIONS, INVALIDATE } from '@/core/api/query';
 
 export function usePatientBilling(
   patientId: string,

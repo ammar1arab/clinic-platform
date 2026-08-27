@@ -5,9 +5,7 @@ import {
   Referral,
 } from '@/services/referrals.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData, type TResponseError } from './use-fetch-data';
-import { useApiMutation } from './use-api-mutation';
-import { INVALIDATE } from './query-presets';
+import { useFetchData, type TResponseError, useApiMutation, INVALIDATE } from '@/core/api/query';
 
 export function useReferrals(filters: ReferralFilters) {
   return useFetchData<Referral[]>({

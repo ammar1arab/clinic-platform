@@ -7,9 +7,7 @@ import {
 } from '@/services/appointments.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
-import { useFetchData, type TResponseError } from './use-fetch-data';
-import { useApiMutation } from './use-api-mutation';
-import { INVALIDATE, LIVE_LIST_OPTIONS } from './query-presets';
+import { useFetchData, type TResponseError, useApiMutation, INVALIDATE, LIVE_LIST_OPTIONS } from '@/core/api/query';
 
 export function useAppointments(filters: AppointmentFilters, enabled = true) {
   return useFetchData<Appointment[]>({

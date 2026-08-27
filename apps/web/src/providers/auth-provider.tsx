@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { authService, MeResponse } from '@/services/auth.service';
 import { getToken, setToken, clearToken } from '@/lib/auth-token';
-import { useFetchData } from '@/hooks/use-fetch-data';
+import { useFetchData } from '@/core/api/query';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface AuthContextType {

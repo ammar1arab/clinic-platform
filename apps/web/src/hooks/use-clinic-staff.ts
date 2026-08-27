@@ -1,7 +1,6 @@
 import { clinicsService, ClinicStaffMember } from '@/services/clinics.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData } from './use-fetch-data';
-import { clinicListOptions } from './query-presets';
+import { useFetchData, clinicListOptions } from '@/core/api/query';
 
 export function useClinicStaff(clinicId: string) {
   return useFetchData<ClinicStaffMember[]>({
