@@ -30,16 +30,20 @@ export function rectFromElement(
   if (!el || typeof (el as HTMLElement).getBoundingClientRect !== 'function') {
     return rectFromPoint(fallbackX, fallbackY);
   }
-  const r = (el as HTMLElement).getBoundingClientRect();
-  if (!r.width && !r.height) return rectFromPoint(fallbackX, fallbackY);
-  return {
-    left: r.left,
-    top: r.top,
-    right: r.right,
-    bottom: r.bottom,
-    width: r.width,
-    height: r.height,
-  };
+  try {
+    const r = (el as HTMLElement).getBoundingClientRect();
+    if (!r.width && !r.height) return rectFromPoint(fallbackX, fallbackY);
+    return {
+      left: r.left,
+      top: r.top,
+      right: r.right,
+      bottom: r.bottom,
+      width: r.width,
+      height: r.height,
+    };
+  } catch {
+    return rectFromPoint(fallbackX, fallbackY);
+  }
 }
 
 

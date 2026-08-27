@@ -22,10 +22,10 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="grid h-dvh place-items-center">
-          <div className="text-center space-y-4">
+        <div className="grid h-dvh place-items-center bg-background text-foreground">
+          <div className="space-y-4 text-center">
             <h2 className="text-lg font-semibold">Something went wrong</h2>
-            <p className="text-sm text-muted-foreground max-w-sm">{this.state.message}</p>
+            <p className="max-w-sm text-sm text-muted-foreground">{this.state.message}</p>
             <Button onClick={() => location.reload()}>Reload page</Button>
           </div>
         </div>

@@ -37,7 +37,7 @@ export function CalendarMoreList({
       <PopoverAnchor asChild>
         <div
           aria-hidden
-          className="pointer-events-none fixed"
+          className="pointer-events-none fixed z-110 size-px"
           style={{
             left: Math.max(0, anchor.left),
             top: Math.max(0, anchor.top),
@@ -48,7 +48,7 @@ export function CalendarMoreList({
       </PopoverAnchor>
       <PopoverContent
         align="start"
-        className="z-110 w-[min(calc(100vw-1.5rem),22rem)] overflow-hidden p-0"
+        className="z-110 w-[min(calc(100vw-1.5rem),22rem)] overflow-hidden border-border bg-popover p-0 text-popover-foreground"
         data-calendar-popover="more"
       >
         <div className="border-b border-border px-3.5 py-2.5">

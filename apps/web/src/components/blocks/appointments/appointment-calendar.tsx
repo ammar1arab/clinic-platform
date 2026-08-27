@@ -1,17 +1,16 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, type PointerEvent } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin, { type EventResizeDoneArg } from '@fullcalendar/interaction';
+import interactionPlugin, { type DateClickArg, type EventResizeDoneArg } from '@fullcalendar/interaction';
 import {
   DatesSetArg,
   EventClickArg,
   DateSelectArg,
   EventDropArg,
   EventMountArg,
-  MoreLinkArg,
   MoreLinkContentArg,
 } from '@fullcalendar/core';
 import { Badge } from '@/components/ui';
@@ -36,20 +35,15 @@ import { formatTime } from '@/lib/datetime';
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
 
-function appointmentsFromSegs(
-  segs: MoreLinkArg['allSegs'] | undefined,
-): Appointment[] {
-  const seen = new Set<string>();
-  const list: Appointment[] = [];
-  for (const seg of segs ?? []) {
-    const appt = readCalendarAppointment(seg.event.extendedProps);
-    if (!appt || seen.has(appt.id)) continue;
-    seen.add(appt.id);
-    list.push(appt);
-  }
-  return list.sort(
-    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
-  );
+function dayAppointments(list: Appointment[] | undefined, date: Date) {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const end = start + 24 * 60 * 60 * 1000;
+  return (list ?? [])
+    .filter((appt) => {
+      const t = new Date(appt.scheduledAt).getTime();
+      return t >= start && t < end;
+    })
+    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
 }
 
 interface Props {
@@ -76,6 +70,8 @@ export function AppointmentCalendar({
   onSelectSlot,
 }: Props) {
   const calendarRef = useRef<FullCalendar>(null);
+  const appointmentsRef = useRef(appointments);
+  appointmentsRef.current = appointments;
   const updateMutation = useUpdateAppointment();
   const isMobile = useIsMobile();
   const [preview, setPreview] = useState<EventPreviewState | null>(null);
@@ -114,6 +110,22 @@ export function AppointmentCalendar({
       anchor: rectFromElement(el, arg.jsEvent.clientX, arg.jsEvent.clientY),
     });
   }, []);
+
+  const handleDateClick = useCallback(
+    (arg: DateClickArg) => {
+      if (arg.view.type !== 'dayGridMonth') return;
+      const target = arg.jsEvent.target;
+      if (target instanceof Element && target.closest('.fc-event, .fc-more-link')) return;
+      setPreview(null);
+      setOverflow(null);
+      const slot = new Date(arg.date);
+      if (slot.getHours() === 0 && slot.getMinutes() === 0) {
+        slot.setHours(9, 0, 0, 0);
+      }
+      onSelectSlot(slot);
+    },
+    [onSelectSlot],
+  );
 
   const handleDateSelect = useCallback(
     (arg: DateSelectArg) => {
@@ -205,28 +217,40 @@ export function AppointmentCalendar({
 
   const renderMoreLinkContent = useCallback(
     (arg: MoreLinkContentArg) => (
-      <Badge variant="info" className="fc-more-badge text-[10px] font-semibold">
+      <Badge variant="info" className="fc-more-badge pointer-events-none text-[10px] font-semibold">
         +{arg.num} more
       </Badge>
     ),
     [],
   );
 
-  const handleMoreLinkClick = useCallback((info: MoreLinkArg) => {
-    info.jsEvent.preventDefault();
-    info.jsEvent.stopPropagation();
-    const point = info.jsEvent as MouseEvent;
-    const target = point.currentTarget;
-    const el = target instanceof Element ? target : null;
+  const openDayMore = useCallback((link: Element, clientX: number, clientY: number) => {
+    const dayEl = link.closest<HTMLElement>('[data-date]');
+    const raw = dayEl?.getAttribute('data-date');
+    const date = raw ? new Date(`${raw}T00:00:00`) : new Date();
     setPreview(null);
     setOverflow({
-      date: info.date,
-      appointments: appointmentsFromSegs(info.allSegs),
-      x: point.clientX,
-      y: point.clientY,
-      anchor: rectFromElement(el, point.clientX, point.clientY),
+      date,
+      appointments: dayAppointments(appointmentsRef.current, date),
+      x: clientX,
+      y: clientY,
+      anchor: rectFromElement(link, clientX, clientY),
     });
   }, []);
+
+  const handleCalendarPointerDown = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest('.fc-more-link');
+      if (!link || !event.currentTarget.contains(link)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.nativeEvent.stopImmediatePropagation();
+      openDayMore(link, event.clientX, event.clientY);
+    },
+    [openDayMore],
+  );
 
   const handleEventDidMount = useCallback((info: EventMountArg) => {
     const appt = readCalendarAppointment(info.event.extendedProps);
@@ -249,23 +273,21 @@ export function AppointmentCalendar({
       btn.setAttribute('aria-label', 'Add appointment');
       btn.innerHTML =
         '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setPreview(null);
-        const slot = new Date(arg.date);
-        if (slot.getHours() === 0 && slot.getMinutes() === 0) {
-          slot.setHours(9, 0, 0, 0);
-        }
-        onSelectSlot(slot);
-      });
+      btn.setAttribute('aria-hidden', 'true');
+      btn.tabIndex = -1;
       frame.appendChild(btn);
     },
-    [onSelectSlot],
+    [],
   );
 
   const syncCalendarSize = useCallback(() => {
-    calendarRef.current?.getApi().updateSize();
+    const api = calendarRef.current?.getApi();
+    if (!api) return;
+    try {
+      api.updateSize();
+    } catch {
+      return;
+    }
   }, []);
 
   const sizeHostRef = useResizeObserver(syncCalendarSize);
@@ -289,6 +311,7 @@ export function AppointmentCalendar({
     >
       <div
         ref={sizeHostRef}
+        onPointerDownCapture={handleCalendarPointerDown}
         className={cn(
           'relative [&_.fc-header-toolbar]:pr-9 sm:[&_.fc-header-toolbar]:pr-10',
           focused && 'flex h-full min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-view-harness]:min-h-0',
@@ -337,6 +360,7 @@ export function AppointmentCalendar({
           eventDidMount={handleEventDidMount}
           dayCellDidMount={handleDayCellDidMount}
           eventClick={handleEventClick}
+          dateClick={handleDateClick}
           eventDrop={handleEventDrop}
           eventResize={handleEventResize}
           select={handleDateSelect}
@@ -346,7 +370,6 @@ export function AppointmentCalendar({
           eventMaxStack={isMobile ? 2 : 4}
           slotEventOverlap={false}
           eventMinHeight={isMobile ? 28 : 32}
-          moreLinkClick={handleMoreLinkClick}
           moreLinkContent={renderMoreLinkContent}
           expandRows
           stickyHeaderDates

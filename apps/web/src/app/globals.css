@@ -1111,7 +1111,7 @@
   opacity: 0.35;
   cursor: pointer;
   transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .fc .fc-daygrid-day:hover .fc-day-add,
@@ -1166,10 +1166,11 @@
 
 .fc .fc-daygrid-day-bottom {
   position: relative;
-  z-index: 3;
+  z-index: 8;
   margin: 6px 2px 2px;
   padding-top: 4px;
   border-top: 1px dashed color-mix(in oklch, var(--color-primary) 22%, transparent);
+  pointer-events: auto;
 }
 
 .fc .fc-daygrid-more-link,
@@ -1210,10 +1211,6 @@
   background: color-mix(in oklch, var(--color-primary) 18%, transparent);
   border-color: color-mix(in oklch, var(--color-primary) 50%, transparent);
   color: var(--color-primary);
-}
-
-.fc .fc-more-popover {
-  display: none !important;
 }
 
 .fc .fc-popover {
