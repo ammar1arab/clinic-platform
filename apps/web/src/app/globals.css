@@ -643,6 +643,30 @@
   font-family: inherit;
 }
 
+html[data-view-focus='true'] {
+  --app-sidebar-current-width: 0px;
+  --app-queue-col-max: none;
+}
+
+html[data-view-focus='true'] [data-app-sidebar],
+html[data-view-focus='true'] [data-app-topbar],
+html[data-view-focus='true'] [data-schedule-toolbar] {
+  display: none;
+}
+
+html[data-view-focus='true'] main {
+  padding: 0;
+  overflow: hidden;
+}
+
+html[data-view-focus='true'] main,
+html[data-view-focus='true'] main > *,
+html[data-view-focus='true'] main > * > *,
+html[data-view-focus='true'] [data-view-focus='true'] {
+  min-height: 0;
+  height: 100%;
+}
+
 [data-view-focus='true'] .fc,
 [data-view-focus='true'] .fc .fc-view-harness {
   height: 100% !important;

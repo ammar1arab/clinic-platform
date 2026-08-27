@@ -16,7 +16,7 @@ export function PageTransition({
     <div
       key={pathname}
       className={cn(
-        'flex min-h-full flex-1 flex-col animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out',
+        'flex min-h-0 flex-1 flex-col',
         className,
       )}
     >

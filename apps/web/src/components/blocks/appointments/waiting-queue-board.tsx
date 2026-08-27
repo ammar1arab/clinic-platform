@@ -169,7 +169,7 @@ export function WaitingQueueBoard({
       className={cn(
         'flex flex-col overflow-hidden border bg-card shadow-xs',
         focused
-          ? 'h-full min-h-0 rounded-none border-0'
+          ? 'h-0 min-h-0 flex-1 rounded-none border-0'
           : 'card-aura min-h-0 flex-1 rounded-xl sm:rounded-2xl',
       )}
     >
@@ -200,6 +200,7 @@ export function WaitingQueueBoard({
       <div
         className={cn(
           'grid min-h-0 flex-1 grid-cols-1 gap-2.5 overflow-y-auto overscroll-y-contain p-2.5',
+          focused && 'h-0',
           'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
           stageTab === 'all' ? 'lg:grid-cols-4' : 'lg:grid-cols-1',
           'lg:grid-rows-[minmax(0,1fr)] lg:items-stretch lg:overflow-hidden',

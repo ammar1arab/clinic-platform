@@ -8,12 +8,10 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui';
 import { SoftTip } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
-import { useMounted } from '@/hooks/shared/use-mounted';
 import { IconMaximize, IconMinimize } from '@/constants/icons';
 
 interface ViewFocusApi {
@@ -58,6 +56,11 @@ function hasOpenOverlay() {
   );
 }
 
+function applyViewFocus(on: boolean) {
+  if (on) document.documentElement.setAttribute('data-view-focus', 'true');
+  else document.documentElement.removeAttribute('data-view-focus');
+}
+
 export function ViewFocusToggle({ className }: { className?: string }) {
   const api = useViewFocusControls();
   if (!api) return null;
@@ -70,9 +73,11 @@ export function ViewFocusToggle({ className }: { className?: string }) {
         size="icon-sm"
         onClick={api.focused ? api.exit : api.enter}
         aria-label={api.focused ? 'Exit focus' : 'Focus view'}
+        aria-pressed={api.focused}
         className={cn(
           'size-8 shrink-0 rounded-lg border-border/70 bg-background/80 text-muted-foreground shadow-2xs',
           'hover:border-primary/40 hover:bg-card hover:text-foreground active:scale-95',
+          api.focused && 'border-primary/50 bg-card text-foreground',
           className,
         )}
       >
@@ -83,11 +88,21 @@ export function ViewFocusToggle({ className }: { className?: string }) {
 }
 
 export function ViewFocus({ label, children, className }: ViewFocusProps) {
-  const mounted = useMounted();
   const [focused, setFocused] = useState(false);
 
-  const enter = useCallback(() => setFocused(true), []);
-  const exit = useCallback(() => setFocused(false), []);
+  const enter = useCallback(() => {
+    applyViewFocus(true);
+    setFocused(true);
+  }, []);
+
+  const exit = useCallback(() => {
+    applyViewFocus(false);
+    setFocused(false);
+  }, []);
+
+  const bind = useCallback((node: HTMLDivElement | null) => {
+    if (!node) applyViewFocus(false);
+  }, []);
 
   useKeyboardShortcut(
     'escape',
@@ -104,35 +119,27 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
 
   const content = isFocusRender(children) ? children(focused) : children;
 
-  const panel = (
-    <div
-      data-view-focus={focused ? 'true' : undefined}
-      aria-label={focused ? `${label} focus view` : undefined}
-      className={cn(
-        focused
-          ? [
-              'fixed inset-x-0 bottom-0 top-app-header inset-s-app-sidebar z-50 flex flex-col overflow-hidden overscroll-none bg-background pb-[env(safe-area-inset-bottom,0px)]',
-              'transition-[inset-inline-start] duration-300 ease-in-out',
-              'animate-in fade-in-0 zoom-in-[0.985] duration-300 ease-out',
-            ]
-          : cn('relative flex min-h-0 flex-1 flex-col', className),
-      )}
-    >
-      <div
-        className={cn(
-          'min-h-0 min-w-0 flex-1',
-          focused && 'flex h-full min-h-0 flex-col overflow-hidden',
-        )}
-      >
-        {content}
-      </div>
-    </div>
-  );
-
   return (
     <ViewFocusContext.Provider value={api}>
-      {focused ? <div className="min-h-[min(70dvh,40rem)] flex-1" aria-hidden /> : null}
-      {focused && mounted ? createPortal(panel, document.body) : panel}
+      <div
+        ref={bind}
+        data-view-focus={focused ? 'true' : undefined}
+        aria-label={focused ? `${label} focus view` : undefined}
+        className={cn(
+          'relative flex min-h-0 flex-1 flex-col',
+          focused && 'h-full overflow-hidden bg-background',
+          className,
+        )}
+      >
+        <div
+          className={cn(
+            'flex min-h-0 min-w-0 flex-1 flex-col',
+            focused && 'overflow-hidden',
+          )}
+        >
+          {content}
+        </div>
+      </div>
     </ViewFocusContext.Provider>
   );
 }

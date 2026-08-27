@@ -144,7 +144,10 @@ export function ScheduleToolbar({
   onNewAppointment,
 }: Props) {
   return (
-    <div className="card-aura flex flex-col gap-2 rounded-xl border bg-card/90 p-2 shadow-xs backdrop-blur-md sm:rounded-2xl sm:p-2.5">
+    <div
+      data-schedule-toolbar=""
+      className="card-aura flex flex-col gap-2 rounded-xl border bg-card/90 p-2 shadow-xs backdrop-blur-md sm:rounded-2xl sm:p-2.5"
+    >
       <div className="flex items-center gap-1.5 sm:gap-2">
         <div className="flex min-w-0 flex-1 items-center overflow-x-auto rounded-lg border bg-muted/50 p-0.5 shadow-2xs scrollbar-none">
           {VIEW_TABS.map(({ id, label, short, icon: Icon, match, target }) => {

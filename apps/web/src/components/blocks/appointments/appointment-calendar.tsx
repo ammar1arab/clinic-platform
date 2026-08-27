@@ -304,7 +304,7 @@ export function AppointmentCalendar({
       className={cn(
         'relative bg-card [&_.fc]:text-sm',
         focused
-          ? 'flex h-full min-h-0 flex-col overflow-hidden rounded-none border-0 p-1.5 sm:p-2'
+          ? 'flex h-0 min-h-0 flex-1 flex-col overflow-hidden rounded-none border-0 p-1.5 sm:p-2'
           : 'card-aura rounded-xl border p-2 sm:p-2.5',
       )}
       aria-busy={isFetching || undefined}
@@ -314,7 +314,8 @@ export function AppointmentCalendar({
         onPointerDownCapture={handleCalendarPointerDown}
         className={cn(
           'relative [&_.fc-header-toolbar]:pr-9 sm:[&_.fc-header-toolbar]:pr-10',
-          focused && 'flex h-full min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-view-harness]:min-h-0',
+          focused &&
+            'flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0',
         )}
       >
         <div className="absolute top-0 right-0 z-20">

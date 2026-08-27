@@ -165,6 +165,7 @@ export function SidebarBlock() {
         aria-label="Navigation"
         aria-hidden={!mobileOpen}
         inert={!mobileOpen}
+        data-app-sidebar=""
         className={cn(
           'fixed inset-0 z-50 flex flex-col bg-background md:hidden',
           'pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]',
@@ -225,6 +226,7 @@ export function SidebarBlock() {
       </div>
 
       <aside
+        data-app-sidebar=""
         className={cn(
           'hidden flex-col border-r border-border/80 bg-card/95 backdrop-blur-md md:flex',
           'md:static md:shrink-0',
