@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui';
 import {
   languageLabelList,
+  LANGUAGE_BADGE_VARIANT,
   PRACTITIONER_EMPLOYMENT_LABEL,
   PRACTITIONER_EMPLOYMENT_VARIANT,
   WEEKDAY_OPTIONS,
@@ -61,6 +62,8 @@ export function PractitionerProfile({
   const titleName = practitioner.title
     ? `${practitioner.title} ${practitioner.name}`
     : practitioner.name;
+  const nationality = countryLabel(practitioner.nationality);
+  const employment = employmentLabel(practitioner.employmentType);
   const languages = languageLabelList(practitioner.languages);
   const genderLabel =
     GENDERS.find((g) => g.value === practitioner.gender)?.label ?? practitioner.gender;
@@ -114,12 +117,12 @@ export function PractitionerProfile({
         badges={
           <>
             <ProfileStatusBadge active={practitioner.isActive} />
-            {practitioner.employmentType ? (
+            {employment && practitioner.employmentType ? (
               <Badge
-                variant={PRACTITIONER_EMPLOYMENT_VARIANT[practitioner.employmentType] ?? 'outline'}
+                variant={PRACTITIONER_EMPLOYMENT_VARIANT[practitioner.employmentType] ?? 'secondary'}
                 className="font-normal"
               >
-                {employmentLabel(practitioner.employmentType)}
+                {employment}
               </Badge>
             ) : null}
           </>
@@ -148,24 +151,51 @@ export function PractitionerProfile({
           <ProfileInfoField label="Specialty" value={practitioner.specialty} />
           <ProfileInfoField label="Department" value={practitioner.departmentName} />
           <ProfileInfoField label="Default room" value={practitioner.defaultRoomName} />
-          <ProfileInfoField
-            label="Employment"
-            value={employmentLabel(practitioner.employmentType)}
-          />
+          <ProfileInfoField label="Employment" value={employment}>
+            {employment && practitioner.employmentType ? (
+              <Badge
+                variant={
+                  PRACTITIONER_EMPLOYMENT_VARIANT[practitioner.employmentType] ?? 'secondary'
+                }
+                className="font-normal"
+              >
+                {employment}
+              </Badge>
+            ) : null}
+          </ProfileInfoField>
           <ProfileInfoField
             label="Commission"
             value={
               practitioner.commissionPercent != null ? `${practitioner.commissionPercent}%` : null
             }
           />
-          <ProfileInfoField label="Nationality" value={countryLabel(practitioner.nationality)} />
-          <ProfileInfoField label="Gender" value={genderLabel} />
+          <ProfileInfoField label="Nationality" value={nationality}>
+            {nationality ? (
+              <Badge variant="info" className="font-normal">
+                {nationality}
+              </Badge>
+            ) : null}
+          </ProfileInfoField>
+          <ProfileInfoField label="Gender" value={genderLabel}>
+            {genderLabel ? (
+              <Badge
+                variant={genderLabel.toLowerCase() === 'female' ? 'warning' : 'info'}
+                className="font-normal"
+              >
+                {genderLabel}
+              </Badge>
+            ) : null}
+          </ProfileInfoField>
           <ProfileInfoField label="Date of birth" value={dobText} />
           {languages.length > 0 ? (
             <ProfileInfoField label="Languages" value={languages.join(', ')}>
-              <div className="flex flex-wrap gap-1">
-                {languages.map((label) => (
-                  <Badge key={label} variant="outline" className="font-normal">
+              <div className="flex flex-wrap justify-end gap-1 sm:justify-start">
+                {languages.map((label, index) => (
+                  <Badge
+                    key={label}
+                    variant={LANGUAGE_BADGE_VARIANT[index % LANGUAGE_BADGE_VARIANT.length]}
+                    className="font-normal"
+                  >
                     {label}
                   </Badge>
                 ))}
@@ -174,7 +204,7 @@ export function PractitionerProfile({
           ) : null}
           {practitioner.whatsapp ? (
             <ProfileInfoField label="WhatsApp" value={practitioner.whatsapp}>
-              <PhoneLink value={practitioner.whatsapp} className="block text-sm font-medium" />
+              <PhoneLink value={practitioner.whatsapp} className="text-sm font-medium" />
             </ProfileInfoField>
           ) : null}
           <ProfileInfoField label="License" value={practitioner.licenseNumber} />
@@ -201,7 +231,7 @@ export function PractitionerProfile({
         </ProfileSection>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
         <ProfileSection
           title="Services"
           description={

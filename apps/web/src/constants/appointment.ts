@@ -1,6 +1,7 @@
 import type { AppointmentStatus } from '@/services/appointments.service';
 
 export const CLINIC_CURRENCY = 'JOD';
+export const DEFAULT_DURATION_MINS = '45';
 
 export const STATUS_BADGE_VARIANT: Record<
   AppointmentStatus,

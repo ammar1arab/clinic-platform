@@ -25,6 +25,7 @@ export { RowActionsMenu, type RowActionItem } from './row-actions-menu';
 export { SearchInput } from './search-input';
 export {
   CardGridSkeleton,
+  FormPageSkeleton,
   FormSkeleton,
   PageHeaderSkeleton,
   StatGridSkeleton,

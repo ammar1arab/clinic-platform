@@ -28,7 +28,7 @@ import {
   SoftTip,
 } from '@/components/primitives';
 import { TableFrame } from '@/components/blocks/data';
-import { PRACTITIONER_EMPLOYMENT_LABEL, PRACTITIONER_EMPLOYMENT_VARIANT, languageLabelList, languageLabels } from '@/constants/practitioner';
+import { PRACTITIONER_EMPLOYMENT_LABEL, PRACTITIONER_EMPLOYMENT_VARIANT, LANGUAGE_BADGE_VARIANT, languageLabelList } from '@/constants/practitioner';
 import { ROUTES } from '@/constants/routes';
 import { ageLabel } from '@/lib/age';
 import {
@@ -72,8 +72,12 @@ function LanguageBadges({ codes }: { codes: string[] | null | undefined }) {
 
   return (
     <div className="flex min-w-0 items-center gap-1">
-      {shown.map((label) => (
-        <Badge key={label} variant="outline" className="font-normal">
+      {shown.map((label, index) => (
+        <Badge
+          key={label}
+          variant={LANGUAGE_BADGE_VARIANT[index % LANGUAGE_BADGE_VARIANT.length]}
+          className="font-normal"
+        >
           <span>{label}</span>
         </Badge>
       ))}
@@ -95,8 +99,16 @@ function LanguageBadges({ codes }: { codes: string[] | null | undefined }) {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex flex-wrap gap-1">
-              {rest.map((label) => (
-                <Badge key={label} variant="outline" className="font-normal">
+              {rest.map((label, index) => (
+                <Badge
+                  key={label}
+                  variant={
+                    LANGUAGE_BADGE_VARIANT[
+                      (shown.length + index) % LANGUAGE_BADGE_VARIANT.length
+                    ]
+                  }
+                  className="font-normal"
+                >
                   <span>{label}</span>
                 </Badge>
               ))}
@@ -340,9 +352,19 @@ export function PractitionersList({
                     className="min-w-0 w-full text-xs text-muted-foreground"
                   />
                 </div>
-                {p.specialty ? (
-                  <div className="mt-0.5">
-                    <CellBadge value={p.specialty} />
+                {p.specialty || p.employmentType ? (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {p.specialty ? <CellBadge value={p.specialty} /> : null}
+                    {p.employmentType ? (
+                      <CellBadge
+                        value={
+                          PRACTITIONER_EMPLOYMENT_LABEL[p.employmentType] ?? p.employmentType
+                        }
+                        variant={
+                          PRACTITIONER_EMPLOYMENT_VARIANT[p.employmentType] ?? 'secondary'
+                        }
+                      />
+                    ) : null}
                   </div>
                 ) : null}
                 {p.phone ? (
@@ -370,25 +392,14 @@ export function PractitionersList({
 
             <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs">
               <MetaStat label="Department" value={p.departmentName ?? '—'} />
-              <MetaStat label="Languages" value={languageLabels(p.languages) || '—'} />
+              <div className="min-w-0">
+                <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+                  Languages
+                </p>
+                <LanguageBadges codes={p.languages} />
+              </div>
               <MetaStat label="Services" value={String(p.serviceIds.length)} />
-              <MetaStat
-                label="Employment"
-                value={
-                  p.employmentType
-                    ? PRACTITIONER_EMPLOYMENT_LABEL[p.employmentType] ??
-                      p.employmentType
-                    : '—'
-                }
-              />
-              <MetaStat label="Buffer" value={`${p.bufferMins}m`} />
               <MetaStat label="Age" value={ageLabel(p.dob) || '—'} />
-              <MetaStat
-                label="Experience"
-                value={
-                  p.experienceYears != null ? `${p.experienceYears} yrs` : '—'
-                }
-              />
             </div>
           </div>
         ))}

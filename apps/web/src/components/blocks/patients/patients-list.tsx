@@ -189,7 +189,14 @@ export function PatientsList({
                     <TableCell>
                       {genderLabel(p.gender) ? (
                         <SoftTip label={genderLabel(p.gender)}>
-                          <Badge variant="outline" className="font-normal">
+                          <Badge
+                            variant={
+                              genderLabel(p.gender).toLowerCase() === 'female'
+                                ? 'warning'
+                                : 'info'
+                            }
+                            className="font-normal"
+                          >
                             {genderLabel(p.gender)}
                           </Badge>
                         </SoftTip>
@@ -264,7 +271,14 @@ export function PatientsList({
                     <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
                       {genderLabel(p.gender) ? (
                         <SoftTip label={genderLabel(p.gender)}>
-                          <Badge variant="outline" className="font-normal">
+                          <Badge
+                            variant={
+                              genderLabel(p.gender).toLowerCase() === 'female'
+                                ? 'warning'
+                                : 'info'
+                            }
+                            className="font-normal"
+                          >
                             {genderLabel(p.gender)}
                           </Badge>
                         </SoftTip>

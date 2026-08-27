@@ -134,7 +134,7 @@ export function FormSkeleton({
     cols === 1 ? 'grid-cols-1' : cols === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2';
 
   return (
-    <div className={cn('rounded-xl border bg-card p-5 shadow-xs space-y-5', className)}>
+    <div className={cn('card-aura space-y-5 rounded-xl bg-card p-5', className)}>
       <div className="space-y-1.5 border-b pb-3.5">
         <Skeleton className="h-5 w-48" />
         <Skeleton className="h-3 w-72" />
@@ -155,6 +155,27 @@ export function FormSkeleton({
           <Skeleton className="h-9 w-28 rounded-lg" />
         </div>
       )}
+    </div>
+  );
+}
+
+export function FormPageSkeleton({
+  sections = [1, 4, 3, 4],
+  className,
+}: {
+  sections?: number[];
+  className?: string;
+}) {
+  return (
+    <div className={cn('space-y-4', className)}>
+      {sections.map((fields, i) => (
+        <FormSkeleton
+          key={i}
+          fields={fields}
+          cols={fields >= 3 ? 2 : 1}
+          hasActions={i === sections.length - 1}
+        />
+      ))}
     </div>
   );
 }

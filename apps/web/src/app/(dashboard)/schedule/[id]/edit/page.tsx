@@ -2,26 +2,28 @@
 
 import { Suspense, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Skeleton } from '@/components/ui';
 import {
   AppointmentForm,
   parseScheduleView,
   schedulePath,
 } from '@/components/blocks/appointments';
 import {
+  EmptyState,
+  FormPageSkeleton,
   PageBack,
   RowActionsMenu,
 } from '@/components/primitives';
+import { Button } from '@/components/ui';
 import { useAppointment, useUpdateAppointment } from '@/hooks/api/use-appointments';
 import { useAuth, useConfirm } from '@/providers';
-import { IconBan } from '@/constants/icons';
+import { IconBan, IconVisit } from '@/constants/icons';
 
 function EditAppointmentInner({ id }: { id: string }) {
   const router = useRouter();
   const params = useSearchParams();
   const { user } = useAuth();
   const confirm = useConfirm();
-  const { data: appointment, isLoading } = useAppointment(id);
+  const { data: appointment, isLoading, isError } = useAppointment(id);
   const update = useUpdateAppointment();
   const backHref = schedulePath(parseScheduleView(params.get('view')));
 
@@ -32,7 +34,7 @@ function EditAppointmentInner({ id }: { id: string }) {
     appointment.status !== 'completed';
 
   return (
-    <div className="mx-auto max-w-3xl space-y-3 sm:space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">
       <PageBack
         backHref={backHref}
         backLabel="Back to Schedule"
@@ -65,12 +67,19 @@ function EditAppointmentInner({ id }: { id: string }) {
         }
       />
 
-      {isLoading || !appointment ? (
-        <div className="space-y-3 sm:space-y-4">
-          <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-56 w-full" />
-          <Skeleton className="h-40 w-full" />
-        </div>
+      {isLoading ? (
+        <FormPageSkeleton />
+      ) : isError || !appointment ? (
+        <EmptyState
+          icon={IconVisit}
+          title="Appointment not found"
+          description="This visit may have been removed or the link is out of date."
+          action={
+            <Button variant="outline" size="sm" onClick={() => router.push(backHref)}>
+              Back to Schedule
+            </Button>
+          }
+        />
       ) : (
         <AppointmentForm
           appointment={appointment}
@@ -92,7 +101,7 @@ export default function EditAppointmentPage({
   const { id } = use(params);
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<FormPageSkeleton />}>
       <EditAppointmentInner id={id} />
     </Suspense>
   );

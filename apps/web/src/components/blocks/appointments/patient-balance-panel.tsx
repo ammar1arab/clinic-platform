@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@/components/ui';
-import { SoftTip } from '@/components/primitives';
+import { Badge, Button, Skeleton } from '@/components/ui';
+import { IconWell, SoftTip } from '@/components/primitives';
 import { ButtonSpinner } from '@/components/blocks/feedback';
 import { cn } from '@/lib/utils';
 import type { PatientBillingSummary, PatientPackageDto } from '@clinic/types';
@@ -52,9 +52,15 @@ export function PatientBalancePanel({
 
   if (isLoading) {
     return (
-      <div className="animate-pulse rounded-lg border bg-muted/30 p-3">
-        <div className="mb-2 h-4 w-32 rounded bg-muted" />
-        <div className="h-10 rounded bg-muted" />
+      <div className="space-y-2.5 rounded-xl border border-border bg-card p-3">
+        <div className="flex items-center gap-2">
+          <Skeleton className="size-8 rounded-md" />
+          <div className="space-y-1.5">
+            <Skeleton className="h-3.5 w-28" />
+            <Skeleton className="h-2.5 w-40" />
+          </div>
+        </div>
+        <Skeleton className="h-16 w-full rounded-lg" />
       </div>
     );
   }
@@ -62,15 +68,13 @@ export function PatientBalancePanel({
   if (!hasContent) return null;
 
   return (
-    <div className="space-y-3 rounded-lg border border-border/80 bg-card p-3">
+    <div className="space-y-3 rounded-xl border border-border bg-card p-3">
       <div className="flex items-center gap-2">
-        <span className="grid size-7 place-items-center rounded-md bg-muted text-muted-foreground">
-          <IconPayment className="size-3.5" strokeWidth={1.75} />
-        </span>
+        <IconWell icon={IconPayment} size="sm" accent="muted" />
         <div className="min-w-0">
           <p className="text-sm font-medium">Patient balance</p>
           <p className="text-[11px] text-muted-foreground">
-            IconPackage credit & previous dues for this visit
+            Package credit and previous dues for this visit
           </p>
         </div>
       </div>
@@ -155,26 +159,24 @@ function PackageRow({
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex items-start gap-2">
-          <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-md bg-background text-muted-foreground">
-            <IconPackage className="size-3.5" strokeWidth={1.75} />
-          </span>
+          <IconWell icon={IconPackage} size="sm" accent={covering ? 'success' : 'muted'} />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{pkg.packageName}</p>
             <p className="text-xs tabular-nums text-muted-foreground">
               {formatPackageBalance(pkg)}
             </p>
             {covering ? (
-              <p className="mt-0.5 text-[11px] font-medium text-success">
+              <Badge variant="success" className="mt-1">
                 Covering this visit · charged {costLabel}
-              </p>
+              </Badge>
             ) : covers ? (
               <p className="mt-0.5 text-[11px] text-muted-foreground">
                 Use for this visit: {costLabel}
               </p>
             ) : (
-              <p className="mt-0.5 text-[11px] text-destructive/80">
+              <Badge variant="destructive" className="mt-1">
                 Not enough balance for this visit
-              </p>
+              </Badge>
             )}
           </div>
         </div>

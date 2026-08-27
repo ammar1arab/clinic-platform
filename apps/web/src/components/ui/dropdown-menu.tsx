@@ -4,7 +4,11 @@ import * as React from "react"
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
-import { OVERLAY_POP_CLASS, overlayPointerProps } from "@/lib/overlay"
+import {
+  OVERLAY_COLLISION_PADDING,
+  OVERLAY_POP_CLASS,
+  overlayPointerProps,
+} from "@/lib/overlay"
 import { IconCheck, IconChevronRight } from '@/constants/icons'
 
 function DropdownMenu({
@@ -38,7 +42,8 @@ function DropdownMenuContent({
   align = "start",
   side = "bottom",
   sideOffset = 6,
-  avoidCollisions = false,
+  avoidCollisions = true,
+  collisionPadding = OVERLAY_COLLISION_PADDING,
   onPointerDownOutside,
   onInteractOutside,
   ...props
@@ -51,6 +56,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         align={align}
         avoidCollisions={avoidCollisions}
+        collisionPadding={collisionPadding}
         className={cn(
           OVERLAY_POP_CLASS,
           "z-50 max-h-(--radix-dropdown-menu-content-available-height)",

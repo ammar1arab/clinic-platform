@@ -39,6 +39,8 @@ export function languageLabels(codes: string[] | null | undefined): string {
   return languageLabelList(codes).join(', ');
 }
 
+export const LANGUAGE_BADGE_VARIANT = ['info', 'success', 'warning', 'secondary'] as const;
+
 export const WEEKDAY_OPTIONS = [
   'Sunday',
   'Monday',

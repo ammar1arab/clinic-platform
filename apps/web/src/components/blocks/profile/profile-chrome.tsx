@@ -23,7 +23,7 @@ export function ProfileShell({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto max-w-5xl space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
       <PageBack backHref={backHref} backLabel={backLabel} actions={actions} />
       {children}
     </div>
@@ -112,7 +112,7 @@ export function ProfileSection({
 
   return (
     <Card className={cn('card-aura flex flex-col ring-0', className)}>
-      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-5 pb-3 pt-5">
+      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 pb-2 pt-4 sm:px-5 sm:pb-3 sm:pt-5">
         <div className="min-w-0 space-y-0.5">
           <CardTitle className="text-base font-semibold tracking-tight">
             {title}
@@ -124,7 +124,7 @@ export function ProfileSection({
         {action ? <div className="shrink-0">{action}</div> : null}
       </CardHeader>
       <CardContent
-        className={cn('px-5 pb-5', fillHeight && 'flex-1', contentClassName)}
+        className={cn('px-4 pb-4 sm:px-5 sm:pb-5', fillHeight && 'flex-1', contentClassName)}
       >
         {children}
       </CardContent>
@@ -155,15 +155,23 @@ export function ProfileInfoField({
   if (hideEmpty && !filled && children == null) return null;
 
   return (
-    <div className={cn('min-w-0 space-y-1', className)}>
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+    <div
+      className={cn(
+        'flex items-center justify-between gap-3 py-2.5',
+        'sm:flex-col sm:items-stretch sm:justify-start sm:gap-1 sm:py-0',
+        className,
+      )}
+    >
+      <p className="w-32 shrink-0 text-xs font-medium text-muted-foreground sm:w-auto">
+        {label}
+      </p>
       <div
-        className="min-w-0 text-sm font-medium leading-snug text-foreground"
+        className="min-w-0 flex-1 text-right text-sm font-medium leading-snug text-foreground sm:flex-none sm:text-left"
         dir={dir}
       >
         {children ?? (
           filled ? (
-            <SoftTip label={value}>
+            <SoftTip label={value} className="justify-end sm:justify-start">
               <span className="break-words">{value}</span>
             </SoftTip>
           ) : (
@@ -185,7 +193,7 @@ export function ProfileInfoGrid({
   return (
     <div
       className={cn(
-        'grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2',
+        '-my-2.5 divide-y divide-border/70 sm:my-0 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-4 sm:divide-y-0',
         className,
       )}
     >
@@ -215,7 +223,7 @@ export function ProfileGroup({
 
 export function ProfileStatusBadge({ active }: { active: boolean }) {
   return (
-    <Badge variant={active ? 'secondary' : 'outline'} className="font-normal">
+    <Badge variant={active ? 'success' : 'muted'} className="font-normal">
       {active ? 'Active' : 'Inactive'}
     </Badge>
   );

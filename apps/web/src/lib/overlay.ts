@@ -1,4 +1,5 @@
 export const OVERLAY_POP_CLASS = 'overlay-pop overlay-surface';
+export const OVERLAY_COLLISION_PADDING = 8;
 
 const PROTECTED_OVERLAY =
   '[data-slot="dropdown-menu-content"], [data-slot="select-content"], [data-slot="popover-content"], [data-slot="dialog-content"], [data-slot="calendar"], [data-radix-select-content], [data-radix-popper-content-wrapper], [data-calendar-popover], .fc-popover';

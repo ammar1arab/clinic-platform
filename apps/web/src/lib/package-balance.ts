@@ -3,13 +3,21 @@ import { CLINIC_CURRENCY } from '@/constants/appointment';
 
 export const PACKAGE_CURRENCY = CLINIC_CURRENCY;
 
+export function formatClinicNumber(value: string | number | null | undefined) {
+  return Number(value ?? 0).toFixed(3);
+}
+
+export function formatClinicAmount(value: string | number | null | undefined) {
+  return `${formatClinicNumber(value)} ${CLINIC_CURRENCY}`;
+}
+
 export function formatPackageBalance(pkg: PatientPackageDto): string {
   if (pkg.sessionsTotal != null) {
     const left = pkg.sessionsRemaining ?? 0;
     const total = pkg.sessionsTotal;
     return `${left} of ${total} session${total === 1 ? '' : 's'} left`;
   }
-  return `${Number(pkg.creditRemaining ?? 0).toFixed(3)} ${PACKAGE_CURRENCY} left`;
+  return `${formatClinicAmount(pkg.creditRemaining)} left`;
 }
 
 export function formatPackageRedeemCost(
@@ -17,7 +25,7 @@ export function formatPackageRedeemCost(
   payable: number,
 ): string {
   if (pkg.sessionsTotal != null) return '1 session';
-  return `${payable.toFixed(3)} ${PACKAGE_CURRENCY}`;
+  return formatClinicAmount(payable);
 }
 
 export function canCoverVisit(pkg: PatientPackageDto, payable: number): boolean {

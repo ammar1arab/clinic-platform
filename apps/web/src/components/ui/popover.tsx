@@ -4,7 +4,11 @@ import * as React from "react"
 import { Popover as PopoverPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
-import { OVERLAY_POP_CLASS, overlayPointerProps } from "@/lib/overlay"
+import {
+  OVERLAY_COLLISION_PADDING,
+  OVERLAY_POP_CLASS,
+  overlayPointerProps,
+} from "@/lib/overlay"
 
 function Popover({
   modal = false,
@@ -24,7 +28,8 @@ function PopoverContent({
   align = "start",
   side = "bottom",
   sideOffset = 6,
-  avoidCollisions = false,
+  avoidCollisions = true,
+  collisionPadding = OVERLAY_COLLISION_PADDING,
   onPointerDownOutside,
   onInteractOutside,
   ref,
@@ -39,9 +44,10 @@ function PopoverContent({
         side={side}
         sideOffset={sideOffset}
         avoidCollisions={avoidCollisions}
+        collisionPadding={collisionPadding}
         className={cn(
           OVERLAY_POP_CLASS,
-          "z-100 w-[min(100vw-1.5rem,18rem)] max-w-[calc(100vw-1.5rem)] p-4 text-sm",
+          "z-100 w-[min(100vw-1.5rem,18rem)] max-h-(--radix-popover-content-available-height) max-w-[calc(100vw-1.5rem)] overflow-y-auto overscroll-contain p-4 text-sm",
           className,
         )}
         {...props}

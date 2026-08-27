@@ -1,5 +1,10 @@
-import { BootSplash } from '@/components/blocks/feedback';
+import { FormSkeleton, PageHeaderSkeleton } from '@/components/primitives/skeleton-presets';
 
 export default function DashboardLoading() {
-  return <BootSplash variant="panel" label="Loading page…" className="min-h-[70vh]" />;
+  return (
+    <div className="space-y-4">
+      <PageHeaderSkeleton />
+      <FormSkeleton fields={6} cols={2} />
+    </div>
+  );
 }

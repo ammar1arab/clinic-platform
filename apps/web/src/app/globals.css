@@ -45,7 +45,8 @@
   --app-sidebar-width-collapsed: 4.5rem;
   --app-sidebar-current-width: 0px;
   --app-main-pad: 0.625rem;
-  --app-main-pad-bottom: max(0.625rem, env(safe-area-inset-bottom, 0px));
+  --app-main-pad-bottom: calc(var(--app-main-pad) + 0.75rem + env(safe-area-inset-bottom, 0px));
+  --app-pagination-bar: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   --overlay-duration: 280ms;
   --overlay-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --overlay-from: 5px;
@@ -56,7 +57,6 @@
 @media (min-width: 640px) {
   :root {
     --app-main-pad: 0.75rem;
-    --app-main-pad-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -65,7 +65,6 @@
     --app-header-height: calc(3.5rem + env(safe-area-inset-top, 0px));
     --app-sidebar-current-width: var(--app-sidebar-width);
     --app-main-pad: 1.25rem;
-    --app-main-pad-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
   }
 
   [data-sidebar='collapsed'] {
@@ -77,7 +76,6 @@
   :root {
     --app-sidebar-width: 16rem;
     --app-main-pad: 1.5rem;
-    --app-main-pad-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -154,6 +152,7 @@
   --spacing-app-sidebar: var(--app-sidebar-current-width);
   --spacing-app-main-pad: var(--app-main-pad);
   --spacing-app-main-pad-bottom: var(--app-main-pad-bottom);
+  --spacing-app-pagination-bar: var(--app-pagination-bar);
 }
 
 @layer base {

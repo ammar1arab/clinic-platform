@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui';
 import {
   ContactLine,
   EmailLink,
@@ -159,24 +160,36 @@ export function PatientProfile({ patientId }: { patientId: string }) {
         <ProfileInfoGrid className="lg:grid-cols-3">
           {patient.phone ? (
             <ProfileInfoField label="Phone" value={patient.phone}>
-              <PhoneLink
-                value={patient.phone}
-                className="block text-sm font-medium"
-              />
+              <PhoneLink value={patient.phone} className="text-sm font-medium" />
             </ProfileInfoField>
           ) : null}
           {patient.email ? (
             <ProfileInfoField label="Email" value={patient.email}>
-              <EmailLink
-                value={patient.email}
-                className="block text-sm font-medium"
-              />
+              <EmailLink value={patient.email} className="text-sm font-medium" />
             </ProfileInfoField>
           ) : null}
           <ProfileInfoField label="National ID" value={patient.nationalId} />
           <ProfileInfoField label="Date of birth" value={dobText} />
-          <ProfileInfoField label="Gender" value={genderLabel ?? null} />
-          <ProfileInfoField label="Blood type" value={patient.bloodType} />
+          <ProfileInfoField label="Gender" value={genderLabel ?? null}>
+            {genderLabel ? (
+              <Badge
+                variant={genderLabel.toLowerCase() === 'female' ? 'warning' : 'info'}
+                className="font-normal"
+              >
+                {genderLabel}
+              </Badge>
+            ) : null}
+          </ProfileInfoField>
+          <ProfileInfoField label="Blood type" value={patient.bloodType}>
+            {patient.bloodType ? (
+              <Badge
+                variant={patient.bloodType.endsWith('-') ? 'warning' : 'success'}
+                className="font-normal"
+              >
+                {patient.bloodType}
+              </Badge>
+            ) : null}
+          </ProfileInfoField>
           <ProfileInfoField
             label="Emergency contact"
             value={patient.emergencyContactName}
@@ -188,7 +201,7 @@ export function PatientProfile({ patientId }: { patientId: string }) {
             >
               <PhoneLink
                 value={patient.emergencyContactPhone}
-                className="block text-sm font-medium"
+                className="text-sm font-medium"
               />
             </ProfileInfoField>
           ) : null}

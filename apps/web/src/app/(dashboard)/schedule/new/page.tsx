@@ -7,7 +7,7 @@ import {
   parseScheduleView,
   schedulePath,
 } from '@/components/blocks/appointments';
-import { PageBack } from '@/components/primitives';
+import { PageBack, FormPageSkeleton } from '@/components/primitives';
 import { useAuth } from '@/providers';
 
 function NewAppointmentInner() {
@@ -21,7 +21,7 @@ function NewAppointmentInner() {
   const backHref = schedulePath(parseScheduleView(params.get('view')));
 
   return (
-    <div className="mx-auto max-w-3xl space-y-3 sm:space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">
       <PageBack backHref={backHref} backLabel="Back to Schedule" />
 
       <AppointmentForm
@@ -38,7 +38,7 @@ function NewAppointmentInner() {
 
 export default function NewAppointmentPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<FormPageSkeleton />}>
       <NewAppointmentInner />
     </Suspense>
   );

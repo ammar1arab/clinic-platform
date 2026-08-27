@@ -4,7 +4,11 @@ import * as React from "react"
 import { Select as SelectPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
-import { OVERLAY_POP_CLASS, overlayPointerProps } from "@/lib/overlay"
+import {
+  OVERLAY_COLLISION_PADDING,
+  OVERLAY_POP_CLASS,
+  overlayPointerProps,
+} from "@/lib/overlay"
 import { IconCheck, IconChevronDown, IconChevronUp } from '@/constants/icons'
 
 function Select({
@@ -64,7 +68,8 @@ function SelectContent({
   position = "popper",
   align = "start",
   side = "bottom",
-  avoidCollisions = false,
+  avoidCollisions = true,
+  collisionPadding = OVERLAY_COLLISION_PADDING,
   onPointerDownOutside,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
@@ -82,6 +87,7 @@ function SelectContent({
         align={align}
         side={side}
         avoidCollisions={avoidCollisions}
+        collisionPadding={collisionPadding}
         {...props}
         {...overlayPointerProps({ onPointerDownOutside })}
       >

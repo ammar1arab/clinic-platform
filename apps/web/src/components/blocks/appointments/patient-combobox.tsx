@@ -77,7 +77,7 @@ export function PatientCombobox({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="IconSearch patients…"
+            placeholder="Search patients…"
             className="h-8 border-0 px-0 shadow-none focus-visible:ring-0"
           />
         </div>

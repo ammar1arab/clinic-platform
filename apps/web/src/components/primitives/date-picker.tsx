@@ -156,7 +156,6 @@ export function DatePicker({
         onInteractOutside={keepNestedPortals}
       >
         <div className="flex flex-col">
-          {}
           {withDropdown ? (
             <div className="flex items-center gap-1.5 border-b p-2.5">
               <Button
