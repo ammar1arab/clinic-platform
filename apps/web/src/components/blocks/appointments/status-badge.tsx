@@ -34,7 +34,11 @@ export function StatusBadgeBlock({
       <Badge
         variant={STATUS_BADGE_VARIANT[status]}
         aria-label={config.label}
-        className={cn(compact && 'text-[11px]', className)}
+        className={cn(
+          'max-w-none shrink-0 [&>span]:max-w-none [&>span]:overflow-visible [&>span]:whitespace-nowrap',
+          compact && 'text-[11px]',
+          className,
+        )}
       >
         <span className={cn('size-1.5 shrink-0 rounded-full', config.dotClassName)} />
         <span>{text}</span>

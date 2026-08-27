@@ -23,8 +23,12 @@ export function SearchInput({
     <div className={cn('relative min-w-0 flex-1', className)}>
       <IconSearch className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input
+        type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.preventDefault();
+        }}
         placeholder={placeholder}
         className={cn('h-8 rounded-lg ps-8 pe-8', inputClassName)}
       />

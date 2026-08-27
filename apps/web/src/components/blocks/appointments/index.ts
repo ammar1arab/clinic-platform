@@ -3,6 +3,7 @@ export { AppointmentStatusSelect } from './appointment-status-select';
 export { CalendarSkeleton } from './calendar-skeleton';
 export { DoctorTimeline } from './doctor-timeline';
 export { PatientBalancePanel } from './patient-balance-panel';
+export { DoctorCombobox } from './doctor-combobox';
 export { PatientCombobox } from './patient-combobox';
 export { ScheduleToolbar } from './schedule-toolbar';
 export { StatusBadgeBlock } from './status-badge';

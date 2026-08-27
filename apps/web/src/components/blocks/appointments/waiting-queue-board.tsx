@@ -5,11 +5,6 @@ import { useNow } from '@/hooks/shared/use-now';
 import {
   Button,
   Badge,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from '@/components/ui';
 import { Appointment, AppointmentStatus } from '@/services/appointments.service';
 import { useUpdateAppointment, useMarkAppointmentPaid } from '@/hooks/api/use-appointments';
@@ -22,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { CardGridSkeleton, SoftTip } from '@/components/primitives';
 import { ViewFocusToggle } from './view-focus';
 import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
-import { IconActivate, IconCalendarClock, IconCheckCircle, IconCreditCard, IconDeactivate, IconMore, IconOnline, IconPatients, IconPlay, IconRoom, IconRotateCcw, IconService, IconTime, IconTimer, IconView } from '@/constants/icons';
+import { IconActivate, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
 
 type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
 type Tone = 'default' | 'warning' | 'info' | 'muted' | 'success';
@@ -237,24 +232,8 @@ export function WaitingQueueBoard({
                         <IconTime className="size-3" />
                         {formatWaitingMins(waitMins, true)} · {waitLabel}
                       </Badge>
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <div onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />
-                        <QuickActionMenu
-                          onView={() => onEventClick(appt)}
-                          actions={[
-                            {
-                              label: 'Start Consultation',
-                              icon: <IconPlay className="size-3.5" />,
-                              onClick: () => handleQuickStatus(appt, 'in_progress'),
-                            },
-                            {
-                              label: 'Mark No-Show',
-                              icon: <IconDeactivate className="size-3.5" />,
-                              className: 'text-warning',
-                              onClick: () => handleQuickStatus(appt, 'no_show'),
-                            },
-                          ]}
-                        />
                       </div>
                     </div>
                     <div className="mt-3">
@@ -303,23 +282,8 @@ export function WaitingQueueBoard({
                         <IconTimer className="size-3 animate-spin" />
                         {formatWaitingMins(sessionMins, true)} / {appt.durationMins}m
                       </Badge>
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <div onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />
-                        <QuickActionMenu
-                          onView={() => onEventClick(appt)}
-                          actions={[
-                            {
-                              label: 'Finish Consultation',
-                              icon: <IconCheckCircle className="size-3.5" />,
-                              onClick: () => handleQuickStatus(appt, 'completed'),
-                            },
-                            {
-                              label: 'Return to Waiting',
-                              icon: <IconRotateCcw className="size-3.5" />,
-                              onClick: () => handleQuickStatus(appt, 'waiting'),
-                            },
-                          ]}
-                        />
                       </div>
                     </div>
                     <div className="mt-3">
@@ -358,23 +322,8 @@ export function WaitingQueueBoard({
                       <IconTime className="size-3" />
                       {formatApptTimeRange(appt)}
                     </Badge>
-                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <div onClick={(e) => e.stopPropagation()}>
                       <AppointmentStatusSelect appointment={appt} compact />
-                      <QuickActionMenu
-                        onView={() => onEventClick(appt)}
-                        actions={[
-                          {
-                            label: 'Patient Arrived',
-                            icon: <IconActivate className="size-3.5" />,
-                            onClick: () => handleQuickStatus(appt, 'waiting'),
-                          },
-                          {
-                            label: 'Start Directly',
-                            icon: <IconPlay className="size-3.5" />,
-                            onClick: () => handleQuickStatus(appt, 'in_progress'),
-                          },
-                        ]}
-                      />
                     </div>
                   </div>
                   <div className="mt-3">
@@ -413,9 +362,8 @@ export function WaitingQueueBoard({
                       <IconCheckCircle className="size-3" />
                       Visit Completed
                     </Badge>
-                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <div onClick={(e) => e.stopPropagation()}>
                       <AppointmentStatusSelect appointment={appt} compact />
-                      <QuickActionMenu onView={() => onEventClick(appt)} actions={[]} />
                     </div>
                   </div>
 
@@ -460,56 +408,6 @@ export function WaitingQueueBoard({
         )}
       </div>
     </div>
-  );
-}
-
-interface QuickAction {
-  label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-  className?: string;
-}
-
-function QuickActionMenu({
-  onView,
-  actions,
-}: {
-  onView: () => void;
-  actions: QuickAction[];
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer active:scale-95"
-        >
-          <IconMore className="size-3.5" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44 text-xs">
-        <DropdownMenuItem
-          className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs"
-          onClick={onView}
-        >
-          <IconView className="size-3.5 shrink-0 text-muted-foreground" />
-          Open Details
-        </DropdownMenuItem>
-
-        {actions.length > 0 && <DropdownMenuSeparator />}
-
-        {actions.map((action) => (
-          <DropdownMenuItem
-            key={action.label}
-            className={cn('flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs', action.className)}
-            onClick={action.onClick}
-          >
-            <span className="shrink-0 text-muted-foreground">{action.icon}</span>
-            {action.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
 
@@ -567,7 +465,7 @@ function QueueCard({
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+          <p className="text-xs font-bold break-words text-foreground group-hover:text-primary transition-colors">
             {patientDisplayName(appt)}
           </p>
           <p className="mt-0.5 text-[10px] text-muted-foreground font-medium flex items-center gap-1">
@@ -581,9 +479,9 @@ function QueueCard({
       </div>
 
       <div className="mb-2.5 flex flex-col gap-1 text-[10px] text-muted-foreground">
-        <div className="flex items-center gap-1.5 truncate">
-          <IconService className="size-3 shrink-0 text-primary" />
-          <span className="truncate font-medium text-foreground/90">
+        <div className="flex items-start gap-1.5">
+          <IconService className="mt-0.5 size-3 shrink-0 text-primary" />
+          <span className="min-w-0 break-words font-medium text-foreground/90">
             {appt.doctor?.name} · {appt.service?.name || 'General Visit'}
           </span>
         </div>

@@ -1,21 +1,12 @@
 'use client';
 
-import {
-  Badge,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Textarea,
-} from '@/components/ui';
+import { Badge, Textarea } from '@/components/ui';
 import { FormField } from '@/components/primitives';
-import { STATUS_CONFIG, STATUS_OPTIONS } from '@/constants/appointment';
 import { IconTimer } from '@/constants/icons';
 import { formatWaitingMins } from '@/lib/waiting-time';
 import type { AppointmentStatus } from '@/services/appointments.service';
-import { StatusBadgeBlock } from './status-badge';
 import { FormSection } from './appointment-form-controls';
+import { StatusFieldPicker } from './status-menu';
 
 export function AppointmentStatusFields({
   status,
@@ -31,20 +22,9 @@ export function AppointmentStatusFields({
   onCancelReasonChange: (reason: string) => void;
 }) {
   return (
-    <FormSection title="Status" action={<StatusBadgeBlock status={status} />}>
+    <FormSection title="Status">
       <div className="space-y-3">
-        <Select value={status} onValueChange={(value) => onStatusChange(value as AppointmentStatus)}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((option) => (
-              <SelectItem key={option} value={option} textValue={STATUS_CONFIG[option].label}>
-                <StatusBadgeBlock status={option} />
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <StatusFieldPicker status={status} onChange={onStatusChange} />
         {waitingMins != null && (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">Waiting time</span>

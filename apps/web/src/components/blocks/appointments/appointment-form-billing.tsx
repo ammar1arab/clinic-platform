@@ -1,7 +1,7 @@
 'use client';
 
 import { Controller, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
-import { Badge, Button, Input, SelectItem, Switch } from '@/components/ui';
+import { Badge, Button, Input, Switch } from '@/components/ui';
 import { FormField } from '@/components/primitives';
 import { ButtonSpinner } from '@/components/blocks/feedback';
 import { CLINIC_CURRENCY } from '@/constants/appointment';
@@ -263,13 +263,12 @@ export function AppointmentBillingFields({
                 onChange={onPayMethodChange}
                 placeholder="Select method"
                 noneLabel="Select method"
-              >
-                {paymentMethods.map((method) => (
-                  <SelectItem key={method.id} value={method.id}>
-                    {method.name}
-                  </SelectItem>
-                ))}
-              </OptionalSelect>
+                searchPlaceholder="Search payment methods…"
+                options={paymentMethods.map((method) => ({
+                  value: method.id,
+                  label: method.name,
+                }))}
+              />
             </FormField>
           )}
         </div>

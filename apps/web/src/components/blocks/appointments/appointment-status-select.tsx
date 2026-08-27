@@ -5,11 +5,6 @@ import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -18,7 +13,6 @@ import {
   DialogTitle,
   Textarea,
 } from '@/components/ui';
-import { StatusBadgeBlock, STATUS_OPTIONS } from './status-badge';
 import { SoftTip } from '@/components/primitives';
 import { Appointment, AppointmentStatus } from '@/services/appointments.service';
 import { useUpdateAppointment } from '@/hooks/api/use-appointments';
@@ -26,7 +20,11 @@ import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { patientDisplayName } from './appointment-display';
-import { IconChevronDown, IconSpinner } from '@/constants/icons';
+import {
+  STATUS_MENU_CONTENT_CLASS,
+  StatusMenuItems,
+  StatusPickerTrigger,
+} from './status-menu';
 
 interface Props {
   appointment: Appointment;
@@ -52,7 +50,7 @@ export function AppointmentStatusSelect({
   const isPending = updateMutation.isPending;
   const isDisabled = disabled || isPending || isCancelled;
 
-  const handleSelectStatus = (newStatus: string) => {
+  const handleSelectStatus = (newStatus: AppointmentStatus) => {
     if (newStatus === appt.status) return;
     if (isCancelled) return;
 
@@ -115,41 +113,20 @@ export function AppointmentStatusSelect({
               : 'Click to change appointment status'
           }
         >
-          <DropdownMenuTrigger
+          <StatusPickerTrigger
+            status={appt.status}
             disabled={isDisabled}
-            className={cn(
-              'group inline-flex items-center gap-1 rounded-md transition-all outline-none select-none',
-              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1',
-              isCancelled
-                ? 'cursor-not-allowed opacity-80'
-                : 'cursor-pointer hover:opacity-85 hover:shadow-xs active:scale-[0.98]',
-              className,
-            )}
-          >
-            <StatusBadgeBlock status={appt.status} compact={compact} tip={false} />
-          {isPending ? (
-            <IconSpinner className="size-3 animate-spin text-muted-foreground" />
-          ) : !isCancelled ? (
-            <IconChevronDown className="size-3 text-muted-foreground/80 transition-transform duration-150 group-data-[state=open]:rotate-180" />
-          ) : null}
-        </DropdownMenuTrigger>
+            pending={isPending}
+            compact={compact}
+            className={className}
+          />
         </SoftTip>
-        <DropdownMenuContent align="end" className="z-[120] w-52 p-1">
-          <DropdownMenuLabel className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Update Status
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator className="my-1" />
-          <DropdownMenuRadioGroup value={appt.status} onValueChange={handleSelectStatus}>
-            {STATUS_OPTIONS.map((s) => (
-              <DropdownMenuRadioItem
-                key={s}
-                value={s}
-                className="cursor-pointer rounded-md px-2 py-1.5"
-              >
-                <StatusBadgeBlock status={s} />
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
+        <DropdownMenuContent align="end" className={cn('z-[120]', STATUS_MENU_CONTENT_CLASS)}>
+          <StatusMenuItems
+            value={appt.status}
+            onChange={handleSelectStatus}
+            title="Update status"
+          />
         </DropdownMenuContent>
       </DropdownMenu>
 

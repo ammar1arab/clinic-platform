@@ -23,6 +23,7 @@ export { Pagination } from './pagination';
 export { PhoneInputField } from './phone-input';
 export { RowActionsMenu, type RowActionItem } from './row-actions-menu';
 export { SearchInput } from './search-input';
+export { SearchablePicker, PickerSearch, type PickerOption } from './searchable-picker';
 export {
   CardGridSkeleton,
   FormPageSkeleton,

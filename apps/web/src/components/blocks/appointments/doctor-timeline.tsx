@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useMemo, useState, useRef, useCallback } from 'react';
-import {
-  Button,
-  Badge,
-} from '@/components/ui';
+import { Button } from '@/components/ui';
 import { Appointment } from '@/services/appointments.service';
 import { ClinicStaffMember } from '@/services/clinics.service';
 import { STATUS_COLORS, STATUS_CONFIG, StatusBadgeBlock } from './status-badge';
 import { AppointmentStatusSelect } from './appointment-status-select';
+import { DoctorCombobox } from './doctor-combobox';
 import {
   patientDisplayName,
   doctorDisplayName,
@@ -415,49 +413,15 @@ export function DoctorTimeline({
         </div>
 
         {allDoctors.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-            <Badge asChild variant={activeDoctorId === 'all' ? 'default' : 'secondary'}>
-              <button
-                type="button"
-                onClick={() => setActiveDoctorId('all')}
-                className="cursor-pointer py-1"
-              >
-                All doctors
-              </button>
-            </Badge>
-            {allDoctors.map((doc) => {
-              const full = doctorDisplayName(doc.name);
-              const count = dayAppts.filter((a) => a.doctorId === doc.id).length;
-              const active = activeDoctorId === doc.id;
-              return (
-                <SoftTip key={doc.id} label={formatDoctorLabel(full)} side="bottom">
-                  <Badge asChild variant={active ? 'default' : 'secondary'}>
-                    <button
-                      type="button"
-                      onClick={() => setActiveDoctorId(doc.id)}
-                      aria-label={formatDoctorLabel(full)}
-                      className="max-w-38 cursor-pointer py-1 sm:max-w-48"
-                    >
-                      <span
-                        className="size-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: doc.color }}
-                      />
-                      <span className="hidden truncate sm:inline">{full}</span>
-                      <span className="truncate sm:hidden">
-                        {formatDoctorLabel(full, { short: true }).replace(/^Dr\.\s/, '')}
-                      </span>
-                      <Badge
-                        variant={active ? 'secondary' : 'muted'}
-                        className="min-h-0 px-1 py-0 text-[10px]"
-                      >
-                        {count}
-                      </Badge>
-                    </button>
-                  </Badge>
-                </SoftTip>
-              );
-            })}
-          </div>
+          <DoctorCombobox
+            doctors={allDoctors}
+            value={activeDoctorId}
+            onChange={setActiveDoctorId}
+            extraOption={{ value: 'all', label: 'All doctors' }}
+            placeholder="Select doctor"
+            className="w-full max-w-md"
+            size="sm"
+          />
         )}
       </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { Controller, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
-import { Input, SelectItem } from '@/components/ui';
+import { Input } from '@/components/ui';
 import { FormField } from '@/components/primitives';
 import { IconInPerson, IconOnline } from '@/constants/icons';
 import type { AppointmentFormData } from '@/lib/validations';
@@ -63,13 +63,12 @@ export function AppointmentSessionFields({
                 value={field.value}
                 onChange={field.onChange}
                 placeholder="Select a room"
-              >
-                {rooms?.map((room) => (
-                  <SelectItem key={room.id} value={room.id}>
-                    {room.name}
-                  </SelectItem>
-                ))}
-              </OptionalSelect>
+                searchPlaceholder="Search rooms…"
+                options={(rooms ?? []).map((room) => ({
+                  value: room.id,
+                  label: room.name,
+                }))}
+              />
             )}
           />
         </FormField>

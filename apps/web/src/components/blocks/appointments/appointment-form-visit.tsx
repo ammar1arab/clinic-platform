@@ -1,7 +1,6 @@
 'use client';
 
 import { Controller, type Control, type FieldErrors } from 'react-hook-form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import { FormField } from '@/components/primitives';
 import { formatClinicAmount } from '@/lib/package-balance';
 import type { AppointmentFormData } from '@/lib/validations';
@@ -10,8 +9,9 @@ import type { Department } from '@/services/departments.service';
 import type { Patient } from '@/services/patients.service';
 import type { ServiceItem } from '@/services/services.service';
 import { PatientCombobox } from './patient-combobox';
+import { DoctorCombobox } from './doctor-combobox';
 import { FormSection, OptionalSelect } from './appointment-form-controls';
-import { staffRoleLabel } from './appointment-form.mapper';
+import { formatDoctorLabel } from './appointment-display';
 
 export function AppointmentVisitFields({
   control,
@@ -63,22 +63,17 @@ export function AppointmentVisitFields({
           control={control}
           name="doctorId"
           render={({ field }) => (
-            <Select value={field.value || undefined} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select doctor" />
-              </SelectTrigger>
-              <SelectContent>
-                {staff?.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
-                    {member.name}
-                    {staffRoleLabel(member.role)}
-                  </SelectItem>
-                ))}
-                {field.value && !staff?.some((member) => member.id === field.value) && currentDoctorName && (
-                  <SelectItem value={field.value}>{currentDoctorName}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <DoctorCombobox
+              doctors={staff}
+              value={field.value}
+              onChange={field.onChange}
+              extraOption={
+                field.value && !staff?.some((member) => member.id === field.value) && currentDoctorName
+                  ? { value: field.value, label: formatDoctorLabel(currentDoctorName) }
+                  : undefined
+              }
+              className="w-full"
+            />
           )}
         />
       </FormField>
@@ -88,13 +83,15 @@ export function AppointmentVisitFields({
           control={control}
           name="departmentId"
           render={({ field }) => (
-            <OptionalSelect value={field.value} onChange={field.onChange}>
-              {departments?.map((dept) => (
-                <SelectItem key={dept.id} value={dept.id}>
-                  {dept.name}
-                </SelectItem>
-              ))}
-            </OptionalSelect>
+            <OptionalSelect
+              value={field.value}
+              onChange={field.onChange}
+              searchPlaceholder="Search departments…"
+              options={(departments ?? []).map((dept) => ({
+                value: dept.id,
+                label: dept.name,
+              }))}
+            />
           )}
         />
       </FormField>
@@ -110,13 +107,12 @@ export function AppointmentVisitFields({
                 field.onChange(id);
                 if (id) onServiceChange(id);
               }}
-            >
-              {services?.map((service) => (
-                <SelectItem key={service.id} value={service.id}>
-                  {service.name} · {formatClinicAmount(service.fee)}
-                </SelectItem>
-              ))}
-            </OptionalSelect>
+              searchPlaceholder="Search services…"
+              options={(services ?? []).map((service) => ({
+                value: service.id,
+                label: `${service.name} · ${formatClinicAmount(service.fee)}`,
+              }))}
+            />
           )}
         />
       </FormField>

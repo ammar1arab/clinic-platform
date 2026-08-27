@@ -3,31 +3,24 @@
 import {
   Button,
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Badge,
 } from '@/components/ui';
 import {
   SearchInput,
+  SearchablePicker,
   SoftTip,
   Spinner,
 } from '@/components/primitives';
 import type { Department } from '@/services/departments.service';
 import type { AppointmentStatus } from '@/services/appointments.service';
 import type { ScheduleView } from './schedule-nav';
-import { StatusBadgeBlock } from './status-badge';
-import { SCHEDULE_FILTER_STATUSES } from '@/constants/appointment';
 import { FORM_ALL } from '@/constants/form';
 import { cn } from '@/lib/utils';
 import { IconAdd, IconChevronDown, IconNewPatient, IconPatients, IconSchedule, IconTimer } from '@/constants/icons';
+import { STATUS_MENU_CONTENT_CLASS, StatusFilterItems } from './status-menu';
 
 const VIEW_TABS: {
   id: ScheduleView | 'calendar';
@@ -40,7 +33,7 @@ const VIEW_TABS: {
   {
     id: 'calendar',
     label: 'Calendar',
-    short: 'Cal',
+    short: 'Calendar',
     icon: IconSchedule,
     match: (v) => v === 'month' || v === 'week' || v === 'day',
     target: (v) => (v === 'month' || v === 'week' || v === 'day' ? v : 'month'),
@@ -114,23 +107,9 @@ function StatusFilterDropdown({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="z-[80] w-[min(100vw-1.5rem,16rem)] p-1.5"
+        className={cn('z-[80]', STATUS_MENU_CONTENT_CLASS)}
       >
-        <DropdownMenuLabel className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Filter by status
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator className="my-1" />
-        {SCHEDULE_FILTER_STATUSES.map((status) => (
-          <DropdownMenuCheckboxItem
-            key={status}
-            checked={active.has(status)}
-            onCheckedChange={() => onToggle(status)}
-            onSelect={(e) => e.preventDefault()}
-            className="gap-2 rounded-md px-2 py-1.5"
-          >
-            <StatusBadgeBlock status={status} />
-          </DropdownMenuCheckboxItem>
-        ))}
+        <StatusFilterItems active={active} onToggle={onToggle} />
         {count > 0 && (
           <>
             <DropdownMenuSeparator className="my-1" />
@@ -188,8 +167,8 @@ export function ScheduleToolbar({
                       id === 'queue' ? 'text-warning' : 'text-primary',
                     )}
                   />
-                  <span className="truncate sm:hidden">{short}</span>
-                  <span className="hidden truncate sm:inline">{label}</span>
+                  <span className="whitespace-nowrap sm:hidden">{short}</span>
+                  <span className="hidden whitespace-nowrap sm:inline">{label}</span>
                 </button>
               </SoftTip>
             );
@@ -232,25 +211,19 @@ export function ScheduleToolbar({
         />
 
         <div className="flex min-w-0 items-center gap-1.5 sm:contents">
-          <Select
+          <SearchablePicker
+            size="sm"
+            options={(departments ?? []).map((dept) => ({
+              value: dept.id,
+              label: dept.name,
+            }))}
             value={departmentId || FORM_ALL}
-            onValueChange={(v) => onDepartmentChange(v === FORM_ALL ? '' : v)}
-          >
-            <SelectTrigger
-              size="sm"
-              className="h-9 min-w-0 flex-1 bg-background/50 sm:w-44 sm:flex-none"
-            >
-              <SelectValue placeholder="Department" />
-            </SelectTrigger>
-            <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
-              <SelectItem value={FORM_ALL}>All departments</SelectItem>
-              {departments?.map((d) => (
-                <SelectItem key={d.id} value={d.id} textValue={d.name} title={d.name}>
-                  {d.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onChange={(next) => onDepartmentChange(next === FORM_ALL ? '' : next)}
+            extraOption={{ value: FORM_ALL, label: 'All departments' }}
+            placeholder="Department"
+            searchPlaceholder="Search departments…"
+            className="h-9 min-w-0 flex-1 bg-background/50 sm:w-52 sm:flex-none"
+          />
 
           <StatusFilterDropdown
             active={statusFilters}

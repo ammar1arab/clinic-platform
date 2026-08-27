@@ -8,12 +8,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@/components/ui';
+import { SearchablePicker, type PickerOption } from '@/components/primitives';
 import { FORM_NONE, fromFormNone, toFormNone } from '@/constants/form';
 import { cn } from '@/lib/utils';
 
@@ -42,26 +38,28 @@ export function FormSection({
 export function OptionalSelect({
   value,
   onChange,
+  options,
   placeholder = 'None',
   noneLabel = 'None',
-  children,
+  searchPlaceholder = 'Search…',
 }: {
   value: string;
   onChange: (value: string) => void;
+  options: PickerOption[];
   placeholder?: string;
   noneLabel?: string;
-  children: ReactNode;
+  searchPlaceholder?: string;
 }) {
   return (
-    <Select value={toFormNone(value)} onValueChange={(next) => onChange(fromFormNone(next))}>
-      <SelectTrigger className="w-full">
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value={FORM_NONE}>{noneLabel}</SelectItem>
-        {children}
-      </SelectContent>
-    </Select>
+    <SearchablePicker
+      options={options}
+      value={toFormNone(value)}
+      onChange={(next) => onChange(fromFormNone(next))}
+      placeholder={placeholder}
+      searchPlaceholder={searchPlaceholder}
+      extraOption={{ value: FORM_NONE, label: noneLabel }}
+      className="w-full"
+    />
   );
 }
 

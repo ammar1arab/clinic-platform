@@ -191,7 +191,7 @@ export function EventPreview({
         <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border/60 px-3.5 py-3">
           <div className="min-w-0">
             <SoftTip label={patientDisplayName(appt)}>
-              <p className="truncate text-sm font-semibold tracking-tight text-foreground">
+              <p className="break-words text-sm font-semibold tracking-tight text-foreground">
                 {patientDisplayName(appt)}
               </p>
             </SoftTip>
@@ -241,7 +241,7 @@ export function EventPreview({
                       href={appt.meetingUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="truncate text-primary underline-offset-2 hover:underline"
+                      className="break-words text-primary underline-offset-2 hover:underline"
                     >
                       Join online session
                     </a>
@@ -310,7 +310,7 @@ function Row({
           {label}
         </p>
         <SoftTip label={title}>
-          <p className="truncate font-medium text-foreground">
+          <p className="break-words font-medium text-foreground">
             {value}
           </p>
         </SoftTip>
