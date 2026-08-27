@@ -11,6 +11,7 @@ import {
   DateSelectArg,
   EventDropArg,
   EventMountArg,
+  MoreLinkArg,
   MoreLinkContentArg,
 } from '@fullcalendar/core';
 import { Badge } from '@/components/ui';
@@ -20,6 +21,7 @@ import { STATUS_COLORS } from './status-badge';
 import { formatApptTip, patientDisplayName } from './appointment-display';
 import { hasScheduleConflict } from './appointment-conflict';
 import { CalendarEventChip, readCalendarAppointment } from './calendar-event-chip';
+import { CalendarMoreList, type CalendarMoreState } from './calendar-more-list';
 import { EventPreview, type EventPreviewState, type PreviewPlacement } from './event-preview';
 import { rectFromElement } from './popover-position';
 import { FC_TO_VIEW, ScheduleView, VIEW_TO_FC } from './schedule-nav';
@@ -33,6 +35,22 @@ import { extractErrorMessage } from '@/lib/api';
 import { formatTime } from '@/lib/datetime';
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
+
+function appointmentsFromSegs(
+  segs: MoreLinkArg['allSegs'] | undefined,
+): Appointment[] {
+  const seen = new Set<string>();
+  const list: Appointment[] = [];
+  for (const seg of segs ?? []) {
+    const appt = readCalendarAppointment(seg.event.extendedProps);
+    if (!appt || seen.has(appt.id)) continue;
+    seen.add(appt.id);
+    list.push(appt);
+  }
+  return list.sort(
+    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+  );
+}
 
 interface Props {
   appointments: Appointment[] | undefined;
@@ -61,6 +79,7 @@ export function AppointmentCalendar({
   const updateMutation = useUpdateAppointment();
   const isMobile = useIsMobile();
   const [preview, setPreview] = useState<EventPreviewState | null>(null);
+  const [overflow, setOverflow] = useState<CalendarMoreState | null>(null);
 
   const events = useMemo(
     () =>
@@ -85,10 +104,6 @@ export function AppointmentCalendar({
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const appt = readCalendarAppointment(arg.event.extendedProps);
     if (!appt) return;
-    if (arg.el.closest('.fc-popover')) {
-      arg.jsEvent.preventDefault();
-      arg.jsEvent.stopPropagation();
-    }
     const target = arg.jsEvent.target;
     const fromEvent = target instanceof Element ? target.closest('.fc-event') : null;
     const el = arg.el ?? fromEvent;
@@ -103,6 +118,7 @@ export function AppointmentCalendar({
   const handleDateSelect = useCallback(
     (arg: DateSelectArg) => {
       setPreview(null);
+      setOverflow(null);
       onSelectSlot(arg.start);
     },
     [onSelectSlot],
@@ -195,6 +211,22 @@ export function AppointmentCalendar({
     ),
     [],
   );
+
+  const handleMoreLinkClick = useCallback((info: MoreLinkArg) => {
+    info.jsEvent.preventDefault();
+    info.jsEvent.stopPropagation();
+    const point = info.jsEvent as MouseEvent;
+    const target = point.currentTarget;
+    const el = target instanceof Element ? target : null;
+    setPreview(null);
+    setOverflow({
+      date: info.date,
+      appointments: appointmentsFromSegs(info.allSegs),
+      x: point.clientX,
+      y: point.clientY,
+      anchor: rectFromElement(el, point.clientX, point.clientY),
+    });
+  }, []);
 
   const handleEventDidMount = useCallback((info: EventMountArg) => {
     const appt = readCalendarAppointment(info.event.extendedProps);
@@ -314,7 +346,7 @@ export function AppointmentCalendar({
           eventMaxStack={isMobile ? 2 : 4}
           slotEventOverlap={false}
           eventMinHeight={isMobile ? 28 : 32}
-          moreLinkClick="popover"
+          moreLinkClick={handleMoreLinkClick}
           moreLinkContent={renderMoreLinkContent}
           expandRows
           stickyHeaderDates
@@ -339,6 +371,22 @@ export function AppointmentCalendar({
           }}
         />
       </div>
+
+      {overflow ? (
+        <CalendarMoreList
+          state={overflow}
+          onClose={() => setOverflow(null)}
+          onSelect={(appt) => {
+            setOverflow(null);
+            setPreview({
+              appointment: appt,
+              x: overflow.x,
+              y: overflow.y,
+              anchor: overflow.anchor,
+            });
+          }}
+        />
+      ) : null}
 
       {preview ? (
         <EventPreview

@@ -8,10 +8,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui';
 import { SoftTip } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
+import { useMounted } from '@/hooks/shared/use-mounted';
 import { IconMaximize, IconMinimize } from '@/constants/icons';
 
 interface ViewFocusApi {
@@ -46,7 +48,7 @@ function hasOpenOverlay() {
   return Boolean(
     document.querySelector(
       [
-        '[data-calendar-popover="preview"]',
+        '[data-calendar-popover]',
         '[data-slot="dropdown-menu-content"][data-state="open"]',
         '[data-slot="dialog-content"][data-state="open"]',
         '[data-slot="select-content"][data-state="open"]',
@@ -81,6 +83,7 @@ export function ViewFocusToggle({ className }: { className?: string }) {
 }
 
 export function ViewFocus({ label, children, className }: ViewFocusProps) {
+  const mounted = useMounted();
   const [focused, setFocused] = useState(false);
 
   const enter = useCallback(() => setFocused(true), []);
@@ -101,32 +104,35 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
 
   const content = isFocusRender(children) ? children(focused) : children;
 
-  return (
-    <ViewFocusContext.Provider value={api}>
-      {focused ? <div className="min-h-0 flex-1" aria-hidden /> : null}
-
+  const panel = (
+    <div
+      data-view-focus={focused ? 'true' : undefined}
+      aria-label={focused ? `${label} focus view` : undefined}
+      className={cn(
+        focused
+          ? [
+              'fixed inset-x-0 bottom-0 top-app-header inset-s-app-sidebar z-50 flex flex-col overflow-hidden overscroll-none bg-background pb-[env(safe-area-inset-bottom,0px)]',
+              'transition-[inset-inline-start] duration-300 ease-in-out',
+              'animate-in fade-in-0 zoom-in-[0.985] duration-300 ease-out',
+            ]
+          : cn('relative flex min-h-0 flex-1 flex-col', className),
+      )}
+    >
       <div
-        data-view-focus={focused ? 'true' : undefined}
-        aria-label={focused ? `${label} focus view` : undefined}
         className={cn(
-          focused
-            ? [
-                'fixed inset-x-0 bottom-0 top-app-header inset-s-app-sidebar z-40 flex flex-col overflow-hidden overscroll-none bg-background pb-[env(safe-area-inset-bottom,0px)]',
-                'transition-[inset-inline-start] duration-300 ease-in-out',
-                'animate-in fade-in-0 zoom-in-[0.985] duration-300 ease-out',
-              ]
-            : cn('relative flex min-h-0 flex-1 flex-col', className),
+          'min-h-0 min-w-0 flex-1',
+          focused && 'flex h-full min-h-0 flex-col overflow-hidden',
         )}
       >
-        <div
-          className={cn(
-            'min-h-0 min-w-0 flex-1',
-            focused && 'flex h-full min-h-0 flex-col overflow-hidden',
-          )}
-        >
-          {content}
-        </div>
+        {content}
       </div>
+    </div>
+  );
+
+  return (
+    <ViewFocusContext.Provider value={api}>
+      {focused ? <div className="min-h-[min(70dvh,40rem)] flex-1" aria-hidden /> : null}
+      {focused && mounted ? createPortal(panel, document.body) : panel}
     </ViewFocusContext.Provider>
   );
 }
