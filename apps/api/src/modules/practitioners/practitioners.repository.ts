@@ -110,14 +110,13 @@ export class PractitionersRepository {
           experienceYears: dto.experienceYears ?? null,
           imageUrl: dto.imageUrl?.trim() || null,
           licenseNumber: dto.licenseNumber?.trim() || null,
-          licenseExpiry: dto.licenseExpiry
-            ? new Date(dto.licenseExpiry)
-            : null,
+          licenseExpiry: dto.licenseExpiry ? new Date(dto.licenseExpiry) : null,
           departmentId: dto.departmentId,
           defaultRoomId: dto.defaultRoomId || null,
           employmentType: dto.employmentType ?? null,
           commissionPercent:
-            dto.commissionPercent === undefined || dto.commissionPercent === null
+            dto.commissionPercent === undefined ||
+            dto.commissionPercent === null
               ? null
               : dto.commissionPercent,
           bufferMins: dto.bufferMins ?? 0,
@@ -197,9 +196,7 @@ export class PractitionersRepository {
       await this.preservePackageUsage(
         tx,
         appointments.filter(
-          (row) =>
-            row.patientPackageId &&
-            !NON_BILLABLE.includes(row.status),
+          (row) => row.patientPackageId && !NON_BILLABLE.includes(row.status),
         ),
       );
 
@@ -281,7 +278,10 @@ export class PractitionersRepository {
         await tx.patientPackage.update({
           where: { id: enrollmentId },
           data: {
-            sessionsTotal: Math.max(0, enrollment.sessionsTotal - used.sessions),
+            sessionsTotal: Math.max(
+              0,
+              enrollment.sessionsTotal - used.sessions,
+            ),
           },
         });
       }
@@ -303,10 +303,15 @@ export class PractitionersRepository {
   private async syncChildren(
     tx: Prisma.TransactionClient,
     doctorId: string,
-    dto: { serviceIds?: string[]; availabilities?: AvailabilitySlotDto[]; timeOffs?: TimeOffEntryDto[] },
+    dto: {
+      serviceIds?: string[];
+      availabilities?: AvailabilitySlotDto[];
+      timeOffs?: TimeOffEntryDto[];
+    },
   ) {
     if (dto.serviceIds) await this.setServices(tx, doctorId, dto.serviceIds);
-    if (dto.availabilities) await this.setAvailability(tx, doctorId, dto.availabilities);
+    if (dto.availabilities)
+      await this.setAvailability(tx, doctorId, dto.availabilities);
     if (dto.timeOffs) await this.setTimeOff(tx, doctorId, dto.timeOffs);
   }
 

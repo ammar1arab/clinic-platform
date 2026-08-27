@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useDebounce } from '@/hooks/shared/use-debounce';
 import { Button } from '@/components/ui';
-import { IconNewPatient } from '@/constants/icons';
 import { usePatients } from '@/hooks/api/use-patients';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useClinicStaff } from '@/hooks/api/use-clinic-staff';
@@ -12,9 +11,9 @@ import {
   type PatientFilterState,
   PatientsList,
 } from '@/components/blocks/patients';
-import { ExportFormatButton } from '@/components/blocks/reports';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { DEFAULT_PATIENT_SORT, parsePatientSort } from '@/constants/patient';
+import { ROUTES } from '@/constants/routes';
 import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import { exportPatients } from '@/lib/export-patients';
 import { toast } from 'sonner';
@@ -104,21 +103,8 @@ export default function PatientsPage() {
         onReset={resetFilters}
         staff={staff}
         departments={departments}
-        trailing={
-          <>
-            <ExportFormatButton
-              className="shrink-0"
-              disabled={isLoading || !patients?.length}
-              onSelect={handleExport}
-            />
-            <Button asChild className="h-8 shrink-0 rounded-lg">
-              <Link href="/patients/new">
-                <IconNewPatient className="size-4" />
-                Add Patient
-              </Link>
-            </Button>
-          </>
-        }
+        exportDisabled={isLoading || !patients?.length}
+        onExport={handleExport}
       />
 
       <PatientsList
@@ -128,7 +114,7 @@ export default function PatientsPage() {
         hasActiveFilters={hasActiveFilters}
         emptyAction={
           <Button asChild>
-            <Link href="/patients/new">Create patient</Link>
+            <Link href={ROUTES.PATIENT_NEW}>Create patient</Link>
           </Button>
         }
       />

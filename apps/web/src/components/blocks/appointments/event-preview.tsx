@@ -25,6 +25,12 @@ import { useNow } from '@/hooks/shared/use-now';
 import { useMounted } from '@/hooks/shared/use-mounted';
 import { IconClose, IconMaximize, IconOnline, IconPerson, IconRoom, IconService, IconTime } from '@/constants/icons';
 import { SoftTip } from '@/components/primitives';
+import {
+  holdCalendarMorePopover,
+  isProtectedOverlayTarget,
+  overlayEventTarget,
+  stopNativeOverlayEvent,
+} from '@/lib/overlay';
 
 export interface EventPreviewState {
   appointment: Appointment;
@@ -33,7 +39,7 @@ export interface EventPreviewState {
   anchor?: AnchorRect;
 }
 
-/** horizontal = L/R (month/week desktop), vertical = T/B (day/mobile), auto = best space (timeline). */
+
 export type PreviewPlacement = 'horizontal' | 'vertical' | 'auto';
 
 interface Props {
@@ -85,21 +91,6 @@ function formatDayLabel(appt: Appointment) {
     month: 'short',
     day: 'numeric',
   });
-}
-
-function isNestedOverlay(target: EventTarget | null) {
-  return (
-    target instanceof Element &&
-    Boolean(
-      target.closest(
-        [
-          '[data-slot="dropdown-menu-content"]',
-          '[data-slot="dialog-content"]',
-          '[data-slot="select-content"]',
-        ].join(','),
-      ),
-    )
-  );
 }
 
 export function EventPreview({
@@ -162,6 +153,7 @@ export function EventPreview({
       </PopoverAnchor>
 
       <PopoverContent
+        ref={holdCalendarMorePopover}
         side={side}
         align="center"
         sideOffset={10}
@@ -169,23 +161,25 @@ export function EventPreview({
         collisionPadding={8}
         onOpenAutoFocus={(event) => event.preventDefault()}
         onPointerDownOutside={(event) => {
-          if (isNestedOverlay(event.target)) {
+          const target = overlayEventTarget(event);
+          if (isProtectedOverlayTarget(target)) {
             event.preventDefault();
             return;
           }
+          stopNativeOverlayEvent(event);
           onClose();
         }}
         onFocusOutside={(event) => {
           const originalEvent = event.detail.originalEvent;
           if (
             originalEvent instanceof FocusEvent &&
-            isNestedOverlay(originalEvent.relatedTarget)
+            isProtectedOverlayTarget(originalEvent.relatedTarget)
           ) {
             event.preventDefault();
           }
         }}
         onEscapeKeyDown={onClose}
-        className="z-110 flex w-[min(calc(100vw-1rem),20rem)] max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem),28rem)] flex-col overflow-hidden rounded-xl border bg-popover p-0 text-popover-foreground shadow-2xl ring-1 ring-foreground/10"
+        className="z-110 flex w-[min(calc(100vw-1rem),20rem)] max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem),28rem)] flex-col overflow-hidden p-0"
         data-calendar-popover="preview"
       >
         <div
@@ -275,7 +269,11 @@ export function EventPreview({
         </div>
 
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-border/60 bg-muted/20 px-3.5 py-2.5">
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+          >
             Close
           </Button>
           <Button

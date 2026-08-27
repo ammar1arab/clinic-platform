@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/providers";
@@ -9,11 +9,15 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-
-
 export const metadata: Metadata = {
   title: "Clinic Platform",
   description: "Clinic Management System",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

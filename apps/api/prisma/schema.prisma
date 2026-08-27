@@ -6,7 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// ==================== Enums ====================
 
 enum Role {
   owner
@@ -65,7 +64,6 @@ enum EmploymentType {
   mixed
 }
 
-// ==================== Tables ====================
 
 model Clinic {
   id                   String       @id @default(uuid())
@@ -274,10 +272,10 @@ model Appointment {
   statusReason      String?
   statusUpdatedBy   String?
   statusUpdatedAt   DateTime?
-  /// Clock start for wait — option A: defaults to scheduledAt when session starts / waiting begins
+
   waitingStartedAt  DateTime?
   inProgressAt      DateTime?
-  /// Frozen minutes waited when entering in_progress (how late session started vs waitingStartedAt)
+
   waitingMins       Int?
   cancelReason      String?
   notes             String?
@@ -292,7 +290,7 @@ model Appointment {
   paymentMethod    String?
   paymentMethodId  String?
   patientPackageId String?
-  /// Credit drawn from a credit-based enrollment. Null when the redemption consumed a session.
+
   packageCredit    Decimal?          @db.Decimal(10, 3)
   meetingUrl       String?
   createdAt        DateTime          @default(now())
@@ -390,17 +388,15 @@ model Package {
   enrollments PatientPackage[]
 }
 
-/// A package a patient actually bought. Totals are snapshotted at purchase time so
-/// later edits to the catalog Package never move an existing balance. Consumption is
-/// derived from the appointments that redeemed it — never stored as a counter.
+
 model PatientPackage {
   id            String   @id @default(uuid())
   clinicId      String
   patientId     String
   packageId     String
-  /// Session-based enrollment: total sessions bought. Null for credit-based.
+
   sessionsTotal Int?
-  /// Credit-based enrollment: total prepaid value. Null for session-based.
+
   creditTotal   Decimal? @db.Decimal(10, 3)
   notes         String?
   isActive      Boolean  @default(true)

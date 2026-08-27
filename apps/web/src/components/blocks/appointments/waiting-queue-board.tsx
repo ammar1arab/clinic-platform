@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { CardGridSkeleton, SoftTip } from '@/components/primitives';
-import { useViewFocused, ViewFocusToggle } from './view-focus';
+import { ViewFocusToggle } from './view-focus';
 import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
 import { IconActivate, IconCalendarClock, IconCheckCircle, IconCreditCard, IconDeactivate, IconMore, IconOnline, IconPatients, IconPlay, IconRoom, IconRotateCcw, IconService, IconTime, IconTimer, IconView } from '@/constants/icons';
 
@@ -175,7 +175,7 @@ export function WaitingQueueBoard({
         'flex flex-col overflow-hidden border bg-card shadow-xs',
         focused
           ? 'h-full min-h-0 rounded-none border-0'
-          : 'card-aura rounded-xl sm:rounded-2xl',
+          : 'card-aura min-h-0 flex-1 rounded-xl sm:rounded-2xl',
       )}
     >
       <div className="flex items-center justify-between gap-1.5 border-b bg-muted/20 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
@@ -204,10 +204,10 @@ export function WaitingQueueBoard({
 
       <div
         className={cn(
-          'grid grid-cols-1 gap-2.5 p-2.5 sm:gap-3 sm:p-3 md:gap-4 md:p-4',
+          'grid min-h-0 flex-1 grid-cols-1 gap-2.5 overflow-y-auto overscroll-y-contain p-2.5',
+          'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
           stageTab === 'all' ? 'lg:grid-cols-4' : 'lg:grid-cols-1',
-          focused &&
-            'min-h-0 flex-1 overflow-y-auto overscroll-contain max-lg:content-start lg:grid-rows-1 lg:items-stretch lg:overflow-hidden',
+          'lg:grid-rows-[minmax(0,1fr)] lg:items-stretch lg:overflow-hidden',
         )}
       >
         {isVisible('waiting') && (
@@ -528,16 +528,9 @@ function StageColumn({
   icon: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const focused = useViewFocused();
-
   return (
-    <div
-      className={cn(
-        'card-aura flex flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs sm:rounded-2xl',
-        focused && 'min-h-0 lg:h-full',
-      )}
-    >
-      <div className="flex items-center justify-between border-b bg-muted/25 p-2.5 sm:p-3">
+    <div className="card-aura flex max-h-(--app-queue-col-max) min-h-0 flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs sm:rounded-2xl lg:h-full lg:max-h-none">
+      <div className="flex shrink-0 items-center justify-between border-b bg-muted/25 p-2.5 sm:p-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className={cn('size-2 rounded-full ring-2 ring-background', accentClass)} />
           <span className="text-muted-foreground">{icon}</span>
@@ -547,13 +540,8 @@ function StageColumn({
           {count}
         </Badge>
       </div>
-      <div
-        className={cn(
-          'flex flex-col gap-2.5 overflow-y-auto overscroll-contain p-3',
-          focused ? 'max-lg:max-h-none lg:min-h-0 lg:flex-1' : 'min-h-90 max-h-[72vh]',
-        )}
-      >
-        {children}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-3 touch-pan-y">
+        <div className="flex flex-col gap-2.5">{children}</div>
       </div>
     </div>
   );

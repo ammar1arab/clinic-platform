@@ -46,15 +46,10 @@ function TooltipContent({
         side={side}
         sideOffset={sideOffset}
         className={cn(
-          'z-50 w-fit max-w-[min(16rem,calc(100vw-1.5rem))]',
+          'overlay-pop overlay-pop-tip z-50 w-fit max-w-[min(16rem,calc(100vw-1.5rem))]',
           'rounded-md bg-foreground px-2.5 py-1.5',
           'text-xs font-medium leading-none text-background',
           'shadow-[0_8px_24px_-10px_color-mix(in_oklch,var(--foreground)_55%,transparent)]',
-          'origin-(--radix-tooltip-content-transform-origin)',
-          'animate-in fade-in-0 zoom-in-95 duration-150',
-          'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
-          'data-[side=bottom]:slide-in-from-top-1 data-[side=left]:slide-in-from-right-1',
-          'data-[side=right]:slide-in-from-left-1 data-[side=top]:slide-in-from-bottom-1',
           className,
         )}
         {...props}

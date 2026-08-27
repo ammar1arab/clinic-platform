@@ -108,8 +108,10 @@ export function ProfileSection({
   className?: string;
   contentClassName?: string;
 }) {
+  const fillHeight = Boolean(className?.includes('h-full'));
+
   return (
-    <Card className={cn('card-aura flex h-full flex-col ring-0', className)}>
+    <Card className={cn('card-aura flex flex-col ring-0', className)}>
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-5 pb-3 pt-5">
         <div className="min-w-0 space-y-0.5">
           <CardTitle className="text-base font-semibold tracking-tight">
@@ -121,7 +123,9 @@ export function ProfileSection({
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
       </CardHeader>
-      <CardContent className={cn('flex-1 px-5 pb-5', contentClassName)}>
+      <CardContent
+        className={cn('px-5 pb-5', fillHeight && 'flex-1', contentClassName)}
+      >
         {children}
       </CardContent>
     </Card>

@@ -90,7 +90,6 @@ describe("AppointmentsService", () => {
     service = module.get<AppointmentsService>(AppointmentsService);
   });
 
-  // Private methods are exercised via a narrow cast for unit coverage.
   const helpers = () =>
     service as unknown as {
       calculatePricing: (

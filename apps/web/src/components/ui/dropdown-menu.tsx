@@ -4,12 +4,14 @@ import * as React from "react"
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { OVERLAY_POP_CLASS, overlayPointerProps } from "@/lib/overlay"
 import { IconCheck, IconChevronRight } from '@/constants/icons'
 
 function DropdownMenu({
+  modal = false,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" modal={modal} {...props} />
 }
 
 function DropdownMenuPortal({
@@ -37,6 +39,8 @@ function DropdownMenuContent({
   side = "bottom",
   sideOffset = 6,
   avoidCollisions = false,
+  onPointerDownOutside,
+  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
   return (
@@ -48,23 +52,14 @@ function DropdownMenuContent({
         align={align}
         avoidCollisions={avoidCollisions}
         className={cn(
-          // Layout & sizing
+          OVERLAY_POP_CLASS,
           "z-50 max-h-(--radix-dropdown-menu-content-available-height)",
           "w-[min(100vw-1.5rem,var(--radix-dropdown-menu-trigger-width))] min-w-36 max-w-[calc(100vw-1.5rem)]",
-          // Visual
-          "overflow-x-hidden overflow-y-auto rounded-xl border bg-popover p-1.5",
-          "text-popover-foreground shadow-xl ring-1 ring-foreground/8",
-          // Animations
-          "origin-(--radix-dropdown-menu-content-transform-origin)",
-          "duration-150",
-          "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2",
-          "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-          "data-[state=closed]:overflow-hidden",
-          "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
-          "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "overflow-y-auto overscroll-contain p-1.5",
           className
         )}
         {...props}
+        {...overlayPointerProps({ onPointerDownOutside, onInteractOutside })}
       />
     </DropdownMenuPrimitive.Portal>
   )
@@ -93,25 +88,25 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        // Base layout
+
         "group/menu-item relative flex cursor-pointer items-center gap-2",
         "rounded-lg px-2.5 py-2 text-sm outline-hidden select-none",
-        // Transition
+
         "transition-all duration-100",
-        // Default focus/hover — subtle bg lift
+
         "focus:bg-accent/70 focus:text-accent-foreground",
         "not-data-[variant=destructive]:focus:**:text-accent-foreground",
-        // Icons
+
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         "[&_svg]:text-muted-foreground [&_svg]:transition-colors [&_svg]:duration-100",
         "focus:[&_svg]:text-accent-foreground",
-        // Active scale
+
         "active:scale-[0.98]",
-        // Inset
+
         "data-inset:pl-8",
-        // Disabled
+
         "data-disabled:pointer-events-none data-disabled:opacity-40",
-        // Destructive
+
         "data-[variant=destructive]:text-destructive",
         "data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20",
         "data-[variant=destructive]:focus:text-destructive",
@@ -300,15 +295,11 @@ function DropdownMenuSubContent({
   return (
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
-      className={cn(
-        "z-50 min-w-[120px] overflow-hidden rounded-xl border bg-popover p-1.5 text-popover-foreground shadow-xl ring-1 ring-foreground/8",
-        "origin-(--radix-dropdown-menu-content-transform-origin) duration-150",
-        "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2",
-        "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-        "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
-        "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-        className
-      )}
+        className={cn(
+          OVERLAY_POP_CLASS,
+          "z-50 min-w-30 p-1.5",
+          className
+        )}
       {...props}
     />
   )

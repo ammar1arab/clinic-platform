@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui';
 import { ButtonSpinner } from '@/components/blocks/feedback';
+import { SoftTip } from '@/components/primitives';
 import { REPORT_FORMATS } from '@/constants/report';
 import { IconExport } from '@/constants/icons';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ type Props = {
   disabled?: boolean;
   className?: string;
   align?: 'start' | 'end' | 'center';
+  compact?: boolean;
 };
 
 export function ExportFormatButton({
@@ -30,20 +32,29 @@ export function ExportFormatButton({
   disabled = false,
   className,
   align = 'end',
+  compact = false,
 }: Props) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          size="default"
-          variant="default"
-          className={cn('h-8 rounded-lg', className)}
-          disabled={disabled || pending}
-        >
-          {pending ? <ButtonSpinner /> : <IconExport className="size-4" />}
-          Download
-        </Button>
-      </DropdownMenuTrigger>
+      <SoftTip label={compact ? 'Download' : undefined}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            size="default"
+            variant={compact ? 'outline' : 'default'}
+            aria-label="Download"
+            className={cn(
+              'h-8 rounded-lg',
+              compact &&
+                'size-8 shrink-0 border-border/70 bg-background/50 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5',
+              className,
+            )}
+            disabled={disabled || pending}
+          >
+            {pending ? <ButtonSpinner /> : <IconExport className="size-4" />}
+            <span className={cn(compact && 'hidden font-semibold sm:inline')}>Download</span>
+          </Button>
+        </DropdownMenuTrigger>
+      </SoftTip>
       <DropdownMenuContent align={align} className="w-52">
         <DropdownMenuLabel>Export format</DropdownMenuLabel>
         <DropdownMenuSeparator />

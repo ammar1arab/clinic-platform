@@ -203,8 +203,7 @@ export class AppointmentsService {
     });
     const timezone = clinic?.timezone || "UTC";
 
-    // A doctor with no configured weekly schedule hasn't opted into availability
-    // enforcement yet — don't block every booking because of missing setup.
+
     const hasSchedule = await this.prisma.doctorAvailability.count({
       where: { doctorId, isActive: true },
     });
@@ -386,7 +385,7 @@ export class AppointmentsService {
   ) {
     const existing = await this.findOne(clinicId, id);
 
-    // Status transitions
+
     if (dto.status && String(dto.status) !== String(existing.status)) {
       if (dto.status === AppointmentStatusDto.cancelled && !dto.cancelReason) {
         throw new BadRequestException("Cancellation reason is required");
@@ -396,8 +395,7 @@ export class AppointmentsService {
       }
     }
 
-    // Package-covered visits: pricing is locked to the redeemed payable; change fee only
-    // after releasing coverage. Cancel / no-show auto-releases so balance is restored.
+
     const nextStatus = dto.status ? String(dto.status) : null;
     const becomingNonBillable =
       nextStatus === AppointmentStatusDto.cancelled ||
@@ -477,7 +475,7 @@ export class AppointmentsService {
     const meetingUrl =
       dto.meetingUrl !== undefined ? dto.meetingUrl : existing.meetingUrl;
 
-    // Validate entities if changed
+
     let service = existing.service;
     if (dto.doctorId || dto.serviceId || dto.roomId || dto.departmentId) {
       const validationDto: ValidateEntitiesInput = {
@@ -531,8 +529,7 @@ export class AppointmentsService {
         : (existing.discountReason ?? undefined),
     );
 
-    // If feeOverride wasn't specifically provided, and service changed, pricing.fee gets new service fee.
-    // If service didn't change, pricing.fee gets existing fee.
+
     let finalFee = pricing.fee;
     if (dto.feeOverride === undefined && !dto.serviceId) {
       finalFee = existing.fee ? Number(existing.fee) : finalFee;
@@ -578,7 +575,7 @@ export class AppointmentsService {
           ? existing.scheduledAt
           : new Date(existing.scheduledAt);
 
-      // Option A: wait clock anchors to scheduledAt (how late the session started).
+
       if (
         nextStatus === AppointmentStatusDto.waiting ||
         nextStatus === AppointmentStatusDto.checked_in
@@ -668,11 +665,7 @@ export class AppointmentsService {
     return appointment;
   }
 
-  /**
-   * Settle this visit from one of the patient's packages: draw a session or the visit's
-   * payable in credit, and record it as paid without touching a payment method — the
-   * money changed hands when the package was bought.
-   */
+
   async redeemPackage(
     clinicId: string,
     clinicUserId: string,
@@ -721,7 +714,7 @@ export class AppointmentsService {
     return appointment;
   }
 
-  /** Undo a redemption — unlinking restores the balance, since usage is derived. */
+
   async releasePackage(clinicId: string, id: string) {
     const existing = await this.findOne(clinicId, id);
     if (!existing.patientPackageId) {

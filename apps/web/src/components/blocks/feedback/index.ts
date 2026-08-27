@@ -9,5 +9,3 @@ export { GlobalActivity } from './global-activity';
 export { PageTransition } from './page-transition';
 export { TwoStepDeleteDialogs, useTwoStepDelete } from './two-step-delete';
 export type { TwoStepDeleteTarget } from './two-step-delete';
-
-

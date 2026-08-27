@@ -234,8 +234,6 @@ export function AppointmentForm({
     if (!patient) return;
 
 
-
-
     const pkg =
       (packages as ClinicPackage[] | undefined)?.find((p) => p.id === patient.packageId) ??
       null;

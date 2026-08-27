@@ -24,7 +24,6 @@ export class PatientPackagesService {
     private prisma: PrismaService,
   ) {}
 
-  /** Snapshot the catalog package onto the enrollment, unless the caller overrode it. */
   async enroll(clinicId: string, dto: EnrollPatientPackageDto) {
     const patient = await this.prisma.patient.findFirst({
       where: { id: dto.patientId, clinicId },
@@ -38,7 +37,7 @@ export class PatientPackagesService {
 
     const sessionsTotal =
       dto.sessionsTotal !== undefined ? dto.sessionsTotal : pkg.sessionCount;
-    // A package without a session count is a prepaid credit pot; its price is the balance.
+
     const creditTotal =
       dto.creditTotal !== undefined
         ? dto.creditTotal
@@ -68,12 +67,11 @@ export class PatientPackagesService {
     return this.toDto(created, { sessions: 0, credit: ZERO });
   }
 
-  /**
-   * Give the patient an enrollment for this package unless they already hold one with
-   * balance left. Called when a package is assigned on the patient record, so assigning
-   * a package is what actually grants the balance.
-   */
-  async ensureEnrollment(clinicId: string, patientId: string, packageId: string) {
+  async ensureEnrollment(
+    clinicId: string,
+    patientId: string,
+    packageId: string,
+  ) {
     const existing = await this.findWithBalance(clinicId, patientId);
     if (existing.some((e) => e.packageId === packageId && e.hasBalance)) return;
     await this.enroll(clinicId, { patientId, packageId });
@@ -107,7 +105,11 @@ export class PatientPackagesService {
     };
   }
 
-  async findWithBalance(clinicId: string, patientId: string, activeOnly = true) {
+  async findWithBalance(
+    clinicId: string,
+    patientId: string,
+    activeOnly = true,
+  ) {
     const enrollments = await this.repo.findByPatient(
       clinicId,
       patientId,
@@ -125,10 +127,6 @@ export class PatientPackagesService {
     return this.toDto(updated, usage.get(updated.id));
   }
 
-  /**
-   * Validate that this enrollment can cover the visit and report what redeeming costs.
-   * Returns the credit to draw, or null when the redemption consumes a session instead.
-   */
   async resolveRedemption(
     clinicId: string,
     patientId: string,
@@ -138,9 +136,7 @@ export class PatientPackagesService {
     const enrollment = await this.repo.findById(clinicId, patientPackageId);
     if (!enrollment) throw new NotFoundException("Patient package not found");
     if (enrollment.patientId !== patientId) {
-      throw new BadRequestException(
-        "Package does not belong to this patient",
-      );
+      throw new BadRequestException("Package does not belong to this patient");
     }
     if (!enrollment.isActive) {
       throw new BadRequestException("Package is no longer active");

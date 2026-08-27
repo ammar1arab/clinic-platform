@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="grid h-screen place-items-center">
+        <div className="grid h-dvh place-items-center">
           <div className="text-center space-y-4">
             <h2 className="text-lg font-semibold">Something went wrong</h2>
             <p className="text-sm text-muted-foreground max-w-sm">{this.state.message}</p>

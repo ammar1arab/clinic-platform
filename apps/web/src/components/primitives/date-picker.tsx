@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui"
 import { IconCalendar, IconChevronLeft, IconChevronRight, IconClose } from '@/constants/icons'
+import { keepNestedPortals } from '@/lib/overlay'
 
 interface Props {
 
@@ -152,15 +153,7 @@ export function DatePicker({
         className="w-auto p-0"
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
-        onInteractOutside={(e) => {
-          const target = e.target as HTMLElement | null
-          if (
-            target?.closest('[data-slot="select-content"]') ||
-            target?.closest("[data-radix-select-content]")
-          ) {
-            e.preventDefault()
-          }
-        }}
+        onInteractOutside={keepNestedPortals}
       >
         <div className="flex flex-col">
           {}

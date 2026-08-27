@@ -57,29 +57,33 @@ function NavLink({
   active: boolean;
   collapsed?: boolean;
 }) {
-  return (
-    <SoftTip label={label} side="right" sideOffset={10}>
-      <Link
-        href={href}
-        aria-label={collapsed ? label : undefined}
+  const link = (
+    <Link
+      href={href}
+      aria-label={collapsed ? label : undefined}
+      className={cn(
+        'flex w-full items-center rounded-xl text-sm font-medium transition-all duration-200',
+        collapsed ? 'size-10 justify-center px-0' : 'gap-3 px-3 py-2.5',
+        active
+          ? 'bg-primary text-primary-foreground shadow-[0_8px_20px_-10px_color-mix(in_oklch,var(--primary)_65%,transparent)]'
+          : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+      )}
+    >
+      <Icon
         className={cn(
-          'flex items-center rounded-xl text-sm font-medium transition-all duration-200',
-          collapsed
-            ? 'mx-auto size-10 justify-center'
-            : 'w-full gap-3 px-3 py-2.5',
-          active
-            ? 'bg-primary text-primary-foreground shadow-[0_8px_20px_-10px_color-mix(in_oklch,var(--primary)_65%,transparent)]'
-            : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+          'shrink-0 transition-all duration-200',
+          collapsed ? 'size-5' : 'size-4',
         )}
-      >
-        <Icon
-          className={cn(
-            'shrink-0 transition-all duration-200',
-            collapsed ? 'size-5' : 'size-4',
-          )}
-        />
-        {collapsed ? null : <span className="whitespace-nowrap">{label}</span>}
-      </Link>
+      />
+      {collapsed ? null : <span className="whitespace-nowrap">{label}</span>}
+    </Link>
+  );
+
+  if (!collapsed) return <div className="w-full">{link}</div>;
+
+  return (
+    <SoftTip label={label} side="right" sideOffset={10} className="flex w-full justify-center">
+      {link}
     </SoftTip>
   );
 }
@@ -262,7 +266,7 @@ export function SidebarBlock() {
 
         <nav
           className={cn(
-            'flex-1 space-y-1 overflow-y-auto py-3',
+            'flex flex-1 flex-col gap-1 overflow-y-auto py-3',
             isCollapsed ? 'px-2' : 'px-2.5',
           )}
         >

@@ -79,7 +79,6 @@ export class ReportsRepository {
     });
   }
 
-  /** Appointments in period for finance (excludes cancelled). */
   findAppointmentsForFinanceReport(params: {
     clinicId: string;
     from?: Date;

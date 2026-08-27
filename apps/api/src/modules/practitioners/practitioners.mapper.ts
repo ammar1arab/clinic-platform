@@ -77,7 +77,7 @@ export function mapPractitioner(row: Row) {
   };
 }
 
-/** undefined = leave unchanged; null/'' = clear */
+
 export function optStr(value: string | null | undefined) {
   if (value === undefined) return undefined;
   const trimmed = value?.trim();

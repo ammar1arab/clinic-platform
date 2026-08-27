@@ -18,8 +18,7 @@ export class PatientsService {
       `${dto.firstNameEn}-${dto.lastNameEn}-${Date.now()}`;
     const patient = await this.patientsRepository.create({
       ...dto,
-      imageUrl:
-        persistableImageUrl(dto.imageUrl) || defaultAvatarUrl(seed),
+      imageUrl: persistableImageUrl(dto.imageUrl) || defaultAvatarUrl(seed),
     });
     if (patient.packageId) {
       await this.patientPackagesService.ensureEnrollment(
@@ -97,7 +96,7 @@ export class PatientsService {
       ...dto,
       imageUrl,
     });
-    // Assigning a package is what grants the balance; an existing one is left untouched.
+
     if (patient.packageId) {
       await this.patientPackagesService.ensureEnrollment(
         patient.clinicId,

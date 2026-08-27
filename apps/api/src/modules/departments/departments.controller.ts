@@ -35,7 +35,6 @@ export class DepartmentsController {
     return this.departmentsService.findOne(id);
   }
 
-  // Specific :id/... routes must be registered before the generic :id patch
   @Patch(":id/deactivate")
   deactivate(@Param("id") id: string) {
     return this.departmentsService.deactivate(id);

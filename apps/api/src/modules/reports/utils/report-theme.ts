@@ -2,10 +2,7 @@ import { formatDisplayDate } from "./report-format";
 import { formatPhoneDisplay } from "@/infrastructure";
 import type { ReportDocument } from "../types/report-document";
 
-/**
- * Neutral clinic report palette — matches product UI (slate + soft primary),
- * not loud teal marketing colors.
- */
+
 export const REPORT_THEME = {
   ink: "#1E293B",
   muted: "#64748B",
@@ -56,15 +53,12 @@ export function csvPreface(doc: ReportDocument): string[] {
   return lines;
 }
 
-/** Prefer landscape when tables are wide. */
+
 export function useLandscape(columnCount: number): boolean {
   return columnCount >= 7;
 }
 
-/**
- * Relative column widths from header + sample cell lengths.
- * Returns fractions summing to ~1.
- */
+
 export function proportionalWidths(
   doc: ReportDocument,
   sampleRows = 12,
@@ -83,7 +77,7 @@ export function proportionalWidths(
   return weights.map((w) => w / sum);
 }
 
-/** Split wide tables into chunks so Word/PDF stay readable. */
+
 export function chunkColumns(doc: ReportDocument, maxCols = 6): ReportDocument[] {
   if (doc.columns.length <= maxCols) return [doc];
 

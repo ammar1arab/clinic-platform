@@ -12,7 +12,6 @@ import { Button } from '@/components/ui';
 import { SoftTip } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
-import { useSidebar } from '@/providers/sidebar-provider';
 import { IconMaximize, IconMinimize } from '@/constants/icons';
 
 interface ViewFocusApi {
@@ -83,7 +82,6 @@ export function ViewFocusToggle({ className }: { className?: string }) {
 
 export function ViewFocus({ label, children, className }: ViewFocusProps) {
   const [focused, setFocused] = useState(false);
-  const { isCollapsed } = useSidebar();
 
   const enter = useCallback(() => setFocused(true), []);
   const exit = useCallback(() => setFocused(false), []);
@@ -105,7 +103,7 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
 
   return (
     <ViewFocusContext.Provider value={api}>
-      {focused ? <div className="h-[min(72vh,40rem)] w-full" aria-hidden /> : null}
+      {focused ? <div className="min-h-0 flex-1" aria-hidden /> : null}
 
       <div
         data-view-focus={focused ? 'true' : undefined}
@@ -113,18 +111,17 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
         className={cn(
           focused
             ? [
-                'fixed inset-x-0 bottom-0 top-13 z-40 flex flex-col overflow-hidden overscroll-none bg-background pb-[env(safe-area-inset-bottom)] md:top-14',
-                isCollapsed ? 'md:left-18' : 'md:left-56 lg:left-64',
-                'transition-[left] duration-300 ease-in-out',
+                'fixed inset-x-0 bottom-0 top-app-header inset-s-app-sidebar z-40 flex flex-col overflow-hidden overscroll-none bg-background pb-[env(safe-area-inset-bottom,0px)]',
+                'transition-[inset-inline-start] duration-300 ease-in-out',
                 'animate-in fade-in-0 zoom-in-[0.985] duration-300 ease-out',
               ]
-            : cn('relative', className),
+            : cn('relative flex min-h-0 flex-1 flex-col', className),
         )}
       >
         <div
           className={cn(
-            'min-h-0 min-w-0',
-            focused && 'flex h-full min-h-0 flex-1 flex-col overflow-hidden',
+            'min-h-0 min-w-0 flex-1',
+            focused && 'flex h-full min-h-0 flex-col overflow-hidden',
           )}
         >
           {content}

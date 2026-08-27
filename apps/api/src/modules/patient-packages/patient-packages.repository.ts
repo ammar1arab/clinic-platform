@@ -2,7 +2,6 @@ import { Injectable } from "@nestjs/common";
 import { AppointmentStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "@/prisma/prisma.service";
 
-/** Visits that never owe money, so they never count as dues. */
 const NON_BILLABLE: AppointmentStatus[] = [
   AppointmentStatus.cancelled,
   AppointmentStatus.no_show,
@@ -42,12 +41,6 @@ export class PatientPackagesRepository {
     });
   }
 
-  /**
-   * Redemptions per enrollment. A session-based enrollment only ever has
-   * `packageCredit: null` rows, a credit-based one only ever has non-null rows, so the
-   * row count and the credit sum each answer exactly one kind of enrollment.
-   * Cancelled / no-show visits never consume balance.
-   */
   aggregateUsage(enrollmentIds: string[]) {
     if (enrollmentIds.length === 0) {
       return Promise.resolve(
@@ -69,8 +62,11 @@ export class PatientPackagesRepository {
     });
   }
 
-  /** Past visits the patient still owes money on (optionally excluding the open visit). */
-  findUnpaidVisits(clinicId: string, patientId: string, excludeAppointmentId?: string) {
+  findUnpaidVisits(
+    clinicId: string,
+    patientId: string,
+    excludeAppointmentId?: string,
+  ) {
     return this.prisma.appointment.findMany({
       where: {
         clinicId,

@@ -9,12 +9,12 @@ import {
 import { Transform } from "class-transformer";
 
 export enum PatientSortBy {
-  CREATED_AT = "createdAt", // newest registered
-  UPDATED_AT = "updatedAt", // recently modified
-  FIRST_NAME = "firstNameEn", // A-Z by first name
-  LAST_NAME = "lastNameEn", // A-Z by last name
-  DOB = "dob", // age (youngest / oldest)
-  APPOINTMENTS = "appointments", // most total sessions
+  CREATED_AT = "createdAt",
+  UPDATED_AT = "updatedAt",
+  FIRST_NAME = "firstNameEn",
+  LAST_NAME = "lastNameEn",
+  DOB = "dob",
+  APPOINTMENTS = "appointments",
 }
 
 export enum SortOrder {
@@ -66,11 +66,11 @@ export class PatientFiltersDto {
 
   @IsOptional()
   @IsDateString()
-  dobFrom?: string; // born AFTER this date e.g. "1990-01-01"
+  dobFrom?: string;
 
   @IsOptional()
   @IsDateString()
-  dobTo?: string; // born BEFORE this date e.g. "2005-12-31"
+  dobTo?: string;
 
   @IsOptional()
   @IsEnum(PatientSortBy)

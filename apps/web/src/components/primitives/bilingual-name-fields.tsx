@@ -20,7 +20,6 @@ type Props = {
 };
 
 
-
 export function BilingualNameFields({
   name,
   nameAr,

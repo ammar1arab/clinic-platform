@@ -1,6 +1,6 @@
 'use client';
 
-import { isValidElement, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   Tooltip,
   TooltipContent,
@@ -27,15 +27,11 @@ export function SoftTip({
   if (!text) return children;
 
   return (
-    <Tooltip>
+    <Tooltip delayDuration={450} disableHoverableContent>
       <TooltipTrigger asChild>
-        {isValidElement(children) ? (
-          children
-        ) : (
-          <span className={cn('inline-flex min-w-0 max-w-full', className)}>
-            {children}
-          </span>
-        )}
+        <span className={cn('inline-flex min-w-0 max-w-full', className)}>
+          {children}
+        </span>
       </TooltipTrigger>
       <TooltipContent side={side} sideOffset={sideOffset} className={contentClassName}>
         {text}

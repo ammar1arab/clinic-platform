@@ -3,6 +3,11 @@ export { BilingualNameFields, optionalArabicName } from './bilingual-name-fields
 export { ContactLine, EmailLink, PhoneLink } from './contact-link';
 export { CountrySelect, countryLabel, type CountryCode } from './country-select';
 export { DatePicker } from './date-picker';
+export {
+  DirectorySortMenu,
+  DirectoryToolbar,
+  DIRECTORY_ACTION_CLASS,
+} from './directory-toolbar';
 export { EmptyState } from './empty-state';
 export { AvatarImage, EntityAvatar } from './entity-avatar';
 export { FormActions } from './form-actions';

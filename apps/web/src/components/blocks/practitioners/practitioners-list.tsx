@@ -10,6 +10,9 @@ import {
   TableRow,
   Switch,
   Badge,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from '@/components/ui';
 import {
   PreviewableAvatar,
@@ -65,22 +68,41 @@ function LanguageBadges({ codes }: { codes: string[] | null | undefined }) {
   const labels = languageLabelList(codes);
   if (!labels.length) return <span className="text-muted-foreground">—</span>;
   const shown = labels.slice(0, 2);
-  const extra = labels.length - shown.length;
+  const rest = labels.slice(2);
+
   return (
     <div className="flex min-w-0 items-center gap-1">
       {shown.map((label) => (
-        <SoftTip key={label} label={label}>
-          <Badge variant="outline" className="max-w-18 font-normal">
-            <span>{label}</span>
-          </Badge>
-        </SoftTip>
+        <Badge key={label} variant="outline" className="font-normal">
+          <span>{label}</span>
+        </Badge>
       ))}
-      {extra > 0 ? (
-        <SoftTip label={labels.join(', ')}>
-          <Badge variant="muted" className="font-normal">
-            +{extra}
-          </Badge>
-        </SoftTip>
+      {rest.length > 0 ? (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={`${rest.length} more languages: ${rest.join(', ')}`}
+              className="shrink-0 rounded-md px-1 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              onClick={(event) => event.stopPropagation()}
+            >
+              {rest.length} more
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            className="w-auto max-w-56 p-2"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex flex-wrap gap-1">
+              {rest.map((label) => (
+                <Badge key={label} variant="outline" className="font-normal">
+                  <span>{label}</span>
+                </Badge>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
       ) : null}
     </div>
   );
@@ -90,7 +112,7 @@ interface Props {
   pageItems: Practitioner[];
   isLoading: boolean;
   clinicId: string;
-  search: string;
+  hasActiveFilters?: boolean;
   page: number;
   pageCount: number;
   totalItems: number;
@@ -103,7 +125,7 @@ export function PractitionersList({
   pageItems,
   isLoading,
   clinicId,
-  search,
+  hasActiveFilters = false,
   page,
   pageCount,
   totalItems,
@@ -161,13 +183,13 @@ export function PractitionersList({
       <TableFrame>
         <EmptyState
           icon={IconPractitioner}
-          title={search ? 'No matches' : 'No practitioners'}
+          title={hasActiveFilters ? 'No matches' : 'No practitioners'}
           description={
-            search
-              ? 'Try a different name, email, or department.'
+            hasActiveFilters
+              ? 'Try a different name, email, department, or filter.'
               : 'Create a practitioner with department, services, and availability.'
           }
-          action={search ? undefined : emptyAction}
+          action={hasActiveFilters ? undefined : emptyAction}
         />
       </TableFrame>
     );
@@ -180,7 +202,7 @@ export function PractitionersList({
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[18%]">Practitioner</TableHead>
+                <TableHead className="w-[22%]">Practitioner</TableHead>
                 <TableHead className="w-[12%]">Phone</TableHead>
                 <TableHead className="w-[7%]">Age</TableHead>
                 <TableHead className="w-[12%]">Specialty</TableHead>
@@ -204,7 +226,7 @@ export function PractitionersList({
                   }}
                 >
                   <TableCell className="max-w-0 overflow-hidden">
-                    <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="flex min-w-0 items-start gap-2.5">
                       <PreviewableAvatar
                         src={p.imageUrl}
                         seed={p.id}
@@ -212,7 +234,7 @@ export function PractitionersList({
                         size="sm"
                       />
                       <div
-                        className="min-w-0"
+                        className="flex min-w-0 flex-1 flex-col"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <TruncatedText className="font-medium">
@@ -220,7 +242,7 @@ export function PractitionersList({
                         </TruncatedText>
                         <EmailLink
                           value={p.email}
-                          className="block text-xs text-muted-foreground"
+                          className="min-w-0 w-full text-xs text-muted-foreground"
                         />
                       </div>
                     </div>
@@ -240,7 +262,10 @@ export function PractitionersList({
                   <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden">
                     <CellBadge value={p.departmentName} variant="outline" />
                   </TableCell>
-                  <TableCell className="hidden xl:table-cell max-w-0 overflow-hidden">
+                  <TableCell
+                    className="hidden xl:table-cell max-w-0 overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <LanguageBadges codes={p.languages} />
                   </TableCell>
                   <TableCell className="text-muted-foreground">
@@ -309,22 +334,26 @@ export function PractitionersList({
               <PreviewableAvatar src={p.imageUrl} seed={p.id} alt={displayName(p)} />
               <div className="min-w-0 flex-1">
                 <TruncatedText className="font-medium">{displayName(p)}</TruncatedText>
+                <div className="mt-0.5 min-w-0" onClick={(e) => e.stopPropagation()}>
+                  <EmailLink
+                    value={p.email}
+                    className="min-w-0 w-full text-xs text-muted-foreground"
+                  />
+                </div>
                 {p.specialty ? (
                   <div className="mt-0.5">
                     <CellBadge value={p.specialty} />
                   </div>
                 ) : null}
-                <div
-                  className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <IconPhone className="size-3 shrink-0" />
-                  {p.phone ? (
+                {p.phone ? (
+                  <div
+                    className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <IconPhone className="size-3 shrink-0" />
                     <PhoneLink value={p.phone} className="min-w-0" />
-                  ) : (
-                    <EmailLink value={p.email} className="min-w-0" />
-                  )}
-                </div>
+                  </div>
+                ) : null}
               </div>
               <div
                 className="flex shrink-0 items-center gap-1"

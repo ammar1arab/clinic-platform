@@ -66,7 +66,7 @@ export function TopbarBlock() {
 
   return (
     <>
-      <header className="relative z-10 flex h-13 shrink-0 items-center justify-between border-b border-border/70 bg-background/80 px-3 shadow-[0_1px_0_0_color-mix(in_oklch,var(--brand)_12%,transparent)] backdrop-blur-md md:h-14 md:px-5">
+      <header className="relative z-10 flex h-app-header shrink-0 items-center justify-between border-b border-border/70 bg-background/80 px-3 pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_0_color-mix(in_oklch,var(--brand)_12%,transparent)] backdrop-blur-md md:px-5">
         <div className="flex min-w-0 items-center gap-2.5">
           <SoftTip label="Open menu">
             <button

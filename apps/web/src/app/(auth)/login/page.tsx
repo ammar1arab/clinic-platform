@@ -56,7 +56,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="grid h-screen place-items-center bg-muted/40 px-4">
+    <div className="grid h-dvh place-items-center bg-muted/40 px-4">
       <Card className="w-full max-w-sm" aura>
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">Clinic Platform</CardTitle>

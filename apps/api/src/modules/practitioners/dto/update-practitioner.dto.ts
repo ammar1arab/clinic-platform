@@ -13,7 +13,10 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 import { EmploymentType } from "@prisma/client";
-import { AvailabilitySlotDto, TimeOffEntryDto } from "./create-practitioner.dto";
+import {
+  AvailabilitySlotDto,
+  TimeOffEntryDto,
+} from "./create-practitioner.dto";
 
 export class UpdatePractitionerDto {
   @IsOptional()

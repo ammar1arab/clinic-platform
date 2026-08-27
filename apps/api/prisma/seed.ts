@@ -2,14 +2,10 @@ import "dotenv/config";
 import {
   PrismaClient,
   Prisma,
-  AppointmentStatus,
   type Department,
   type Room,
   type Service,
   type PaymentMethod,
-  type Patient,
-  type PatientPackage,
-  type Appointment,
   type ClinicUser,
 } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -21,6 +17,12 @@ import {
   buildJordanianPractitioners,
   type SeedPractitioner,
 } from "./jordan-practitioners";
+import {
+  buildBulkAppointments,
+  buildBulkEnrollments,
+  buildBulkPatients,
+  buildBulkReferrals,
+} from "./seed-bulk";
 
 const DEMO_PASSWORD = "Demo123!";
 
@@ -150,18 +152,28 @@ function practitionerWriteData(
 }
 
 async function ensureJordanianStaff(clinicId: string) {
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const roster = buildJordanianPractitioners();
-  const practitioners: ClinicUser[] = [];
-  for (const seed of roster) {
-    practitioners.push(
-      await upsertClinicUserByEmail(
-        clinicId,
-        seed.email,
-        passwordHash,
-        practitionerWriteData(seed),
-      ),
-    );
+  const existingPractitioners = await prisma.clinicUser.findMany({
+    where: { clinicId, role: "practitioner", isActive: true },
+  });
+
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  let practitioners: ClinicUser[];
+  if (existingPractitioners.length >= roster.length) {
+    practitioners = existingPractitioners.slice(0, roster.length);
+    console.log(`Reusing ${practitioners.length} existing practitioners`);
+  } else {
+    practitioners = [];
+    for (const seed of roster) {
+      practitioners.push(
+        await upsertClinicUserByEmail(
+          clinicId,
+          seed.email,
+          passwordHash,
+          practitionerWriteData(seed),
+        ),
+      );
+    }
   }
 
   const finance = await upsertClinicUserByEmail(
@@ -311,7 +323,10 @@ async function main() {
     include: { user: { select: { email: true } } },
   });
   const roomCursor = new Map<string, number>();
-  const doctorsByDept = new Map<string, typeof doctorUsers>();
+  const doctorsByDept = new Map<
+    string,
+    Array<{ id: string; userId: string }>
+  >();
   for (const doctor of doctorUsers) {
     const seed = rosterByEmail.get(doctor.user.email);
     const dept =
@@ -340,7 +355,7 @@ async function main() {
       });
     }
     const inDept = doctorsByDept.get(dept.id) ?? [];
-    inDept.push(doctor);
+    inDept.push({ id: doctor.id, userId: doctor.userId });
     doctorsByDept.set(dept.id, inDept);
   }
 
@@ -472,277 +487,49 @@ async function main() {
     }),
   ]);
 
-  const firstNames = [
-    "Ahmad",
-    "Layla",
-    "Yousef",
-    "Noor",
-    "Khaled",
-    "Maya",
-    "Tariq",
-    "Hala",
-    "Rami",
-    "Sara",
-    "Fadi",
-    "Dina",
-    "Zaid",
-    "Rana",
-    "Samir",
-    "Lina",
-    "Hasan",
-    "Farah",
-    "Basel",
-    "Nadia",
-    "Omar",
-    "Jana",
-    "Walid",
-    "Reem",
-    "Issa",
-    "Dana",
-  ];
-  const lastNames = [
-    "Al-Masri",
-    "Haddad",
-    "Nasser",
-    "Khoury",
-    "Saleh",
-    "Qasim",
-    "Farouq",
-    "Barakat",
-    "Awad",
-    "Hamdan",
-    "Zoubi",
-    "Taha",
-    "Jaber",
-    "Mansour",
-  ];
-  const genders = ["male", "female"];
-  const bloods = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
+  const patientRows = buildBulkPatients({
+    clinicId: clinic.id,
+    doctorIds: doctors.map((d) => d.id),
+    packageIds: packages.map((p) => p.id),
+    codeIds: codes.map((c) => c.id),
+  });
+  await prisma.patient.createMany({ data: patientRows });
 
-  const patients: Patient[] = [];
-  for (let i = 0; i < 52; i++) {
-    const fn = pick(firstNames, i);
-    const ln = pick(lastNames, i * 3);
-    const doctor = pick(doctors, i);
-    const usePkg = i % 3 === 0;
-    const useCode = i % 5 === 0;
-    const pkg = usePkg ? pick(packages, i) : null;
-    patients.push(
-      await prisma.patient.create({
-        data: {
-          clinicId: clinic.id,
-          firstNameEn: fn,
-          lastNameEn: ln,
-          firstNameAr: fn,
-          lastNameAr: ln,
-          nationalId: `99${String(100000000 + i).slice(0, 9)}`,
-          phone: `+96279${String(2000000 + i).padStart(7, "0")}`,
-          email: `${fn.toLowerCase()}.${ln.toLowerCase().replace(/[^a-z]/g, "")}${i}@demo.local`,
-          dob: new Date(1980 + (i % 30), i % 12, (i % 27) + 1),
-          gender: pick(genders, i),
-          bloodType: pick(bloods, i),
-          allergies: i % 4 === 0 ? "Penicillin" : i % 7 === 0 ? "Dust" : null,
-          emergencyContactName: `EC ${fn}`,
-          emergencyContactPhone: `+96278${String(3000000 + i).padStart(7, "0")}`,
-          address: `Amman — Street ${(i % 40) + 1}, Building ${(i % 12) + 1}`,
-          primaryDoctorId: doctor.id,
-          packageId: pkg?.id ?? null,
-          discountCodeId: useCode ? pick(codes, i).id : null,
-          isActive: i !== 50,
-        },
-      }),
-    );
-  }
+  const enrollmentRows = buildBulkEnrollments({
+    clinicId: clinic.id,
+    patients: patientRows,
+    packages,
+  });
+  await prisma.patientPackage.createMany({ data: enrollmentRows });
 
-  // Enrollments for patients with catalog packages + some extras
-  const enrollments: PatientPackage[] = [];
-  for (let i = 0; i < patients.length; i++) {
-    if (i % 3 !== 0) continue;
-    const patient = patients[i];
-    const pkg = packages[i % packages.length];
-    const isSession = pkg.sessionCount != null;
-    enrollments.push(
-      await prisma.patientPackage.create({
-        data: {
-          clinicId: clinic.id,
-          patientId: patient.id,
-          packageId: pkg.id,
-          sessionsTotal: isSession ? pkg.sessionCount : null,
-          creditTotal: isSession ? null : pkg.price,
-          notes: "Demo enrollment",
-        },
-      }),
-    );
-  }
+  const doctorRefs = doctorUsers.map((d) => ({ id: d.id, userId: d.userId }));
+  const appointmentRows = buildBulkAppointments({
+    clinicId: clinic.id,
+    patients: patientRows,
+    services,
+    doctors: doctorRefs,
+    doctorsByDept,
+    rooms,
+    departments,
+    enrollments: enrollmentRows,
+    packages,
+    payMethods,
+    codes,
+    payerId: payer.id,
+    daysFromNow,
+    now,
+  });
+  await prisma.appointment.createMany({ data: appointmentRows });
 
-  const statuses: AppointmentStatus[] = [
-    "unconfirmed",
-    "confirmed",
-    "checked_in",
-    "waiting",
-    "in_progress",
-    "completed",
-    "no_show",
-    "cancelled",
-  ];
+  const referralRows = buildBulkReferrals({
+    clinicId: clinic.id,
+    appointments: appointmentRows,
+    doctorIds: doctors.map((d) => d.id),
+  });
+  await prisma.referral.createMany({ data: referralRows });
 
-  let apptCount = 0;
-  const appointments: Appointment[] = [];
-
-  for (let day = -7; day <= 14; day++) {
-    const perDay = day === 0 ? 18 : day > 0 ? 8 : 10;
-    for (let slot = 0; slot < perDay; slot++) {
-      const patient = pick(patients, apptCount);
-      const service = pick(services, apptCount);
-      const deptId =
-        service.departmentId ?? departments.find((d) => d.isActive)?.id;
-      if (!deptId) throw new Error("No department for appointment");
-      const deptDoctors = doctorsByDept.get(deptId);
-      const doctor = pick(
-        deptDoctors?.length ? deptDoctors : doctors,
-        apptCount + slot,
-      );
-      const roomCandidates = rooms.filter((r) => r.departmentId === deptId);
-      const online =
-        service.supportedModes.includes("online") && slot % 5 === 0;
-      const hour = 8 + (slot % 10);
-      const minute = slot % 2 === 0 ? 0 : 30;
-      const scheduledAt = daysFromNow(day, hour, minute);
-      const status = pick(statuses, apptCount + day + 3);
-      const isTerminalMiss = status === "cancelled" || status === "no_show";
-      const enrollment =
-        enrollments.find((e) => e.patientId === patient.id) ?? null;
-
-      const fee = Number(service.fee);
-      let discount: number | null = null;
-      let discountType: "fixed" | "percentage" | null = null;
-      let discountReason: string | null = null;
-      let discountCodeId: string | null = null;
-      if (apptCount % 6 === 0) {
-        discount = 10;
-        discountType = "percentage";
-        discountReason = "Demo loyalty";
-      } else if (apptCount % 9 === 0) {
-        discount = 5;
-        discountType = "fixed";
-        discountReason = "Code: FLAT5";
-        discountCodeId = codes[1].id;
-      }
-
-      const payable =
-        discountType === "percentage"
-          ? Math.max(fee - (fee * (discount ?? 0)) / 100, 0)
-          : Math.max(fee - (discount ?? 0), 0);
-
-      let waitingStartedAt: Date | null = null;
-      let inProgressAt: Date | null = null;
-      let waitingMins: number | null = null;
-      if (status === "waiting" || status === "checked_in") {
-        waitingStartedAt = scheduledAt;
-      }
-      if (status === "in_progress" || status === "completed") {
-        waitingStartedAt = scheduledAt;
-        inProgressAt = new Date(
-          scheduledAt.getTime() + (15 + (apptCount % 40)) * 60_000,
-        );
-        waitingMins = Math.max(
-          0,
-          Math.floor(
-            (inProgressAt.getTime() - waitingStartedAt.getTime()) / 60_000,
-          ),
-        );
-      }
-
-      const activeEnrollment =
-        enrollment &&
-        (status === "completed" || status === "in_progress") &&
-        apptCount % 4 === 0
-          ? enrollment
-          : null;
-      const usePackage = activeEnrollment != null;
-      const isPaid =
-        usePackage ||
-        status === "completed" ||
-        (status === "in_progress" && apptCount % 2 === 0);
-      const recordPayment = isPaid && !isTerminalMiss;
-
-      const isSessionEnrollment = activeEnrollment?.sessionsTotal != null;
-
-      appointments.push(
-        await prisma.appointment.create({
-          data: {
-            clinicId: clinic.id,
-            patientId: patient.id,
-            doctorId: doctor.id,
-            departmentId: deptId,
-            roomId: online
-              ? null
-              : pick(roomCandidates.length ? roomCandidates : rooms, slot).id,
-            serviceId: service.id,
-            scheduledAt,
-            durationMins: service.durationMins,
-            sessionType: online ? "online" : "in_person",
-            meetingUrl: online ? "https://meet.example.com/demo-room" : null,
-            status,
-            statusUpdatedAt: now,
-            statusUpdatedBy: doctor.userId,
-            waitingStartedAt,
-            inProgressAt,
-            waitingMins,
-            cancelReason:
-              status === "cancelled" ? "Patient requested reschedule" : null,
-            notes: apptCount % 7 === 0 ? "Demo clinical note" : null,
-            fee: new Prisma.Decimal(fee),
-            discount: discount != null ? new Prisma.Decimal(discount) : null,
-            discountType,
-            discountReason,
-            discountCodeId,
-            isPaid: recordPayment,
-            paidAt: recordPayment ? (inProgressAt ?? now) : null,
-            paidById: recordPayment ? payer.id : null,
-            paymentMethodId:
-              recordPayment && !usePackage
-                ? pick(payMethods, apptCount).id
-                : null,
-            paymentMethod: activeEnrollment
-              ? `Package: ${packages.find((p) => p.id === activeEnrollment.packageId)?.name ?? "Demo"}`
-              : null,
-            patientPackageId: activeEnrollment?.id ?? null,
-            packageCredit:
-              activeEnrollment && !isSessionEnrollment
-                ? new Prisma.Decimal(payable)
-                : null,
-          },
-        }),
-      );
-      apptCount++;
-    }
-  }
-
-  // Referrals
-  let referralCount = 0;
-  for (let i = 0; i < 18; i++) {
-    const appt = appointments[i * 7];
-    if (!appt) continue;
-    const from = pick(doctors, i);
-    const to = pick(doctors, i + 1);
-    if (from.id === to.id) continue;
-    await prisma.referral.create({
-      data: {
-        clinicId: clinic.id,
-        appointmentId: appt.id,
-        fromDoctorId: from.id,
-        toDoctorId: to.id,
-        type: i % 2 === 0 ? "referral" : "consultation",
-        urgency: pick(["normal", "high", "urgent"] as const, i),
-        reason: "Demo referral for specialist review",
-        opinion: i % 3 === 0 ? "Agree with plan" : null,
-        status: pick(["pending", "accepted", "rejected"] as const, i),
-      },
-    });
-    referralCount++;
-  }
-
+  const availabilityRows: Prisma.DoctorAvailabilityUncheckedCreateInput[] = [];
+  const timeOffRows: Prisma.DoctorTimeOffUncheckedCreateInput[] = [];
   for (const doctor of doctorUsers) {
     const seed = rosterByEmail.get(doctor.user.email);
     const slots = seed?.availabilities ?? [
@@ -753,54 +540,53 @@ async function main() {
       { dayOfWeek: 4, startTime: "09:00", endTime: "17:00" },
     ];
     for (const slot of slots) {
-      await prisma.doctorAvailability.create({
-        data: {
-          doctorId: doctor.id,
-          dayOfWeek: slot.dayOfWeek,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-          isActive: true,
-        },
+      availabilityRows.push({
+        doctorId: doctor.id,
+        dayOfWeek: slot.dayOfWeek,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        isActive: true,
       });
     }
     const offs = seed?.timeOffs ?? [];
     for (const off of offs) {
-      await prisma.doctorTimeOff.create({
-        data: {
-          doctorId: doctor.id,
-          startDate: daysFromNow(off.startOffset, 0, 0),
-          endDate: daysFromNow(off.endOffset, 23, 59),
-          reason: off.reason,
-        },
+      timeOffRows.push({
+        doctorId: doctor.id,
+        startDate: daysFromNow(off.startOffset, 0, 0),
+        endDate: daysFromNow(off.endOffset, 23, 59),
+        reason: off.reason,
       });
     }
   }
+  await prisma.doctorAvailability.createMany({ data: availabilityRows });
+  if (timeOffRows.length) {
+    await prisma.doctorTimeOff.createMany({ data: timeOffRows });
+  }
 
-  // Notifications
+  const notificationRows: Prisma.NotificationUncheckedCreateInput[] = [];
   let notifCount = 0;
   for (const user of staff.slice(0, 4)) {
     for (let i = 0; i < 6; i++) {
-      await prisma.notification.create({
-        data: {
-          clinicId: clinic.id,
-          userId: user.id,
-          type: pick(["appointment", "referral", "system"] as const, i),
-          title: pick(
-            [
-              "New appointment booked",
-              "Referral awaiting response",
-              "Patient checked in",
-              "Package almost empty",
-            ],
-            i + notifCount,
-          ),
-          body: "Demo notification for UI coverage",
-          readAt: i % 2 === 0 ? now : null,
-        },
+      notificationRows.push({
+        clinicId: clinic.id,
+        userId: user.id,
+        type: pick(["appointment", "referral", "system"] as const, i),
+        title: pick(
+          [
+            "New appointment booked",
+            "Referral awaiting response",
+            "Patient checked in",
+            "Package almost empty",
+          ],
+          i + notifCount,
+        ),
+        body: "Demo notification for UI coverage",
+        readAt: i % 2 === 0 ? now : null,
       });
       notifCount++;
     }
   }
+  await prisma.notification.createMany({ data: notificationRows });
 
   console.log("--- Seed complete ---");
   console.log(`Departments: ${departments.length}`);
@@ -809,10 +595,10 @@ async function main() {
   console.log(`Payment methods: ${payMethods.length}`);
   console.log(`Packages: ${packages.length}`);
   console.log(`Promocodes: ${codes.length}`);
-  console.log(`Patients: ${patients.length}`);
-  console.log(`Enrollments: ${enrollments.length}`);
-  console.log(`Appointments: ${appointments.length}`);
-  console.log(`Referrals: ${referralCount}`);
+  console.log(`Patients: ${patientRows.length}`);
+  console.log(`Enrollments: ${enrollmentRows.length}`);
+  console.log(`Appointments: ${appointmentRows.length}`);
+  console.log(`Referrals: ${referralRows.length}`);
   console.log(`Notifications: ${notifCount}`);
   console.log(`Practitioners: ${doctors.length}`);
   console.log(`Demo staff password: ${DEMO_PASSWORD}`);

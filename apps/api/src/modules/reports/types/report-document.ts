@@ -7,7 +7,6 @@ export interface ReportColumn {
   header: string;
 }
 
-/** Normalized document every exporter understands. */
 export interface ReportDocument {
   type: ReportType;
   title: string;
@@ -20,7 +19,7 @@ export interface ReportDocument {
     logoUrl?: string | null;
     footer?: string | null;
   };
-  /** Key/value summary block (patient profile, period meta, etc.). */
+
   summary?: Array<{ label: string; value: string }>;
   columns: ReportColumn[];
   rows: Array<Record<string, string | number | null>>;

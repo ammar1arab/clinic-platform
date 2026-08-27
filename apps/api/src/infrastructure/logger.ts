@@ -11,9 +11,7 @@ export type LogMetaValue =
   | { [key: string]: LogMetaValue | undefined };
 
 export type LogMeta =
-  | string
-  | Error
-  | { [key: string]: LogMetaValue | undefined };
+  string | Error | { [key: string]: LogMetaValue | undefined };
 
 export interface Logger {
   debug(scope: string, action: string, meta?: LogMeta): void;

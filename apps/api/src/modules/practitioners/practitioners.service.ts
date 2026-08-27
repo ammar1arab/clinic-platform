@@ -6,7 +6,12 @@ import {
 } from "@nestjs/common";
 import { randomBytes } from "crypto";
 import * as bcrypt from "bcrypt";
-import { EmailService, createLogger, defaultAvatarUrl, persistableImageUrl } from "@/infrastructure";
+import {
+  EmailService,
+  createLogger,
+  defaultAvatarUrl,
+  persistableImageUrl,
+} from "@/infrastructure";
 import { PractitionersRepository } from "./practitioners.repository";
 import {
   AssignServicesDto,
@@ -45,8 +50,7 @@ export class PractitionersService {
       dto: {
         ...dto,
         email,
-        imageUrl:
-          persistableImageUrl(dto.imageUrl) || defaultAvatarUrl(email),
+        imageUrl: persistableImageUrl(dto.imageUrl) || defaultAvatarUrl(email),
       },
       passwordHash: await bcrypt.hash(temporaryPassword, 10),
       initials: initialsFromName(dto.name),
@@ -133,9 +137,7 @@ export class PractitionersService {
             : { disconnect: true },
       employmentType: dto.employmentType,
       commissionPercent:
-        dto.commissionPercent === undefined
-          ? undefined
-          : dto.commissionPercent,
+        dto.commissionPercent === undefined ? undefined : dto.commissionPercent,
       bufferMins: dto.bufferMins,
     });
     return mapPractitioner(row);

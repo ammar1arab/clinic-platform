@@ -146,14 +146,18 @@ export class PdfExporter implements ReportExporter {
 
     const fractions = proportionalWidths(doc);
     const colWidths = fractions.map((f) => f * pageWidth);
-    const fontSize = doc.columns.length >= 8 ? 6.5 : doc.columns.length >= 6 ? 7 : 8;
+    const fontSize =
+      doc.columns.length >= 8 ? 6.5 : doc.columns.length >= 6 ? 7 : 8;
     const rowPad = 3;
 
     const drawHeader = () => {
       let x = pdf.page.margins.left;
       const headerH = 18;
       pdf.rect(x, y, pageWidth, headerH).fill(REPORT_THEME.headerBg);
-      pdf.fillColor(REPORT_THEME.headerFg).font("Helvetica-Bold").fontSize(fontSize);
+      pdf
+        .fillColor(REPORT_THEME.headerFg)
+        .font("Helvetica-Bold")
+        .fontSize(fontSize);
       doc.columns.forEach((col, i) => {
         pdf.text(col.header, x + rowPad, y + 5, {
           width: colWidths[i] - rowPad * 2,

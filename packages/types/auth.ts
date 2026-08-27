@@ -36,7 +36,7 @@ export interface UpdateClinicInput {
   timezone?: string;
 }
 
-/** Logged-in session payload from GET /auth/me */
+
 export interface AuthMe {
   userId: string;
   clinicUserId: string;
@@ -50,7 +50,7 @@ export interface AuthTokenResponse {
   accessToken: string;
 }
 
-/** Clinic staff row (ClinicUser) for pickers / staff lists */
+
 export interface ClinicStaffMember {
   id: string;
   name: string;

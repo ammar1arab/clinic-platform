@@ -25,13 +25,13 @@ export interface Appointment {
   discountReason: string | null;
   isPaid: boolean;
   paidAt: string | null;
-  /** @deprecated Prefer paymentMethodRef.name */
+
   paymentMethod: string | null;
   paymentMethodId: string | null;
   paymentMethodRef?: { id: string; name: string } | null;
-  /** Set when the visit was settled from a package instead of a payment method. */
+
   patientPackageId: string | null;
-  /** Credit drawn from a credit-based package; null when a session was consumed. */
+
   packageCredit: string | null;
   meetingUrl: string | null;
   createdAt?: string;

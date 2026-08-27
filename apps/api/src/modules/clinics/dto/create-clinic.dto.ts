@@ -59,7 +59,6 @@ export class CreateClinicDto {
   @IsString()
   defaultDepartmentId?: string;
 
-  /** IANA timezone e.g. Asia/Riyadh */
   @IsOptional()
   @IsString()
   timezone?: string;

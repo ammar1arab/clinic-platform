@@ -21,7 +21,7 @@ export interface PatientDiscountCodeSummary {
   isActive: boolean;
 }
 
-/** Editable clinical/contact fields shared by list + detail. */
+
 export interface PatientProfileFields {
   firstNameAr: string | null;
   lastNameAr: string | null;

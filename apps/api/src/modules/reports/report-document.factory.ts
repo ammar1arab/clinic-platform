@@ -88,7 +88,6 @@ function toNumber(
   return Number(value) || 0;
 }
 
-/** Mirrors web computePayable for report totals. */
 function computePayable(
   fee: { toString(): string } | number | null | undefined,
   discount: { toString(): string } | number | null | undefined,
@@ -114,7 +113,6 @@ function formatMoney(n: number): string {
   return n.toFixed(3);
 }
 
-/** Builds normalized ReportDocument — no I/O, no format knowledge. */
 export class ReportDocumentFactory {
   buildPatientMedical(input: PatientMedicalInput): ReportDocument {
     const { clinic, patient, appointments } = input;

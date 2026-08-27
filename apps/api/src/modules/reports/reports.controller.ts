@@ -27,10 +27,6 @@ import {
 export class ReportsController {
   constructor(private reportsService: ReportsService) {}
 
-  /**
-   * Patient medical report — visit history + profile.
-   * Formats: pdf | xlsx | csv | docx
-   */
   @Get("patients/:patientId")
   @ApiProduces(
     "application/pdf",
@@ -60,10 +56,6 @@ export class ReportsController {
     return new StreamableFile(exported.buffer);
   }
 
-  /**
-   * Referrals & consultations report (no payment data).
-   * Formats: pdf | xlsx | csv | docx
-   */
   @Get("referrals")
   @ApiProduces(
     "application/pdf",
@@ -99,10 +91,6 @@ export class ReportsController {
     return new StreamableFile(exported.buffer);
   }
 
-  /**
-   * Monthly finance report — revenue, unpaid, by method / doctor.
-   * Formats: pdf | xlsx | csv | docx
-   */
   @Get("finance")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin, Role.financial)

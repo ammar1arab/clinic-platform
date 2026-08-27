@@ -85,6 +85,10 @@ export function AppointmentCalendar({
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const appt = readCalendarAppointment(arg.event.extendedProps);
     if (!appt) return;
+    if (arg.el.closest('.fc-popover')) {
+      arg.jsEvent.preventDefault();
+      arg.jsEvent.stopPropagation();
+    }
     const target = arg.jsEvent.target;
     const fromEvent = target instanceof Element ? target.closest('.fc-event') : null;
     const el = arg.el ?? fromEvent;

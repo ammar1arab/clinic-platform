@@ -373,7 +373,7 @@ export function DoctorTimeline({
         'flex flex-col overflow-hidden border bg-card shadow-xs',
         focused
           ? 'h-full min-h-0 rounded-none border-0'
-          : 'card-aura rounded-2xl',
+          : 'card-aura min-h-0 flex-1 rounded-2xl',
       )}
     >
 

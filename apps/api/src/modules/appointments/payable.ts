@@ -1,10 +1,5 @@
 type Money = { toString(): string } | number | string | null | undefined;
 
-/**
- * What a visit actually costs after its discount — the server-side mirror of
- * `computePayable` in the web app. Shared by billing summaries and package redemption
- * so "how much does this session cost" has exactly one answer.
- */
 export function computePayable(
   fee: Money,
   discount: Money,

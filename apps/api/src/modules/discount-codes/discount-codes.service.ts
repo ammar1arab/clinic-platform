@@ -58,7 +58,6 @@ export class DiscountCodesService {
     return this.discountCodesRepository.hardDelete(id);
   }
 
-  /** Validate a code for checkout / appointment discount application. */
   async validate(dto: ValidateDiscountCodeDto) {
     const row = await this.discountCodesRepository.findByCode(
       dto.clinicId,
@@ -76,9 +75,7 @@ export class DiscountCodesService {
       throw new BadRequestException("Promocode has expired");
     }
     if (row.maxUses != null && row.usedCount >= row.maxUses) {
-      throw new BadRequestException(
-        "Promocode has reached its usage limit",
-      );
+      throw new BadRequestException("Promocode has reached its usage limit");
     }
 
     return {

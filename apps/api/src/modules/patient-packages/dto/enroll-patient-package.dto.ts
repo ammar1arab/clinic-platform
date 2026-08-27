@@ -7,13 +7,11 @@ export class EnrollPatientPackageDto {
   @IsString()
   packageId: string;
 
-  /** Overrides the catalog session count for this purchase. */
   @IsOptional()
   @IsInt()
   @Min(1)
   sessionsTotal?: number | null;
 
-  /** Overrides the catalog credit amount for this purchase. */
   @IsOptional()
   @IsNumber()
   @Min(0)

@@ -4,9 +4,6 @@ import { ExportedReport, ReportExporter } from "./report-exporter";
 import { escapeXml, formatDisplayDate } from "../utils/report-format";
 import { REPORT_THEME, letterheadLines } from "../utils/report-theme";
 
-/**
- * SpreadsheetML (.xls) — opens in Excel / LibreOffice without native deps.
- */
 @Injectable()
 export class ExcelExporter implements ReportExporter {
   readonly format = "xlsx" as const;

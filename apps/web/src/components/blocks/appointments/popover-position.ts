@@ -42,7 +42,7 @@ export function rectFromElement(
   };
 }
 
-/** Prefer the clicked event rect; clamp oversized timeline blocks to a compact anchor. */
+
 export function clickAnchor(
   clickX: number,
   clickY: number,

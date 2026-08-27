@@ -4,9 +4,13 @@ import * as React from "react"
 import { Popover as PopoverPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { OVERLAY_POP_CLASS, overlayPointerProps } from "@/lib/overlay"
 
-function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
-  return <PopoverPrimitive.Root data-slot="popover" {...props} />
+function Popover({
+  modal = false,
+  ...props
+}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
+  return <PopoverPrimitive.Root data-slot="popover" modal={modal} {...props} />
 }
 
 function PopoverTrigger({
@@ -19,23 +23,29 @@ function PopoverContent({
   className,
   align = "start",
   side = "bottom",
-  sideOffset = 4,
+  sideOffset = 6,
   avoidCollisions = false,
+  onPointerDownOutside,
+  onInteractOutside,
+  ref,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
+        ref={ref}
         data-slot="popover-content"
         align={align}
         side={side}
         sideOffset={sideOffset}
         avoidCollisions={avoidCollisions}
         className={cn(
-          "z-100 w-[min(100vw-1.5rem,18rem)] max-w-[calc(100vw-1.5rem)] origin-(--radix-popover-content-transform-origin) overflow-x-hidden rounded-xl bg-popover p-4 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-none duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          OVERLAY_POP_CLASS,
+          "z-100 w-[min(100vw-1.5rem,18rem)] max-w-[calc(100vw-1.5rem)] p-4 text-sm",
           className,
         )}
         {...props}
+        {...overlayPointerProps({ onPointerDownOutside, onInteractOutside })}
       />
     </PopoverPrimitive.Portal>
   )

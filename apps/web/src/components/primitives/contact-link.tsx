@@ -52,9 +52,13 @@ export function EmailLink({
   const label = formatEmailDisplay(value);
   const href = emailHref(value);
   if (!label) return <span className={className}>{empty}</span>;
-  if (!href) return <span className={cn('truncate', className)}>{label}</span>;
+  if (!href) {
+    return (
+      <span className={cn('block min-w-0 truncate', className)}>{label}</span>
+    );
+  }
   return (
-    <SoftTip label={label}>
+    <SoftTip label={label} className="flex min-w-0 max-w-full">
       <a
         href={href}
         className={cn(linkClass, className)}

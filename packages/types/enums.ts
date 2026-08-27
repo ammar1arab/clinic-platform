@@ -1,4 +1,4 @@
-/** Shared enums - single source for web + api HTTP contracts. */
+
 
 export type Role = 'owner' | 'admin' | 'practitioner' | 'financial';
 

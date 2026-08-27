@@ -114,7 +114,7 @@ export class AppointmentsRepository {
       where: { id, clinicId },
       data: {
         ...data,
-        // Clear legacy string; name comes from paymentMethodRef
+
         paymentMethod: null,
       },
       include: {

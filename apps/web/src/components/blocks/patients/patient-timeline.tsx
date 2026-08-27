@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui';
@@ -28,6 +28,8 @@ import {
   IconTime,
   IconVisit,
 } from '@/constants/icons';
+
+const TIMELINE_PREVIEW = 12;
 
 type TimelineKind = 'visit' | 'referral' | 'payment';
 
@@ -154,10 +156,14 @@ interface Props {
 }
 
 export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
+  const [expanded, setExpanded] = useState(false);
   const items = useMemo(
     () => buildTimeline(appointments, referrals),
     [appointments, referrals],
   );
+  const hiddenCount = Math.max(0, items.length - TIMELINE_PREVIEW);
+  const visibleItems =
+    expanded || hiddenCount === 0 ? items : items.slice(0, TIMELINE_PREVIEW);
 
   const visitCount = appointments.length;
 
@@ -174,8 +180,9 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
           className="py-8"
         />
       ) : (
-        <ol className="space-y-2">
-          {items.map((item) => {
+        <>
+          <ol className="space-y-2">
+            {visibleItems.map((item) => {
             const meta = KIND_META[item.kind];
             const Icon = meta.icon;
             const isUnpaid = item.kind === 'payment' && item.status === 'unpaid';
@@ -266,7 +273,19 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
               </li>
             );
           })}
-        </ol>
+          </ol>
+          {hiddenCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-3 w-full rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            >
+              {expanded
+                ? 'Show less activity'
+                : `Show ${hiddenCount} more item${hiddenCount === 1 ? '' : 's'}`}
+            </button>
+          ) : null}
+        </>
       )}
     </ProfileSection>
   );
