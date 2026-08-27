@@ -222,7 +222,7 @@ export function ScheduleToolbar({
             }))}
             value={departmentId || FORM_ALL}
             onChange={(next) => onDepartmentChange(next === FORM_ALL ? '' : next)}
-            extraOption={{ value: FORM_ALL, label: 'All departments' }}
+            extraOption={{ value: FORM_ALL, label: 'Departments' }}
             placeholder="Department"
             searchPlaceholder="Search departments…"
             className="h-9 min-w-0 flex-1 bg-background/50 sm:w-52 sm:flex-none"
