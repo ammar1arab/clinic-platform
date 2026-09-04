@@ -742,7 +742,7 @@ export const ar: Translations = {
     quickActions: 'إجراءات سريعة',
     newAppointment: 'موعد جديد',
     newPatient: 'مريض جديد',
-    todaysAppointments: 'مواعيد اليوم',
+    todaysAppointments: 'المواعيد',
     avgWait: 'متوسط الانتظار',
     rooms: 'الغرف',
     waiting: 'قيد الانتظار',

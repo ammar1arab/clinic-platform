@@ -747,7 +747,7 @@ export const en = {
     quickActions: 'Quick Actions',
     newAppointment: 'New Appointment',
     newPatient: 'New Patient',
-    todaysAppointments: "Today's Appointments",
+    todaysAppointments: "Appointments",
     avgWait: 'Avg Wait',
     rooms: 'Rooms',
     waiting: 'Waiting',
