@@ -25,17 +25,19 @@ export function SoftTip({
 }) {
   const text = label?.trim();
   if (!text) return children;
+
   const trigger = isValidElement(children)
-    ? cloneElement(children as ReactElement<{ title?: string }>, { title: undefined })
-    : children;
+    ? cloneElement(children as ReactElement<{ title?: string; className?: string }>, {
+        title: undefined,
+        className: cn((children.props as { className?: string }).className, className),
+      })
+    : (
+        <span className={className}>{children}</span>
+      );
 
   return (
     <Tooltip delayDuration={220} disableHoverableContent>
-      <TooltipTrigger asChild>
-        <span className={cn('inline-flex min-w-0 max-w-full', className)}>
-          {trigger}
-        </span>
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{trigger}</TooltipTrigger>
       <TooltipContent side={side} sideOffset={sideOffset} className={contentClassName}>
         {text}
       </TooltipContent>

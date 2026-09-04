@@ -367,7 +367,7 @@ export function buildBulkAppointments(params: {
   let apptCount = 0;
 
   for (let day = -7; day <= 7; day++) {
-    const perDay = 2;
+    const perDay = day === 0 ? 18 : 3;
     for (let slot = 0; slot < perDay; slot++) {
       const patient = pick(params.patients, apptCount);
       const service = pick(params.services, apptCount);

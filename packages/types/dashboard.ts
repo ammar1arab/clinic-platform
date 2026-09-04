@@ -12,6 +12,9 @@ export interface RoomUtilization {
   roomId: string;
   roomName: string;
   roomNameAr?: string | null;
+  departmentId: string | null;
+  departmentName: string | null;
+  departmentNameAr?: string | null;
   bookedMinutes: number;
   workingMinutes: number;
   utilisationPercent: number;

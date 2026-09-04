@@ -345,7 +345,86 @@ th, td {
   .overlay-pop-tip {
     --overlay-duration: 160ms;
     --overlay-from: 4px;
-    --overlay-scale-from: 1;
+    --overlay-scale-from: 0.96;
+  }
+
+  .tip-cursor-cluster {
+    display: inline-flex;
+    max-width: min(16rem, calc(100vw - 2rem));
+    pointer-events: none;
+  }
+
+  .tip-cursor {
+    width: 0.9rem;
+    height: 0.9rem;
+    flex-shrink: 0;
+    fill: var(--color-primary);
+    filter: drop-shadow(
+      0 1px 1px color-mix(in oklch, var(--color-foreground) 16%, transparent)
+    );
+  }
+
+  .tip-cursor-label {
+    border-radius: 0.375rem;
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+    padding: 0.15rem 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.3;
+    box-shadow: 0 8px 18px -10px color-mix(in oklch, var(--color-primary) 70%, transparent);
+  }
+
+  .overlay-pop-tip[data-side='right'] .tip-cursor-cluster {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .overlay-pop-tip[data-side='right'] .tip-cursor {
+    transform: rotate(-90deg);
+  }
+
+  .overlay-pop-tip[data-side='right'] .tip-cursor-label {
+    margin-inline-start: -0.12rem;
+    margin-block-start: 0.7rem;
+  }
+
+  .overlay-pop-tip[data-side='left'] .tip-cursor-cluster {
+    flex-direction: row-reverse;
+    align-items: flex-start;
+  }
+
+  .overlay-pop-tip[data-side='left'] .tip-cursor {
+    transform: rotate(90deg);
+  }
+
+  .overlay-pop-tip[data-side='left'] .tip-cursor-label {
+    margin-inline-end: -0.12rem;
+    margin-block-start: 0.7rem;
+  }
+
+  .overlay-pop-tip[data-side='bottom'] .tip-cursor-cluster {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .overlay-pop-tip[data-side='bottom'] .tip-cursor-label {
+    margin-inline-start: 0.7rem;
+    margin-block-start: -0.12rem;
+  }
+
+  .overlay-pop-tip[data-side='top'] .tip-cursor-cluster {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+  .overlay-pop-tip[data-side='top'] .tip-cursor {
+    transform: rotate(180deg);
+  }
+
+  .overlay-pop-tip[data-side='top'] .tip-cursor-label {
+    margin-inline-start: 0.7rem;
+    margin-block-end: -0.12rem;
   }
 
   @keyframes overlay-in {

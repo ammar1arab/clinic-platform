@@ -31,6 +31,8 @@ export class DashboardRepository {
   findActiveRooms(clinicId: string) {
     return this.prisma.room.findMany({
       where: { clinicId, isActive: true },
+      include: { department: true },
+      orderBy: { name: "asc" },
     });
   }
 

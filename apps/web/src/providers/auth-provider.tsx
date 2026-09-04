@@ -5,6 +5,7 @@ import { authService, MeResponse } from '@/services/auth.service';
 import { getToken, setToken, clearToken, subscribeToToken, getServerTokenSnapshot } from '@/lib/auth-token';
 import { createLogger } from '@/lib/logger';
 import { useFetchData } from '@/hooks/query/use-fetch-data';
+import { useMounted } from '@/hooks/shared/use-mounted';
 import { useQueryClient } from '@tanstack/react-query';
 
 const log = createLogger('auth');
@@ -16,11 +17,13 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isHydrated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const isHydrated = useMounted();
   const token = useSyncExternalStore(subscribeToToken, getToken, getServerTokenSnapshot);
   const queryClient = useQueryClient();
 
@@ -28,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     queryKey: ['auth', 'me', token],
     request: () => authService.getMe(),
     options: {
-      enabled: !!token,
+      enabled: isHydrated && !!token,
       staleTime: 300_000,
     },
   });
@@ -52,7 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     isAuthenticated: !!token && !!user,
     isLoading: !!token && isLoading,
-  }), [user, token, login, logout, isLoading]);
+    isHydrated,
+  }), [user, token, login, logout, isLoading, isHydrated]);
 
   return (
     <AuthContext.Provider value={value}>

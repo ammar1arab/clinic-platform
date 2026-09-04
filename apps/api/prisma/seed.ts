@@ -6,7 +6,6 @@ import {
   type Room,
   type Service,
   type PaymentMethod,
-  type ClinicUser,
 } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
@@ -153,28 +152,17 @@ function practitionerWriteData(
 
 async function ensureJordanianStaff(clinicId: string) {
   const roster = buildJordanianPractitioners();
-  const existingPractitioners = await prisma.clinicUser.findMany({
-    where: { clinicId, role: "practitioner", isActive: true },
-  });
-
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
-  let practitioners: ClinicUser[];
-  if (existingPractitioners.length >= roster.length) {
-    practitioners = existingPractitioners.slice(0, roster.length);
-    console.log(`Reusing ${practitioners.length} existing practitioners`);
-  } else {
-    practitioners = [];
-    for (const seed of roster) {
-      practitioners.push(
-        await upsertClinicUserByEmail(
-          clinicId,
-          seed.email,
-          passwordHash,
-          practitionerWriteData(seed),
-        ),
-      );
-    }
-  }
+  const practitioners = await Promise.all(
+    roster.map((seed) =>
+      upsertClinicUserByEmail(
+        clinicId,
+        seed.email,
+        passwordHash,
+        practitionerWriteData(seed),
+      ),
+    ),
+  );
 
   const finance = await upsertClinicUserByEmail(
     clinicId,

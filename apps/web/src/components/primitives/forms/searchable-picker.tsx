@@ -16,6 +16,7 @@ import { IconCheck, IconChevronsUpDown } from '@/constants/icons';
 export type PickerOption = {
   value: string;
   label: string;
+  end?: ReactNode;
 };
 
 export function PickerSearch({
@@ -145,9 +146,12 @@ export function SearchablePicker({
                 <span className="min-w-0 flex-1 break-words whitespace-normal">
                   {option.label}
                 </span>
-                {option.value === value ? (
-                  <IconCheck className="size-4 shrink-0 text-primary" />
-                ) : null}
+                <span className="flex shrink-0 items-center gap-1.5">
+                  {option.end}
+                  {option.value === value ? (
+                    <IconCheck className="size-4 shrink-0 text-primary" />
+                  ) : null}
+                </span>
               </button>
             ))
           )}

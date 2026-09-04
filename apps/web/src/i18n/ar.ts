@@ -778,6 +778,7 @@ export const ar: Translations = {
     todaySchedule: 'جدول اليوم',
     roomUtilization: 'إشغال الغرف',
     roomUtilizationToday: 'إشغال الغرف اليوم',
+    unassignedDepartment: 'غير معيّن',
     quickActions: 'إجراءات سريعة',
     newAppointment: 'موعد جديد',
     newPatient: 'مريض جديد',

@@ -784,6 +784,7 @@ export const en = {
     todaySchedule: "Today's Schedule",
     roomUtilization: 'Room Utilization',
     roomUtilizationToday: 'Room Utilization Today',
+    unassignedDepartment: 'Unassigned',
     quickActions: 'Quick Actions',
     newAppointment: 'New Appointment',
     newPatient: 'New Patient',

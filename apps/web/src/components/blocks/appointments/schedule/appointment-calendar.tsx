@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, type MouseEvent } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -21,8 +21,10 @@ import { patientDisplayName } from '../shared/appointment-display';
 import { CalendarEventChip, readCalendarAppointment } from './calendar-event-chip';
 import {
   AppointmentPopover,
+  DayAppointmentsPopover,
   popoverAnchorFromElement,
   type AppointmentPopoverState,
+  type DayAppointmentsPopoverState,
 } from './appointment-popovers';
 import { FC_TO_VIEW, ScheduleView, VIEW_TO_FC } from './schedule-nav';
 import { CalendarSkeleton } from './calendar-skeleton';
@@ -32,7 +34,7 @@ import { useResizeObserver } from '@/hooks/shared/use-resize-observer';
 import { useIsMobile } from '@/hooks/shared/use-media-query';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
-import { formatTime } from '@/lib/datetime';
+import { formatTime, toDateParam } from '@/lib/datetime';
 import { useLanguage } from '@/providers';
 import arLocale from '@fullcalendar/core/locales/ar';
 
@@ -98,10 +100,17 @@ export function AppointmentCalendar({
   const { t, lang } = useLanguage();
   const [appointmentPopover, setAppointmentPopover] =
     useState<AppointmentPopoverState | null>(null);
+  const [dayPopover, setDayPopover] = useState<DayAppointmentsPopoverState | null>(null);
 
-  const events = useMemo(
-    () =>
-      (appointments ?? []).map((appointment) => ({
+  const { events, appointmentsByDay } = useMemo(() => {
+    const byDay = new Map<string, Appointment[]>();
+    const calendarEvents = (appointments ?? []).map((appointment) => {
+      const key = toDateParam(new Date(appointment.scheduledAt));
+      const items = byDay.get(key);
+      if (items) items.push(appointment);
+      else byDay.set(key, [appointment]);
+
+      return {
         id: appointment.id,
         title: patientDisplayName(appointment, lang),
         start: appointment.scheduledAt,
@@ -116,13 +125,21 @@ export function AppointmentCalendar({
           appointment.status !== 'cancelled' && appointment.status !== 'completed',
         classNames: appointment.status === 'cancelled' ? ['fc-event-cancelled'] : [],
         extendedProps: { appointment },
-      })),
-    [appointments, lang],
-  );
+      };
+    });
+    byDay.forEach((items) =>
+      items.sort(
+        (a, b) =>
+          new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+      ),
+    );
+    return { events: calendarEvents, appointmentsByDay: byDay };
+  }, [appointments, lang]);
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const appt = readCalendarAppointment(arg.event.extendedProps);
     if (!appt) return;
+    setDayPopover(null);
     setAppointmentPopover({
       appointment: appt,
       anchor: popoverAnchorFromElement(arg.el),
@@ -134,6 +151,7 @@ export function AppointmentCalendar({
       if (arg.view.type !== 'dayGridMonth') return;
       const target = arg.jsEvent.target;
       if (target instanceof Element && target.closest('.fc-event, .fc-more-link')) return;
+      setDayPopover(null);
       setAppointmentPopover(null);
       const slot = new Date(arg.date);
       if (slot.getHours() === 0 && slot.getMinutes() === 0) {
@@ -146,6 +164,7 @@ export function AppointmentCalendar({
 
   const handleDateSelect = useCallback(
     (arg: DateSelectArg) => {
+      setDayPopover(null);
       setAppointmentPopover(null);
       onSelectSlot(arg.start);
     },
@@ -240,6 +259,30 @@ export function AppointmentCalendar({
     [t],
   );
 
+  const handleCalendarClickCapture = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest('.fc-more-link');
+      if (!link || !event.currentTarget.contains(link)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.nativeEvent.stopImmediatePropagation();
+
+      const dayElement = link.closest<HTMLElement>('[data-date]');
+      const rawDate = dayElement?.getAttribute('data-date');
+      const date = rawDate ? new Date(`${rawDate}T00:00:00`) : new Date();
+      setAppointmentPopover(null);
+      setDayPopover({
+        date,
+        appointments: appointmentsByDay.get(rawDate ?? toDateParam(date)) ?? [],
+        anchor: popoverAnchorFromElement(link),
+      });
+    },
+    [appointmentsByDay],
+  );
+
   const handleEventDidMount = useCallback((info: EventMountArg) => {
     const appt = readCalendarAppointment(info.event.extendedProps);
     const color = appt
@@ -295,6 +338,7 @@ export function AppointmentCalendar({
     >
       <div
         ref={sizeHostRef}
+        onClickCapture={handleCalendarClickCapture}
         className={cn(
           'relative [&_.fc-header-toolbar]:pe-9 sm:[&_.fc-header-toolbar]:pe-10',
           focused &&
@@ -383,13 +427,26 @@ export function AppointmentCalendar({
         />
       </div>
 
+      {dayPopover ? (
+        <DayAppointmentsPopover
+          state={dayPopover}
+          onClose={() => setDayPopover(null)}
+          onSelect={(appointment, anchor) => {
+            setDayPopover(null);
+            setAppointmentPopover({ appointment, anchor });
+          }}
+        />
+      ) : null}
+
       {appointmentPopover ? (
         <AppointmentPopover
           key={appointmentPopover.appointment.id}
           state={appointmentPopover}
+          placement={view === 'month' ? 'month' : 'vertical'}
           onClose={() => setAppointmentPopover(null)}
           onExpand={(appt) => {
             setAppointmentPopover(null);
+            setDayPopover(null);
             onEventClick(appt);
           }}
         />

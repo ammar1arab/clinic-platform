@@ -44,7 +44,12 @@ export function StatusBadgeBlock({
           className,
         )}
       >
-        <span className={cn('size-1.5 shrink-0 rounded-full', config.dotClassName)} />
+        <span
+          className={cn(
+            'size-1.5 shrink-0 rounded-full ring-2 ring-background shadow-sm',
+            config.dotClassName,
+          )}
+        />
         <span>{text}</span>
       </Badge>
     </SoftTip>

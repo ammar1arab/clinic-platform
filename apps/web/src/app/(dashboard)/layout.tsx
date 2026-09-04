@@ -6,18 +6,16 @@ import { SidebarBlock, TopbarBlock, PageTransition } from '@/components/layout';
 import { LoadingState } from '@/components/primitives';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isHydrated } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
 
-  if (isLoading) {
+  if (!isHydrated || isLoading) {
     return <LoadingState variant="page" text={t.common.checkingPermissions} />;
   }
 
   if (!isAuthenticated) {
-    if (typeof window !== 'undefined') {
-      router.replace('/login');
-    }
+    router.replace('/login');
     return <LoadingState variant="page" text={t.common.loadingSession} />;
   }
 

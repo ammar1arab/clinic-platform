@@ -263,18 +263,31 @@ export function DoctorTimeline({
 
   const allDoctors = useMemo(() => Array.from(doctorMap.values()), [doctorMap]);
 
-  const dayAppts = useMemo(() => {
+  const dayAppointmentsAll = useMemo(() => {
     if (!appointments) return [];
     return appointments.filter((a) => {
       const parsed = new Date(a.scheduledAt);
-      if (isNaN(parsed.getTime()) || !isSameDay(parsed, selectedDate)) return false;
-      if (activeDoctorId !== 'all') {
-        const docId = a.doctor?.id ?? a.doctorId;
-        return docId === activeDoctorId;
-      }
-      return true;
+      return !isNaN(parsed.getTime()) && isSameDay(parsed, selectedDate);
     });
-  }, [appointments, selectedDate, activeDoctorId]);
+  }, [appointments, selectedDate]);
+
+  const doctorDayCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: dayAppointmentsAll.length };
+    for (const a of dayAppointmentsAll) {
+      const docId = a.doctor?.id ?? a.doctorId;
+      if (!docId) continue;
+      counts[docId] = (counts[docId] ?? 0) + 1;
+    }
+    return counts;
+  }, [dayAppointmentsAll]);
+
+  const dayAppts = useMemo(() => {
+    if (activeDoctorId === 'all') return dayAppointmentsAll;
+    return dayAppointmentsAll.filter((a) => {
+      const docId = a.doctor?.id ?? a.doctorId;
+      return docId === activeDoctorId;
+    });
+  }, [dayAppointmentsAll, activeDoctorId]);
 
   const positioned = useMemo(
     () => layoutTimelineAppts(dayAppts, doctorMap),
@@ -412,6 +425,7 @@ export function DoctorTimeline({
             doctors={allDoctors}
             value={activeDoctorId}
             onChange={setActiveDoctorId}
+            counts={doctorDayCounts}
             extraOption={{ value: 'all', label: t.appointments.allDoctors }}
             placeholder={t.appointments.selectDoctor}
             className="w-full max-w-md"
