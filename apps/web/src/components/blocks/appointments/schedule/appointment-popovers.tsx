@@ -10,13 +10,20 @@ import {
 } from "@/components/ui";
 import { SoftTip } from "@/components/primitives";
 import {
+  IconCalendar,
   IconClose,
+  IconCreditCard,
+  IconDepartment,
+  IconFileText,
+  IconHourglass,
+  IconInPerson,
   IconMaximize,
   IconOnline,
+  IconPayment,
   IconPerson,
   IconRoom,
   IconService,
-  IconTime,
+  IconTimer,
 } from "@/constants/icons";
 import { useMediaQuery } from "@/hooks/shared/use-media-query";
 import { useNow } from "@/hooks/shared/use-now";
@@ -312,125 +319,176 @@ export function AppointmentPopover({
       onClose={onClose}
       kind="appointment"
     >
-      <div className="h-1 shrink-0" style={{ backgroundColor: accent }} aria-hidden />
-      <div className="shrink-0 border-b px-2.5 py-2">
-        <div className="flex min-w-0 items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <SoftTip label={title}>
-              <h2 className="truncate text-xs font-semibold text-foreground">
-                {title}
-              </h2>
-            </SoftTip>
-            <p className="text-[10px] text-muted-foreground">
-              {formatDay(appointment.scheduledAt, lang)} ·{" "}
-              {formatApptTimeRange(appointment, lang)}
-            </p>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[inherit]">
+        <div
+          className="h-1.5 shrink-0"
+          style={{ backgroundColor: accent }}
+          aria-hidden
+        />
+        <div className="shrink-0 border-b px-2.5 py-2">
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <SoftTip label={title}>
+                <h2 className="truncate text-xs font-semibold text-foreground">
+                  {title}
+                </h2>
+              </SoftTip>
+              <p className="text-[10px] text-muted-foreground">
+                {formatApptTimeRange(appointment, lang)}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={onClose}
+              aria-label={t.common.close}
+              className="shrink-0"
+            >
+              <IconClose />
+            </Button>
           </div>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <span className="text-[10px] font-medium text-muted-foreground">
+              {t.appointments.status}
+            </span>
+            <AppointmentStatusSelect
+              appointment={{ ...appointment, status }}
+              onStatusChange={setStatus}
+              compact={compact}
+            />
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5">
+          <div className="space-y-2 rounded-lg border bg-muted/30 p-2.5">
+            <DetailRow
+              icon={<IconPerson />}
+              label={t.appointments.doctor}
+              value={formatDoctorLabel(appointment.doctor, { lang })}
+            />
+            <DetailRow
+              icon={<IconCalendar />}
+              label={t.appointments.dateLabel}
+              value={formatDay(appointment.scheduledAt, lang)}
+            />
+            <DetailRow
+              icon={<IconTimer />}
+              label={t.appointments.duration}
+              value={`${appointment.durationMins}${t.appointments.minutesShort}`}
+            />
+            {appointment.service ? (
+              <DetailRow
+                icon={<IconService />}
+                label={t.appointments.service}
+                value={getBilingualName(
+                  appointment.service.name,
+                  appointment.service.nameAr,
+                  lang,
+                )}
+              />
+            ) : null}
+            {appointment.department ? (
+              <DetailRow
+                icon={<IconDepartment />}
+                label={t.common.department}
+                value={getBilingualName(
+                  appointment.department.name,
+                  appointment.department.nameAr,
+                  lang,
+                )}
+              />
+            ) : null}
+            {appointment.sessionType === "online" ? (
+              <DetailRow
+                icon={<IconOnline />}
+                label={t.appointments.sessionType}
+                value={
+                  appointment.meetingUrl ? (
+                    <a
+                      href={appointment.meetingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="wrap-break-word text-primary underline-offset-2 hover:underline"
+                    >
+                      {t.appointments.joinOnlineSession}
+                    </a>
+                  ) : (
+                    t.appointments.onlineSession
+                  )
+                }
+              />
+            ) : (
+              <DetailRow
+                icon={<IconInPerson />}
+                label={t.appointments.sessionType}
+                value={t.appointments.inPerson}
+              />
+            )}
+            {appointment.sessionType !== "online" && appointment.room ? (
+              <DetailRow
+                icon={<IconRoom />}
+                label={t.appointments.room}
+                value={getBilingualName(
+                  appointment.room.name,
+                  appointment.room.nameAr,
+                  lang,
+                )}
+              />
+            ) : null}
+            <DetailRow
+              icon={<IconPayment />}
+              label={t.appointments.payable}
+              value={formatClinicAmount(pricing.payable)}
+            />
+            <DetailRow
+              icon={<IconCreditCard />}
+              label={t.appointments.paymentStatus}
+              value={
+                appointment.isPaid
+                  ? appointment.paymentMethodRef?.name ||
+                    appointment.paymentMethod ||
+                    t.appointments.paid
+                  : t.appointments.unpaid
+              }
+            />
+            {waitingMins != null ? (
+              <DetailRow
+                icon={<IconHourglass />}
+                label={t.queue.estimatedWait}
+                value={formatWaitingMins(waitingMins, false, t)}
+              />
+            ) : null}
+            {appointment.notes ? (
+              <DetailRow
+                icon={<IconFileText />}
+                label={t.appointments.notes}
+                value={appointment.notes}
+              />
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center justify-end gap-1.5 border-t bg-muted/20 px-2.5 py-2">
           <Button
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="sm"
+            className="h-7 px-2.5 text-xs"
             onClick={onClose}
-            aria-label={t.common.close}
-            className="shrink-0"
           >
-            <IconClose />
+            {t.common.close}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            className="h-7 px-2.5 text-xs"
+            onClick={() => onExpand({ ...appointment, status })}
+          >
+            <IconMaximize />
+            {t.appointments.openAppointment}
           </Button>
         </div>
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <span className="text-[10px] font-medium text-muted-foreground">
-            {t.appointments.status}
-          </span>
-          <AppointmentStatusSelect
-            appointment={{ ...appointment, status }}
-            onStatusChange={setStatus}
-            compact={compact}
-          />
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5">
-        <div className="space-y-2 rounded-lg border bg-muted/30 p-2.5">
-          <DetailRow
-            icon={<IconPerson />}
-            label={t.appointments.doctor}
-            value={formatDoctorLabel(appointment.doctor, { lang })}
-          />
-          {appointment.service ? (
-            <DetailRow
-              icon={<IconService />}
-              label={t.appointments.service}
-              value={getBilingualName(
-                appointment.service.name,
-                appointment.service.nameAr,
-                lang,
-              )}
-            />
-          ) : null}
-          {appointment.sessionType === "online" ? (
-            <DetailRow
-              icon={<IconOnline />}
-              label={t.appointments.sessionType}
-              value={
-                appointment.meetingUrl ? (
-                  <a
-                    href={appointment.meetingUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="wrap-break-word text-primary underline-offset-2 hover:underline"
-                  >
-                    {t.appointments.joinOnlineSession}
-                  </a>
-                ) : (
-                  t.appointments.onlineSession
-                )
-              }
-            />
-          ) : appointment.room ? (
-            <DetailRow
-              icon={<IconRoom />}
-              label={t.appointments.room}
-              value={getBilingualName(
-                appointment.room.name,
-                appointment.room.nameAr,
-                lang,
-              )}
-            />
-          ) : null}
-          <DetailRow
-            icon={<IconTime />}
-            label={t.appointments.appointmentDetails}
-            value={`${appointment.durationMins}${t.appointments.minutesShort} · ${formatClinicAmount(pricing.payable)}`}
-          />
-          {waitingMins != null ? (
-            <DetailRow
-              icon={<IconTime />}
-              label={t.queue.estimatedWait}
-              value={formatWaitingMins(waitingMins, false, t)}
-            />
-          ) : null}
-        </div>
-      </div>
-
-      <div className="flex shrink-0 items-center justify-end gap-1.5 border-t bg-muted/20 px-2.5 py-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2.5 text-xs"
-          onClick={onClose}
-        >
-          {t.common.close}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          className="h-7 px-2.5 text-xs"
-          onClick={() => onExpand({ ...appointment, status })}
-        >
-          <IconMaximize />
-          {t.appointments.openAppointment}
-        </Button>
       </div>
     </SchedulePopover>
   );
