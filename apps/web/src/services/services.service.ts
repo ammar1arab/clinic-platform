@@ -1,10 +1,11 @@
-import { api } from '@/lib/api';
+import { api } from "@/lib/api";
+import { ENDPOINTS } from "@/constants/endpoints";
 import type {
   CreateServiceInput,
   ServiceItem,
   ServiceSessionMode,
   UpdateServiceInput,
-} from '@clinic/types';
+} from "@clinic/types";
 
 export type {
   CreateServiceInput,
@@ -15,23 +16,27 @@ export type {
 
 export const servicesService = {
   getAll: (clinicId: string) =>
-    api.get<ServiceItem[]>('/services', { params: { clinicId } }).then((r) => r.data),
+    api
+      .get<ServiceItem[]>(ENDPOINTS.SERVICES.BASE, { params: { clinicId } })
+      .then((r) => r.data),
 
   getOne: (id: string) =>
-    api.get<ServiceItem>(`/services/${id}`).then((r) => r.data),
+    api.get<ServiceItem>(ENDPOINTS.SERVICES.BY_ID(id)).then((r) => r.data),
 
   create: (data: CreateServiceInput) =>
-    api.post<ServiceItem>('/services', data).then((r) => r.data),
+    api.post<ServiceItem>(ENDPOINTS.SERVICES.BASE, data).then((r) => r.data),
 
   update: (id: string, data: UpdateServiceInput) =>
-    api.patch<ServiceItem>(`/services/${id}`, data).then((r) => r.data),
+    api
+      .patch<ServiceItem>(ENDPOINTS.SERVICES.BY_ID(id), data)
+      .then((r) => r.data),
 
   deactivate: (id: string) =>
-    api.patch(`/services/${id}/deactivate`).then((r) => r.data),
+    api.patch(ENDPOINTS.SERVICES.DEACTIVATE(id)).then((r) => r.data),
 
   reactivate: (id: string) =>
-    api.patch(`/services/${id}/reactivate`).then((r) => r.data),
+    api.patch(ENDPOINTS.SERVICES.REACTIVATE(id)).then((r) => r.data),
 
   remove: (id: string) =>
-    api.delete(`/services/${id}`).then((r) => r.data),
+    api.delete(ENDPOINTS.SERVICES.BY_ID(id)).then((r) => r.data),
 };

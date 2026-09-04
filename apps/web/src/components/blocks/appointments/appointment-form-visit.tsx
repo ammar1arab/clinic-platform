@@ -12,6 +12,7 @@ import { PatientCombobox } from './patient-combobox';
 import { DoctorCombobox } from './doctor-combobox';
 import { FormSection, OptionalSelect } from './appointment-form-controls';
 import { formatDoctorLabel } from './appointment-display';
+import { useLanguage } from '@/providers';
 
 export function AppointmentVisitFields({
   control,
@@ -34,10 +35,15 @@ export function AppointmentVisitFields({
   onPatientChange: (id: string) => void;
   onServiceChange: (serviceId: string) => void;
 }) {
+  const { t, lang } = useLanguage();
+
   return (
-    <FormSection title="Visit Details" contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <FormSection
+      title={t?.appointments?.appointmentDetails ?? (lang === 'ar' ? 'تفاصيل الزيارة' : 'Visit Details')}
+      contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-2"
+    >
       <FormField
-        label="Patient"
+        label={t?.appointments?.patient ?? (lang === 'ar' ? 'المريض' : 'Patient')}
         required
         error={errors.patientId?.message}
         className="sm:col-span-2"
@@ -58,7 +64,11 @@ export function AppointmentVisitFields({
         />
       </FormField>
 
-      <FormField label="Doctor" required error={errors.doctorId?.message}>
+      <FormField
+        label={t?.practitioner?.practitioner ?? (lang === 'ar' ? 'الطبيب' : 'Doctor')}
+        required
+        error={errors.doctorId?.message}
+      >
         <Controller
           control={control}
           name="doctorId"
@@ -69,7 +79,7 @@ export function AppointmentVisitFields({
               onChange={field.onChange}
               extraOption={
                 field.value && !staff?.some((member) => member.id === field.value) && currentDoctorName
-                  ? { value: field.value, label: formatDoctorLabel(currentDoctorName) }
+                  ? { value: field.value, label: formatDoctorLabel(currentDoctorName, { lang }) }
                   : undefined
               }
               className="w-full"
@@ -78,7 +88,10 @@ export function AppointmentVisitFields({
         />
       </FormField>
 
-      <FormField label="Department" error={errors.departmentId?.message}>
+      <FormField
+        label={t?.practitioner?.department ?? (lang === 'ar' ? 'القسم' : 'Department')}
+        error={errors.departmentId?.message}
+      >
         <Controller
           control={control}
           name="departmentId"
@@ -86,17 +99,21 @@ export function AppointmentVisitFields({
             <OptionalSelect
               value={field.value}
               onChange={field.onChange}
-              searchPlaceholder="Search departments…"
+              searchPlaceholder={lang === 'ar' ? 'البحث عن قسم...' : 'Search departments…'}
               options={(departments ?? []).map((dept) => ({
                 value: dept.id,
-                label: dept.name,
+                label: (lang === 'ar' && (dept as any).nameAr) ? (dept as any).nameAr : dept.name,
               }))}
             />
           )}
         />
       </FormField>
 
-      <FormField label="Service" error={errors.serviceId?.message} className="sm:col-span-2">
+      <FormField
+        label={t?.practitioner?.services ?? (lang === 'ar' ? 'الخدمة' : 'Service')}
+        error={errors.serviceId?.message}
+        className="sm:col-span-2"
+      >
         <Controller
           control={control}
           name="serviceId"
@@ -107,11 +124,14 @@ export function AppointmentVisitFields({
                 field.onChange(id);
                 if (id) onServiceChange(id);
               }}
-              searchPlaceholder="Search services…"
-              options={(services ?? []).map((service) => ({
-                value: service.id,
-                label: `${service.name} · ${formatClinicAmount(service.fee)}`,
-              }))}
+              searchPlaceholder={lang === 'ar' ? 'البحث عن خدمة...' : 'Search services…'}
+              options={(services ?? []).map((service) => {
+                const svcName = (lang === 'ar' && (service as any).nameAr) ? (service as any).nameAr : service.name;
+                return {
+                  value: service.id,
+                  label: `${svcName} · ${formatClinicAmount(service.fee)}`,
+                };
+              })}
             />
           )}
         />

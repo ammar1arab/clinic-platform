@@ -203,7 +203,6 @@ export class AppointmentsService {
     });
     const timezone = clinic?.timezone || "UTC";
 
-
     const hasSchedule = await this.prisma.doctorAvailability.count({
       where: { doctorId, isActive: true },
     });
@@ -385,7 +384,6 @@ export class AppointmentsService {
   ) {
     const existing = await this.findOne(clinicId, id);
 
-
     if (dto.status && String(dto.status) !== String(existing.status)) {
       if (dto.status === AppointmentStatusDto.cancelled && !dto.cancelReason) {
         throw new BadRequestException("Cancellation reason is required");
@@ -394,7 +392,6 @@ export class AppointmentsService {
         throw new BadRequestException("Cannot update a cancelled appointment");
       }
     }
-
 
     const nextStatus = dto.status ? String(dto.status) : null;
     const becomingNonBillable =
@@ -475,7 +472,6 @@ export class AppointmentsService {
     const meetingUrl =
       dto.meetingUrl !== undefined ? dto.meetingUrl : existing.meetingUrl;
 
-
     let service = existing.service;
     if (dto.doctorId || dto.serviceId || dto.roomId || dto.departmentId) {
       const validationDto: ValidateEntitiesInput = {
@@ -529,7 +525,6 @@ export class AppointmentsService {
         : (existing.discountReason ?? undefined),
     );
 
-
     let finalFee = pricing.fee;
     if (dto.feeOverride === undefined && !dto.serviceId) {
       finalFee = existing.fee ? Number(existing.fee) : finalFee;
@@ -574,7 +569,6 @@ export class AppointmentsService {
         existing.scheduledAt instanceof Date
           ? existing.scheduledAt
           : new Date(existing.scheduledAt);
-
 
       if (
         nextStatus === AppointmentStatusDto.waiting ||
@@ -665,7 +659,6 @@ export class AppointmentsService {
     return appointment;
   }
 
-
   async redeemPackage(
     clinicId: string,
     clinicUserId: string,
@@ -713,7 +706,6 @@ export class AppointmentsService {
     this.dashboardGateway.emitAppointmentChanged(clinicId);
     return appointment;
   }
-
 
   async releasePackage(clinicId: string, id: string) {
     const existing = await this.findOne(clinicId, id);

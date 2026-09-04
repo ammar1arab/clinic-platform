@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useMemo, useState, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui';
 import { Appointment } from '@/services/appointments.service';
 import { ClinicStaffMember } from '@/services/clinics.service';
-import { STATUS_COLORS, STATUS_CONFIG, StatusBadgeBlock } from './status-badge';
+import { STATUS_COLORS, getStatusConfig, StatusBadgeBlock } from './status-badge';
 import { AppointmentStatusSelect } from './appointment-status-select';
 import { DoctorCombobox } from './doctor-combobox';
 import {
@@ -25,6 +25,7 @@ import {
   TIMELINE_START_HOUR,
   TIMELINE_END_HOUR,
   TIMELINE_TOTAL_HEIGHT,
+  TIMELINE_PX_PER_MIN,
   type PositionedAppt,
   type TimelineDoctor,
 } from './timeline-layout';
@@ -38,6 +39,7 @@ import { cn } from '@/lib/utils';
 import { useNow } from '@/hooks/shared/use-now';
 import { ViewFocusToggle } from './view-focus';
 import { IconAdd, IconChevronLeft, IconChevronRight, IconOnline, IconPatients, IconRoom, IconService, IconVisit } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 interface Props {
   appointments: Appointment[] | undefined;
@@ -59,15 +61,16 @@ function TimelineEventBlock({
 }: PositionedAppt & {
   onOpen: (appt: Appointment, el: HTMLElement, x: number, y: number) => void;
 }) {
+  const { t, lang } = useLanguage();
   const accent = STATUS_COLORS[appt.status];
-  const statusCfg = STATUS_CONFIG[appt.status];
+  const statusCfg = getStatusConfig(t)[appt.status];
   const density = densityFromHeight(height);
   const isCancelled = appt.status === 'cancelled';
-  const doctorName = doctorDisplayName(doctor?.name ?? appt.doctor?.name);
-  const fullName = patientDisplayName(appt);
-  const timeLabel = `${formatApptStartAmPm(appt)} · ${appt.durationMins}m`;
+  const doctorName = doctorDisplayName(doctor?.name ?? appt.doctor?.name, lang);
+  const fullName = patientDisplayName(appt, lang);
+  const timeLabel = `${formatApptStartAmPm(appt, lang)} · ${appt.durationMins}m`;
   const narrow = widthPct < 34;
-  const tip = formatApptTip(appt, { doctorName });
+  const tip = formatApptTip(appt, { doctorName, lang });
   const gapPx = widthPct < 50 ? 5 : 4;
   const blockH = Math.max(height - 2, 28);
 
@@ -105,10 +108,10 @@ function TimelineEventBlock({
       style={{
         top: `${top + 1}px`,
         height: `${blockH}px`,
-        left: `calc(${leftPct}% + 2px)`,
+        insetInlineStart: `calc(${leftPct}% + 2px)`,
         width: `calc(${widthPct}% - ${gapPx}px)`,
-        borderLeftWidth: 3,
-        borderLeftColor: accent,
+        borderInlineStartWidth: 3,
+        borderInlineStartColor: accent,
         backgroundColor: `color-mix(in oklch, ${accent} 9%, var(--card))`,
       }}
     >
@@ -190,20 +193,20 @@ function TimelineEventBlock({
                   className="flex min-w-0 max-w-full items-center gap-1 truncate font-medium text-foreground/75"
                 >
                   <IconService className="size-2.5 shrink-0 text-primary" />
-                  <span className="truncate">{appt.service.name}</span>
+                  <span className="truncate">{(lang === 'ar' && appt.service.nameAr) || appt.service.name}</span>
                 </span>
               ) : null}
               {appt.sessionType === 'online' ? (
                 <span className="inline-flex items-center gap-1 font-medium text-primary">
                   <IconOnline className="size-2.5 shrink-0" />
-                  Online
+                  {t.appointments.online}
                 </span>
               ) : appt.room ? (
                 <span
                   className="inline-flex min-w-0 items-center gap-1 truncate font-medium"
                 >
                   <IconRoom className="size-2.5 shrink-0" />
-                  <span className="truncate">{appt.room.name}</span>
+                  <span className="truncate">{(lang === 'ar' && appt.room.nameAr) || appt.room.name}</span>
                 </span>
               ) : null}
             </div>
@@ -223,6 +226,7 @@ export function DoctorTimeline({
   onSelectSlot,
   onEventClick,
 }: Props) {
+  const { t, lang, dir } = useLanguage();
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d;
   });
@@ -250,57 +254,58 @@ export function DoctorTimeline({
     doctors?.forEach((d) => {
       map.set(d.id, {
         id: d.id,
-        name: d.name,
+        name: lang === 'ar' && (d as { nameAr?: string }).nameAr ? (d as { nameAr?: string }).nameAr! : d.name,
         color: TIMELINE_DOCTOR_COLORS[i++ % TIMELINE_DOCTOR_COLORS.length],
       });
     });
     appointments?.forEach((a) => {
-      if (a.doctor && !map.has(a.doctorId)) {
-        map.set(a.doctorId, {
-          id: a.doctorId,
-          name: a.doctor.name ?? 'Doctor',
-          color: TIMELINE_DOCTOR_COLORS[map.size % TIMELINE_DOCTOR_COLORS.length],
+      const doc = a.doctor;
+      if (doc?.id && !map.has(doc.id)) {
+        map.set(doc.id, {
+          id: doc.id,
+          name: lang === 'ar' && (doc as { nameAr?: string }).nameAr ? (doc as { nameAr?: string }).nameAr! : doc.name,
+          color: TIMELINE_DOCTOR_COLORS[i++ % TIMELINE_DOCTOR_COLORS.length],
         });
       }
     });
     return map;
-  }, [doctors, appointments]);
+  }, [doctors, appointments, lang]);
 
   const allDoctors = useMemo(() => Array.from(doctorMap.values()), [doctorMap]);
 
   const dayAppts = useMemo(() => {
     if (!appointments) return [];
-    const d = new Date(selectedDate);
-    const start = new Date(d.setHours(0, 0, 0, 0)).getTime();
-    const end = new Date(d.setHours(23, 59, 59, 999)).getTime();
     return appointments.filter((a) => {
-      const t = new Date(a.scheduledAt).getTime();
-      return t >= start && t <= end;
+      const parsed = new Date(a.scheduledAt);
+      if (isNaN(parsed.getTime()) || !isSameDay(parsed, selectedDate)) return false;
+      if (activeDoctorId !== 'all') {
+        const docId = a.doctor?.id ?? a.doctorId;
+        return docId === activeDoctorId;
+      }
+      return true;
     });
-  }, [appointments, selectedDate]);
-
-  const visibleAppts = useMemo(
-    () =>
-      activeDoctorId === 'all'
-        ? dayAppts
-        : dayAppts.filter((a) => a.doctorId === activeDoctorId),
-    [dayAppts, activeDoctorId],
-  );
+  }, [appointments, selectedDate, activeDoctorId]);
 
   const positioned = useMemo(
-    () => layoutTimelineAppts(visibleAppts, doctorMap),
-    [visibleAppts, doctorMap],
+    () => layoutTimelineAppts(dayAppts, doctorMap),
+    [dayAppts, doctorMap],
   );
 
   const nowTop = useMemo(() => {
     if (!isToday) return null;
-    const h = now.getHours();
-    const m = now.getMinutes();
-    if (h < TIMELINE_START_HOUR || h >= TIMELINE_END_HOUR) {
-      return null;
-    }
-    return ((h - TIMELINE_START_HOUR) * 60 + m) * (TIMELINE_HOUR_HEIGHT / 60);
+    const currentMin = now.getHours() * 60 + now.getMinutes();
+    return Math.max(0, currentMin - TIMELINE_START_HOUR * 60) * TIMELINE_PX_PER_MIN;
   }, [isToday, now]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (nowTop !== null) {
+      el.scrollTop = Math.max(0, nowTop - 120);
+    } else {
+      el.scrollTop = (9 - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT;
+    }
+  }, [selectedDate, isToday, nowTop]);
 
   const shiftDate = useCallback((delta: number) => {
     setSelectedDate((prev) => {
@@ -318,12 +323,12 @@ export function DoctorTimeline({
 
   const dateLabel = useMemo(
     () =>
-      selectedDate.toLocaleDateString(undefined, {
+      selectedDate.toLocaleDateString(lang === 'ar' ? 'ar' : undefined, {
         weekday: 'long',
         month: 'short',
         day: 'numeric',
       }),
-    [selectedDate],
+    [selectedDate, lang],
   );
 
   const handleGridClick = useCallback(
@@ -352,14 +357,14 @@ export function DoctorTimeline({
         <div className="grid size-12 place-items-center rounded-2xl bg-muted/60">
           <IconPatients className="size-6 text-muted-foreground" />
         </div>
-        <h3 className="mt-3 text-sm font-bold">No doctors found</h3>
+        <h3 className="mt-3 text-sm font-bold">{t.appointments.noDoctorsFound}</h3>
         <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-          Add staff or book the first appointment to populate the timeline.
+          {t.appointments.noDoctorsDesc}
         </p>
         <Button size="sm" className="mt-4" onClick={() => {
           const s = new Date(selectedDate); s.setHours(9, 0, 0, 0); onSelectSlot(s);
         }}>
-          <IconAdd className="mr-1.5 size-3.5" /> Book Appointment
+          <IconAdd className="me-1.5 size-3.5" /> {t.appointments.bookAppointment}
         </Button>
       </div>
     );
@@ -382,16 +387,16 @@ export function DoctorTimeline({
             <Button variant="outline" size="sm" onClick={goToday} disabled={isToday}
               className="h-8 px-2.5 text-xs font-semibold active:scale-95">
               <IconVisit className="size-3.5" />
-              <span className="ml-1 hidden sm:inline">Today</span>
+              <span className="ms-1 hidden sm:inline">{t.appointments.today}</span>
             </Button>
             <div className="flex items-center overflow-hidden rounded-lg border bg-background/60">
-              <button type="button" onClick={() => shiftDate(-1)} aria-label="Previous day"
+              <button type="button" onClick={() => shiftDate(-1)} aria-label={t.appointments.previousDay}
                 className="flex h-8 w-8 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95">
-                <IconChevronLeft className="size-4" />
+                {dir === 'rtl' ? <IconChevronRight className="size-4" /> : <IconChevronLeft className="size-4" />}
               </button>
-              <button type="button" onClick={() => shiftDate(1)} aria-label="Next day"
+              <button type="button" onClick={() => shiftDate(1)} aria-label={t.appointments.nextDay}
                 className="flex h-8 w-8 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95">
-                <IconChevronRight className="size-4" />
+                {dir === 'rtl' ? <IconChevronLeft className="size-4" /> : <IconChevronRight className="size-4" />}
               </button>
             </div>
             <span className="truncate text-xs font-bold text-foreground sm:text-sm">{dateLabel}</span>
@@ -401,11 +406,11 @@ export function DoctorTimeline({
             <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground sm:gap-3">
               <span className="flex items-center gap-1">
                 <IconPatients className="size-3.5 text-primary" />
-                {allDoctors.length} dr{allDoctors.length !== 1 ? 's' : ''}
+                {allDoctors.length} {t.appointments.doctorsCount}
               </span>
               <span className="hidden h-3 w-px bg-border sm:block" />
               <span className="hidden sm:inline">
-                {dayAppts.length} appt{dayAppts.length !== 1 ? 's' : ''}
+                {dayAppts.length} {t.appointments.appts}
               </span>
             </div>
             <ViewFocusToggle />
@@ -417,8 +422,8 @@ export function DoctorTimeline({
             doctors={allDoctors}
             value={activeDoctorId}
             onChange={setActiveDoctorId}
-            extraOption={{ value: 'all', label: 'All doctors' }}
-            placeholder="Select doctor"
+            extraOption={{ value: 'all', label: t.appointments.allDoctors }}
+            placeholder={t.appointments.selectDoctor}
             className="w-full max-w-md"
             size="sm"
           />
@@ -440,14 +445,14 @@ export function DoctorTimeline({
       >
         <div className="relative flex min-w-[20rem]" style={{ height: `${TIMELINE_TOTAL_HEIGHT}px` }}>
 
-          <div className="sticky left-0 z-10 w-12 shrink-0 border-r bg-card/95 backdrop-blur-md">
+          <div className="sticky start-0 z-10 w-12 shrink-0 border-e bg-card/95 backdrop-blur-md">
             {TIMELINE_HOURS.map((h) => (
               <div
                 key={h}
-                className="absolute right-0 flex w-12 items-start justify-end pr-1.5 text-[10px] font-semibold text-muted-foreground/60"
+                className="absolute end-0 flex w-12 items-start justify-end pe-1.5 text-[10px] font-semibold text-muted-foreground/60"
                 style={{ top: `${(h - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT}px`, height: `${TIMELINE_HOUR_HEIGHT}px` }}
               >
-                <span className="mt-0.5">{formatHourLabel(h)}</span>
+                <span className="mt-0.5">{formatHourLabel(h, lang)}</span>
               </div>
             ))}
           </div>
@@ -456,24 +461,24 @@ export function DoctorTimeline({
             {TIMELINE_HOURS.map((h) => (
               <div
                 key={h}
-                className="absolute left-0 right-0 border-t border-border/30"
+                className="absolute inset-x-0 border-t border-border/30"
                 style={{ top: `${(h - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT}px` }}
               />
             ))}
             {TIMELINE_HOURS.map((h) => (
               <div
                 key={`${h}h`}
-                className="absolute left-0 right-0 border-t border-border/15 border-dashed"
+                className="absolute inset-x-0 border-t border-border/15 border-dashed"
                 style={{ top: `${(h - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT + TIMELINE_HOUR_HEIGHT / 2}px` }}
               />
             ))}
 
             {nowTop !== null && (
               <div
-                className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
+                className="absolute inset-x-0 z-20 pointer-events-none flex items-center"
                 style={{ top: `${nowTop}px` }}
               >
-                <div className="size-2 -ml-1 animate-pulse rounded-full bg-error shadow-[0_0_6px_color-mix(in_oklch,var(--color-error)_70%,transparent)]" />
+                <div className="size-2 -ms-1 animate-pulse rounded-full bg-error shadow-[0_0_6px_color-mix(in_oklch,var(--color-error)_70%,transparent)]" />
                 <div className="h-0.5 flex-1 bg-error/70" />
               </div>
             )}
@@ -482,8 +487,8 @@ export function DoctorTimeline({
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-3">
                 <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-center text-[11px] font-semibold text-primary sm:px-4 sm:text-xs">
                   <IconAdd className="size-3.5 shrink-0" />
-                  <span className="sm:hidden">Tap to book</span>
-                  <span className="hidden sm:inline">Click anywhere to book</span>
+                  <span className="sm:hidden">{t.appointments.tapToBook}</span>
+                  <span className="hidden sm:inline">{t.appointments.clickAnywhereToBook}</span>
                 </span>
               </div>
             )}

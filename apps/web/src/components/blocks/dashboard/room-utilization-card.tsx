@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/primitives';
 import { RoomUtilization } from '@/services/dashboard.service';
 import { cn } from '@/lib/utils';
 import { IconRoom } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 interface Props {
   rooms: RoomUtilization[] | undefined;
@@ -22,36 +23,44 @@ function barColor(percent: number) {
 }
 
 export function RoomUtilizationCardBlock({ rooms, isLoading }: Props) {
+  const { t, lang } = useLanguage();
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm">Room Utilization Today</CardTitle>
+        <CardTitle className="text-sm">{t.dashboard.roomUtilizationToday}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
 
         {!isLoading && rooms?.length === 0 && (
-          <EmptyState icon={IconRoom} title="No rooms configured yet" className="py-6" />
+          <EmptyState icon={IconRoom} title={t.settings.noRooms} className="py-6" />
         )}
 
-        {rooms?.map((room) => (
-          <div key={room.roomId} className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">{room.roomName}</span>
-              <span className="text-muted-foreground text-xs">{room.utilisationPercent}%</span>
+        {rooms?.map((room) => {
+          const displayName =
+            lang === 'ar'
+              ? room.roomNameAr || room.roomName.replace(/^Room\s+(\d+)$/i, 'غرفة $1')
+              : room.roomName;
+          return (
+            <div key={room.roomId} className="space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">{displayName}</span>
+                <span className="text-muted-foreground text-xs">{room.utilisationPercent}%</span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-muted/80">
+                <div
+                  className={cn(
+                    'h-full rounded-full shadow-[0_0_12px_-2px_currentColor] transition-all duration-700 ease-out',
+                    barColor(room.utilisationPercent),
+                  )}
+                  style={{ width: `${Math.min(room.utilisationPercent, 100)}%` }}
+                />
+              </div>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-muted/80">
-              <div
-                className={cn(
-                  'h-full rounded-full shadow-[0_0_12px_-2px_currentColor] transition-all duration-700 ease-out',
-                  barColor(room.utilisationPercent),
-                )}
-                style={{ width: `${Math.min(room.utilisationPercent, 100)}%` }}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </CardContent>
     </Card>
   );

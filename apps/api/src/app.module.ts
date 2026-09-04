@@ -1,8 +1,8 @@
-﻿import { Module } from "@nestjs/common";
+import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { PrismaModule } from "@/prisma/prisma.module";
-import { InfrastructureModule } from "@/infrastructure";
+import { InfrastructureModule, I18nMiddleware } from "@/infrastructure";
 import {
   AuthModule,
   ClinicsModule,
@@ -46,4 +46,8 @@ import {
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(I18nMiddleware).forRoutes("*");
+  }
+}

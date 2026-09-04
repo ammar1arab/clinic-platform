@@ -1,6 +1,7 @@
 import { clinicsService, UpdateClinicInput, Clinic } from '@/services/clinics.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData, type TResponseError, useApiMutation } from '../query';
+import { useFetchData, type TResponseError, useApiMutation, INVALIDATE } from '../query';
+import { useLanguage } from '@/providers';
 
 export function useClinic(clinicId: string) {
   return useFetchData<Clinic>({
@@ -13,9 +14,10 @@ export function useClinic(clinicId: string) {
 }
 
 export function useUpdateClinic(clinicId: string) {
+  const { t } = useLanguage();
   return useApiMutation<Clinic, TResponseError, UpdateClinicInput>({
     request: (data) => clinicsService.update(clinicId, data),
     invalidateQueries: [QUERY_KEYS.clinics.detail(clinicId)],
-    successMessage: 'Clinic settings saved',
+    successMessage: t.common.clinicSettingsSaved,
   });
 }

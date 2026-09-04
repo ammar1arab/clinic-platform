@@ -1,3 +1,4 @@
+import { getTranslations } from '@/i18n';
 import axios from 'axios';
 
 export interface IMessageError {
@@ -32,11 +33,11 @@ export function toMessageError(
   }
   if (typeof error === 'object' && error !== null) return error as IMessageError;
   if (typeof error === 'string') return { message: error };
-  return { message: 'Something went wrong. Please try again.' };
+  return { message: getTranslations().errors.generic };
 }
 
 export function errorText(error: unknown): string {
   const msg = toMessageError(error).message;
   if (Array.isArray(msg)) return msg.join(', ');
-  return msg || 'Something went wrong. Please try again.';
+  return msg || getTranslations().errors.generic;
 }

@@ -1,3 +1,4 @@
+import { getTranslations } from '@/i18n';
 import axios, { type AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { env } from './env';
@@ -15,6 +16,10 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  
+  const lang = typeof window !== 'undefined' ? localStorage.getItem('language') : null;
+  config.headers['Accept-Language'] = lang === 'ar' ? 'ar' : 'en';
+  
   return config;
 });
 
@@ -51,7 +56,7 @@ function extractErrorMessage(error: ApiErrorLike): string {
 
   if (axios.isAxiosError<ApiErrorBody>(error)) {
     if (error.code === 'ERR_NETWORK') {
-      return 'Cannot reach the server. Is the backend running?';
+      return getTranslations().errors.network;
     }
     const raw = error.response?.data;
     if (typeof raw === 'string' && raw.trim()) {
@@ -78,7 +83,7 @@ function extractErrorMessage(error: ApiErrorLike): string {
     }
   }
 
-  return 'Something went wrong. Please try again.';
+  return getTranslations().errors.generic;
 }
 
 api.interceptors.response.use(

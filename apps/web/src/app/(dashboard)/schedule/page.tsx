@@ -1,17 +1,21 @@
-'use client';
+"use client";
 
-import { Suspense, useCallback, useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAppointments } from '@/hooks/api/use-appointments';
-import { useClinicId } from '@/hooks/shared/use-clinic-id';
-import { useClinic } from '@/hooks/api/use-clinic';
-import { useClinicStaff } from '@/hooks/api/use-clinic-staff';
-import { useClinicRealtime } from '@/hooks/api/use-clinic-realtime';
-import { useDepartments } from '@/hooks/api/use-departments';
-import { useDebounce } from '@/hooks/shared/use-debounce';
-import { Appointment, AppointmentStatus } from '@/services/appointments.service';
-import { ROUTES } from '@/constants/routes';
+import { Suspense, useCallback, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAppointments } from "@/hooks/api/use-appointments";
+import { useClinicId } from "@/hooks/shared/use-clinic-id";
+import { useClinic } from "@/hooks/api/use-clinic";
+import { useClinicStaff } from "@/hooks/api/use-clinic-staff";
+import { useClinicRealtime } from "@/hooks/api/use-clinic-realtime";
+import { useDepartments } from "@/hooks/api/use-departments";
+import { useDebounce } from "@/hooks/shared/use-debounce";
+import { useSessionStorageState } from "@/hooks/shared/use-session-storage-state";
+import {
+  Appointment,
+  AppointmentStatus,
+} from "@/services/appointments.service";
+import { ROUTES } from "@/constants/routes";
 import {
   ScheduleToolbar,
   CalendarSkeleton,
@@ -24,12 +28,12 @@ import {
   schedulePath,
   type ScheduleView,
   matchesAppointmentSearch,
-} from '@/components/blocks/appointments';
-import { toDateParam, toTimeParam } from '@/lib/datetime';
+} from "@/components/blocks/appointments";
+import { toDateParam, toTimeParam } from "@/lib/datetime";
 
 const AppointmentCalendar = dynamic(
   () =>
-    import('@/components/blocks/appointments/appointment-calendar').then(
+    import("@/components/blocks/appointments/appointment-calendar").then(
       (m) => m.AppointmentCalendar,
     ),
   { ssr: false, loading: () => <CalendarSkeleton /> },
@@ -39,14 +43,23 @@ function SchedulePageInner() {
   const clinicId = useClinicId();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [range, setRange] = useState(initialScheduleRange);
 
   const { data: clinic } = useClinic(clinicId);
   const { data: staff } = useClinicStaff(clinicId);
-  const viewParam = searchParams.get('view');
+  const viewParam = searchParams.get("view");
 
-  const [view, setCurrentView] = useState<ScheduleView>(() =>
-    parseScheduleView(viewParam || clinic?.defaultCalendarView || 'month'),
+  const [view, setCurrentView] = useSessionStorageState<ScheduleView>(
+    "schedule-view",
+    parseScheduleView(clinic?.defaultCalendarView || "month"),
+  );
+  const [range, setRange] = useSessionStorageState(
+    "schedule-range",
+    initialScheduleRange(),
+  );
+  const [search, setSearch] = useSessionStorageState("schedule-search", "");
+  const [departmentId, setDepartmentId] = useSessionStorageState(
+    "schedule-department",
+    "",
   );
 
   const [prevParam, setPrevParam] = useState(viewParam);
@@ -55,8 +68,6 @@ function SchedulePageInner() {
     if (viewParam) setCurrentView(parseScheduleView(viewParam));
   }
 
-  const [search, setSearch] = useState('');
-  const [departmentId, setDepartmentId] = useState('');
   const [statusFilters, setStatusFilters] = useState<Set<AppointmentStatus>>(
     () => new Set(),
   );
@@ -65,7 +76,11 @@ function SchedulePageInner() {
   useClinicRealtime(clinicId);
 
   const { data: departments } = useDepartments(clinicId);
-  const { data: appointments, isLoading, isFetching } = useAppointments(
+  const {
+    data: appointments,
+    isLoading,
+    isFetching,
+  } = useAppointments(
     {
       startDate: range.startDate,
       endDate: range.endDate,
@@ -96,7 +111,9 @@ function SchedulePageInner() {
   const handleVisibleRangeChange = useCallback((start: Date, end: Date) => {
     const next = rangeFromVisible(start, end);
     setRange((prev) =>
-      prev.startDate === next.startDate && prev.endDate === next.endDate ? prev : next,
+      prev.startDate === next.startDate && prev.endDate === next.endDate
+        ? prev
+        : next,
     );
   }, []);
 
@@ -105,7 +122,9 @@ function SchedulePageInner() {
     if (statusFilters.size > 0) {
       list = list?.filter((appt) => statusFilters.has(appt.status));
     }
-    return list?.filter((appt) => matchesAppointmentSearch(appt, debouncedSearch));
+    return list?.filter((appt) =>
+      matchesAppointmentSearch(appt, debouncedSearch),
+    );
   }, [appointments, debouncedSearch, statusFilters]);
 
   const returnTo = schedulePath(view);
@@ -114,10 +133,10 @@ function SchedulePageInner() {
     (date?: Date, doctorId?: string) => {
       const params = new URLSearchParams({ view });
       if (date) {
-        params.set('date', toDateParam(date));
-        params.set('time', toTimeParam(date));
+        params.set("date", toDateParam(date));
+        params.set("time", toTimeParam(date));
       }
-      if (doctorId) params.set('doctorId', doctorId);
+      if (doctorId) params.set("doctorId", doctorId);
       router.push(`${ROUTES.SCHEDULE_NEW}?${params.toString()}`);
     },
     [router, view],
@@ -153,7 +172,7 @@ function SchedulePageInner() {
         onNewAppointment={() => goNewAppointment()}
       />
 
-      {view === 'doctors' ? (
+      {view === "doctors" ? (
         <ViewFocus label="Doctor timeline">
           {(focused) => (
             <DoctorTimeline
@@ -166,7 +185,7 @@ function SchedulePageInner() {
             />
           )}
         </ViewFocus>
-      ) : view === 'queue' ? (
+      ) : view === "queue" ? (
         <ViewFocus label="Waiting board">
           {(focused) => (
             <WaitingQueueBoard

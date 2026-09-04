@@ -6,6 +6,7 @@ import {
 } from '@/services/referrals.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { useFetchData, type TResponseError, useApiMutation, INVALIDATE } from '../query';
+import { useLanguage } from '@/providers';
 
 export function useReferrals(filters: ReferralFilters) {
   return useFetchData<Referral[]>({
@@ -18,33 +19,37 @@ export function useReferrals(filters: ReferralFilters) {
 }
 
 export function useCreateReferral(_clinicId?: string) {
+  const { t } = useLanguage();
   return useApiMutation<Referral, TResponseError, CreateReferralInput>({
     request: (data) => referralsService.create(data),
     invalidateQueries: [...INVALIDATE.referralWrite],
-    successMessage: 'Request sent',
+    successMessage: t.common.requestSent,
   });
 }
 
 export function useAcceptReferral(_clinicId?: string) {
+  const { t } = useLanguage();
   return useApiMutation<Referral, TResponseError, string>({
     request: (id) => referralsService.accept(id),
     invalidateQueries: [...INVALIDATE.referralWrite],
-    successMessage: 'Referral accepted',
+    successMessage: t.common.referralAccepted,
   });
 }
 
 export function useRejectReferral(_clinicId?: string) {
+  const { t } = useLanguage();
   return useApiMutation<Referral, TResponseError, string>({
     request: (id) => referralsService.reject(id),
     invalidateQueries: [...INVALIDATE.referralWrite],
-    successMessage: 'Referral rejected',
+    successMessage: t.common.referralRejected,
   });
 }
 
-export function useReferralOpinion(_clinicId?: string) {
+export function useSaveOpinion(_clinicId?: string) {
+  const { t } = useLanguage();
   return useApiMutation<Referral, TResponseError, { id: string; opinion: string }>({
     request: ({ id, opinion }) => referralsService.setOpinion(id, opinion),
     invalidateQueries: [...INVALIDATE.referralWrite],
-    successMessage: 'Opinion saved',
+    successMessage: t.common.opinionSaved,
   });
 }

@@ -36,11 +36,17 @@ export interface Appointment {
   meetingUrl: string | null;
   createdAt?: string;
   updatedAt?: string;
-  patient: { id: string; firstNameEn: string; lastNameEn: string };
-  doctor: { id: string; name: string };
-  room: { id: string; name: string } | null;
-  service: { id: string; name: string; fee: string } | null;
-  department?: { id: string; name: string } | null;
+  patient: {
+    id: string;
+    firstNameEn: string;
+    lastNameEn: string;
+    firstNameAr?: string | null;
+    lastNameAr?: string | null;
+  };
+  doctor: { id: string; name: string; nameAr?: string | null };
+  room: { id: string; name: string; nameAr?: string | null } | null;
+  service: { id: string; name: string; nameAr?: string | null; fee: string } | null;
+  department?: { id: string; name: string; nameAr?: string | null } | null;
 }
 
 export interface AppointmentFilters {

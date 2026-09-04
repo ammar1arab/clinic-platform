@@ -1,4 +1,5 @@
-import { api } from '@/lib/api';
+import { api } from "@/lib/api";
+import { ENDPOINTS } from "@/constants/endpoints";
 import type {
   CreatePatientInput,
   Patient,
@@ -9,7 +10,7 @@ import type {
   PatientSortBy,
   SortOrder,
   UpdatePatientInput,
-} from '@clinic/types';
+} from "@clinic/types";
 
 export type {
   CreatePatientInput,
@@ -24,40 +25,41 @@ export type {
 };
 
 export const patientsService = {
-  getAll: (filters: PatientFilters) =>
-    api
-      .get<Patient[]>('/patients', {
-        params: {
-          clinicId: filters.clinicId,
-          search: filters.search || undefined,
-          isActive: filters.isActive === undefined ? undefined : String(filters.isActive),
-          gender: filters.gender || undefined,
-          bloodType: filters.bloodType || undefined,
-          primaryDoctorId: filters.primaryDoctorId || undefined,
-          departmentId: filters.departmentId || undefined,
-          visitFrom: filters.visitFrom || undefined,
-          visitTo: filters.visitTo || undefined,
-          dobFrom: filters.dobFrom || undefined,
-          dobTo: filters.dobTo || undefined,
-          sortBy: filters.sortBy || undefined,
-          sortOrder: filters.sortOrder || undefined,
-          page: filters.page || undefined,
-          limit: filters.limit || undefined,
-        },
-      })
-      .then((r) => r.data),
+  getAll: (filters: PatientFilters) => {
+    const params: Record<string, string | number | boolean | undefined> = {
+      ...filters,
+    };
+    Object.keys(params).forEach((key) => {
+      if (params[key] === undefined || params[key] === "") {
+        delete params[key];
+      }
+    });
+    if (params.isActive !== undefined) {
+      params.isActive = String(params.isActive);
+    }
 
-  getOne: (id: string) => api.get<PatientDetail>(`/patients/${id}`).then((r) => r.data),
+    return api
+      .get<Patient[]>(ENDPOINTS.PATIENTS.BASE, { params })
+      .then((r) => r.data);
+  },
+
+  getOne: (id: string) =>
+    api.get<PatientDetail>(ENDPOINTS.PATIENTS.BY_ID(id)).then((r) => r.data),
 
   create: (data: CreatePatientInput) =>
-    api.post<PatientDetail>('/patients', data).then((r) => r.data),
+    api.post<PatientDetail>(ENDPOINTS.PATIENTS.BASE, data).then((r) => r.data),
 
   update: (id: string, data: UpdatePatientInput) =>
-    api.patch<PatientDetail>(`/patients/${id}`, data).then((r) => r.data),
+    api
+      .patch<PatientDetail>(ENDPOINTS.PATIENTS.BY_ID(id), data)
+      .then((r) => r.data),
 
-  deactivate: (id: string) => api.patch(`/patients/${id}/deactivate`).then((r) => r.data),
+  deactivate: (id: string) =>
+    api.patch(ENDPOINTS.PATIENTS.DEACTIVATE(id)).then((r) => r.data),
 
-  reactivate: (id: string) => api.patch(`/patients/${id}/reactivate`).then((r) => r.data),
+  reactivate: (id: string) =>
+    api.patch(ENDPOINTS.PATIENTS.REACTIVATE(id)).then((r) => r.data),
 
-  remove: (id: string) => api.delete(`/patients/${id}`).then((r) => r.data),
+  remove: (id: string) =>
+    api.delete(ENDPOINTS.PATIENTS.BY_ID(id)).then((r) => r.data),
 };

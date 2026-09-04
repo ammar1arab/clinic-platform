@@ -8,6 +8,7 @@ import {
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { useFetchData, type TResponseError, useApiMutation, INVALIDATE, LIVE_LIST_OPTIONS } from '../query';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { useLanguage } from '@/providers';
 
 export function useAppointments(filters: AppointmentFilters, enabled = true) {
   return useFetchData<Appointment[]>({
@@ -31,10 +32,11 @@ export function useAppointment(id: string) {
 }
 
 export function useCreateAppointment() {
+  const { t } = useLanguage();
   return useApiMutation<Appointment, TResponseError, CreateAppointmentInput>({
     request: (data) => appointmentsService.create(data),
     invalidateQueries: [...INVALIDATE.appointmentWrite],
-    successMessage: 'Appointment created',
+    successMessage: t.common.appointmentCreated,
   });
 }
 
@@ -73,6 +75,7 @@ interface UpdateAppointmentContext {
 
 export function useUpdateAppointment() {
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
 
   return useApiMutation<
     Appointment,
@@ -81,7 +84,7 @@ export function useUpdateAppointment() {
     UpdateAppointmentContext
   >({
     request: ({ id, data }) => appointmentsService.update(id, data),
-    successMessage: 'Appointment updated',
+    successMessage: t.common.appointmentUpdated,
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.appointments.all });
 
@@ -137,6 +140,7 @@ export function useUpdateAppointment() {
 }
 
 export function useMarkAppointmentPaid() {
+  const { t } = useLanguage();
   return useApiMutation<
     Appointment,
     TResponseError,
@@ -145,19 +149,21 @@ export function useMarkAppointmentPaid() {
     request: ({ id, paymentMethodId }) =>
       appointmentsService.markPaid(id, paymentMethodId),
     invalidateQueries: [...INVALIDATE.appointmentPayment],
-    successMessage: 'Marked as paid',
+    successMessage: t.common.markedAsPaid,
   });
 }
 
 export function useMarkAppointmentUnpaid() {
+  const { t } = useLanguage();
   return useApiMutation<Appointment, TResponseError, string>({
     request: (id) => appointmentsService.markUnpaid(id),
     invalidateQueries: [...INVALIDATE.appointmentPayment],
-    successMessage: 'Marked as unpaid',
+    successMessage: t.common.markedAsUnpaid,
   });
 }
 
 export function useRedeemAppointmentPackage() {
+  const { t } = useLanguage();
   return useApiMutation<
     Appointment,
     TResponseError,
@@ -166,14 +172,15 @@ export function useRedeemAppointmentPackage() {
     request: ({ id, patientPackageId }) =>
       appointmentsService.redeemPackage(id, patientPackageId),
     invalidateQueries: [...INVALIDATE.appointmentPackage],
-    successMessage: 'Visit covered by package',
+    successMessage: t.common.visitCoveredByPackage,
   });
 }
 
 export function useReleaseAppointmentPackage() {
+  const { t } = useLanguage();
   return useApiMutation<Appointment, TResponseError, string>({
     request: (id) => appointmentsService.releasePackage(id),
     invalidateQueries: [...INVALIDATE.appointmentPackage],
-    successMessage: 'Package coverage removed',
+    successMessage: t.common.packageCoverageRemoved,
   });
 }

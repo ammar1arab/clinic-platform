@@ -25,7 +25,7 @@ export function CalendarSkeleton() {
           <Skeleton key={`h-${i}`} className="h-8 rounded-none" />
         ))}
         {Array.from({ length: 35 }).map((_, i) => (
-          <div key={i} className="min-h-[5.5rem] space-y-2 bg-card p-2">
+          <div key={i} className="min-h-22 space-y-2 bg-card p-2">
             <Skeleton className="h-4 w-6" />
             {i % 3 === 0 && <Skeleton className="h-4 w-full rounded-md" />}
             {i % 5 === 0 && <Skeleton className="h-4 w-[80%] rounded-md" />}

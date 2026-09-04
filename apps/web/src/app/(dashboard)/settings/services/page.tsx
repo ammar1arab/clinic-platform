@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
 import {
   Button,
   Table,
@@ -22,11 +23,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+  } from '@/components/ui';
 import {
   RowActionsMenu,
   EmptyState,
@@ -37,12 +34,12 @@ import {
   Pagination,
   BilingualNameFields,
   optionalArabicName,
-} from '@/components/primitives';
-import {
+  PageBack,
   TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data';
+} from '@/components/primitives';
+
 import {
   IconAdd,
   IconDelete,
@@ -50,6 +47,7 @@ import {
   IconService,
 } from '@/constants/icons';
 import { FORM_NONE } from '@/constants/form';
+import { ROUTES } from '@/constants/routes';
 import {
   useServices,
   useCreateService,
@@ -61,12 +59,14 @@ import {
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useListFilter } from '@/hooks/shared/use-list-filter';
-import { ServiceItem } from '@/services/services.service';
+import { useLanguage } from '@/providers';
+import type { ServiceItem } from '@/services/services.service';
 
 const searchFields = (s: ServiceItem) => [s.name];
 
 export default function ServicesPage() {
   const clinicId = useClinicId();
+  const { t, lang } = useLanguage();
   const { data: services, isLoading } = useServices(clinicId);
   const { data: departments } = useDepartments(clinicId);
   const {
@@ -97,8 +97,11 @@ export default function ServicesPage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const isToggling = deactivateMutation.isPending || reactivateMutation.isPending;
 
-  const departmentName = (id: string | null) =>
-    departments?.find((d) => d.id === id)?.name ?? '—';
+  const departmentName = (id: string | null) => {
+    const dept = departments?.find((d) => d.id === id);
+    if (!dept) return '—';
+    return lang === 'ar' && dept.nameAr ? dept.nameAr : dept.name;
+  };
 
   const openCreate = () => {
     setEditing(null);
@@ -145,13 +148,12 @@ export default function ServicesPage() {
     if (nextActive) reactivateMutation.mutate(svc.id);
     else deactivateMutation.mutate(svc.id);
   };
-
   const rowActions = (svc: ServiceItem) => (
     <RowActionsMenu
       items={[
-        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(svc) },
+        { label: t.common.edit, icon: IconEdit, onSelect: () => openEdit(svc) },
         {
-          label: 'Delete',
+          label: t.common.delete,
           icon: IconDelete,
           variant: 'destructive',
           onSelect: () => del.ask({ id: svc.id, name: svc.name }),
@@ -161,18 +163,20 @@ export default function ServicesPage() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
+      <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
+
       <div className="flex items-center gap-2">
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search services…"
+          placeholder={t.settings.searchServices}
           className="min-w-0 flex-1 sm:max-w-sm"
         />
         <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 mr-1.5" />
-          <span className="hidden sm:inline">Add Service</span>
-          <span className="sm:hidden">Add</span>
+          <IconAdd className="size-4 me-1.5" />
+          <span className="hidden sm:inline">{t.settings.addService}</span>
+          <span className="sm:hidden">{t.common.add}</span>
         </Button>
       </div>
 
@@ -181,11 +185,11 @@ export default function ServicesPage() {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[32%]">Name</TableHead>
-                <TableHead className="w-[22%]">Department</TableHead>
-                <TableHead className="w-[12%]">Duration</TableHead>
-                <TableHead className="w-[14%]">Fee (JOD)</TableHead>
-                <TableHead className="w-[10%]">Active</TableHead>
+                <TableHead className="w-[32%]">{t.common.name}</TableHead>
+                <TableHead className="w-[22%]">{t.settings.departments}</TableHead>
+                <TableHead className="w-[12%]">{t.common.duration}</TableHead>
+                <TableHead className="w-[14%]">{t.common.fee} (JOD)</TableHead>
+                <TableHead className="w-[10%]">{t.common.active}</TableHead>
                 <TableHead className="w-[10%]" />
               </TableRow>
             </TableHeader>
@@ -217,11 +221,11 @@ export default function ServicesPage() {
                   <TableCell colSpan={6} className="p-0">
                     <EmptyState
                       icon={IconService}
-                      title={search ? 'No matching services' : 'No services yet'}
+                      title={search ? t.settings.noMatchingServices : t.settings.noServices}
                       description={
                         search
-                          ? 'Try a different search term.'
-                          : 'Add a service to define appointment types, duration, and fees.'
+                          ? t.common.noResults
+                          : t.settings.servicesDesc
                       }
                     />
                   </TableCell>
@@ -231,16 +235,18 @@ export default function ServicesPage() {
               {pageItems.map((svc) => (
                 <TableRow key={svc.id} className={!svc.isActive ? 'opacity-60' : undefined}>
                   <TableCell className="max-w-0 overflow-hidden">
-                    <TruncatedText className="font-medium">{svc.name}</TruncatedText>
+                    <TruncatedText className="font-medium">
+                      {lang === 'ar' && svc.nameAr ? svc.nameAr : svc.name}
+                    </TruncatedText>
                   </TableCell>
                   <TableCell className="max-w-0 overflow-hidden text-muted-foreground">
                     <TruncatedText>{departmentName(svc.departmentId)}</TruncatedText>
                   </TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">
-                    {svc.durationMins} min
+                  <TableCell className="text-muted-foreground">
+                    {svc.durationMins} {t.common.mins}
                   </TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap">
-                    {Number(svc.fee).toFixed(3)}
+                  <TableCell className="font-mono text-xs">
+                    {Number(svc.fee).toFixed(3)} JOD
                   </TableCell>
                   <TableCell>
                     <Switch
@@ -259,35 +265,37 @@ export default function ServicesPage() {
         </TableFrame>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 md:hidden">
+      <div className="space-y-2 md:hidden">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-[4.5rem] w-full rounded-xl" />
+            <div key={i} className="rounded-xl border border-border/70 bg-card p-4">
+              <Skeleton className="h-4 w-28" />
+            </div>
           ))}
         {!isLoading && totalItems === 0 && (
           <EmptyState
             icon={IconService}
-            title={search ? 'No matching services' : 'No services yet'}
+            title={search ? t.settings.noMatchingServices : t.settings.noServices}
             description={
               search
-                ? 'Try a different search term.'
-                : 'Add a service to define appointment types, duration, and fees.'
+                ? t.common.noResults
+                : t.settings.servicesDesc
             }
           />
         )}
         {pageItems.map((svc) => (
           <EntityMobileCard
             key={svc.id}
-            title={svc.name}
+            title={lang === 'ar' && svc.nameAr ? svc.nameAr : svc.name}
             active={svc.isActive}
             onActiveChange={(checked) => handleToggleActive(svc, checked)}
             activeDisabled={isToggling}
             actions={rowActions(svc)}
             meta={
               <>
-                <EntityMetaStat label="Department" value={departmentName(svc.departmentId)} />
-                <EntityMetaStat label="Duration" value={`${svc.durationMins} min`} />
-                <EntityMetaStat label="Fee" value={`${Number(svc.fee).toFixed(3)} JOD`} />
+                <EntityMetaStat label={t.settings.departments} value={departmentName(svc.departmentId)} />
+                <EntityMetaStat label={t.common.duration} value={`${svc.durationMins} ${t.common.mins}`} />
+                <EntityMetaStat label={t.common.fee} value={`${Number(svc.fee).toFixed(3)} JOD`} />
               </>
             }
           />
@@ -303,37 +311,39 @@ export default function ServicesPage() {
       />
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Service' : 'New Service'}</DialogTitle>
+            <DialogTitle>
+              {editing ? t.common.edit : t.settings.addService}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="py-2 space-y-3">
             <BilingualNameFields
               name={name}
               nameAr={nameAr}
               onNameChange={setName}
               onNameArChange={setNameAr}
             />
-            <FormField label="Department">
+            <FormField label={t.settings.departments}>
               <Select
                 value={departmentId || FORM_NONE}
                 onValueChange={(v) => setDepartmentId(v === FORM_NONE ? '' : v)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="No department" />
+                  <SelectValue placeholder={t.common.none} />
                 </SelectTrigger>
                 <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
-                  <SelectItem value={FORM_NONE}>No department</SelectItem>
+                  <SelectItem value={FORM_NONE}>{t.common.none}</SelectItem>
                   {departments?.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
-                      <span className="truncate">{d.name}</span>
+                      <span className="truncate">{lang === 'ar' && d.nameAr ? d.nameAr : d.name}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </FormField>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormField label="Duration (min)" htmlFor="duration">
+              <FormField label={`${t.common.duration} (${t.common.mins})`} htmlFor="duration">
                 <Input
                   id="duration"
                   type="number"
@@ -343,7 +353,7 @@ export default function ServicesPage() {
                   onChange={(e) => setDurationMins(e.target.value)}
                 />
               </FormField>
-              <FormField label="Fee (JOD)" htmlFor="fee">
+              <FormField label={`${t.common.fee} (JOD)`} htmlFor="fee">
                 <Input
                   id="fee"
                   type="number"
@@ -359,7 +369,7 @@ export default function ServicesPage() {
             <FormActions
               variant="dialog"
               onCancel={() => setOpen(false)}
-              submitLabel={editing ? 'Save' : 'Create'}
+              submitLabel={editing ? t.common.save : t.common.create}
               pending={isSaving}
               disabled={!name.trim() || !fee}
               onSubmitClick={handleSubmit}

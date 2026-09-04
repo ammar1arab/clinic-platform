@@ -21,35 +21,28 @@ import { FORM_ALL } from '@/constants/form';
 import { cn } from '@/lib/utils';
 import { IconAdd, IconChevronDown, IconNewPatient, IconPatients, IconSchedule, IconTimer } from '@/constants/icons';
 import { STATUS_MENU_CONTENT_CLASS, StatusFilterItems } from './status-menu';
+import { useLanguage } from '@/providers';
 
 const VIEW_TABS: {
-  id: ScheduleView | 'calendar';
-  label: string;
-  short: string;
+  id: 'calendar' | 'doctors' | 'queue';
   icon: typeof IconSchedule;
   match: (view: ScheduleView) => boolean;
   target: (view: ScheduleView) => ScheduleView;
 }[] = [
   {
     id: 'calendar',
-    label: 'Calendar',
-    short: 'Calendar',
     icon: IconSchedule,
     match: (v) => v === 'month' || v === 'week' || v === 'day',
     target: (v) => (v === 'month' || v === 'week' || v === 'day' ? v : 'month'),
   },
   {
     id: 'doctors',
-    label: 'Doctor Timeline',
-    short: 'Doctors',
     icon: IconPatients,
     match: (v) => v === 'doctors',
     target: () => 'doctors',
   },
   {
     id: 'queue',
-    label: 'Waiting Room',
-    short: 'Waiting',
     icon: IconTimer,
     match: (v) => v === 'queue',
     target: () => 'queue',
@@ -82,6 +75,7 @@ function StatusFilterDropdown({
   onToggle: (status: AppointmentStatus) => void;
   onClear: () => void;
 }) {
+  const { t } = useLanguage();
   const count = active.size;
 
   return (
@@ -96,7 +90,7 @@ function StatusFilterDropdown({
             count > 0 && 'border-primary/35 bg-primary/5 text-foreground',
           )}
         >
-          <span className="truncate text-muted-foreground">Status</span>
+          <span className="truncate text-muted-foreground">{t.appointments.status}</span>
           {count > 0 ? (
             <Badge variant="info" className="h-5 min-h-0 min-w-5 justify-center px-1 font-bold">
               {count}
@@ -118,7 +112,7 @@ function StatusFilterDropdown({
               onClick={onClear}
               className="flex w-full cursor-pointer items-center rounded-md px-2 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
-              Clear filters
+              {t.appointments.clearFilters}
             </button>
           </>
         )}
@@ -143,6 +137,14 @@ export function ScheduleToolbar({
   onNewPatient,
   onNewAppointment,
 }: Props) {
+  const { t, lang } = useLanguage();
+
+  const tabLabels: Record<'calendar' | 'doctors' | 'queue', string> = {
+    calendar: t.appointments.calendar,
+    doctors: t.appointments.doctorTimeline,
+    queue: t.appointments.waitingRoom,
+  };
+
   return (
     <div
       data-schedule-toolbar=""
@@ -150,8 +152,9 @@ export function ScheduleToolbar({
     >
       <div className="flex items-center gap-1.5 sm:gap-2">
         <div className="flex min-w-0 flex-1 items-center overflow-x-auto rounded-lg border bg-muted/50 p-0.5 shadow-2xs scrollbar-none">
-          {VIEW_TABS.map(({ id, label, short, icon: Icon, match, target }) => {
+          {VIEW_TABS.map(({ id, icon: Icon, match, target }) => {
             const active = match(view);
+            const label = tabLabels[id];
             return (
               <SoftTip key={id} label={label}>
                 <button
@@ -170,8 +173,7 @@ export function ScheduleToolbar({
                       id === 'queue' ? 'text-warning' : 'text-primary',
                     )}
                   />
-                  <span className="whitespace-nowrap sm:hidden">{short}</span>
-                  <span className="hidden whitespace-nowrap sm:inline">{label}</span>
+                  <span className="whitespace-nowrap">{label}</span>
                 </button>
               </SoftTip>
             );
@@ -179,27 +181,27 @@ export function ScheduleToolbar({
         </div>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
-          <SoftTip label="Add patient">
+          <SoftTip label={t.appointments.addPatient}>
             <Button
               variant="outline"
               size="sm"
               onClick={onNewPatient}
-              aria-label="Add patient"
+              aria-label={t.appointments.addPatient}
               className="size-8 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
             >
               <IconNewPatient className="size-3.5 shrink-0 text-muted-foreground" />
-              <span className="hidden font-semibold sm:inline">Patient</span>
+              <span className="hidden font-semibold sm:inline">{t.appointments.patient}</span>
             </Button>
           </SoftTip>
-          <SoftTip label="Add appointment">
+          <SoftTip label={t.appointments.addAppointment}>
             <Button
               size="sm"
               onClick={onNewAppointment}
-              aria-label="Add appointment"
+              aria-label={t.appointments.addAppointment}
               className="size-8 shrink-0 px-0 active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
             >
               <IconAdd className="size-3.5 shrink-0" />
-              <span className="hidden font-semibold sm:inline">Appointment</span>
+              <span className="hidden font-semibold sm:inline">{t.appointments.appointment}</span>
             </Button>
           </SoftTip>
         </div>
@@ -209,7 +211,7 @@ export function ScheduleToolbar({
         <SearchInput
           value={search}
           onChange={onSearchChange}
-          placeholder="Search patients, doctors…"
+          placeholder={t.appointments.searchPlaceholder}
           className="min-w-0 w-full sm:max-w-64 sm:flex-1 lg:max-w-72"
         />
 
@@ -218,13 +220,13 @@ export function ScheduleToolbar({
             size="sm"
             options={(departments ?? []).map((dept) => ({
               value: dept.id,
-              label: dept.name,
+              label: (lang === 'ar' && dept.nameAr) || dept.name,
             }))}
             value={departmentId || FORM_ALL}
             onChange={(next) => onDepartmentChange(next === FORM_ALL ? '' : next)}
-            extraOption={{ value: FORM_ALL, label: 'Departments' }}
-            placeholder="Department"
-            searchPlaceholder="Search departments…"
+            extraOption={{ value: FORM_ALL, label: t.appointments.departments }}
+            placeholder={t.appointments.departments}
+            searchPlaceholder={t.appointments.searchPlaceholder}
             className="h-9 min-w-0 flex-1 bg-background/50 sm:w-52 sm:flex-none"
           />
 
@@ -235,19 +237,19 @@ export function ScheduleToolbar({
           />
 
           {isLoading ? (
-            <Badge variant="muted" className="h-9 sm:ml-auto">
+            <Badge variant="muted" className="h-9 sm:ms-auto">
               <Spinner size="sm" className="text-primary" />
             </Badge>
           ) : (
-            <SoftTip label={`${count} appointment${count === 1 ? '' : 's'}`}>
+            <SoftTip label={`${count} ${t.appointments.appts}`}>
               <Badge
                 variant="success"
-                className="h-9 tabular-nums sm:ml-auto"
+                className="h-9 tabular-nums sm:ms-auto"
               >
                 <span className="size-1.5 shrink-0 rounded-full bg-success" />
                 <span>{count}</span>
-                <span className="hidden sm:inline">appt{count === 1 ? '' : 's'}</span>
-              </Badge>
+                <span className="hidden sm:inline">{t.appointments.appts}</span>
+               </Badge>
             </SoftTip>
           )}
         </div>

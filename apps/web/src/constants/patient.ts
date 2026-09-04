@@ -1,31 +1,33 @@
 import type { PatientSortBy, SortOrder } from '@/services/patients.service';
+import type { Translations } from '@/i18n';
 import { ageLabel } from '@/lib/age';
 
-export const GENDERS = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
+export const getGenders = (t: Translations) => [
+  { value: 'male', label: t.constants.gender['male'] },
+  { value: 'female', label: t.constants.gender['female'] },
 ] as const;
 
-export function genderLabel(value: string | null | undefined): string {
+export function genderLabel(value: string | null | undefined, t: Translations): string {
   if (!value) return '';
-  return GENDERS.find((g) => g.value === value)?.label ?? value;
+  if (value === 'male' || value === 'female') return t.constants.gender[value];
+  return value;
 }
 
-export function patientAgeLabel(dob: string | null | undefined): string {
-  return ageLabel(dob);
+export function patientAgeLabel(dob: string | null | undefined, t: Translations): string {
+  return ageLabel(dob, undefined, t);
 }
 
 export const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as const;
 
-export const PATIENT_SORTS = [
-  { value: 'createdAt:desc', label: 'Newest first' },
-  { value: 'createdAt:asc', label: 'Oldest first' },
-  { value: 'firstNameEn:asc', label: 'First name (A–Z)' },
-  { value: 'firstNameEn:desc', label: 'First name (Z–A)' },
-  { value: 'lastNameEn:asc', label: 'Last name (A–Z)' },
-  { value: 'appointments:desc', label: 'Most sessions' },
-  { value: 'dob:desc', label: 'Youngest' },
-  { value: 'dob:asc', label: 'Oldest (age)' },
+export const getPatientSorts = (t: Translations) => [
+  { value: 'createdAt:desc', label: t.constants.patientSorts['createdAt:desc'] },
+  { value: 'createdAt:asc', label: t.constants.patientSorts['createdAt:asc'] },
+  { value: 'firstNameEn:asc', label: t.constants.patientSorts['firstNameEn:asc'] },
+  { value: 'firstNameEn:desc', label: t.constants.patientSorts['firstNameEn:desc'] },
+  { value: 'lastNameEn:asc', label: t.constants.patientSorts['lastNameEn:asc'] },
+  { value: 'appointments:desc', label: t.constants.patientSorts['appointments:desc'] },
+  { value: 'dob:desc', label: t.constants.patientSorts['dob:desc'] },
+  { value: 'dob:asc', label: t.constants.patientSorts['dob:asc'] },
 ] as const;
 
 export const DEFAULT_PATIENT_SORT = 'createdAt:desc';

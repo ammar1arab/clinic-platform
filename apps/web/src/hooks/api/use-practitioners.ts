@@ -1,3 +1,4 @@
+import type { Translations } from '@/i18n';
 import { practitionersService } from '@/services/practitioners.service';
 import type {
   CreatePractitionerInput,
@@ -25,8 +26,8 @@ const {
   useReactivate: useReactivatePractitioner,
 } = createCrudHooks<Practitioner, CreatePractitionerInput, UpdatePractitionerInput>({
   keys: QUERY_KEYS.practitioners,
-  entity: 'Practitioner',
-  labels: { removed: 'Practitioner deleted' },
+  entity: 'practitioner',
+  labels: (t: Translations) => ({ removed: t.common.practitionerDeleted }),
   service: {
     getAll: practitionersService.getAll,
     create: (data) =>

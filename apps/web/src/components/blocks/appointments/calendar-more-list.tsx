@@ -7,6 +7,8 @@ import { clickAnchor, type AnchorRect } from './popover-position';
 import { formatApptStartAmPm, patientDisplayName } from './appointment-display';
 import { StatusBadgeBlock } from './status-badge';
 
+import { useLanguage } from '@/providers';
+
 export type CalendarMoreState = {
   date: Date;
   appointments: Appointment[];
@@ -24,6 +26,7 @@ export function CalendarMoreList({
   onClose: () => void;
   onSelect: (appointment: Appointment) => void;
 }) {
+  const { t, lang } = useLanguage();
   const anchor = clickAnchor(state.x, state.y, state.anchor);
   const count = state.appointments.length;
 
@@ -53,14 +56,14 @@ export function CalendarMoreList({
       >
         <div className="border-b border-border px-3.5 py-2.5">
           <p className="text-sm font-semibold text-foreground">
-            {state.date.toLocaleDateString(undefined, {
+            {state.date.toLocaleDateString(lang === 'ar' ? 'ar' : undefined, {
               weekday: 'short',
               month: 'short',
               day: 'numeric',
             })}
           </p>
           <p className="text-xs text-muted-foreground">
-            {count} appointment{count === 1 ? '' : 's'}
+            {count} {t?.appointments?.appts ?? 'appointments'}
           </p>
         </div>
         <div className="max-h-80 overflow-y-auto p-1.5">
@@ -75,10 +78,10 @@ export function CalendarMoreList({
               )}
             >
               <span className="w-14 shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
-                {formatApptStartAmPm(appt)}
+                {formatApptStartAmPm(appt, lang)}
               </span>
-              <span className="min-w-0 flex-1 break-words text-sm font-medium text-foreground">
-                {patientDisplayName(appt)}
+              <span className="min-w-0 flex-1 wrap-break-word text-sm font-medium text-foreground">
+                {patientDisplayName(appt, lang)}
               </span>
               <StatusBadgeBlock status={appt.status} compact tip={false} />
             </button>

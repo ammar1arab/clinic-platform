@@ -14,12 +14,13 @@ import {
 } from '@/components/blocks/reports';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { usePatients } from '@/hooks/api/use-patients';
-import { useAuth } from '@/providers';
+import { useAuth, useLanguage } from '@/providers';
 import {
   useDownloadFinanceReport,
   useDownloadPatientReport,
   useDownloadReferralsReport,
 } from '@/hooks/api/use-reports';
+import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import { currentMonthRange } from '@/constants/report';
 import { IconPatients, IconPayment, IconPerson, IconReferral } from '@/constants/icons';
 import { exportPatients } from '@/lib/export-patients';
@@ -28,18 +29,19 @@ import { toast } from 'sonner';
 export default function ReportsPage() {
   const clinicId = useClinicId();
   const { user } = useAuth();
+  const { t, lang } = useLanguage();
   const canFinance =
     user?.role === 'owner' ||
     user?.role === 'admin' ||
     user?.role === 'financial';
   const month = useMemo(() => currentMonthRange(), []);
 
-  const [patientReportId, setPatientReportId] = useState('');
-  const [referralsPatientId, setReferralsPatientId] = useState('');
-  const [referralsFrom, setReferralsFrom] = useState(month.from);
-  const [referralsTo, setReferralsTo] = useState(month.to);
-  const [financeFrom, setFinanceFrom] = useState(month.from);
-  const [financeTo, setFinanceTo] = useState(month.to);
+  const [patientReportId, setPatientReportId] = useSessionStorageState('reports-patient', '');
+  const [referralsPatientId, setReferralsPatientId] = useSessionStorageState('reports-ref-patient', '');
+  const [referralsFrom, setReferralsFrom] = useSessionStorageState('reports-ref-from', month.from);
+  const [referralsTo, setReferralsTo] = useSessionStorageState('reports-ref-to', month.to);
+  const [financeFrom, setFinanceFrom] = useSessionStorageState('reports-fin-from', month.from);
+  const [financeTo, setFinanceTo] = useSessionStorageState('reports-fin-to', month.to);
 
   const { data: patients, isLoading: patientsLoading } = usePatients({
     clinicId,
@@ -56,15 +58,15 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <ReportCard
           icon={IconPerson}
-          title="Patient medical"
-          description="Visit history and profile for one patient."
+          title={t?.reports?.patientMedical ?? "Patient medical"}
+          description={t?.reports?.patientMedicalDesc ?? "Visit history and profile for one patient."}
         >
-          <FormField label="Patient" labelClassName="text-xs">
+          <FormField label={t?.patient?.patient ?? "Patient"} labelClassName="text-xs">
             <PatientCombobox
               patients={patients}
               value={patientReportId}
               onChange={setPatientReportId}
-              placeholder="Select patient"
+              placeholder={t?.reports?.selectPatient ?? "Select patient"}
             />
           </FormField>
           <div className="mt-auto pt-1">
@@ -81,13 +83,13 @@ export default function ReportsPage() {
 
         <ReportCard
           icon={IconPatients}
-          title="Patients directory"
-          description="Export the active patients roster (A–Z)."
+          title={t?.reports?.patientsDirectory ?? "Patients directory"}
+          description={t?.reports?.patientsDirectoryDesc ?? "Export the active patients roster (A–Z)."}
         >
           <p className="text-xs text-muted-foreground">
             {patientsLoading
-              ? 'Loading…'
-              : `${patients?.length ?? 0} active patient${(patients?.length ?? 0) === 1 ? '' : 's'}`}
+              ? (t?.common?.loading ?? 'Loading…')
+              : `${patients?.length ?? 0} ${t?.reports?.activePatients ?? 'active patients'}`}
           </p>
           <div className="mt-auto pt-1">
             <ExportFormatButton
@@ -112,8 +114,8 @@ export default function ReportsPage() {
 
         <ReportCard
           icon={IconReferral}
-          title="Referrals & consultations"
-          description="Referrals in a date range. Optionally filter by patient."
+          title={t?.reports?.referralsConsultations ?? "Referrals & consultations"}
+          description={t?.reports?.referralsConsultationsDesc ?? "Referrals in a date range. Optionally filter by patient."}
         >
           <DateRangePresets
             onPick={(from, to) => {
@@ -122,27 +124,27 @@ export default function ReportsPage() {
             }}
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <FormField label="From" labelClassName="text-xs">
+            <FormField label={t?.reports?.from ?? "From"} labelClassName="text-xs">
               <DatePicker
                 value={referralsFrom}
                 onChange={setReferralsFrom}
-                placeholder="From"
+                placeholder={t?.reports?.from ?? "From"}
               />
             </FormField>
-            <FormField label="To" labelClassName="text-xs">
+            <FormField label={t?.reports?.to ?? "To"} labelClassName="text-xs">
               <DatePicker
                 value={referralsTo}
                 onChange={setReferralsTo}
-                placeholder="To"
+                placeholder={t?.reports?.to ?? "To"}
               />
             </FormField>
           </div>
-          <FormField label="Patient (optional)" labelClassName="text-xs">
+          <FormField label={`${t?.patient?.patient ?? "Patient"} (${t?.common?.optional ?? (lang === 'ar' ? 'اختياري' : 'optional')})`} labelClassName="text-xs">
             <PatientCombobox
               patients={patients}
               value={referralsPatientId}
               onChange={setReferralsPatientId}
-              placeholder="All patients"
+              placeholder={t?.reports?.allPatients ?? "All patients"}
               allowClear
             />
           </FormField>
@@ -165,8 +167,8 @@ export default function ReportsPage() {
         {canFinance && (
           <ReportCard
             icon={IconPayment}
-            title="Finance"
-            description="Revenue, unpaid balances, by payment method and doctor."
+            title={t?.reports?.finance ?? "Finance"}
+            description={t?.reports?.financeDesc ?? "Revenue, unpaid balances, by payment method and doctor."}
           >
             <DateRangePresets
               onPick={(from, to) => {
@@ -175,18 +177,18 @@ export default function ReportsPage() {
               }}
             />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <FormField label="From" labelClassName="text-xs">
+              <FormField label={t?.reports?.from ?? "From"} labelClassName="text-xs">
                 <DatePicker
                   value={financeFrom}
                   onChange={setFinanceFrom}
-                  placeholder="From"
+                  placeholder={t?.reports?.from ?? "From"}
                 />
               </FormField>
-              <FormField label="To" labelClassName="text-xs">
+              <FormField label={t?.reports?.to ?? "To"} labelClassName="text-xs">
                 <DatePicker
                   value={financeTo}
                   onChange={setFinanceTo}
-                  placeholder="To"
+                  placeholder={t?.reports?.to ?? "To"}
                 />
               </FormField>
             </div>

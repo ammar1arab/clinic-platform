@@ -1,4 +1,6 @@
 import { format } from 'date-fns';
+import { ar, enUS } from 'date-fns/locale';
+import { getTranslations } from '@/i18n';
 
 const CLOCK_RE = /^(\d{1,2}):(\d{2})(?::\d{2})?$/;
 const RANGE_SEP = ' – ';
@@ -24,22 +26,23 @@ export function toClockValue(hours: number, minutes: number) {
   return `${pad2(hours)}:${pad2(minutes)}`;
 }
 
-export function formatClockParts(hours: number, minutes: number) {
+export function formatClockParts(hours: number, minutes: number, lang?: string) {
   const hour12 = hours % 12 || 12;
-  const period = hours < 12 ? 'AM' : 'PM';
+  const t = getTranslations(lang ?? 'en');
+  const period = hours < 12 ? t.time.am : t.time.pm;
   if (minutes === 0) return `${hour12} ${period}`;
   return `${hour12}:${pad2(minutes)} ${period}`;
 }
 
-export function formatHour(hour: number) {
+export function formatHour(hour: number, lang?: string) {
   const normalized = ((Math.trunc(hour) % 24) + 24) % 24;
-  return formatClockParts(normalized, 0);
+  return formatClockParts(normalized, 0, lang);
 }
 
-export function formatClock(value: string | null | undefined, empty = EMPTY) {
+export function formatClock(value: string | null | undefined, empty = EMPTY, lang?: string) {
   const clock = parseClock(value);
   if (!clock) return empty;
-  return formatClockParts(clock.hours, clock.minutes);
+  return formatClockParts(clock.hours, clock.minutes, lang);
 }
 
 function toDate(value: Date | string | number | null | undefined): Date | null {
@@ -62,36 +65,40 @@ function toDate(value: Date | string | number | null | undefined): Date | null {
 export function formatTime(
   value: Date | string | number | null | undefined,
   empty = EMPTY,
+  lang?: string,
 ) {
   const date = toDate(value);
   if (!date) return empty;
-  return formatClockParts(date.getHours(), date.getMinutes());
+  return formatClockParts(date.getHours(), date.getMinutes(), lang);
 }
 
 export function formatTimeRange(
   start: Date | string | number | null | undefined,
   end: Date | string | number | null | undefined,
   empty = EMPTY,
+  lang?: string,
 ) {
-  return `${formatTime(start, empty)}${RANGE_SEP}${formatTime(end, empty)}`;
+  return `${formatTime(start, empty, lang)}${RANGE_SEP}${formatTime(end, empty, lang)}`;
 }
 
 export function formatDate(
   value: Date | string | number | null | undefined,
   empty = EMPTY,
+  lang = 'en',
 ) {
   const date = toDate(value);
   if (!date) return empty;
-  return format(date, 'MMM d, yyyy');
+  return format(date, 'MMM d, yyyy', { locale: lang === 'ar' ? ar : enUS });
 }
 
 export function formatDateTime(
   value: Date | string | number | null | undefined,
   empty = EMPTY,
+  lang = 'en',
 ) {
   const date = toDate(value);
   if (!date) return empty;
-  return `${formatDate(date)} · ${formatTime(date)}`;
+  return `${formatDate(date, empty, lang)} · ${formatTime(date, empty, lang)}`;
 }
 
 export function toDateParam(date: Date) {

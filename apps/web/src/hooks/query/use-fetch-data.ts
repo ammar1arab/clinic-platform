@@ -2,9 +2,9 @@ import {
   type QueryKey,
   useQuery,
   type UseQueryResult,
-} from '@tanstack/react-query';
-import axios from 'axios';
-import { createLogger } from '@/lib/logger';
+} from "@tanstack/react-query";
+import axios from "axios";
+import { createLogger } from "@/lib/logger";
 import {
   errorText,
   toMessageError,
@@ -12,12 +12,12 @@ import {
   type IMessageError,
   type TResponse,
   type TResponseError,
-} from './query-normalize';
-import { toQueryOptions, type FetchOptions } from './query-presets';
+} from "./query-normalize";
+import { toQueryOptions, type FetchOptions } from "./query-presets";
 
 export type { IMessageError, TResponse, TResponseError, FetchOptions };
 
-const log = createLogger('hooks/query');
+const log = createLogger("hooks/query");
 
 export function isNotFoundError(
   error: Error | IMessageError | null | undefined,
@@ -29,8 +29,6 @@ export type UseFetchDataArgs<T> = {
   queryKey: QueryKey;
   request: () => Promise<TResponse<T>> | Promise<T>;
   options?: FetchOptions;
-  onSuccess?: (data: T) => void;
-  onError?: (error: IMessageError) => void;
 };
 
 export type UseFetchDataResult<T> = UseQueryResult<T, TResponseError> & {
@@ -41,20 +39,14 @@ export function useFetchData<T>({
   queryKey,
   request,
   options,
-  onSuccess,
-  onError,
 }: UseFetchDataArgs<T>): UseFetchDataResult<T> {
   const queryResult = useQuery<T, TResponseError>({
     queryKey,
     queryFn: async () => {
       try {
         const raw = await request();
-        const data = unwrapResponse(raw, options?.skipNormalization);
-        onSuccess?.(data);
-        return data;
+        return unwrapResponse(raw, options?.skipNormalization);
       } catch (error) {
-        const parsed = toMessageError(error);
-        onError?.(parsed);
         const status = axios.isAxiosError(error)
           ? error.response?.status
           : undefined;
@@ -63,9 +55,9 @@ export function useFetchData<T>({
           status: status ?? null,
           queryKey: JSON.stringify(queryKey),
         };
-        if (axios.isAxiosError(error)) log.warn('fetch_failed', meta);
-        else log.error('fetch_failed', meta);
-        throw error;
+        if (axios.isAxiosError(error)) log.warn("fetch_failed", meta);
+        else log.error("fetch_failed", meta);
+        throw toMessageError(error);
       }
     },
     ...toQueryOptions(options),

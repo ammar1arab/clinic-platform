@@ -32,6 +32,8 @@ import { useIsMobile } from '@/hooks/shared/use-media-query';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { formatTime } from '@/lib/datetime';
+import { useLanguage } from '@/providers';
+import arLocale from '@fullcalendar/core/locales/ar';
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
 
@@ -74,6 +76,7 @@ export function AppointmentCalendar({
   appointmentsRef.current = appointments;
   const updateMutation = useUpdateAppointment();
   const isMobile = useIsMobile();
+  const { t, lang } = useLanguage();
   const [preview, setPreview] = useState<EventPreviewState | null>(null);
   const [overflow, setOverflow] = useState<CalendarMoreState | null>(null);
 
@@ -81,7 +84,7 @@ export function AppointmentCalendar({
     () =>
       appointments?.map((appt) => ({
         id: appt.id,
-        title: patientDisplayName(appt),
+        title: patientDisplayName(appt, lang),
         start: appt.scheduledAt,
         end: new Date(
           new Date(appt.scheduledAt).getTime() + appt.durationMins * 60000,
@@ -94,7 +97,7 @@ export function AppointmentCalendar({
         classNames: appt.status === 'cancelled' ? ['fc-event-cancelled'] : [],
         extendedProps: { appointment: appt },
       })) ?? [],
-    [appointments],
+    [appointments, lang],
   );
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
@@ -218,10 +221,10 @@ export function AppointmentCalendar({
   const renderMoreLinkContent = useCallback(
     (arg: MoreLinkContentArg) => (
       <Badge variant="info" className="fc-more-badge pointer-events-none text-[10px] font-semibold">
-        +{arg.num} more
+        +{arg.num} {t?.appointments?.more ?? (lang === 'ar' ? 'المزيد' : 'more')}
       </Badge>
     ),
-    [],
+    [t, lang],
   );
 
   const openDayMore = useCallback((link: Element, clientX: number, clientY: number) => {
@@ -313,29 +316,32 @@ export function AppointmentCalendar({
         ref={sizeHostRef}
         onPointerDownCapture={handleCalendarPointerDown}
         className={cn(
-          'relative [&_.fc-header-toolbar]:pr-9 sm:[&_.fc-header-toolbar]:pr-10',
+          'relative [&_.fc-header-toolbar]:pe-9 sm:[&_.fc-header-toolbar]:pe-10',
           focused &&
             'flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0',
         )}
       >
-        <div className="absolute top-0 right-0 z-20">
+        <div className="absolute top-0 end-0 z-20">
           <ViewFocusToggle />
         </div>
         <FullCalendar
-          key={view}
+          key={`${view}-${lang}`}
           ref={calendarRef}
           plugins={PLUGINS}
           initialView={VIEW_TO_FC[view]}
+          locales={[arLocale]}
+          locale={lang === 'ar' ? 'ar' : 'en'}
+          direction={lang === 'ar' ? 'rtl' : 'ltr'}
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
             right: 'timeGridDay,timeGridWeek,dayGridMonth',
           }}
           buttonText={{
-            today: 'Today',
-            day: 'Day',
-            week: 'Week',
-            month: 'Month',
+            today: t?.appointments?.today ?? 'Today',
+            day: t?.appointments?.day ?? 'Day',
+            week: t?.appointments?.week ?? 'Week',
+            month: t?.appointments?.month ?? 'Month',
           }}
           height={focused ? '100%' : 'auto'}
           slotMinTime="07:00:00"
@@ -348,7 +354,7 @@ export function AppointmentCalendar({
           eventDurationEditable
           eventResizableFromStart
           nowIndicator
-          slotLabelContent={(arg) => formatTime(arg.date)}
+          slotLabelContent={(arg) => formatTime(arg.date, undefined, lang)}
           eventTimeFormat={{
             hour: 'numeric',
             minute: '2-digit',

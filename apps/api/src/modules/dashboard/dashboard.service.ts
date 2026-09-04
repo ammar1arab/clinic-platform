@@ -78,6 +78,7 @@ export class DashboardService {
       return {
         roomId: room.id,
         roomName: room.name,
+        roomNameAr: room.nameAr,
         bookedMinutes,
         workingMinutes,
         utilisationPercent: Math.min(utilisationPercent, 100),

@@ -1,5 +1,5 @@
-import { BootSplash } from '@/components/blocks/feedback';
+import { LoadingState } from '@/components/primitives';
 
 export default function RootLoading() {
-  return <BootSplash label="Welcome…" />;
+  return <LoadingState variant="section" text="Welcome…" className="min-h-dvh" />;
 }

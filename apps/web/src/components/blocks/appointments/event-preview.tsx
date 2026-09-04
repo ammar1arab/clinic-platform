@@ -25,6 +25,7 @@ import { useNow } from '@/hooks/shared/use-now';
 import { useMounted } from '@/hooks/shared/use-mounted';
 import { IconClose, IconMaximize, IconOnline, IconPerson, IconRoom, IconService, IconTime } from '@/constants/icons';
 import { SoftTip } from '@/components/primitives';
+import { useLanguage } from '@/providers';
 import {
   holdCalendarMorePopover,
   isProtectedOverlayTarget,
@@ -85,8 +86,8 @@ function resolvePreviewSide(
   )[0][0];
 }
 
-function formatDayLabel(appt: Appointment) {
-  return new Date(appt.scheduledAt).toLocaleDateString(undefined, {
+function formatDayLabel(appt: Appointment, lang?: string) {
+  return new Date(appt.scheduledAt).toLocaleDateString(lang === 'ar' ? 'ar' : undefined, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -99,6 +100,7 @@ export function EventPreview({
   onClose,
   onExpand,
 }: Props) {
+  const { t, lang } = useLanguage();
   const { appointment: appt } = preview;
   const mounted = useMounted();
   const now = useNow(30_000);
@@ -190,13 +192,13 @@ export function EventPreview({
 
         <div className="flex shrink-0 items-start justify-between gap-2 border-b border-border/60 px-3.5 py-3">
           <div className="min-w-0">
-            <SoftTip label={patientDisplayName(appt)}>
+            <SoftTip label={patientDisplayName(appt, lang)}>
               <p className="break-words text-sm font-semibold tracking-tight text-foreground">
-                {patientDisplayName(appt)}
+                {patientDisplayName(appt, lang)}
               </p>
             </SoftTip>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {formatDayLabel(appt)} · {formatApptTimeRange(appt)}
+              {formatDayLabel(appt, lang)} · {formatApptTimeRange(appt, lang)}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
@@ -204,10 +206,10 @@ export function EventPreview({
               appointment={{ ...appt, status: currentStatus }}
               onStatusChange={setCurrentStatus}
             />
-            <SoftTip label="Close preview">
+            <SoftTip label={t.common.close}>
               <button
                 type="button"
-                aria-label="Close preview"
+                aria-label={t.common.close}
                 onClick={onClose}
                 className="grid size-7 cursor-pointer place-items-center rounded-md text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground active:scale-95"
               >
@@ -221,20 +223,20 @@ export function EventPreview({
           <div className="space-y-2.5 rounded-lg border bg-muted/30 p-2.5 text-xs">
             <Row
               icon={<IconPerson className="size-3.5" />}
-              label="Doctor"
-              value={formatDoctorLabel(appt.doctor?.name)}
+              label={t.appointments.doctor}
+              value={formatDoctorLabel(appt.doctor, { lang })}
             />
             {appt.service ? (
               <Row
                 icon={<IconService className="size-3.5" />}
-                label="Service"
-                value={appt.service.name}
+                label={t.appointments.service}
+                value={(lang === 'ar' && appt.service.nameAr) || appt.service.name}
               />
             ) : null}
             {appt.sessionType === 'online' ? (
               <Row
                 icon={<IconOnline className="size-3.5" />}
-                label="Session"
+                label={t.appointments.sessionType}
                 value={
                   appt.meetingUrl ? (
                     <a
@@ -243,25 +245,29 @@ export function EventPreview({
                       rel="noreferrer"
                       className="break-words text-primary underline-offset-2 hover:underline"
                     >
-                      Join online session
+                      {t.appointments.joinOnlineSession}
                     </a>
                   ) : (
-                    'Online session'
+                    t.appointments.onlineSession
                   )
                 }
               />
             ) : appt.room ? (
-              <Row icon={<IconRoom className="size-3.5" />} label="Room" value={appt.room.name} />
+              <Row
+                icon={<IconRoom className="size-3.5" />}
+                label={t.appointments.room}
+                value={(lang === 'ar' && appt.room.nameAr) || appt.room.name}
+              />
             ) : null}
             <Row
               icon={<IconTime className="size-3.5" />}
-              label="Details"
-              value={`${appt.durationMins} min · ${pricing.payable.toFixed(3)} JOD`}
+              label={t.appointments.appointmentDetails}
+              value={`${appt.durationMins} ${lang === 'ar' ? 'دقيقة' : 'min'} · ${pricing.payable.toFixed(3)} JOD`}
             />
             {waitingMins != null ? (
               <Row
                 icon={<IconTime className="size-3.5" />}
-                label="Waiting time"
+                label={t.queue.estimatedWait}
                 value={formatWaitingMins(waitingMins)}
               />
             ) : null}
@@ -274,15 +280,15 @@ export function EventPreview({
             size="sm"
             onClick={onClose}
           >
-            Close
+            {t.common.close}
           </Button>
           <Button
             size="sm"
             onClick={() => onExpand({ ...appt, status: currentStatus })}
             className="active:scale-95"
           >
-            <IconMaximize className="mr-1.5 size-3.5" />
-            Open appointment
+            <IconMaximize className="me-1.5 size-3.5" />
+            {t.appointments.openAppointment}
           </Button>
         </div>
       </PopoverContent>

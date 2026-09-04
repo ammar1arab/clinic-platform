@@ -1,3 +1,4 @@
+import type { Translations } from '@/i18n';
 import {
   servicesService,
   CreateServiceInput,
@@ -16,8 +17,8 @@ const {
   useReactivate: useReactivateService,
 } = createCrudHooks<ServiceItem, CreateServiceInput, UpdateServiceInput>({
   keys: QUERY_KEYS.services,
-  entity: 'Service',
-  labels: { removed: 'Service permanently deleted' },
+  entity: 'service',
+  labels: (t: Translations) => ({ removed: t.common.serviceDeleted }),
   service: {
     getAll: servicesService.getAll,
     create: servicesService.create,

@@ -4,6 +4,8 @@ import type { QueryKey } from '@tanstack/react-query';
 import { useFetchData, type TResponseError } from './use-fetch-data';
 import { useApiMutation } from './use-api-mutation';
 import { clinicListOptions } from './query-presets';
+import { useLanguage } from '@/providers';
+import type { Translations } from '@/i18n';
 
 type QueryKeyFactory = {
   all: QueryKey;
@@ -21,8 +23,8 @@ export type CrudService<TEntity, TCreate, TUpdate> = {
 
 export type CrudHooksConfig<TEntity, TCreate, TUpdate> = {
   keys: QueryKeyFactory;
-  entity: string;
-  labels?: {
+  entity: keyof Translations['entities'];
+  labels?: (t: Translations) => {
     created?: string;
     updated?: string;
     removed?: string;
@@ -50,16 +52,22 @@ export function createCrudHooks<TEntity, TCreate, TUpdate>(
   config: CrudHooksConfig<TEntity, TCreate, TUpdate>,
 ) {
   const { keys, entity, service } = config;
-  const labels = {
-    created: config.labels?.created ?? `${entity} created`,
-    updated: config.labels?.updated ?? `${entity} updated`,
-    removed: config.labels?.removed ?? `${entity} removed`,
-    deactivated: config.labels?.deactivated ?? `${entity} deactivated`,
-    reactivated: config.labels?.reactivated ?? `${entity} reactivated`,
-  };
 
   const invalidateFor = (clinicId: string): QueryKey[] =>
     config.invalidateOnWrite?.(clinicId) ?? [keys.list(clinicId)];
+
+  function useResolvedLabels() {
+    const { t } = useLanguage();
+    const entityName = t.entities[entity];
+    const userLabels = config.labels?.(t) ?? {};
+    return {
+      created: userLabels.created ?? t.mutations.created.replace('{entity}', entityName),
+      updated: userLabels.updated ?? t.mutations.updated.replace('{entity}', entityName),
+      removed: userLabels.removed ?? t.mutations.removed.replace('{entity}', entityName),
+      deactivated: userLabels.deactivated ?? t.mutations.deactivated.replace('{entity}', entityName),
+      reactivated: userLabels.reactivated ?? t.mutations.reactivated.replace('{entity}', entityName),
+    };
+  }
 
   return {
     useList(clinicId: string) {
@@ -70,6 +78,7 @@ export function createCrudHooks<TEntity, TCreate, TUpdate>(
       });
     },
     useCreate(clinicId: string) {
+      const labels = useResolvedLabels();
       return useApiMutation<TEntity, TResponseError, TCreate>({
         request: (data) => service.create(data),
         invalidateQueries: invalidateFor(clinicId),
@@ -77,6 +86,7 @@ export function createCrudHooks<TEntity, TCreate, TUpdate>(
       });
     },
     useUpdate(clinicId: string) {
+      const labels = useResolvedLabels();
       return useApiMutation<
         TEntity,
         TResponseError,
@@ -88,6 +98,7 @@ export function createCrudHooks<TEntity, TCreate, TUpdate>(
       });
     },
     useRemove(clinicId: string) {
+      const labels = useResolvedLabels();
       return useApiMutation<null, TResponseError, string>({
         request: (id) => runAction(service.remove, entity, 'remove', id),
         invalidateQueries: invalidateFor(clinicId),
@@ -95,6 +106,7 @@ export function createCrudHooks<TEntity, TCreate, TUpdate>(
       });
     },
     useDeactivate(clinicId: string) {
+      const labels = useResolvedLabels();
       return useApiMutation<null, TResponseError, string>({
         request: (id) =>
           runAction(service.deactivate, entity, 'deactivate', id),
@@ -103,6 +115,7 @@ export function createCrudHooks<TEntity, TCreate, TUpdate>(
       });
     },
     useReactivate(clinicId: string) {
+      const labels = useResolvedLabels();
       return useApiMutation<null, TResponseError, string>({
         request: (id) =>
           runAction(service.reactivate, entity, 'reactivate', id),

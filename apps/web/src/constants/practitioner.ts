@@ -1,10 +1,7 @@
+import type { Translations } from '@/i18n';
 import type { Practitioner } from '@/services/practitioners.service';
 
-export const PRACTITIONER_EMPLOYMENT_LABEL: Record<string, string> = {
-  salaried: 'Salaried',
-  commission: 'Commission',
-  mixed: 'Mixed',
-};
+export const getPractitionerEmploymentLabels = (t: Translations): Record<string, string> => t.constants.employment;
 
 export const PRACTITIONER_EMPLOYMENT_VARIANT: Record<
   string,
@@ -15,28 +12,28 @@ export const PRACTITIONER_EMPLOYMENT_VARIANT: Record<
   mixed: 'info',
 };
 
-export const PRACTITIONER_LANGUAGES = [
-  { value: 'ar', label: 'Arabic' },
-  { value: 'en', label: 'English' },
-  { value: 'fr', label: 'French' },
-  { value: 'de', label: 'German' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'tr', label: 'Turkish' },
-  { value: 'ru', label: 'Russian' },
-  { value: 'hi', label: 'Hindi' },
-  { value: 'ur', label: 'Urdu' },
+export const getPractitionerLanguages = (t: Translations) => [
+  { value: 'ar', label: t.constants.languages['ar'] },
+  { value: 'en', label: t.constants.languages['en'] },
+  { value: 'fr', label: t.constants.languages['fr'] },
+  { value: 'de', label: t.constants.languages['de'] },
+  { value: 'es', label: t.constants.languages['es'] },
+  { value: 'tr', label: t.constants.languages['tr'] },
+  { value: 'ru', label: t.constants.languages['ru'] },
+  { value: 'hi', label: t.constants.languages['hi'] },
+  { value: 'ur', label: t.constants.languages['ur'] },
 ] as const;
 
-export function languageLabelList(codes: string[] | null | undefined): string[] {
+export function languageLabelList(codes: string[] | null | undefined, t: Translations): string[] {
   if (!codes?.length) return [];
   const map = Object.fromEntries(
-    PRACTITIONER_LANGUAGES.map((l) => [l.value, l.label]),
+    getPractitionerLanguages(t).map((l) => [l.value, l.label]),
   );
   return codes.map((code) => map[code] ?? code);
 }
 
-export function languageLabels(codes: string[] | null | undefined): string {
-  return languageLabelList(codes).join(', ');
+export function languageLabels(codes: string[] | null | undefined, t: Translations): string {
+  return languageLabelList(codes, t).join(', ');
 }
 
 export const LANGUAGE_BADGE_VARIANT = ['info', 'success', 'warning', 'secondary'] as const;
@@ -51,34 +48,34 @@ export const WEEKDAY_OPTIONS = [
   'Saturday',
 ] as const;
 
-export const PRACTITIONER_SORTS = [
-  { value: 'name:asc', label: 'Name (A-Z)' },
-  { value: 'name:desc', label: 'Name (Z-A)' },
-  { value: 'createdAt:desc', label: 'Newest first' },
-  { value: 'createdAt:asc', label: 'Oldest first' },
-  { value: 'department:asc', label: 'Department' },
-  { value: 'specialty:asc', label: 'Specialty' },
-  { value: 'experience:desc', label: 'Most experience' },
-  { value: 'experience:asc', label: 'Least experience' },
-  { value: 'licenseExpiry:asc', label: 'License expiring soon' },
+export const getPractitionerSorts = (t: Translations) => [
+  { value: 'name:asc', label: t.constants.practitionerSorts['name:asc'] },
+  { value: 'name:desc', label: t.constants.practitionerSorts['name:desc'] },
+  { value: 'createdAt:desc', label: t.constants.practitionerSorts['createdAt:desc'] },
+  { value: 'createdAt:asc', label: t.constants.practitionerSorts['createdAt:asc'] },
+  { value: 'department:asc', label: t.constants.practitionerSorts['department:asc'] },
+  { value: 'specialty:asc', label: t.constants.practitionerSorts['specialty:asc'] },
+  { value: 'experience:desc', label: t.constants.practitionerSorts['experience:desc'] },
+  { value: 'experience:asc', label: t.constants.practitionerSorts['experience:asc'] },
+  { value: 'licenseExpiry:asc', label: t.constants.practitionerSorts['licenseExpiry:asc'] },
 ] as const;
 
 export const DEFAULT_PRACTITIONER_SORT = 'name:asc';
 
-export const PRACTITIONER_LICENSE_FILTERS = [
-  { value: 'all', label: 'Any license' },
-  { value: 'valid', label: 'Valid' },
-  { value: 'expiring', label: 'Expiring (60 days)' },
-  { value: 'expired', label: 'Expired' },
-  { value: 'missing', label: 'Missing' },
+export const getPractitionerLicenseFilters = (t: Translations) => [
+  { value: 'all', label: t.constants.licenseFilters['all'] },
+  { value: 'valid', label: t.constants.licenseFilters['valid'] },
+  { value: 'expiring', label: t.constants.licenseFilters['expiring'] },
+  { value: 'expired', label: t.constants.licenseFilters['expired'] },
+  { value: 'missing', label: t.constants.licenseFilters['missing'] },
 ] as const;
 
-export const PRACTITIONER_EXPERIENCE_FILTERS = [
-  { value: 'all', label: 'Any experience' },
-  { value: '0-2', label: '0-2 years' },
-  { value: '3-5', label: '3-5 years' },
-  { value: '6-10', label: '6-10 years' },
-  { value: '10+', label: '10+ years' },
+export const getPractitionerExperienceFilters = (t: Translations) => [
+  { value: 'all', label: t.constants.experienceFilters['all'] },
+  { value: '0-2', label: t.constants.experienceFilters['0-2'] },
+  { value: '3-5', label: t.constants.experienceFilters['3-5'] },
+  { value: '6-10', label: t.constants.experienceFilters['6-10'] },
+  { value: '10+', label: t.constants.experienceFilters['10+'] },
 ] as const;
 
 export type PractitionerFilterState = {

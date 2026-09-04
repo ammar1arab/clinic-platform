@@ -7,6 +7,7 @@ import { formatWaitingMins } from '@/lib/waiting-time';
 import type { AppointmentStatus } from '@/services/appointments.service';
 import { FormSection } from './appointment-form-controls';
 import { StatusFieldPicker } from './status-menu';
+import { useLanguage } from '@/providers';
 
 export function AppointmentStatusFields({
   status,
@@ -21,25 +22,33 @@ export function AppointmentStatusFields({
   onStatusChange: (status: AppointmentStatus) => void;
   onCancelReasonChange: (reason: string) => void;
 }) {
+  const { t } = useLanguage();
+
   return (
-    <FormSection title="Status">
+    <FormSection title={t?.appointments?.status ?? 'Status'}>
       <div className="space-y-3">
         <StatusFieldPicker status={status} onChange={onStatusChange} />
         {waitingMins != null && (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">Waiting time</span>
+            <span className="text-xs text-muted-foreground">
+              {t?.appointments?.waitingTime ?? 'Waiting time'}
+            </span>
             <Badge variant="warning" className="tabular-nums">
               <IconTimer className="size-3" />
-              {formatWaitingMins(waitingMins)}
+              {formatWaitingMins(waitingMins, false, t)}
             </Badge>
           </div>
         )}
         {status === 'cancelled' && (
-          <FormField label="Cancellation Reason" required labelClassName="text-destructive">
+          <FormField
+            label={t?.appointments?.cancellationReason ?? 'Cancellation Reason'}
+            required
+            labelClassName="text-destructive"
+          >
             <Textarea
               value={cancelReason}
               onChange={(e) => onCancelReasonChange(e.target.value)}
-              placeholder="Required when cancelling"
+              placeholder={t?.appointments?.requiredWhenCancelling ?? 'Required when cancelling'}
               rows={2}
               className="resize-none border-destructive/40"
             />

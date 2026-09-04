@@ -21,15 +21,15 @@ import {
   FormField,
   FormActions,
 } from '@/components/primitives';
-import { ButtonSpinner } from '@/components/blocks/feedback';
-import { ProfileSection } from '@/components/blocks/profile';
+import { ButtonSpinner } from '@/components/primitives';;
+import {  ProfileSection  } from '@/components/primitives';
 import { useAuth } from '@/providers';
 import { useClinicStaff } from '@/hooks/api/use-clinic-staff';
 import {
   useAcceptReferral,
   useCreateReferral,
   useRejectReferral,
-  useReferralOpinion,
+  useSaveOpinion,
   useReferrals,
 } from '@/hooks/api/use-referrals';
 import type { ReferralType, ReferralUrgency } from '@/services/referrals.service';
@@ -58,7 +58,7 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
   const createMutation = useCreateReferral(clinicId);
   const acceptMutation = useAcceptReferral(clinicId);
   const rejectMutation = useRejectReferral(clinicId);
-  const opinionMutation = useReferralOpinion(clinicId);
+  const opinionMutation = useSaveOpinion(clinicId);
 
   const [open, setOpen] = useState(false);
   const [appointmentId, setAppointmentId] = useState('');

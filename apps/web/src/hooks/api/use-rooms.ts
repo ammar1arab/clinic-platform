@@ -1,3 +1,4 @@
+import type { Translations } from '@/i18n';
 import {
   roomsService,
   CreateRoomInput,
@@ -16,8 +17,8 @@ const {
   useReactivate: useReactivateRoom,
 } = createCrudHooks<Room, CreateRoomInput, UpdateRoomInput>({
   keys: QUERY_KEYS.rooms,
-  entity: 'Room',
-  labels: { removed: 'Room permanently deleted' },
+  entity: 'room',
+  labels: (t: Translations) => ({ removed: t.common.roomDeleted }),
   service: {
     getAll: roomsService.getAll,
     create: roomsService.create,

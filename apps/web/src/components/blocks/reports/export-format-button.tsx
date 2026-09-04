@@ -10,12 +10,13 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { ButtonSpinner } from '@/components/blocks/feedback';
+import { ButtonSpinner } from '@/components/primitives';;
 import { SoftTip } from '@/components/primitives';
-import { REPORT_FORMATS } from '@/constants/report';
+import { getReportFormats } from '@/constants/report';
 import { IconExport } from '@/constants/icons';
 import { cn } from '@/lib/utils';
 import type { ReportFormat } from '@/services/reports.service';
+import { useLanguage } from '@/providers';
 
 type Props = {
   onSelect: (format: ReportFormat) => void;
@@ -34,14 +35,15 @@ export function ExportFormatButton({
   align = 'end',
   compact = false,
 }: Props) {
+  const { t } = useLanguage();
   return (
     <DropdownMenu>
-      <SoftTip label={compact ? 'Download' : undefined}>
+      <SoftTip label={compact ? t.common.download : undefined}>
         <DropdownMenuTrigger asChild>
           <Button
             size="default"
             variant={compact ? 'outline' : 'default'}
-            aria-label="Download"
+            aria-label={t.common.download}
             className={cn(
               'h-8 rounded-lg',
               compact &&
@@ -51,14 +53,14 @@ export function ExportFormatButton({
             disabled={disabled || pending}
           >
             {pending ? <ButtonSpinner /> : <IconExport className="size-4" />}
-            <span className={cn(compact && 'hidden font-semibold sm:inline')}>Download</span>
+            <span className={cn(compact && 'hidden font-semibold sm:inline')}>{t.common.download}</span>
           </Button>
         </DropdownMenuTrigger>
       </SoftTip>
       <DropdownMenuContent align={align} className="w-52">
-        <DropdownMenuLabel>Export format</DropdownMenuLabel>
+        <DropdownMenuLabel>{t.common.exportFormat}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {REPORT_FORMATS.map(({ key, label, ext, desc }) => (
+        {getReportFormats(t).map(({ key, label, ext, desc }) => (
           <DropdownMenuItem
             key={key}
             onClick={() => onSelect(key)}

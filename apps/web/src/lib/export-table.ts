@@ -1,3 +1,4 @@
+import { getTranslations, getLanguage, type Translations } from '@/i18n';
 export type TableExportFormat = 'csv' | 'xlsx' | 'pdf' | 'docx';
 
 export type TableExportColumn<T> = {
@@ -53,15 +54,18 @@ export function exportTable<T>(opts: {
   title: string;
   sheetName: string;
   filename: string;
+  t?: Translations;
+  lang?: string;
 }) {
-  const { rows, columns, format, title, sheetName, filename } = opts;
+  const { rows, columns, format, title, sheetName, filename, lang = getLanguage(), t = getTranslations(lang) } = opts;
+  const dir = lang === 'ar' ? 'rtl' : 'ltr';
   const headers = columns.map((c) => c.header);
 
   if (format === 'csv') {
     const preface = [
       `# ${title}`,
-      `# Generated ${new Date().toLocaleString()}`,
-      `# Count: ${rows.length}`,
+      `# ${t.common.generated} ${new Date().toLocaleString(lang)}`,
+      `# ${t.common.count}: ${rows.length}`,
       '#',
     ];
     const body = rows.map((row) => rowValues(row, columns).map(csvEscape).join(','));
@@ -79,7 +83,7 @@ export function exportTable<T>(opts: {
       .join('');
     const dataRows =
       rows.length === 0
-        ? `<Row><Cell ss:StyleID="Muted"><Data ss:Type="String">No records</Data></Cell></Row>`
+        ? `<Row><Cell ss:StyleID="Muted"><Data ss:Type="String">${t.common.noRecords}</Data></Cell></Row>`
         : rows
             .map((row, index) => {
               const style = index % 2 === 1 ? ' ss:StyleID="Stripe"' : '';
@@ -104,10 +108,10 @@ export function exportTable<T>(opts: {
     <Style ss:ID="Header"><Font ss:Bold="1" ss:Color="${THEME.headerFg}"/><Interior ss:Color="${THEME.headerBg}" ss:Pattern="Solid"/></Style>
     <Style ss:ID="Stripe"><Interior ss:Color="${THEME.stripe}" ss:Pattern="Solid"/></Style>
   </Styles>
-  <Worksheet ss:Name="${xmlEscape(sheetName)}">
+  <Worksheet ss:Name="${xmlEscape(sheetName)}" ss:RightToLeft="${dir === 'rtl' ? 1 : 0}">
     <Table>
       <Row><Cell ss:StyleID="Title"><Data ss:Type="String">${xmlEscape(title)}</Data></Cell></Row>
-      <Row><Cell ss:StyleID="Muted"><Data ss:Type="String">Generated ${xmlEscape(new Date().toLocaleString())} · ${rows.length} records</Data></Cell></Row>
+      <Row><Cell ss:StyleID="Muted"><Data ss:Type="String">${t.common.generated} ${xmlEscape(new Date().toLocaleString(lang))} · ${rows.length} ${t.common.records}</Data></Cell></Row>
       <Row></Row>
       <Row>${headerCells}</Row>
       ${dataRows}
@@ -122,12 +126,12 @@ export function exportTable<T>(opts: {
     const headerCells = headers
       .map(
         (h) =>
-          `<th style="background:${THEME.headerBg};color:${THEME.headerFg};padding:4px 5px;border:1px solid ${THEME.line};text-align:left;font-size:8pt;">${xmlEscape(h)}</th>`,
+          `<th style="background:${THEME.headerBg};color:${THEME.headerFg};padding:4px 5px;border:1px solid ${THEME.line};text-align:start;font-size:8pt;">${xmlEscape(h)}</th>`,
       )
       .join('');
     const bodyRows =
       rows.length === 0
-        ? `<tr><td colspan="${headers.length}" style="padding:8px;border:1px solid ${THEME.line};color:${THEME.muted};text-align:center;">No records</td></tr>`
+        ? `<tr><td colspan="${headers.length}" style="padding:8px;border:1px solid ${THEME.line};color:${THEME.muted};text-align:center;">${t.common.noRecords}</td></tr>`
         : rows
             .map((row, index) => {
               const bg = index % 2 === 1 ? THEME.stripe : '#FFFFFF';
@@ -140,7 +144,7 @@ export function exportTable<T>(opts: {
               return `<tr>${cells}</tr>`;
             })
             .join('');
-    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+    const html = `<html lang="${lang}" dir="${dir}" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head><meta charset="utf-8"><title>${xmlEscape(title)}</title>
 <style>
   @page Section1 { size: 841.9pt 595.3pt; mso-page-orientation: landscape; margin: 36pt; }
@@ -151,7 +155,7 @@ export function exportTable<T>(opts: {
 <body><div class="Section1">
   <div style="text-align:center;margin-bottom:10px;">
     <h1 style="margin:0 0 4px;font-size:16pt;">${xmlEscape(title)}</h1>
-    <p style="margin:0;color:${THEME.muted};font-size:9pt;">${rows.length} records · Generated ${xmlEscape(new Date().toLocaleString())}</p>
+    <p style="margin:0;color:${THEME.muted};font-size:9pt;">${rows.length} ${t.common.records} · ${t.common.generated} ${xmlEscape(new Date().toLocaleString(lang))}</p>
   </div>
   <table><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table>
 </div></body></html>`;
@@ -169,23 +173,23 @@ export function exportTable<T>(opts: {
     })
     .join('');
   const th = headers.map((h) => `<th>${xmlEscape(h)}</th>`).join('');
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" /><title>${xmlEscape(title)}</title>
+  const html = `<!DOCTYPE html><html lang="${lang}" dir="${dir}"><head><meta charset="utf-8" /><title>${xmlEscape(title)}</title>
 <style>
   @page { size: A4 landscape; margin: 12mm; }
   body { font-family: 'Segoe UI', Calibri, system-ui, sans-serif; font-size: 8.5px; color: ${THEME.ink}; margin: 0; }
   h1 { font-size: 15px; margin: 0 0 2px; }
   .meta { margin: 0; color: ${THEME.muted}; font-size: 8px; }
   table { border-collapse: collapse; width: 100%; table-layout: fixed; }
-  th, td { border: 1px solid ${THEME.line}; padding: 3px 4px; text-align: left; vertical-align: top; word-wrap: break-word; }
+  th, td { border: 1px solid ${THEME.line}; padding: 3px 4px; text-align: start; vertical-align: top; word-wrap: break-word; }
   th { background: ${THEME.headerBg}; color: ${THEME.headerFg}; font-size: 7.5px; text-transform: uppercase; }
 </style></head>
 <body>
   <div style="text-align:center;margin-bottom:10px;">
     <h1>${xmlEscape(title)}</h1>
-    <p class="meta">${rows.length} records · Generated ${xmlEscape(new Date().toLocaleString())}</p>
+    <p class="meta">${rows.length} ${t.common.records} · ${t.common.generated} ${xmlEscape(new Date().toLocaleString(lang))}</p>
   </div>
   <table><thead><tr>${th}</tr></thead>
-  <tbody>${tableRows || `<tr><td colspan="${headers.length}" style="text-align:center;color:${THEME.muted};">No records</td></tr>`}</tbody></table>
+  <tbody>${tableRows || `<tr><td colspan="${headers.length}" style="text-align:center;color:${THEME.muted};">${t.common.noRecords}</td></tr>`}</tbody></table>
   <script>window.onload = function () { window.print(); };</script>
 </body></html>`;
   const w = window.open('', '_blank');

@@ -1,3 +1,4 @@
+import type { Translations } from '@/i18n';
 import {
   packagesService,
   CreatePackageInput,
@@ -15,8 +16,8 @@ const {
   useRemove: useDeletePackage,
 } = createCrudHooks<ClinicPackage, CreatePackageInput, UpdatePackageInput>({
   keys: QUERY_KEYS.packages,
-  entity: 'Package',
-  labels: { removed: 'Package permanently deleted' },
+  entity: 'package',
+  labels: (t: Translations) => ({ removed: t.common.packageDeleted }),
   service: {
     getAll: packagesService.getAll,
     create: packagesService.create,

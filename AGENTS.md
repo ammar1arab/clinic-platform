@@ -61,6 +61,9 @@ No hardcoded hex/rgb. No parallel palette.
 - Do not invent endpoints
 - Commit / push / PR only when asked
 - Phase 2 week order; do not cut hire, queue, email/OTP, 48h note lock, or appointment engine
+- Banned: fallback operator with hardcoded string `t?.foo ?? 'String'`. Stand directly on `t.foo`
+- Banned: inline language ternaries `lang === 'ar' ? '...' : '...'`. Put all strings in `en.ts` and `ar.ts`
+- Banned: physical directional classes (`pl-`, `pr-`, `left-`, `right-`). Use logical properties (`ps-`, `pe-`, `start-`, `end-`)
 
 ## Runtime
 

@@ -1,3 +1,4 @@
+import { getTranslations } from '@/i18n';
 export type CompressOptions = {
   maxEdge?: number;
   quality?: number;
@@ -14,14 +15,14 @@ export class ImageCompressError extends Error {
 
 async function toBitmap(source: Blob): Promise<ImageBitmap> {
   if (typeof createImageBitmap === 'function') return createImageBitmap(source);
-  throw new ImageCompressError('Image compression only runs in the browser');
+  throw new ImageCompressError(getTranslations().uploads.browser);
 }
 
 async function toJpeg(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, 'image/jpeg', quality),
   );
-  if (!blob) throw new ImageCompressError('JPEG encode failed');
+  if (!blob) throw new ImageCompressError(getTranslations().uploads.encode);
   return blob;
 }
 
@@ -30,7 +31,7 @@ export async function compressImageToJpeg(
   options: CompressOptions = {},
 ): Promise<File> {
   if (typeof window === 'undefined') {
-    throw new ImageCompressError('Image compression only runs in the browser');
+    throw new ImageCompressError(getTranslations().uploads.browser);
   }
 
   const maxEdge = options.maxEdge ?? 1600;
@@ -40,10 +41,10 @@ export async function compressImageToJpeg(
 
   const type = (input.type || '').toLowerCase();
   if (type && !type.startsWith('image/')) {
-    throw new ImageCompressError('Choose a JPG, PNG, or WebP image');
+    throw new ImageCompressError(getTranslations().uploads.type);
   }
   if ('size' in input && input.size > 20 * 1024 * 1024) {
-    throw new ImageCompressError('Image must be under 20 MB');
+    throw new ImageCompressError(getTranslations().uploads.size);
   }
 
   const bitmap = await toBitmap(input);
@@ -57,7 +58,7 @@ export async function compressImageToJpeg(
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d', { alpha: false });
-    if (!ctx) throw new ImageCompressError('Canvas is unavailable');
+    if (!ctx) throw new ImageCompressError(getTranslations().uploads.canvas);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
     ctx.drawImage(bitmap, 0, 0, width, height);

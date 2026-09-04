@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
 import {
   Button,
   Table,
@@ -16,11 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+  } from '@/components/ui';
 import {
   RowActionsMenu,
   EmptyState,
@@ -30,18 +27,19 @@ import {
   Pagination,
   BilingualNameFields,
   optionalArabicName,
-} from '@/components/primitives';
-import {
+  PageBack,
   TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data';
+} from '@/components/primitives';
+
 import {
   IconAdd,
   IconDelete,
   IconDepartment,
   IconEdit,
 } from '@/constants/icons';
+import { ROUTES } from '@/constants/routes';
 import {
   useDepartments,
   useCreateDepartment,
@@ -51,13 +49,15 @@ import {
   useDeleteDepartment,
 } from '@/hooks/api/use-departments';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useLanguage } from '@/providers';
 import { useListFilter } from '@/hooks/shared/use-list-filter';
-import { Department } from '@/services/departments.service';
+import type { Department } from '@/services/departments.service';
 
 const searchFields = (d: Department) => [d.name];
 
 export default function DepartmentsPage() {
   const clinicId = useClinicId();
+  const { t, lang } = useLanguage();
   const { data: departments, isLoading } = useDepartments(clinicId);
   const {
     search,
@@ -124,9 +124,9 @@ export default function DepartmentsPage() {
   const rowActions = (dept: Department) => (
     <RowActionsMenu
       items={[
-        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(dept) },
+        { label: t.common.edit, icon: IconEdit, onSelect: () => openEdit(dept) },
         {
-          label: 'Delete',
+          label: t.common.delete,
           icon: IconDelete,
           variant: 'destructive',
           onSelect: () => del.ask({ id: dept.id, name: dept.name }),
@@ -136,18 +136,20 @@ export default function DepartmentsPage() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
+      <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
+
       <div className="flex items-center gap-2">
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search departments…"
+          placeholder={t.settings.searchDepartments}
           className="min-w-0 flex-1 sm:max-w-sm"
         />
         <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 mr-1.5" />
-          <span className="hidden sm:inline">Add Department</span>
-          <span className="sm:hidden">Add</span>
+          <IconAdd className="size-4 me-1.5" />
+          <span className="hidden sm:inline">{t.settings.addDepartment}</span>
+          <span className="sm:hidden">{t.common.add}</span>
         </Button>
       </div>
 
@@ -156,8 +158,8 @@ export default function DepartmentsPage() {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[60%]">Name</TableHead>
-                <TableHead className="w-[20%]">Active</TableHead>
+                <TableHead className="w-[60%]">{t.common.name}</TableHead>
+                <TableHead className="w-[20%]">{t.common.active}</TableHead>
                 <TableHead className="w-[20%]" />
               </TableRow>
             </TableHeader>
@@ -180,11 +182,11 @@ export default function DepartmentsPage() {
                   <TableCell colSpan={3} className="p-0">
                     <EmptyState
                       icon={IconDepartment}
-                      title={search ? 'No matching departments' : 'No departments yet'}
+                      title={search ? t.settings.noMatchingDepartments : t.settings.noDepartments}
                       description={
                         search
-                          ? 'Try a different search term.'
-                          : "Add a department to organize your clinic's rooms and services."
+                          ? t.common.noResults
+                          : t.settings.departmentsDesc
                       }
                     />
                   </TableCell>
@@ -194,7 +196,9 @@ export default function DepartmentsPage() {
               {pageItems.map((dept) => (
                 <TableRow key={dept.id} className={!dept.isActive ? 'opacity-60' : undefined}>
                   <TableCell className="max-w-0 overflow-hidden">
-                    <TruncatedText className="font-medium">{dept.name}</TruncatedText>
+                    <TruncatedText className="font-medium">
+                      {lang === 'ar' && dept.nameAr ? dept.nameAr : dept.name}
+                    </TruncatedText>
                   </TableCell>
                   <TableCell>
                     <Switch
@@ -213,33 +217,34 @@ export default function DepartmentsPage() {
         </TableFrame>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 md:hidden">
+      <div className="space-y-2 md:hidden">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-[4.5rem] w-full rounded-xl" />
+            <div key={i} className="rounded-xl border border-border/70 bg-card p-4">
+              <Skeleton className="h-4 w-28" />
+            </div>
           ))}
+
         {!isLoading && totalItems === 0 && (
           <EmptyState
             icon={IconDepartment}
-            title={search ? 'No matching departments' : 'No departments yet'}
+            title={search ? t.settings.noMatchingDepartments : t.settings.noDepartments}
             description={
               search
-                ? 'Try a different search term.'
-                : "Add a department to organize your clinic's rooms and services."
+                ? t.common.noResults
+                : t.settings.departmentsDesc
             }
           />
         )}
+
         {pageItems.map((dept) => (
           <EntityMobileCard
             key={dept.id}
-            title={dept.name}
+            title={lang === 'ar' && dept.nameAr ? dept.nameAr : dept.name}
             active={dept.isActive}
-            onActiveChange={(checked) => handleToggleActive(dept, checked)}
+            onActiveChange={(checked: boolean) => handleToggleActive(dept, checked)}
             activeDisabled={isToggling}
             actions={rowActions(dept)}
-            meta={
-              <EntityMetaStat label="Status" value={dept.isActive ? 'Active' : 'Inactive'} />
-            }
           />
         ))}
       </div>
@@ -253,11 +258,13 @@ export default function DepartmentsPage() {
       />
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Department' : 'New Department'}</DialogTitle>
+            <DialogTitle>
+              {editing ? t.common.edit : t.settings.addDepartment}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="py-2">
             <BilingualNameFields
               name={name}
               nameAr={nameAr}
@@ -269,7 +276,7 @@ export default function DepartmentsPage() {
             <FormActions
               variant="dialog"
               onCancel={() => setOpen(false)}
-              submitLabel={editing ? 'Save' : 'Create'}
+              submitLabel={editing ? t.common.save : t.common.create}
               pending={isSaving}
               disabled={!name.trim()}
               onSubmitClick={handleSubmit}

@@ -18,6 +18,8 @@ export {
   FileText as IconFileText,
   File as IconFile,
   Settings as IconSettings,
+  Languages as IconLanguage,
+  Globe as IconGlobe,
   Building2 as IconDepartment,
   DoorOpen as IconRoom,
   Stethoscope as IconService,

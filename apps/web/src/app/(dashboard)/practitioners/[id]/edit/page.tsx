@@ -1,6 +1,8 @@
 'use client';
 
+import { PractitionerForm } from '@/components/blocks/practitioners';
 import { use } from 'react';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui';
 import {
@@ -8,11 +10,7 @@ import {
   EmptyState,
   RowActionsMenu,
 } from '@/components/primitives';
-import { PractitionerForm } from '@/components/blocks/practitioners';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import {
   useDeletePractitioner,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
 import {
   Button,
   Table,
@@ -17,11 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
   Input,
-} from '@/components/ui';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+  } from '@/components/ui';
 import {
   RowActionsMenu,
   EmptyState,
@@ -30,12 +27,13 @@ import {
   TruncatedText,
   SearchInput,
   Pagination,
-} from '@/components/primitives';
-import {
+  PageBack,
   TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data';
+} from '@/components/primitives';
+
+import { ROUTES } from '@/constants/routes';
 import {
   usePaymentMethods,
   useCreatePaymentMethod,
@@ -46,6 +44,7 @@ import {
 } from '@/hooks/api/use-payment-methods';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useListFilter } from '@/hooks/shared/use-list-filter';
+import { useLanguage } from '@/providers';
 import type { PaymentMethod } from '@/services/payment-methods.service';
 import { IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconEdit, IconPayment } from '@/constants/icons';
 
@@ -53,6 +52,7 @@ const searchFields = (m: PaymentMethod) => [m.name];
 
 export default function PaymentMethodsPage() {
   const clinicId = useClinicId();
+  const { t } = useLanguage();
   const { data: methods, isLoading } = usePaymentMethods(clinicId);
   const {
     search,
@@ -151,9 +151,9 @@ export default function PaymentMethodsPage() {
   const rowActions = (m: PaymentMethod) => (
     <RowActionsMenu
       items={[
-        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(m) },
+        { label: t.common.edit, icon: IconEdit, onSelect: () => openEdit(m) },
         {
-          label: 'Delete',
+          label: t.common.delete,
           icon: IconDelete,
           variant: 'destructive',
           onSelect: () => del.ask({ id: m.id, name: m.name }),
@@ -163,18 +163,20 @@ export default function PaymentMethodsPage() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
+      <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
+
       <div className="flex items-center gap-2">
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search methods…"
+          placeholder={t.settings.searchPaymentMethods}
           className="min-w-0 flex-1 sm:max-w-sm"
         />
         <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 mr-1.5" />
-          <span className="hidden sm:inline">Add Method</span>
-          <span className="sm:hidden">Add</span>
+          <IconAdd className="size-4 me-1.5" />
+          <span className="hidden sm:inline">{t.settings.addPaymentMethod}</span>
+          <span className="sm:hidden">{t.common.add}</span>
         </Button>
       </div>
 
@@ -183,9 +185,9 @@ export default function PaymentMethodsPage() {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[12%]">Order</TableHead>
-                <TableHead className="w-[58%]">Name</TableHead>
-                <TableHead className="w-[15%]">Active</TableHead>
+                <TableHead className="w-[12%]">{t.common.sort}</TableHead>
+                <TableHead className="w-[58%]">{t.common.name}</TableHead>
+                <TableHead className="w-[15%]">{t.common.active}</TableHead>
                 <TableHead className="w-[15%]" />
               </TableRow>
             </TableHeader>
@@ -211,11 +213,11 @@ export default function PaymentMethodsPage() {
                   <TableCell colSpan={4} className="p-0">
                     <EmptyState
                       icon={IconPayment}
-                      title={search ? 'No matching methods' : 'No payment methods yet'}
+                      title={search ? t.settings.noMatchingPaymentMethods : t.settings.noPaymentMethods}
                       description={
                         search
-                          ? 'Try a different search term.'
-                          : 'Add cash, card, or transfer so staff can mark appointments paid.'
+                          ? t.common.noResults
+                          : t.settings.paymentMethodsDesc
                       }
                     />
                   </TableCell>
@@ -247,22 +249,26 @@ export default function PaymentMethodsPage() {
         </TableFrame>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 md:hidden">
+      <div className="space-y-2 md:hidden">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-[4.5rem] w-full rounded-xl" />
+            <div key={i} className="rounded-xl border border-border/70 bg-card p-4">
+              <Skeleton className="h-4 w-28" />
+            </div>
           ))}
+
         {!isLoading && totalItems === 0 && (
           <EmptyState
             icon={IconPayment}
-            title={search ? 'No matching methods' : 'No payment methods yet'}
+            title={search ? t.settings.noMatchingPaymentMethods : t.settings.noPaymentMethods}
             description={
               search
-                ? 'Try a different search term.'
-                : 'Add cash, card, or transfer so staff can mark appointments paid.'
+                ? t.common.noResults
+                : t.settings.paymentMethodsDesc
             }
           />
         )}
+
         {pageItems.map((m) => (
           <EntityMobileCard
             key={m.id}
@@ -270,21 +276,7 @@ export default function PaymentMethodsPage() {
             active={m.isActive}
             onActiveChange={(checked) => handleToggle(m, checked)}
             activeDisabled={isToggling}
-            actions={
-              <>
-                {reorderActions(m)}
-                {rowActions(m)}
-              </>
-            }
-            meta={
-              <>
-                <EntityMetaStat label="Order" value={m.sortOrder + 1} />
-                <EntityMetaStat
-                  label="Status"
-                  value={m.isActive ? 'Active' : 'Inactive'}
-                />
-              </>
-            }
+            actions={rowActions(m)}
           />
         ))}
       </div>
@@ -298,11 +290,11 @@ export default function PaymentMethodsPage() {
       />
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit payment method' : 'New payment method'}</DialogTitle>
+            <DialogTitle>{editing ? t.common.edit : t.settings.addPaymentMethod}</DialogTitle>
           </DialogHeader>
-          <FormField label="Name" htmlFor="pm-name">
+          <FormField label={t.common.name} htmlFor="pm-name">
             <Input
               id="pm-name"
               maxLength={60}
@@ -315,7 +307,7 @@ export default function PaymentMethodsPage() {
             <FormActions
               variant="dialog"
               onCancel={() => setOpen(false)}
-              submitLabel={editing ? 'Save' : 'Create'}
+              submitLabel={editing ? t.common.save : t.common.create}
               pending={isSaving}
               disabled={!name.trim()}
               onSubmitClick={handleSubmit}

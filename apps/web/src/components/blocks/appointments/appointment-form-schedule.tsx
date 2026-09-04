@@ -5,6 +5,7 @@ import { Input } from '@/components/ui';
 import { DatePicker, FormField, TimePicker } from '@/components/primitives';
 import type { AppointmentFormData } from '@/lib/validations';
 import { FormSection } from './appointment-form-controls';
+import { useLanguage } from '@/providers';
 
 export function AppointmentScheduleFields({
   control,
@@ -15,9 +16,14 @@ export function AppointmentScheduleFields({
   errors: FieldErrors<AppointmentFormData>;
   register: UseFormRegister<AppointmentFormData>;
 }) {
+  const { t, lang } = useLanguage();
+
   return (
-    <FormSection title="Schedule" contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <FormField label="Date" required error={errors.date?.message}>
+    <FormSection
+      title={t?.appointments?.schedule ?? (lang === 'ar' ? 'الموعد والوقت' : 'Schedule')}
+      contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-3"
+    >
+      <FormField label={lang === 'ar' ? 'التاريخ' : 'Date'} required error={errors.date?.message}>
         <Controller
           control={control}
           name="date"
@@ -25,13 +31,13 @@ export function AppointmentScheduleFields({
             <DatePicker
               value={field.value}
               onChange={field.onChange}
-              placeholder="Pick a date"
+              placeholder={t?.common?.pickDate ?? 'Pick a date'}
               className="h-10"
             />
           )}
         />
       </FormField>
-      <FormField label="Time" required error={errors.time?.message}>
+      <FormField label={lang === 'ar' ? 'الوقت' : 'Time'} required error={errors.time?.message}>
         <Controller
           control={control}
           name="time"
@@ -39,14 +45,18 @@ export function AppointmentScheduleFields({
             <TimePicker
               value={field.value}
               onChange={field.onChange}
-              placeholder="Pick a time"
+              placeholder={t?.common?.selectTime ?? 'Pick a time'}
               className="h-10"
               step={5}
             />
           )}
         />
       </FormField>
-      <FormField label="Duration (min)" required error={errors.durationMins?.message}>
+      <FormField
+        label={lang === 'ar' ? 'المدة (دقيقة)' : 'Duration (min)'}
+        required
+        error={errors.durationMins?.message}
+      >
         <Input className="h-10" type="number" min={5} step={5} {...register('durationMins')} />
       </FormField>
     </FormSection>

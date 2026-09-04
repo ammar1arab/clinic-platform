@@ -1,29 +1,24 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/providers';
-import {
-  SidebarBlock,
-  TopbarBlock,
-} from '@/components/blocks/layout';
-import {
-  LoadingOverlay,
-  PageTransition,
-} from '@/components/blocks/feedback';
+import { useAuth, useLanguage } from '@/providers';
+import { SidebarBlock, TopbarBlock, PageTransition } from '@/components/layout';
+import { LoadingState } from '@/components/primitives';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
 
   if (isLoading) {
-    return <LoadingOverlay />;
+    return <LoadingState variant="page" text={t.common.checkingPermissions} />;
   }
 
   if (!isAuthenticated) {
     if (typeof window !== 'undefined') {
       router.replace('/login');
     }
-    return <LoadingOverlay />;
+    return <LoadingState variant="page" text={t.common.loadingSession} />;
   }
 
   return (

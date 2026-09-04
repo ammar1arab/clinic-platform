@@ -3,9 +3,21 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html {
+  font-family: var(--font-clinic), var(--font-alexandria), var(--font-tajawal), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
 
+[dir="rtl"], html[dir="rtl"], :root[dir="rtl"] {
+  font-family: var(--font-alexandria), var(--font-tajawal), var(--font-clinic), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+th, td {
+  text-align: start;
+}
 
 :root {
+  --font-sans: var(--font-clinic), var(--font-alexandria), var(--font-tajawal), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-arabic: var(--font-alexandria), var(--font-tajawal), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color-scheme: light;
   --radius: 8px;
 

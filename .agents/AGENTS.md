@@ -21,3 +21,10 @@ See `.cursor/rules/theme.mdc` and `.cursor/skills/theme-ui/SKILL.md`.
 - Ship: `.cursor/skills/ship-check/SKILL.md`
 - Plan cycle: `.cursor/skills/agent-work-cycle/SKILL.md`
 - i18n: `.cursor/skills/sync-i18n/SKILL.md`
+
+## Hard preferences
+- Banned: fallback operator with hardcoded string `t?.foo ?? 'String'`. Stand directly on `t.foo`
+- Banned: inline language ternaries `lang === 'ar' ? '...' : '...'`. Put all strings in `en.ts` and `ar.ts`
+- Banned: physical directional classes (`pl-`, `pr-`, `left-`, `right-`). Use logical properties (`ps-`, `pe-`, `start-`, `end-`)
+- Prefer no `any`
+

@@ -1,6 +1,7 @@
 'use client';
 
 import { use } from 'react';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui';
 import { PatientForm } from '@/components/blocks/patients';
@@ -8,10 +9,7 @@ import {
   PageBack,
   RowActionsMenu,
 } from '@/components/primitives';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+
 import { usePatient, useDeletePatient, useTogglePatientStatus } from '@/hooks/api/use-patients';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { IconActivate, IconDeactivate, IconDelete, IconView } from '@/constants/icons';

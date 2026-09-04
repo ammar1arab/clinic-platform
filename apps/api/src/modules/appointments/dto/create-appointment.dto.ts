@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsEnum,
 } from "class-validator";
+import type { CreateAppointmentInput } from "@clinic/types";
 
 export enum SessionTypeDto {
   in_person = "in_person",
@@ -16,7 +17,7 @@ export enum DiscountTypeDto {
   percentage = "percentage",
 }
 
-export class CreateAppointmentDto {
+export class CreateAppointmentDto implements CreateAppointmentInput {
   @IsString()
   patientId: string;
 

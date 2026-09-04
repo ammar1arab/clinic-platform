@@ -3,6 +3,7 @@
 import type { EventContentArg } from '@fullcalendar/core';
 import type { Appointment } from '@/services/appointments.service';
 import {
+  doctorDisplayName,
   formatApptStartAmPm,
   formatApptTimeRange,
   formatApptTip,
@@ -12,6 +13,7 @@ import {
 import { formatTime, formatTimeRange } from '@/lib/datetime';
 import { IconInPerson, IconOnline } from '@/constants/icons';
 import { SoftTip } from '@/components/primitives';
+import { useLanguage } from '@/providers';
 
 function isAppointment(value: object): value is Appointment {
   return (
@@ -31,23 +33,24 @@ export function readCalendarAppointment(extendedProps: object): Appointment | nu
 }
 
 export function CalendarEventChip({ arg }: { arg: EventContentArg }) {
+  const { lang } = useLanguage();
   const appt = readCalendarAppointment(arg.event.extendedProps);
   const isMonth = arg.view.type === 'dayGridMonth';
-  const fullName = appt ? patientDisplayName(appt) : arg.event.title;
+  const fullName = appt ? patientDisplayName(appt, lang) : arg.event.title;
   const start = arg.event.start;
   const end = arg.event.end;
   const startLabel = appt
-    ? formatApptStartAmPm(appt)
+    ? formatApptStartAmPm(appt, lang)
     : start
-      ? formatTime(start)
+      ? formatTime(start, undefined, lang)
       : arg.timeText;
   const rangeLabel = appt
-    ? formatApptTimeRange(appt)
+    ? formatApptTimeRange(appt, lang)
     : start && end
-      ? formatTimeRange(start, end)
+      ? formatTimeRange(start, end, undefined, lang)
       : arg.timeText;
-  const doctorName = appt?.doctor?.name;
-  const tip = appt ? formatApptTip(appt, { rangeLabel, doctorName }) : fullName;
+  const doctorName = appt?.doctor ? doctorDisplayName(appt.doctor, lang) : undefined;
+  const tip = appt ? formatApptTip(appt, { rangeLabel, doctorName, lang }) : fullName;
   const Icon = appt?.sessionType === 'online' ? IconOnline : IconInPerson;
 
   if (isMonth) {
@@ -75,12 +78,12 @@ export function CalendarEventChip({ arg }: { arg: EventContentArg }) {
           <span className="fc-event-chip__range">{rangeLabel}</span>
           {doctorName ? (
             <span className="fc-event-chip__doctor">
-              {formatDoctorLabel(doctorName, { short: true })}
+              {formatDoctorLabel(appt?.doctor ?? doctorName, { short: true, lang })}
             </span>
           ) : null}
           {appt?.service?.name ? (
             <span className="fc-event-chip__service">
-              {appt.service.name}
+              {lang === 'ar' && appt.service.nameAr ? appt.service.nameAr : appt.service.name}
             </span>
           ) : null}
         </div>

@@ -1,16 +1,20 @@
 'use client';
 
 import { Button } from '@/components/ui';
-import { DATE_RANGE_PRESETS } from '@/constants/report';
+import { getDateRangePresets } from '@/constants/report';
+import { useLanguage } from '@/providers';
 
 type Props = {
   onPick: (from: string, to: string) => void;
 };
 
 export function DateRangePresets({ onPick }: Props) {
+  const { t } = useLanguage();
+
+
   return (
     <div className="flex flex-wrap gap-1.5">
-      {DATE_RANGE_PRESETS.map((preset) => (
+      {getDateRangePresets(t).map((preset) => (
         <Button
           key={preset.label}
           type="button"

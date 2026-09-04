@@ -1,3 +1,4 @@
+import type { Translations } from '@/i18n';
 import type { AppointmentStatus } from '@/services/appointments.service';
 
 export const CLINIC_CURRENCY = 'JOD';
@@ -28,51 +29,43 @@ export const STATUS_COLORS: Record<AppointmentStatus, string> = {
   cancelled: 'var(--color-muted-foreground)',
 };
 
-export const STATUS_CONFIG: Record<
+export const getStatusConfig = (t: Translations): Record<
   AppointmentStatus,
   { label: string; short: string; dotClassName: string }
-> = {
+> => ({
   unconfirmed: {
-    label: 'Unconfirmed',
-    short: 'Pending',
+    ...t.constants.status.unconfirmed,
     dotClassName: 'bg-warning',
   },
   confirmed: {
-    label: 'Confirmed',
-    short: 'Confirmed',
+    ...t.constants.status.confirmed,
     dotClassName: 'bg-success',
   },
   checked_in: {
-    label: 'Checked In',
-    short: 'Checked in',
+    ...t.constants.status.checked_in,
     dotClassName: 'bg-success',
   },
   waiting: {
-    label: 'Waiting',
-    short: 'Waiting',
+    ...t.constants.status.waiting,
     dotClassName: 'bg-warning',
   },
   in_progress: {
-    label: 'In Progress',
-    short: 'In progress',
+    ...t.constants.status.in_progress,
     dotClassName: 'bg-primary animate-pulse',
   },
   completed: {
-    label: 'Completed',
-    short: 'Done',
+    ...t.constants.status.completed,
     dotClassName: 'bg-primary',
   },
   no_show: {
-    label: 'No Show',
-    short: 'No-show',
+    ...t.constants.status.no_show,
     dotClassName: 'bg-error',
   },
   cancelled: {
-    label: 'Cancelled',
-    short: 'Cancelled',
+    ...t.constants.status.cancelled,
     dotClassName: 'bg-muted-foreground',
   },
-};
+});
 
 export const STATUS_OPTIONS: AppointmentStatus[] = [
   'unconfirmed',

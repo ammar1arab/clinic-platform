@@ -23,7 +23,7 @@ import {
 } from '@/components/primitives';
 import { ExportFormatButton } from '@/components/blocks/reports';
 import { FORM_ANY } from '@/constants/form';
-import { GENDERS, BLOOD_TYPES, PATIENT_SORTS } from '@/constants/patient';
+import { getGenders, BLOOD_TYPES, getPatientSorts } from '@/constants/patient';
 import { ROUTES } from '@/constants/routes';
 import { keepNestedPortals } from '@/lib/overlay';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,7 @@ import type { ClinicStaffMember } from '@/services/clinics.service';
 import type { Department } from '@/services/departments.service';
 import type { ReportFormat } from '@/services/reports.service';
 import { IconClose, IconFilters, IconNewPatient } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 export type PatientFilterState = {
   search: string;
@@ -65,6 +66,7 @@ export function PatientFiltersBlock({
   exportDisabled,
   onExport,
 }: Props) {
+  const { t } = useLanguage();
   const activeCount =
     (values.status !== 'all' ? 1 : 0) +
     (values.gender ? 1 : 0) +
@@ -80,23 +82,23 @@ export function PatientFiltersBlock({
     <DirectoryToolbar
       search={values.search}
       onSearchChange={(search) => onChange({ search })}
-      searchPlaceholder="Search by name, phone, ID, or email…"
+      searchPlaceholder={t?.common?.search ?? "Search by name, phone, ID, or email…"}
       actions={
         <>
           <DirectorySortMenu
             value={values.sort}
             onChange={(sort) => onChange({ sort })}
-            options={PATIENT_SORTS}
+            options={getPatientSorts(t).map(s => ({ ...s, label: t?.constants?.patientSorts?.[s.value] ?? s.label }))}
           />
 
           <Popover>
-            <SoftTip label="Filters">
+            <SoftTip label={t?.common?.filters ?? "Filters"}>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  aria-label="Filters"
+                  aria-label={t?.common?.filters ?? "Filters"}
                   className={cn(
                     DIRECTORY_ACTION_CLASS,
                     'border-border/70 bg-background/50',
@@ -104,7 +106,7 @@ export function PatientFiltersBlock({
                   )}
                 >
                   <IconFilters className="size-3.5 shrink-0 text-muted-foreground" />
-                  <span className="hidden font-semibold sm:inline">Filters</span>
+                  <span className="hidden font-semibold sm:inline">{t?.common?.filters ?? "Filters"}</span>
                   {activeCount > 0 ? (
                     <Badge variant="info" className="ms-0 h-5 min-w-5 justify-center px-1 text-xs">
                       {activeCount}
@@ -120,16 +122,16 @@ export function PatientFiltersBlock({
               onFocusOutside={keepNestedPortals}
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Filters</p>
+                <p className="text-sm font-medium">{t?.common?.filters ?? "Filters"}</p>
                 {activeCount > 0 ? (
                   <Button variant="ghost" size="xs" onClick={onReset}>
                     <IconClose className="size-3.5" />
-                    Clear
+                    {t?.common?.clear ?? "Clear"}
                   </Button>
                 ) : null}
               </div>
 
-              <FormField label="Status" labelClassName="text-xs">
+              <FormField label={t?.common?.status ?? "Status"} labelClassName="text-xs">
                 <Select
                   value={values.status}
                   onValueChange={(v) => onChange({ status: v })}
@@ -138,14 +140,14 @@ export function PatientFiltersBlock({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="all">{t?.common?.allStatus ?? "All Status"}</SelectItem>
+                    <SelectItem value="active">{t?.common?.active ?? "Active"}</SelectItem>
+                    <SelectItem value="inactive">{t?.common?.inactive ?? "Inactive"}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
 
-              <FormField label="Practitioner" labelClassName="text-xs">
+              <FormField label={t?.patient?.practitioner ?? t?.practitioner?.practitioner ?? "Practitioner"} labelClassName="text-xs">
                 <Select
                   value={values.primaryDoctorId || FORM_ANY}
                   onValueChange={(v) =>
@@ -153,10 +155,10 @@ export function PatientFiltersBlock({
                   }
                 >
                   <SelectTrigger className="h-8 w-full rounded-lg">
-                    <SelectValue placeholder="Any" />
+                    <SelectValue placeholder={t?.common?.any ?? "Any"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_ANY}>Any</SelectItem>
+                    <SelectItem value={FORM_ANY}>{t?.common?.any ?? "Any"}</SelectItem>
                     {staff?.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
@@ -166,7 +168,7 @@ export function PatientFiltersBlock({
                 </Select>
               </FormField>
 
-              <FormField label="Department" labelClassName="text-xs">
+              <FormField label={t?.practitioner?.department ?? "Department"} labelClassName="text-xs">
                 <Select
                   value={values.departmentId || FORM_ANY}
                   onValueChange={(v) =>
@@ -174,10 +176,10 @@ export function PatientFiltersBlock({
                   }
                 >
                   <SelectTrigger className="h-8 w-full rounded-lg">
-                    <SelectValue placeholder="Any" />
+                    <SelectValue placeholder={t?.common?.any ?? "Any"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_ANY}>Any</SelectItem>
+                    <SelectItem value={FORM_ANY}>{t?.common?.any ?? "Any"}</SelectItem>
                     {departments?.map((d) => (
                       <SelectItem key={d.id} value={d.id}>
                         {d.name}
@@ -188,7 +190,7 @@ export function PatientFiltersBlock({
               </FormField>
 
               <div className="grid grid-cols-2 gap-3">
-                <FormField label="Gender" labelClassName="text-xs">
+                <FormField label={t?.common?.gender ?? "Gender"} labelClassName="text-xs">
                   <Select
                     value={values.gender || FORM_ANY}
                     onValueChange={(v) =>
@@ -196,20 +198,20 @@ export function PatientFiltersBlock({
                     }
                   >
                     <SelectTrigger className="h-8 w-full rounded-lg">
-                      <SelectValue placeholder="Any" />
+                      <SelectValue placeholder={t?.common?.any ?? "Any"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={FORM_ANY}>Any</SelectItem>
-                      {GENDERS.map((g) => (
+                      <SelectItem value={FORM_ANY}>{t?.common?.any ?? "Any"}</SelectItem>
+                      {getGenders(t).map((g) => (
                         <SelectItem key={g.value} value={g.value}>
-                          {g.label}
+                          {t?.constants?.gender?.[g.value] ?? g.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </FormField>
 
-                <FormField label="Blood Type" labelClassName="text-xs">
+                <FormField label={t?.patient?.bloodType ?? "Blood Type"} labelClassName="text-xs">
                   <Select
                     value={values.bloodType || FORM_ANY}
                     onValueChange={(v) =>
@@ -217,10 +219,10 @@ export function PatientFiltersBlock({
                     }
                   >
                     <SelectTrigger className="h-8 w-full rounded-lg">
-                      <SelectValue placeholder="Any" />
+                      <SelectValue placeholder={t?.common?.any ?? "Any"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={FORM_ANY}>Any</SelectItem>
+                      <SelectItem value={FORM_ANY}>{t?.common?.any ?? "Any"}</SelectItem>
                       {BLOOD_TYPES.map((b) => (
                         <SelectItem key={b} value={b}>
                           {b}
@@ -232,37 +234,37 @@ export function PatientFiltersBlock({
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <FormField label="Visit from" labelClassName="text-xs">
+                <FormField label={t?.patient?.visitFrom ?? "Visit from"} labelClassName="text-xs">
                   <DatePicker
                     value={values.visitFrom}
                     onChange={(v) => onChange({ visitFrom: v })}
-                    placeholder="From"
+                    placeholder={t?.common?.from ?? "From"}
                   />
                 </FormField>
-                <FormField label="Visit to" labelClassName="text-xs">
+                <FormField label={t?.patient?.visitTo ?? "Visit to"} labelClassName="text-xs">
                   <DatePicker
                     value={values.visitTo}
                     onChange={(v) => onChange({ visitTo: v })}
-                    placeholder="To"
+                    placeholder={t?.common?.to ?? "To"}
                   />
                 </FormField>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <FormField label="Born after" labelClassName="text-xs">
+                <FormField label={t?.patient?.bornAfter ?? "Born after"} labelClassName="text-xs">
                   <DatePicker
                     value={values.dobFrom}
                     onChange={(v) => onChange({ dobFrom: v })}
-                    placeholder="From"
+                    placeholder={t?.common?.from ?? "From"}
                     withDropdown
                     toDate={new Date()}
                   />
                 </FormField>
-                <FormField label="Born before" labelClassName="text-xs">
+                <FormField label={t?.patient?.bornBefore ?? "Born before"} labelClassName="text-xs">
                   <DatePicker
                     value={values.dobTo}
                     onChange={(v) => onChange({ dobTo: v })}
-                    placeholder="To"
+                    placeholder={t?.common?.to ?? "To"}
                     withDropdown
                     toDate={new Date()}
                   />
@@ -280,11 +282,11 @@ export function PatientFiltersBlock({
             />
           ) : null}
 
-          <SoftTip label="Add patient">
+          <SoftTip label={t?.patient?.addPatient ?? "Add patient"}>
             <Button asChild size="sm" className={DIRECTORY_ACTION_CLASS}>
-              <Link href={ROUTES.PATIENT_NEW} aria-label="Add patient">
+              <Link href={ROUTES.PATIENT_NEW} aria-label={t?.patient?.addPatient ?? "Add patient"}>
                 <IconNewPatient className="size-3.5 shrink-0" />
-                <span className="hidden font-semibold sm:inline">Patient</span>
+                <span className="hidden font-semibold sm:inline">{t?.patient?.patient ?? "Patient"}</span>
               </Link>
             </Button>
           </SoftTip>

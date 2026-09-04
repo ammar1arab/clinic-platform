@@ -1,24 +1,26 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import {
+  useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui';
 import {
   languageLabelList,
   LANGUAGE_BADGE_VARIANT,
-  PRACTITIONER_EMPLOYMENT_LABEL,
+  getPractitionerEmploymentLabels,
   PRACTITIONER_EMPLOYMENT_VARIANT,
   WEEKDAY_OPTIONS,
-} from '@/constants/practitioner';
+  } from '@/constants/practitioner';
 import {
   countryLabel,
   ContactLine,
   PhoneLink,
   PreviewableAvatar,
   RowActionsMenu,
-} from '@/components/primitives';
-import { GENDERS } from '@/constants/patient';
-import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/blocks/feedback';
+  } from '@/components/primitives';
+import { genderLabel } from '@/constants/patient';
+import { TwoStepDeleteDialogs,
+  useTwoStepDelete } from '@/components/primitives';;
 import {
   ProfileEmpty,
   ProfileHero,
@@ -27,8 +29,8 @@ import {
   ProfileSection,
   ProfileShell,
   ProfileSoftRow,
-  ProfileStatusBadge,
-} from '@/components/blocks/profile';
+  ProfileStatusBadge
+} from '@/components/primitives';;
 import { ROUTES } from '@/constants/routes';
 import {
   useDeletePractitioner,
@@ -39,10 +41,12 @@ import { calcAge } from '@/lib/age';
 import { formatDate, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
 import { IconActivate, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
+import { useLanguage } from '@/providers';
+import type { Translations } from '@/i18n';
 
-function employmentLabel(type: string | null | undefined) {
+function employmentLabel(type: string | null | undefined, t: Translations) {
   if (!type) return null;
-  return PRACTITIONER_EMPLOYMENT_LABEL[type] ?? type;
+  return (t.constants.employment as Record<string, string>)?.[type] ?? getPractitionerEmploymentLabels(t)[type] ?? type;
 }
 
 export function PractitionerProfile({
@@ -57,35 +61,42 @@ export function PractitionerProfile({
   const reactivate = useReactivatePractitioner(clinicId);
   const remove = useDeletePractitioner(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
+  const { t, lang } = useLanguage();
 
   const toggling = deactivate.isPending || reactivate.isPending;
   const titleName = practitioner.title
     ? `${practitioner.title} ${practitioner.name}`
     : practitioner.name;
-  const nationality = countryLabel(practitioner.nationality);
-  const employment = employmentLabel(practitioner.employmentType);
-  const languages = languageLabelList(practitioner.languages);
-  const genderLabel =
-    GENDERS.find((g) => g.value === practitioner.gender)?.label ?? practitioner.gender;
-  const age = calcAge(practitioner.dob);
+  const nationality = practitioner.nationality
+    ? countryLabel(practitioner.nationality, lang) ?? practitioner.nationality
+    : null;
+  const employment = employmentLabel(practitioner.employmentType, t);
+  const languages = practitioner.languages
+    .map((code) => (t.constants.languages as Record<string, string>)[code] ?? code)
+    .filter(Boolean);
+  const genderLbl = practitioner.gender
+    ? (t.constants.gender as Record<string, string>)[practitioner.gender.toLowerCase()] ?? practitioner.gender
+    : null;
   const dobText = practitioner.dob
-    ? `${format(new Date(practitioner.dob), 'MMM d, yyyy')}${age != null ? ` (${age} yrs)` : ''}`
+    ? `${format(new Date(practitioner.dob), 'MMM d, yyyy')}${calcAge(practitioner.dob) != null ? ` (${calcAge(practitioner.dob)} yrs)` : ''}`
     : null;
 
   return (
     <ProfileShell
       backHref={ROUTES.PRACTITIONERS}
-      backLabel="Back to Practitioners"
+      backLabel={t.practitioner.backToPractitioners}
       actions={
         <RowActionsMenu
           items={[
             {
-              label: 'Edit',
+              label: t.practitioner.edit,
               icon: IconEdit,
               href: ROUTES.PRACTITIONERS_EDIT(practitioner.id),
             },
             {
-              label: practitioner.isActive ? 'Deactivate' : 'Reactivate',
+              label: practitioner.isActive
+                ? t.practitioner.deactivate
+                : t.practitioner.reactivate,
               icon: practitioner.isActive ? IconDeactivate : IconActivate,
               disabled: toggling,
               onSelect: () =>
@@ -94,7 +105,7 @@ export function PractitionerProfile({
                   : reactivate.mutate(practitioner.id),
             },
             {
-              label: 'Delete',
+              label: t.practitioner.delete,
               icon: IconDelete,
               variant: 'destructive',
               onSelect: () => del.ask({ id: practitioner.id, name: titleName }),
@@ -131,27 +142,27 @@ export function PractitionerProfile({
         meta={<ContactLine phone={practitioner.phone} email={practitioner.email} />}
         stats={[
           {
-            label: 'Services',
+            label: t.practitioner.services,
             value: String(practitioner.services.length),
           },
           {
-            label: 'Buffer',
+            label: t.practitioner.bufferTime,
             value: `${practitioner.bufferMins}m`,
           },
           {
-            label: 'Experience',
+            label: t.practitioner.experience,
             value:
               practitioner.experienceYears != null ? `${practitioner.experienceYears} yrs` : '—',
           },
         ]}
       />
 
-      <ProfileSection title="Overview">
+      <ProfileSection title={t.practitioner.overview}>
         <ProfileInfoGrid className="lg:grid-cols-3">
-          <ProfileInfoField label="Specialty" value={practitioner.specialty} />
-          <ProfileInfoField label="Department" value={practitioner.departmentName} />
-          <ProfileInfoField label="Default room" value={practitioner.defaultRoomName} />
-          <ProfileInfoField label="Employment" value={employment}>
+          <ProfileInfoField label={t.practitioner.specialty} value={practitioner.specialty} />
+          <ProfileInfoField label={t.practitioner.department} value={practitioner.departmentName} />
+          <ProfileInfoField label={t.practitioner.defaultRoom} value={practitioner.defaultRoomName} />
+          <ProfileInfoField label={t.practitioner.employment} value={employment}>
             {employment && practitioner.employmentType ? (
               <Badge
                 variant={
@@ -164,31 +175,31 @@ export function PractitionerProfile({
             ) : null}
           </ProfileInfoField>
           <ProfileInfoField
-            label="Commission"
+            label={t.practitioner.commission}
             value={
               practitioner.commissionPercent != null ? `${practitioner.commissionPercent}%` : null
             }
           />
-          <ProfileInfoField label="Nationality" value={nationality}>
+          <ProfileInfoField label={t.practitioner.nationality} value={nationality}>
             {nationality ? (
               <Badge variant="info" className="font-normal">
                 {nationality}
               </Badge>
             ) : null}
           </ProfileInfoField>
-          <ProfileInfoField label="Gender" value={genderLabel}>
-            {genderLabel ? (
+          <ProfileInfoField label={t.common.gender} value={genderLbl}>
+            {genderLbl ? (
               <Badge
-                variant={genderLabel.toLowerCase() === 'female' ? 'warning' : 'info'}
+                variant={practitioner.gender?.toLowerCase() === 'female' ? 'warning' : 'info'}
                 className="font-normal"
               >
-                {genderLabel}
+                {genderLbl}
               </Badge>
             ) : null}
           </ProfileInfoField>
-          <ProfileInfoField label="Date of birth" value={dobText} />
+          <ProfileInfoField label={t.practitioner.dob} value={dobText} />
           {languages.length > 0 ? (
-            <ProfileInfoField label="Languages" value={languages.join(', ')}>
+            <ProfileInfoField label={t.practitioner.languages} value={languages.join(', ')}>
               <div className="flex flex-wrap justify-end gap-1 sm:justify-start">
                 {languages.map((label, index) => (
                   <Badge
@@ -207,9 +218,9 @@ export function PractitionerProfile({
               <PhoneLink value={practitioner.whatsapp} className="text-sm font-medium" />
             </ProfileInfoField>
           ) : null}
-          <ProfileInfoField label="License" value={practitioner.licenseNumber} />
+          <ProfileInfoField label={t.practitioner.licenseNumber} value={practitioner.licenseNumber} />
           <ProfileInfoField
-            label="License expiry"
+            label={t.practitioner.licenseExpiry}
             value={
               practitioner.licenseExpiry
                 ? format(new Date(practitioner.licenseExpiry), 'MMM d, yyyy')
@@ -217,14 +228,14 @@ export function PractitionerProfile({
             }
           />
           <ProfileInfoField
-            label="Joined"
+            label={t.practitioner.joined}
             value={format(new Date(practitioner.createdAt), 'MMM d, yyyy')}
           />
         </ProfileInfoGrid>
       </ProfileSection>
 
       {practitioner.bio?.trim() ? (
-        <ProfileSection title="Bio">
+        <ProfileSection title={t.practitioner.bio}>
           <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
             {practitioner.bio}
           </p>
@@ -233,14 +244,16 @@ export function PractitionerProfile({
 
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
         <ProfileSection
-          title="Services"
+          title={t.practitioner.services}
           description={
-            practitioner.services.length ? `${practitioner.services.length} assigned` : undefined
+            practitioner.services.length
+              ? `${practitioner.services.length} ${t.practitioner.assigned}`
+              : undefined
           }
           className="h-full"
         >
           {practitioner.services.length === 0 ? (
-            <ProfileEmpty>No services assigned.</ProfileEmpty>
+            <ProfileEmpty>{t.practitioner.noServicesAssigned}</ProfileEmpty>
           ) : (
             <ul className="space-y-1.5">
               {practitioner.services.map((s) => (
@@ -258,15 +271,15 @@ export function PractitionerProfile({
           )}
         </ProfileSection>
 
-        <ProfileSection title="Weekly availability" className="h-full">
+        <ProfileSection title={t.practitioner.weeklyAvailability} className="h-full">
           {practitioner.availabilities.length === 0 ? (
-            <ProfileEmpty>No weekly patterns.</ProfileEmpty>
+            <ProfileEmpty>{t.practitioner.noWeeklyPatterns}</ProfileEmpty>
           ) : (
             <div className="space-y-1.5">
               {practitioner.availabilities.map((slot, index) => (
                 <ProfileSoftRow
                   key={slot.id ?? `${slot.dayOfWeek}-${index}`}
-                  title={WEEKDAY_OPTIONS[slot.dayOfWeek] ?? `Day ${slot.dayOfWeek}`}
+                  title={t.constants.weekdays[WEEKDAY_OPTIONS[slot.dayOfWeek]] ?? WEEKDAY_OPTIONS[slot.dayOfWeek] ?? `Day ${slot.dayOfWeek}`}
                 >
                   <span className="shrink-0 tabular-nums text-muted-foreground">
                     {formatTimeRange(slot.startTime, slot.endTime)}
@@ -277,9 +290,9 @@ export function PractitionerProfile({
           )}
         </ProfileSection>
 
-        <ProfileSection title="Leave" className="h-full">
+        <ProfileSection title={t.practitioner.leave} className="h-full">
           {practitioner.timeOffs.length === 0 ? (
-            <ProfileEmpty>No leave blocks.</ProfileEmpty>
+            <ProfileEmpty>{t.practitioner.noLeaveBlocks}</ProfileEmpty>
           ) : (
             <div className="space-y-1.5">
               {practitioner.timeOffs.map((block, index) => (
@@ -310,9 +323,9 @@ export function PractitionerProfile({
           });
         }}
         isPending={remove.isPending}
-        warning="This permanently removes the practitioner, their schedule, and their appointments. This cannot be undone. To just hide them, use Deactivate instead."
-        finalWarning="This permanently deletes the practitioner and every appointment assigned to them. This action cannot be undone."
-        confirmLabel="Yes, delete practitioner"
+        warning={t.practitioner.deleteWarning1}
+        finalWarning={t.practitioner.deleteWarning2}
+        confirmLabel={t.practitioner.deleteConfirm}
       />
     </ProfileShell>
   );

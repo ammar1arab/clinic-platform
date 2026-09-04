@@ -39,3 +39,6 @@ Put the implemented module under `apps/web/src/` (likely `i18n/`) and update thi
 - Ship EN keys without AR
 - Hardcode toast/button/nav copy on Phase 2 screens after i18n exists
 - Add `safeT` / ad hoc dictionaries when `t` exists
+- Use fallback operator with hardcoded strings (e.g. `t?.foo?.bar ?? 'English Fallback'`). All keys must exist in `en.ts` and `ar.ts`; access keys directly via `t.foo.bar`
+- Use ternary language checks in components (e.g. `lang === 'ar' ? '...' : '...'`). Move all strings into the i18n dictionaries
+- Use physical directional classes (`pl-`, `pr-`, `left-`, `right-`, `border-l-`, `border-r-`). Always use CSS logical properties (`ps-`, `pe-`, `start-`, `end-`, `border-s-`, `border-e-`)

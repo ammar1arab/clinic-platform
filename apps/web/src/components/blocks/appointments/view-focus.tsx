@@ -13,6 +13,7 @@ import { SoftTip } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { IconMaximize, IconMinimize } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 interface ViewFocusApi {
   focused: boolean;
@@ -63,16 +64,17 @@ function applyViewFocus(on: boolean) {
 
 export function ViewFocusToggle({ className }: { className?: string }) {
   const api = useViewFocusControls();
+  const { t } = useLanguage();
   if (!api) return null;
 
   return (
-    <SoftTip label={api.focused ? 'Exit focus' : 'Focus view'}>
+    <SoftTip label={api.focused ? t.layout.exitFocus : t.layout.focusView}>
       <Button
         type="button"
         variant="outline"
         size="icon-sm"
         onClick={api.focused ? api.exit : api.enter}
-        aria-label={api.focused ? 'Exit focus' : 'Focus view'}
+        aria-label={api.focused ? t.layout.exitFocus : t.layout.focusView}
         aria-pressed={api.focused}
         className={cn(
           'size-8 shrink-0 rounded-lg border-border/70 bg-background/80 text-muted-foreground shadow-2xs',

@@ -2,7 +2,6 @@ import { formatDisplayDate } from "./report-format";
 import { formatPhoneDisplay } from "@/infrastructure";
 import type { ReportDocument } from "../types/report-document";
 
-
 export const REPORT_THEME = {
   ink: "#1E293B",
   muted: "#64748B",
@@ -38,7 +37,8 @@ export function csvPreface(doc: ReportDocument): string[] {
     `# ${doc.title}`,
     `# Generated ${formatDisplayDate(doc.generatedAt)}`,
   ];
-  if (doc.letterhead.address) lines.push(`# Address: ${doc.letterhead.address}`);
+  if (doc.letterhead.address)
+    lines.push(`# Address: ${doc.letterhead.address}`);
   if (doc.letterhead.phone) {
     lines.push(
       `# Phone: ${formatPhoneDisplay(doc.letterhead.phone) || doc.letterhead.phone}`,
@@ -53,11 +53,9 @@ export function csvPreface(doc: ReportDocument): string[] {
   return lines;
 }
 
-
 export function useLandscape(columnCount: number): boolean {
   return columnCount >= 7;
 }
-
 
 export function proportionalWidths(
   doc: ReportDocument,
@@ -77,8 +75,10 @@ export function proportionalWidths(
   return weights.map((w) => w / sum);
 }
 
-
-export function chunkColumns(doc: ReportDocument, maxCols = 6): ReportDocument[] {
+export function chunkColumns(
+  doc: ReportDocument,
+  maxCols = 6,
+): ReportDocument[] {
   if (doc.columns.length <= maxCols) return [doc];
 
   const chunks: ReportDocument[] = [];

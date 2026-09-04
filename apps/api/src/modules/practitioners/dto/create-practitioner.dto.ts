@@ -14,6 +14,7 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 import { EmploymentType } from "@prisma/client";
+import type { CreatePractitionerInput } from "@clinic/types";
 
 export class AvailabilitySlotDto {
   @IsInt()
@@ -43,7 +44,7 @@ export class TimeOffEntryDto {
   reason?: string;
 }
 
-export class CreatePractitionerDto {
+export class CreatePractitionerDto implements CreatePractitionerInput {
   @IsUUID()
   clinicId: string;
 

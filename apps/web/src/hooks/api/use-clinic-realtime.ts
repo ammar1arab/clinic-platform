@@ -1,3 +1,4 @@
+import { getTranslations } from '@/i18n';
 import { useMemo, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -53,8 +54,8 @@ export function useClinicRealtime(
           queryKey: QUERY_KEYS.patientPackages.all,
         });
         if (notify) {
-          toast.message('Schedule updated', {
-            description: 'Dashboard refreshed from live clinic changes.',
+          toast.message(getTranslations().notifications.schedule, {
+            description: getTranslations().notifications.refreshed,
             duration: 2200,
           });
         }

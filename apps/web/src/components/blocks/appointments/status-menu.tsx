@@ -5,24 +5,27 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { PickerSearch } from '@/components/primitives/searchable-picker';
-import { SCHEDULE_FILTER_STATUSES, STATUS_CONFIG, STATUS_OPTIONS } from '@/constants/appointment';
+import { PickerSearch } from '@/components/primitives';
+import { SCHEDULE_FILTER_STATUSES, getStatusConfig, STATUS_OPTIONS } from '@/constants/appointment';
 import { cn } from '@/lib/utils';
 import type { AppointmentStatus } from '@/services/appointments.service';
 import { StatusBadgeBlock } from './status-badge';
 import { IconChevronDown, IconSpinner } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 export const STATUS_MENU_CONTENT_CLASS = 'min-w-56 w-56 p-0';
 
-function filterStatuses(query: string, options: AppointmentStatus[]) {
+function filterStatuses(query: string, options: AppointmentStatus[], t?: any) {
   const term = query.trim().toLowerCase();
   if (!term) return options;
-  return options.filter((status) => STATUS_CONFIG[status].label.toLowerCase().includes(term));
+  return options.filter((status) => {
+    const label = t?.constants?.status?.[status]?.label ?? getStatusConfig(t)[status].label;
+    return label.toLowerCase().includes(term);
+  });
 }
 
 function StatusSearch({
@@ -49,22 +52,24 @@ export function StatusMenuItems({
   options = STATUS_OPTIONS,
   value,
   onChange,
-  title = 'Status',
+  title,
 }: {
   options?: AppointmentStatus[];
   value: AppointmentStatus;
   onChange: (status: AppointmentStatus) => void;
   title?: string;
 }) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
-  const filtered = useMemo(() => filterStatuses(query, options), [query, options]);
+  const filtered = useMemo(() => filterStatuses(query, options, t), [query, options, t]);
 
   return (
     <>
-      <DropdownMenuLabel className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </DropdownMenuLabel>
-      <StatusSearch value={query} onChange={setQuery} placeholder="Search status…" />
+      <StatusSearch
+        value={query}
+        onChange={setQuery}
+        placeholder={t?.practitioner?.searchStatus || t?.common?.search || 'Search status…'}
+      />
       <div className="max-h-60 overflow-y-auto p-1">
         <DropdownMenuRadioGroup
           value={value}
@@ -81,7 +86,9 @@ export function StatusMenuItems({
           ))}
         </DropdownMenuRadioGroup>
         {filtered.length === 0 ? (
-          <p className="px-2.5 py-3 text-center text-sm text-muted-foreground">No matches</p>
+          <p className="px-2.5 py-3 text-center text-sm text-muted-foreground">
+            {t?.common?.noMatches || t?.practitioner?.noMatches || 'No matches'}
+          </p>
         ) : null}
       </div>
     </>
@@ -97,15 +104,17 @@ export function StatusFilterItems({
   active: Set<AppointmentStatus>;
   onToggle: (status: AppointmentStatus) => void;
 }) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
-  const filtered = useMemo(() => filterStatuses(query, options), [query, options]);
+  const filtered = useMemo(() => filterStatuses(query, options, t), [query, options, t]);
 
   return (
     <>
-      <DropdownMenuLabel className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        Filter by status
-      </DropdownMenuLabel>
-      <StatusSearch value={query} onChange={setQuery} placeholder="Search status…" />
+      <StatusSearch
+        value={query}
+        onChange={setQuery}
+        placeholder={t?.practitioner?.searchStatus || t?.common?.search || 'Search status…'}
+      />
       <div className="max-h-60 overflow-y-auto p-1">
         {filtered.map((status) => (
           <DropdownMenuCheckboxItem
@@ -119,7 +128,9 @@ export function StatusFilterItems({
           </DropdownMenuCheckboxItem>
         ))}
         {filtered.length === 0 ? (
-          <p className="px-2.5 py-3 text-center text-sm text-muted-foreground">No matches</p>
+          <p className="px-2.5 py-3 text-center text-sm text-muted-foreground">
+            {t?.common?.noMatches || t?.practitioner?.noMatches || 'No matches'}
+          </p>
         ) : null}
       </div>
     </>
@@ -173,7 +184,7 @@ export function StatusFieldPicker({
   return (
     <DropdownMenu>
       <StatusPickerTrigger status={status} field />
-      <DropdownMenuContent align="start" className={cn('z-[120]', STATUS_MENU_CONTENT_CLASS)}>
+      <DropdownMenuContent align="start" className={cn('z-120', STATUS_MENU_CONTENT_CLASS)}>
         <StatusMenuItems value={status} onChange={onChange} />
       </DropdownMenuContent>
     </DropdownMenu>

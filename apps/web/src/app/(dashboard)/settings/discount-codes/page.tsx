@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
 import {
   Button,
   Table,
@@ -22,11 +23,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+  } from '@/components/ui';
 import {
   RowActionsMenu,
   EmptyState,
@@ -36,12 +33,13 @@ import {
   SearchInput,
   Pagination,
   DatePicker,
-} from '@/components/primitives';
-import {
+  PageBack,
   TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data';
+} from '@/components/primitives';
+
+import { ROUTES } from '@/constants/routes';
 import {
   IconAdd,
   IconDelete,
@@ -57,6 +55,7 @@ import {
 } from '@/hooks/api/use-discount-codes';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useListFilter } from '@/hooks/shared/use-list-filter';
+import { useLanguage } from '@/providers';
 import type { DiscountCode } from '@/services/discount-codes.service';
 import type { DiscountType } from '@/services/appointments.service';
 
@@ -75,6 +74,7 @@ function formatDiscount(c: DiscountCode) {
 
 export default function DiscountCodesPage() {
   const clinicId = useClinicId();
+  const { t, lang } = useLanguage();
   const { data: codes, isLoading } = useDiscountCodes(clinicId);
   const {
     search,
@@ -166,9 +166,9 @@ export default function DiscountCodesPage() {
   const rowActions = (c: DiscountCode) => (
     <RowActionsMenu
       items={[
-        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(c) },
+        { label: t.common.edit, icon: IconEdit, onSelect: () => openEdit(c) },
         {
-          label: 'Delete',
+          label: t.common.delete,
           icon: IconDelete,
           variant: 'destructive',
           onSelect: () => del.ask({ id: c.id, name: c.code }),
@@ -178,18 +178,20 @@ export default function DiscountCodesPage() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
+      <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
+
       <div className="flex items-center gap-2">
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search codes…"
+          placeholder={t.settings.searchPromocodes}
           className="min-w-0 flex-1 sm:max-w-sm"
         />
         <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 mr-1.5" />
-          <span className="hidden sm:inline">Add Code</span>
-          <span className="sm:hidden">Add</span>
+          <IconAdd className="size-4 me-1.5" />
+          <span className="hidden sm:inline">{t.settings.addPromocode}</span>
+          <span className="sm:hidden">{t.common.add}</span>
         </Button>
       </div>
 
@@ -198,12 +200,12 @@ export default function DiscountCodesPage() {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[24%]">Code</TableHead>
-                <TableHead className="w-[14%]">Discount</TableHead>
-                <TableHead className="w-[14%]">Uses</TableHead>
-                <TableHead className="w-[14%]">Valid from</TableHead>
-                <TableHead className="w-[14%]">Valid to</TableHead>
-                <TableHead className="w-[10%]">Active</TableHead>
+                <TableHead className="w-[24%]">{t.settings.code}</TableHead>
+                <TableHead className="w-[14%]">{t.appointments.discount}</TableHead>
+                <TableHead className="w-[14%]">{t.settings.uses}</TableHead>
+                <TableHead className="w-[14%]">{t.settings.validFrom}</TableHead>
+                <TableHead className="w-[14%]">{t.settings.validTo}</TableHead>
+                <TableHead className="w-[10%]">{t.common.active}</TableHead>
                 <TableHead className="w-[10%]" />
               </TableRow>
             </TableHeader>
@@ -238,11 +240,11 @@ export default function DiscountCodesPage() {
                   <TableCell colSpan={7} className="p-0">
                     <EmptyState
                       icon={IconDiscount}
-                      title={search ? 'No matching codes' : 'No promocodes yet'}
+                      title={search ? t.settings.noMatchingDiscountCodes : t.settings.noDiscountCodes}
                       description={
                         search
-                          ? 'Try a different search term.'
-                          : 'Create reusable codes with optional date windows and usage caps.'
+                          ? t.common.noResults
+                          : t.settings.discountCodesDesc
                       }
                     />
                   </TableCell>
@@ -252,19 +254,15 @@ export default function DiscountCodesPage() {
               {pageItems.map((c) => (
                 <TableRow key={c.id} className={!c.isActive ? 'opacity-60' : undefined}>
                   <TableCell className="max-w-0 overflow-hidden">
-                    <TruncatedText className="font-medium font-mono">{c.code}</TruncatedText>
+                    <span className="font-mono font-medium">{c.code}</span>
                   </TableCell>
-                  <TableCell>{formatDiscount(c)}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-muted-foreground">{formatDiscount(c)}</TableCell>
+                  <TableCell className="text-muted-foreground">
                     {c.usedCount}
                     {c.maxUses != null ? ` / ${c.maxUses}` : ''}
                   </TableCell>
-                  <TableCell className="text-muted-foreground tabular-nums">
-                    {formatDate(c.validFrom)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground tabular-nums">
-                    {formatDate(c.validTo)}
-                  </TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(c.validFrom)}</TableCell>
+                  <TableCell className="text-muted-foreground">{formatDate(c.validTo)}</TableCell>
                   <TableCell>
                     <Switch
                       checked={c.isActive}
@@ -282,19 +280,21 @@ export default function DiscountCodesPage() {
         </TableFrame>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 md:hidden">
+      <div className="space-y-2 md:hidden">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-[4.5rem] w-full rounded-xl" />
+            <div key={i} className="rounded-xl border border-border/70 bg-card p-4">
+              <Skeleton className="h-4 w-28" />
+            </div>
           ))}
         {!isLoading && totalItems === 0 && (
           <EmptyState
             icon={IconDiscount}
-            title={search ? 'No matching codes' : 'No promocodes yet'}
+            title={search ? t.settings.noMatchingDiscountCodes : t.settings.noDiscountCodes}
             description={
               search
-                ? 'Try a different search term.'
-                : 'Create reusable codes with optional date windows and usage caps.'
+                ? t.common.noResults
+                : t.settings.discountCodesDesc
             }
           />
         )}
@@ -308,9 +308,9 @@ export default function DiscountCodesPage() {
             actions={rowActions(c)}
             meta={
               <>
-                <EntityMetaStat label="Discount" value={formatDiscount(c)} />
+                <EntityMetaStat label={t.appointments.discount} value={formatDiscount(c)} />
                 <EntityMetaStat
-                  label="Uses"
+                  label={t.settings.uses}
                   value={
                     <>
                       {c.usedCount}
@@ -318,8 +318,8 @@ export default function DiscountCodesPage() {
                     </>
                   }
                 />
-                <EntityMetaStat label="Valid from" value={formatDate(c.validFrom)} />
-                <EntityMetaStat label="Valid to" value={formatDate(c.validTo)} />
+                <EntityMetaStat label={t.settings.validFrom} value={formatDate(c.validFrom)} />
+                <EntityMetaStat label={t.settings.validTo} value={formatDate(c.validTo)} />
               </>
             }
           />
@@ -335,12 +335,12 @@ export default function DiscountCodesPage() {
       />
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit promocode' : 'New promocode'}</DialogTitle>
+            <DialogTitle>{editing ? t.common.edit : t.settings.addPromocode}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <FormField label="Code" htmlFor="dc-code">
+          <div className="py-2 space-y-3">
+            <FormField label={t.settings.code} htmlFor="dc-code">
               <Input
                 id="dc-code"
                 value={code}
@@ -350,7 +350,7 @@ export default function DiscountCodesPage() {
               />
             </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="Type">
+              <FormField label={t.appointments.discountType}>
                 <Select
                   value={discountType}
                   onValueChange={(v) => setDiscountType(v as DiscountType)}
@@ -359,12 +359,12 @@ export default function DiscountCodesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="percentage">Percentage</SelectItem>
-                    <SelectItem value="fixed">Fixed</SelectItem>
+                    <SelectItem value="percentage">{t.appointments.percentage}</SelectItem>
+                    <SelectItem value="fixed">{t.appointments.fixed}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label="Value" htmlFor="dc-value">
+              <FormField label={t.appointments.discountValue} htmlFor="dc-value">
                 <Input
                   id="dc-value"
                   type="number"
@@ -375,34 +375,30 @@ export default function DiscountCodesPage() {
                 />
               </FormField>
             </div>
-            <FormField label="Max uses (optional)" htmlFor="dc-max">
+            <FormField label={`${t.settings.maxUses} (${t.common.optional})`} htmlFor="dc-max">
               <Input
                 id="dc-max"
                 type="number"
                 min={1}
                 value={maxUses}
                 onChange={(e) => setMaxUses(e.target.value)}
-                placeholder="Unlimited if empty"
+                placeholder={t.settings.unlimitedIfEmpty}
               />
             </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="Valid from">
-                <DatePicker value={validFrom} onChange={setValidFrom} placeholder="Optional" />
+              <FormField label={t.settings.validFrom}>
+                <DatePicker value={validFrom} onChange={setValidFrom} placeholder={t.common.optional} />
               </FormField>
-              <FormField label="Valid to">
-                <DatePicker value={validTo} onChange={setValidTo} placeholder="Optional" />
+              <FormField label={t.settings.validTo}>
+                <DatePicker value={validTo} onChange={setValidTo} placeholder={t.common.optional} />
               </FormField>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Leave dates empty for no window. Validation rejects expired, upcoming, inactive, or
-              maxed-out codes when applying to appointments.
-            </p>
           </div>
           <DialogFooter>
             <FormActions
               variant="dialog"
               onCancel={() => setOpen(false)}
-              submitLabel={editing ? 'Save' : 'Create'}
+              submitLabel={editing ? t.common.save : t.common.create}
               pending={isSaving}
               disabled={!code.trim() || !discountValue}
               onSubmitClick={handleSubmit}

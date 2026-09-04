@@ -25,6 +25,7 @@ import {
   StatusMenuItems,
   StatusPickerTrigger,
 } from './status-menu';
+import { useLanguage } from '@/providers';
 
 interface Props {
   appointment: Appointment;
@@ -41,6 +42,7 @@ export function AppointmentStatusSelect({
   className,
   disabled = false,
 }: Props) {
+  const { t, lang } = useLanguage();
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelError, setCancelError] = useState(false);
@@ -71,7 +73,10 @@ export function AppointmentStatusSelect({
       },
       {
         onError: (err) => {
-          toast.error(extractErrorMessage(err) || 'Failed to update status');
+          toast.error(
+            extractErrorMessage(err) ||
+              (lang === 'ar' ? 'فشل تحديث الحالة' : 'Failed to update status'),
+          );
         },
       },
     );
@@ -97,7 +102,10 @@ export function AppointmentStatusSelect({
       },
       {
         onError: (err) => {
-          toast.error(extractErrorMessage(err) || 'Failed to cancel appointment');
+          toast.error(
+            extractErrorMessage(err) ||
+              (lang === 'ar' ? 'فشل إلغاء الموعد' : 'Failed to cancel appointment'),
+          );
         },
       },
     );
@@ -109,8 +117,8 @@ export function AppointmentStatusSelect({
         <SoftTip
           label={
             isCancelled
-              ? 'Cancelled appointments cannot be modified'
-              : 'Click to change appointment status'
+              ? (t?.appointments?.cannotModifyCancelled ?? 'Cancelled appointments cannot be modified')
+              : (t?.appointments?.clickToChangeStatus ?? 'Click to change appointment status')
           }
         >
           <StatusPickerTrigger
@@ -125,7 +133,7 @@ export function AppointmentStatusSelect({
           <StatusMenuItems
             value={appt.status}
             onChange={handleSelectStatus}
-            title="Update status"
+            title={t?.appointments?.updateStatus ?? 'Update status'}
           />
         </DropdownMenuContent>
       </DropdownMenu>
@@ -133,16 +141,21 @@ export function AppointmentStatusSelect({
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <DialogContent className="z-[130] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Cancel Appointment</DialogTitle>
+            <DialogTitle>{t?.appointments?.cancelAppointment ?? 'Cancel Appointment'}</DialogTitle>
             <DialogDescription>
-              Please provide a reason for cancelling {patientDisplayName(appt)}&apos;s appointment.
+              {lang === 'ar'
+                ? `يرجى تقديم سبب لإلغاء موعد ${patientDisplayName(appt, lang)}.`
+                : `Please provide a reason for cancelling ${patientDisplayName(appt, lang)}'s appointment.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
             <Textarea
               autoFocus
               rows={3}
-              placeholder="e.g. Patient requested reschedule, emergency..."
+              placeholder={
+                t?.appointments?.cancellationPlaceholder ??
+                'e.g. Patient requested reschedule, emergency...'
+              }
               value={cancelReason}
               onChange={(e) => {
                 setCancelReason(e.target.value);
@@ -155,7 +168,7 @@ export function AppointmentStatusSelect({
             />
             {cancelError && (
               <p className="text-[11px] font-medium text-destructive">
-                Cancellation reason is required.
+                {t?.appointments?.cancellationReasonRequired ?? 'Cancellation reason is required.'}
               </p>
             )}
           </div>
@@ -166,7 +179,7 @@ export function AppointmentStatusSelect({
               size="sm"
               onClick={() => setCancelDialogOpen(false)}
             >
-              Keep Appointment
+              {t?.appointments?.keepAppointment ?? 'Keep Appointment'}
             </Button>
             <Button
               type="button"
@@ -175,7 +188,9 @@ export function AppointmentStatusSelect({
               disabled={isPending}
               onClick={handleConfirmCancel}
             >
-              {isPending ? 'Cancelling...' : 'Confirm Cancellation'}
+              {isPending
+                ? (t?.appointments?.cancelling ?? 'Cancelling...')
+                : (t?.appointments?.confirmCancellation ?? 'Confirm Cancellation')}
             </Button>
           </DialogFooter>
         </DialogContent>

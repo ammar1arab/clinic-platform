@@ -1,4 +1,5 @@
-import { api } from '@/lib/api';
+import { api } from "@/lib/api";
+import { ENDPOINTS } from "@/constants/endpoints";
 import type {
   CreateReferralInput,
   Referral,
@@ -6,7 +7,7 @@ import type {
   ReferralStatus,
   ReferralType,
   ReferralUrgency,
-} from '@clinic/types';
+} from "@clinic/types";
 
 export type {
   CreateReferralInput,
@@ -19,15 +20,21 @@ export type {
 
 export const referralsService = {
   getAll: (filters: ReferralFilters) =>
-    api.get<Referral[]>('/referrals', { params: filters }).then((r) => r.data),
+    api
+      .get<Referral[]>(ENDPOINTS.REFERRALS.BASE, { params: filters })
+      .then((r) => r.data),
 
   create: (data: CreateReferralInput) =>
-    api.post<Referral>('/referrals', data).then((r) => r.data),
+    api.post<Referral>(ENDPOINTS.REFERRALS.BASE, data).then((r) => r.data),
 
-  accept: (id: string) => api.patch<Referral>(`/referrals/${id}/accept`).then((r) => r.data),
+  accept: (id: string) =>
+    api.patch<Referral>(ENDPOINTS.REFERRALS.ACCEPT(id)).then((r) => r.data),
 
-  reject: (id: string) => api.patch<Referral>(`/referrals/${id}/reject`).then((r) => r.data),
+  reject: (id: string) =>
+    api.patch<Referral>(ENDPOINTS.REFERRALS.REJECT(id)).then((r) => r.data),
 
   setOpinion: (id: string, opinion: string) =>
-    api.patch<Referral>(`/referrals/${id}/opinion`, { opinion }).then((r) => r.data),
+    api
+      .patch<Referral>(ENDPOINTS.REFERRALS.OPINION(id), { opinion })
+      .then((r) => r.data),
 };

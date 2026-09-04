@@ -1,7 +1,8 @@
-import { IsString, IsOptional, IsEmail, IsDateString } from "class-validator";
+import { IsString, IsOptional, IsEmail, IsDateString, IsUUID } from "class-validator";
+import type { CreatePatientInput } from '@clinic/types';
 
-export class CreatePatientDto {
-  @IsString()
+export class CreatePatientDto implements CreatePatientInput {
+  @IsUUID()
   clinicId: string;
 
   @IsString()

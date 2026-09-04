@@ -1,40 +1,17 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Switch,
-  Badge,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui';
-import {
-  PreviewableAvatar,
-  isRowControlClick,
-  EmailLink,
-  PhoneLink,
-  TruncatedText,
-  Pagination,
-  EmptyState,
-  MetaStat,
-  TableSkeleton,
-  RowActionsMenu,
-  SoftTip,
-} from '@/components/primitives';
-import { TableFrame } from '@/components/blocks/data';
-import { PRACTITIONER_EMPLOYMENT_LABEL, PRACTITIONER_EMPLOYMENT_VARIANT, LANGUAGE_BADGE_VARIANT, languageLabelList } from '@/constants/practitioner';
+import { languageLabelList } from '@/constants/practitioner';
 import { ROUTES } from '@/constants/routes';
 import { ageLabel } from '@/lib/age';
+import { useRouter } from 'next/navigation';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Switch, Badge, Popover, PopoverContent, PopoverTrigger, } from '@/components/ui';
 import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+  PreviewableAvatar, isRowControlClick, EmailLink, PhoneLink, TruncatedText, Pagination, EmptyState, MetaStat, TableSkeleton, RowActionsMenu, SoftTip, TableFrame } from '@/components/primitives';
+import { getPractitionerEmploymentLabels } from '@/constants/practitioner';
+
+import type { Translations } from '@/i18n';
+import { PRACTITIONER_EMPLOYMENT_VARIANT, LANGUAGE_BADGE_VARIANT } from '@/constants/practitioner';
 import {
   useDeletePractitioner,
   useDeactivatePractitioner,
@@ -42,6 +19,7 @@ import {
 } from '@/hooks/api/use-practitioners';
 import type { Practitioner } from '@/services/practitioners.service';
 import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconPhone, IconPractitioner, IconView } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 function displayName(p: Practitioner) {
   return p.title ? `${p.title} ${p.name}` : p.name;
@@ -64,8 +42,8 @@ function CellBadge({
   );
 }
 
-function LanguageBadges({ codes }: { codes: string[] | null | undefined }) {
-  const labels = languageLabelList(codes);
+function LanguageBadges({ codes, t }: { codes: string[] | null | undefined, t: Partial<Translations> }) {
+  const labels = languageLabelList(codes, t);
   if (!labels.length) return <span className="text-muted-foreground">—</span>;
   const shown = labels.slice(0, 2);
   const rest = labels.slice(2);
@@ -86,11 +64,11 @@ function LanguageBadges({ codes }: { codes: string[] | null | undefined }) {
           <PopoverTrigger asChild>
             <button
               type="button"
-              aria-label={`${rest.length} more languages: ${rest.join(', ')}`}
+              aria-label={`${rest.length} ${t?.practitioner?.moreLanguages}: ${rest.join(', ')}`}
               className="shrink-0 rounded-md px-1 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               onClick={(event) => event.stopPropagation()}
             >
-              {rest.length} more
+              {rest.length} {t?.practitioner?.more}
             </button>
           </PopoverTrigger>
           <PopoverContent
@@ -151,6 +129,8 @@ export function PractitionersList({
   const remove = useDeletePractitioner(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
+  const { t, lang } = useLanguage();
+  
   const toggling = deactivate.isPending || reactivate.isPending;
   const toggle = (p: Practitioner, on: boolean) =>
     on ? reactivate.mutate(p.id) : deactivate.mutate(p.id);
@@ -161,23 +141,23 @@ export function PractitionersList({
     <RowActionsMenu
       items={[
         {
-          label: 'View',
+          label: t.practitioner.view,
           icon: IconView,
           href: ROUTES.PRACTITIONER_DETAIL(p.id),
         },
         {
-          label: 'Edit',
+          label: t.practitioner.edit,
           icon: IconEdit,
           href: ROUTES.PRACTITIONERS_EDIT(p.id),
         },
         {
-          label: p.isActive ? 'Deactivate' : 'Reactivate',
+          label: p.isActive ? t.practitioner.deactivate : t.practitioner.reactivate,
           icon: p.isActive ? IconDeactivate : IconActivate,
           onSelect: () => toggle(p, !p.isActive),
           disabled: toggling,
         },
         {
-          label: 'Delete',
+          label: t.practitioner.delete,
           icon: IconDelete,
           variant: 'destructive',
           onSelect: () => del.ask({ id: p.id, name: displayName(p) }),
@@ -195,11 +175,11 @@ export function PractitionersList({
       <TableFrame>
         <EmptyState
           icon={IconPractitioner}
-          title={hasActiveFilters ? 'No matches' : 'No practitioners'}
+          title={hasActiveFilters ? t.practitioner.noMatches : t.practitioner.noPractitioners}
           description={
             hasActiveFilters
-              ? 'Try a different name, email, department, or filter.'
-              : 'Create a practitioner with department, services, and availability.'
+              ? t.practitioner.noMatchesDesc
+              : t.practitioner.noPractitionersDesc
           }
           action={hasActiveFilters ? undefined : emptyAction}
         />
@@ -214,16 +194,16 @@ export function PractitionersList({
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[22%]">Practitioner</TableHead>
-                <TableHead className="w-[12%]">Phone</TableHead>
-                <TableHead className="w-[7%]">Age</TableHead>
-                <TableHead className="w-[12%]">Specialty</TableHead>
-                <TableHead className="hidden lg:table-cell w-[11%]">Department</TableHead>
-                <TableHead className="hidden xl:table-cell w-[11%]">Languages</TableHead>
-                <TableHead className="w-[7%]">Services</TableHead>
-                <TableHead className="hidden lg:table-cell w-[10%]">Employment</TableHead>
-                <TableHead className="hidden xl:table-cell w-[6%]">Buffer</TableHead>
-                <TableHead className="w-[7%]">Active</TableHead>
+                <TableHead className="w-[22%]">{t.practitioner.practitioner}</TableHead>
+                <TableHead className="w-[12%]">{t.practitioner.phone}</TableHead>
+                <TableHead className="w-[7%]">{t.practitioner.age}</TableHead>
+                <TableHead className="w-[12%]">{t.practitioner.specialty}</TableHead>
+                <TableHead className="hidden lg:table-cell w-[11%]">{t.practitioner.department}</TableHead>
+                <TableHead className="hidden xl:table-cell w-[11%]">{t.practitioner.languages}</TableHead>
+                <TableHead className="w-[7%]">{t.practitioner.services}</TableHead>
+                <TableHead className="hidden lg:table-cell w-[10%]">{t.practitioner.employment}</TableHead>
+                <TableHead className="hidden xl:table-cell w-[6%]">{t.practitioner.buffer}</TableHead>
+                <TableHead className="w-[7%]">{t.practitioner.active}</TableHead>
                 <TableHead className="w-[7%]" />
               </TableRow>
             </TableHeader>
@@ -266,19 +246,19 @@ export function PractitionersList({
                     <PhoneLink value={p.phone} className="block" />
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {ageLabel(p.dob) || '—'}
+                    {ageLabel(p.dob, undefined, t) || '—'}
                   </TableCell>
                   <TableCell className="max-w-0 overflow-hidden">
-                    <CellBadge value={p.specialty} />
+                    <CellBadge value={lang === 'ar' && p.specialtyAr ? p.specialtyAr : p.specialty} />
                   </TableCell>
                   <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden">
-                    <CellBadge value={p.departmentName} variant="outline" />
+                    <CellBadge value={lang === 'ar' && (p as any).departmentNameAr ? (p as any).departmentNameAr : p.departmentName} variant="outline" />
                   </TableCell>
                   <TableCell
                     className="hidden xl:table-cell max-w-0 overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <LanguageBadges codes={p.languages} />
+                    <LanguageBadges codes={p.languages} t={t} />
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {p.serviceIds.length}
@@ -287,7 +267,8 @@ export function PractitionersList({
                     {p.employmentType ? (
                       <CellBadge
                         value={
-                          PRACTITIONER_EMPLOYMENT_LABEL[p.employmentType] ??
+                          (t?.constants?.employment as Record<string, string>)?.[p.employmentType] ??
+                          getPractitionerEmploymentLabels(t)[p.employmentType] ??
                           p.employmentType
                         }
                         variant={
@@ -300,7 +281,7 @@ export function PractitionersList({
                     )}
                   </TableCell>
                   <TableCell className="hidden xl:table-cell text-muted-foreground">
-                    {p.bufferMins}m
+                    {p.bufferMins}{t?.common?.minsCompact ?? 'm'}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Switch
@@ -354,11 +335,13 @@ export function PractitionersList({
                 </div>
                 {p.specialty || p.employmentType ? (
                   <div className="mt-1 flex flex-wrap gap-1">
-                    {p.specialty ? <CellBadge value={p.specialty} /> : null}
+                    {p.specialty ? <CellBadge value={lang === 'ar' && p.specialtyAr ? p.specialtyAr : p.specialty} /> : null}
                     {p.employmentType ? (
                       <CellBadge
                         value={
-                          PRACTITIONER_EMPLOYMENT_LABEL[p.employmentType] ?? p.employmentType
+                          (t?.constants?.employment as Record<string, string>)?.[p.employmentType] ??
+                          getPractitionerEmploymentLabels(t)[p.employmentType] ??
+                          p.employmentType
                         }
                         variant={
                           PRACTITIONER_EMPLOYMENT_VARIANT[p.employmentType] ?? 'secondary'
@@ -391,15 +374,15 @@ export function PractitionersList({
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs">
-              <MetaStat label="Department" value={p.departmentName ?? '—'} />
+              <MetaStat label={t.practitioner.department} value={p.departmentName ?? '—'} />
               <div className="min-w-0">
                 <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-                  Languages
+                  {t.practitioner.languages}
                 </p>
-                <LanguageBadges codes={p.languages} />
+                <LanguageBadges codes={p.languages} t={t} />
               </div>
-              <MetaStat label="Services" value={String(p.serviceIds.length)} />
-              <MetaStat label="Age" value={ageLabel(p.dob) || '—'} />
+              <MetaStat label={t.practitioner.services} value={String(p.serviceIds.length)} />
+              <MetaStat label={t.practitioner.age} value={ageLabel(p.dob) || '—'} />
             </div>
           </div>
         ))}
@@ -424,9 +407,9 @@ export function PractitionersList({
           remove.mutate(del.step2.id, { onSuccess: del.clear });
         }}
         isPending={remove.isPending}
-        warning="This permanently removes the practitioner, their schedule, and their appointments. This cannot be undone. To just hide them, use Deactivate instead."
-        finalWarning="This permanently deletes the practitioner and every appointment assigned to them. This action cannot be undone."
-        confirmLabel="Yes, delete practitioner"
+        warning={t.practitioner.deleteWarning1}
+        finalWarning={t.practitioner.deleteWarning2}
+        confirmLabel={t.practitioner.deleteConfirm}
       />
     </>
   );

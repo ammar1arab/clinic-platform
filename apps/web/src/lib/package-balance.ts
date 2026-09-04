@@ -1,3 +1,4 @@
+import { getTranslations } from '@/i18n';
 import type { PatientPackageDto } from '@clinic/types';
 import { CLINIC_CURRENCY } from '@/constants/appointment';
 
@@ -11,20 +12,17 @@ export function formatClinicAmount(value: string | number | null | undefined) {
   return `${formatClinicNumber(value)} ${CLINIC_CURRENCY}`;
 }
 
-export function formatPackageBalance(pkg: PatientPackageDto): string {
+export function formatPackageBalance(pkg: PatientPackageDto, lang = 'en'): string {
+  const t = getTranslations(lang);
   if (pkg.sessionsTotal != null) {
-    const left = pkg.sessionsRemaining ?? 0;
-    const total = pkg.sessionsTotal;
-    return `${left} of ${total} session${total === 1 ? '' : 's'} left`;
+    const template = pkg.sessionsTotal === 1 ? t.packageBalance.session : t.packageBalance.sessions;
+    return template.replace('{left}', String(pkg.sessionsRemaining ?? 0)).replace('{total}', String(pkg.sessionsTotal));
   }
-  return `${formatClinicAmount(pkg.creditRemaining)} left`;
+  return t.packageBalance.credit.replace('{amount}', formatClinicAmount(pkg.creditRemaining));
 }
 
-export function formatPackageRedeemCost(
-  pkg: PatientPackageDto,
-  payable: number,
-): string {
-  if (pkg.sessionsTotal != null) return '1 session';
+export function formatPackageRedeemCost(pkg: PatientPackageDto, payable: number, lang = 'en'): string {
+  if (pkg.sessionsTotal != null) return getTranslations(lang).packageBalance.oneSession;
   return formatClinicAmount(payable);
 }
 

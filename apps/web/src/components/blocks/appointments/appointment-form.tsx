@@ -10,7 +10,7 @@ import { useNow } from '@/hooks/shared/use-now';
 import { extractErrorMessage, isHttpStatus } from '@/lib/api';
 import { appointmentSchema, type AppointmentFormData } from '@/lib/validations';
 import { resolveWaitingMins } from '@/lib/waiting-time';
-import { useConfirm } from '@/providers';
+import { useConfirm, useLanguage } from '@/providers';
 import type { Appointment, AppointmentStatus } from '@/services/appointments.service';
 import { AppointmentBillingFields } from './appointment-form-billing';
 import { AppointmentNotesFields } from './appointment-form-notes';
@@ -50,8 +50,9 @@ export function AppointmentForm({
   onCancel,
   onSuccess,
 }: Props) {
-  const isEdit = !!appointment;
+  const { t, lang } = useLanguage();
   const confirm = useConfirm();
+  const isEdit = !!appointment;
   const now = useNow(30_000);
 
   const {
@@ -146,7 +147,7 @@ export function AppointmentForm({
   const showConflict = async (error: Parameters<typeof extractErrorMessage>[0]) => {
     if (isHttpStatus(error, 409)) {
       await confirm({
-        title: 'Scheduling conflict',
+        title: t?.appointments?.schedulingConflict ?? 'Scheduling conflict',
         description: extractErrorMessage(error),
         confirmLabel: 'OK',
         cancelLabel: 'Close',
@@ -156,22 +157,22 @@ export function AppointmentForm({
 
   const onSubmit = async (data: AppointmentFormData) => {
     if (fixedExceedsFee) {
-      toast.error('Fixed discount cannot exceed the fee');
+      toast.error(t?.appointments?.fixedDiscountExceedsFee ?? 'Fixed discount cannot exceed the fee');
       return;
     }
 
     if (isEdit && appointment) {
       if (status === 'cancelled' && appointment.status !== 'cancelled') {
         const ok = await confirm({
-          title: 'Cancel this appointment?',
-          description: 'The patient will need to be informed separately.',
+          title: t?.appointments?.cancelConfirmTitle ?? 'Cancel this appointment?',
+          description: t?.appointments?.cancelConfirmDesc ?? 'The patient will need to be informed separately.',
           variant: 'destructive',
-          confirmLabel: 'Cancel appointment',
+          confirmLabel: t?.appointments?.cancelAppointment ?? 'Cancel appointment',
         });
         if (!ok) return;
       }
       if (status === 'cancelled' && !cancelReason.trim()) {
-        toast.error('Cancellation reason is required');
+        toast.error(t?.appointments?.cancellationReasonRequired ?? 'Cancellation reason is required');
         return;
       }
 
@@ -210,21 +211,21 @@ export function AppointmentForm({
   const handleTogglePaid = async (paid: boolean) => {
     if (!appointment) return;
     if (appointment.patientPackageId) {
-      toast.error('Remove package coverage before changing payment status');
+      toast.error(t?.appointments?.removePackageCoverageFirst ?? 'Remove package coverage before changing payment status');
       return;
     }
     if (paid) {
       if (!payMethodId) {
-        toast.error('Select a payment method first');
+        toast.error(t?.appointments?.selectPaymentMethodFirst ?? 'Select a payment method first');
         return;
       }
       markPaidMutation.mutate({ id: appointment.id, paymentMethodId: payMethodId });
       return;
     }
     const ok = await confirm({
-      title: 'Mark as unpaid?',
-      description: 'This clears the recorded payment for this appointment.',
-      confirmLabel: 'Mark unpaid',
+      title: t?.appointments?.markAsUnpaidTitle ?? 'Mark as unpaid?',
+      description: t?.appointments?.markAsUnpaidDesc ?? 'This clears the recorded payment for this appointment.',
+      confirmLabel: t?.appointments?.markUnpaid ?? 'Mark unpaid',
     });
     if (!ok) return;
     markUnpaidMutation.mutate(appointment.id);
@@ -327,7 +328,11 @@ export function AppointmentForm({
       <FormActions
         onCancel={onCancel}
         pending={isPending}
-        submitLabel={isEdit ? 'Save Changes' : 'Create Appointment'}
+        submitLabel={
+          isEdit
+            ? (t?.common?.saveChanges ?? 'Save Changes')
+            : (t?.appointments?.newAppointment ?? 'Create Appointment')
+        }
       />
     </form>
   );

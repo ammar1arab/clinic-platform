@@ -1,21 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui';
 import {
-  ContactLine,
-  EmailLink,
-  PhoneLink,
-  EmptyState,
-  PreviewableAvatar,
-  SectionLoader,
-  RowActionsMenu,
-} from '@/components/primitives';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+  ContactLine, EmailLink, PhoneLink, EmptyState, PreviewableAvatar, SectionLoader, RowActionsMenu } from '@/components/primitives';
 import { ExportFormatButton } from '@/components/blocks/reports';
 import { PatientReferralsBlock } from './patient-referrals';
 import { PatientTimelineBlock } from './patient-timeline';
@@ -26,8 +16,9 @@ import {
   ProfileSection,
   ProfileShell,
   ProfileStatusBadge,
-} from '@/components/blocks/profile';
-import { GENDERS } from '@/constants/patient';
+} from '@/components/primitives';
+
+import { genderLabel } from '@/constants/patient';
 import { ROUTES } from '@/constants/routes';
 import {
   IconActivate,
@@ -45,10 +36,12 @@ import {
 } from '@/hooks/api/use-patients';
 import { useDownloadPatientReport } from '@/hooks/api/use-reports';
 import { calcAge } from '@/lib/age';
+import { useLanguage } from '@/providers';
 
 export function PatientProfile({ patientId }: { patientId: string }) {
   const router = useRouter();
   const clinicId = useClinicId();
+  const { t } = useLanguage();
   const { data: patient, isLoading } = usePatient(patientId);
   const toggleStatus = useTogglePatientStatus(clinicId);
   const deleteMutation = useDeletePatient(clinicId);
@@ -67,8 +60,7 @@ export function PatientProfile({ patientId }: { patientId: string }) {
   }
 
   const fullName = `${patient.firstNameEn} ${patient.lastNameEn}`.trim();
-  const genderLabel =
-    GENDERS.find((g) => g.value === patient.gender)?.label ?? patient.gender;
+  const genderLbl = genderLabel(patient.gender, t);
   const age = calcAge(patient.dob);
   const dobText = patient.dob
     ? `${format(new Date(patient.dob), 'MMM d, yyyy')}${
@@ -170,13 +162,13 @@ export function PatientProfile({ patientId }: { patientId: string }) {
           ) : null}
           <ProfileInfoField label="National ID" value={patient.nationalId} />
           <ProfileInfoField label="Date of birth" value={dobText} />
-          <ProfileInfoField label="Gender" value={genderLabel ?? null}>
-            {genderLabel ? (
+          <ProfileInfoField label="Gender" value={genderLbl ?? null}>
+            {genderLbl ? (
               <Badge
-                variant={genderLabel.toLowerCase() === 'female' ? 'warning' : 'info'}
+                variant={patient.gender?.toLowerCase() === 'female' ? 'warning' : 'info'}
                 className="font-normal"
               >
-                {genderLabel}
+                {genderLbl}
               </Badge>
             ) : null}
           </ProfileInfoField>

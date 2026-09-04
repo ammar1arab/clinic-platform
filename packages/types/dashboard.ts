@@ -11,6 +11,7 @@ export interface DashboardKpis {
 export interface RoomUtilization {
   roomId: string;
   roomName: string;
+  roomNameAr?: string | null;
   bookedMinutes: number;
   workingMinutes: number;
   utilisationPercent: number;

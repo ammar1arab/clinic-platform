@@ -32,6 +32,7 @@ import {
   IconDelete,
   type LucideIcon,
 } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 type WeeklyField = FieldArrayWithId<PractitionerFormData, 'availabilities'>;
 type LeaveField = FieldArrayWithId<PractitionerFormData, 'timeOffs'>;
@@ -116,6 +117,7 @@ export function WeeklyAvailabilityFields({
   onAdd: () => void;
   onRemove: (index: number) => void;
 }) {
+  const { t } = useLanguage();
   return (
     <ScheduleCard title="Weekly availability" addLabel="Add day" onAdd={onAdd}>
       {fields.length === 0 ? (
@@ -144,7 +146,7 @@ export function WeeklyAvailabilityFields({
                     <SelectContent>
                       {WEEKDAY_OPTIONS.map((label, day) => (
                         <SelectItem key={label} value={String(day)}>
-                          {label}
+                          {t?.constants?.weekdays?.[label] ?? label}
                         </SelectItem>
                       ))}
                     </SelectContent>

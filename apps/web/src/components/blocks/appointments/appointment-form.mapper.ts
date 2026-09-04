@@ -182,33 +182,56 @@ export function billingDefaultsForPatient(
   return fromPkg;
 }
 
-export function paymentStatusMeta(appt: Appointment) {
+export function paymentStatusMeta(appt: Appointment, lang?: string) {
   if (appt.isPaid && appt.patientPackageId) {
     return {
       variant: 'info' as const,
-      label: 'Paid · Package',
-      detail: appt.paymentMethod ? `Package (${appt.paymentMethod})` : 'Package',
+      label: lang === 'ar' ? 'مدفوع · باقة' : 'Paid · Package',
+      detail: appt.paymentMethod
+        ? (lang === 'ar' ? `باقة (${appt.paymentMethod})` : `Package (${appt.paymentMethod})`)
+        : (lang === 'ar' ? 'باقة' : 'Package'),
     };
   }
   if (appt.isPaid) {
     const method = appt.paymentMethodRef?.name ?? appt.paymentMethod;
     return {
       variant: 'success' as const,
-      label: 'Paid',
-      detail: method || 'No method recorded',
+      label: lang === 'ar' ? 'مدفوع' : 'Paid',
+      detail: method || (lang === 'ar' ? 'لم يتم تسجيل طريقة الدفع' : 'No method recorded'),
     };
   }
   return {
     variant: appt.patientPackageId ? ('info' as const) : ('warning' as const),
-    label: 'Unpaid',
-    detail: 'Select a method, then mark as paid',
+    label: lang === 'ar' ? 'غير مدفوع' : 'Unpaid',
+    detail: lang === 'ar' ? 'اختر طريقة، ثم حدد كمدفوع' : 'Select a method, then mark as paid',
   };
 }
 
-export function packageCreditLabel(credit: string | number | null | undefined) {
-  return credit != null ? `${formatClinicAmount(credit)} credit used` : '1 session used';
+export function packageCreditLabel(
+  credit: string | number | null | undefined,
+  lang?: string,
+) {
+  if (credit != null) {
+    return lang === 'ar'
+      ? `تم استخدام رصيد ${formatClinicAmount(credit)}`
+      : `${formatClinicAmount(credit)} credit used`;
+  }
+  return lang === 'ar' ? 'تم استخدام جلسة واحدة' : '1 session used';
 }
 
-export function staffRoleLabel(role: string | null | undefined) {
-  return role ? ` · ${role.replace(/_/g, ' ')}` : '';
+export function staffRoleLabel(role: string | null | undefined, lang?: string) {
+  if (!role) return '';
+  if (lang === 'ar') {
+    const roleArMap: Record<string, string> = {
+      owner: 'مالك',
+      admin: 'مدير',
+      practitioner: 'طبيب',
+      financial: 'مالي',
+      receptionist: 'استقبال',
+      nurse: 'تمريض',
+    };
+    const translated = roleArMap[role.toLowerCase()] || role.replace(/_/g, ' ');
+    return ` · ${translated}`;
+  }
+  return ` · ${role.replace(/_/g, ' ')}`;
 }

@@ -1,3 +1,4 @@
+import { getTranslations, type Translations } from '@/i18n';
 export function elapsedMinutesSince(
   dateString: string | Date | null | undefined,
   now: Date = new Date(),
@@ -9,14 +10,17 @@ export function elapsedMinutesSince(
 export function formatWaitingMins(
   mins: number | null | undefined,
   compact = false,
+  t: Translations = getTranslations(),
 ): string {
   if (mins == null || Number.isNaN(mins)) return '—';
   const m = Math.max(0, Math.floor(mins));
-  if (m < 1) return '< 1m';
-  if (m < 60) return compact ? `${m}m` : `${m} min`;
+  if (m < 1) return t.common.lessThanOneMin;
+  if (m < 60) return compact ? `${m}${t.common.minsCompact}` : `${m} ${t.common.mins}`;
   const h = Math.floor(m / 60);
   const rem = m % 60;
-  return rem === 0 ? `${h}h` : `${h}h ${rem}m`;
+  const hLabel = t.common.hours;
+  const mLabel = t.common.minsCompact;
+  return rem === 0 ? `${h}${hLabel}` : `${h}${hLabel} ${rem}${mLabel}`;
 }
 
 export function resolveWaitingMins(appt: {

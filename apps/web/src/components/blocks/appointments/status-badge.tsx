@@ -3,11 +3,12 @@
 import { Badge } from '@/components/ui';
 import { SoftTip } from '@/components/primitives';
 import { cn } from '@/lib/utils';
-import { STATUS_BADGE_VARIANT, STATUS_CONFIG } from '@/constants/appointment';
+import { STATUS_BADGE_VARIANT, getStatusConfig } from '@/constants/appointment';
 import type { AppointmentStatus } from '@/services/appointments.service';
+import { useLanguage } from '@/providers';
 export {
   STATUS_COLORS,
-  STATUS_CONFIG,
+  getStatusConfig,
   STATUS_OPTIONS,
   STATUS_BADGE_VARIANT,
   SCHEDULE_FILTER_STATUSES,
@@ -26,14 +27,17 @@ export function StatusBadgeBlock({
   compact,
   tip = true,
 }: Props) {
-  const config = STATUS_CONFIG[status];
-  const text = compact ? config.short : config.label;
+  const { t } = useLanguage();
+  const config = getStatusConfig(t)[status];
+  const translatedLabel = t?.constants?.status?.[status]?.label ?? config.label;
+  const translatedShort = t?.constants?.status?.[status]?.short ?? config.short;
+  const text = compact ? translatedShort : translatedLabel;
 
   return (
-    <SoftTip label={tip ? config.label : undefined}>
+    <SoftTip label={tip ? translatedLabel : undefined}>
       <Badge
         variant={STATUS_BADGE_VARIANT[status]}
-        aria-label={config.label}
+        aria-label={translatedLabel}
         className={cn(
           'max-w-none shrink-0 [&>span]:max-w-none [&>span]:overflow-visible [&>span]:whitespace-nowrap',
           compact && 'text-[11px]',

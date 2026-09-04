@@ -8,6 +8,7 @@ import type { AppointmentFormData } from '@/lib/validations';
 import type { Room } from '@/services/rooms.service';
 import type { ServiceItem } from '@/services/services.service';
 import { ChoiceButton, FormSection, OptionalSelect } from './appointment-form-controls';
+import { useLanguage } from '@/providers';
 
 export function AppointmentSessionFields({
   control,
@@ -24,12 +25,16 @@ export function AppointmentSessionFields({
   selectedService: ServiceItem | undefined;
   rooms: Room[] | undefined;
 }) {
+  const { t, lang } = useLanguage();
   const modes = selectedService?.supportedModes;
   const canInPerson = !modes || modes.includes('in_person');
   const canOnline = !modes || modes.includes('online');
 
   return (
-    <FormSection title="Session Type" contentClassName="space-y-4">
+    <FormSection
+      title={lang === 'ar' ? 'نوع الجلسة' : 'Session Type'}
+      contentClassName="space-y-4"
+    >
       <Controller
         control={control}
         name="sessionType"
@@ -39,14 +44,14 @@ export function AppointmentSessionFields({
               active={field.value === 'in_person'}
               disabled={!canInPerson}
               icon={<IconInPerson className="size-4" />}
-              label="In Person"
+              label={t?.appointments?.inPerson ?? 'In Person'}
               onClick={() => field.onChange('in_person')}
             />
             <ChoiceButton
               active={field.value === 'online'}
               disabled={!canOnline}
               icon={<IconOnline className="size-4" />}
-              label="Online"
+              label={t?.appointments?.online ?? 'Online'}
               onClick={() => field.onChange('online')}
             />
           </div>
@@ -54,7 +59,7 @@ export function AppointmentSessionFields({
       />
 
       {sessionType === 'in_person' ? (
-        <FormField label="Room" required error={errors.roomId?.message}>
+        <FormField label={t?.appointments?.room ?? 'Room'} required error={errors.roomId?.message}>
           <Controller
             control={control}
             name="roomId"
@@ -62,8 +67,8 @@ export function AppointmentSessionFields({
               <OptionalSelect
                 value={field.value}
                 onChange={field.onChange}
-                placeholder="Select a room"
-                searchPlaceholder="Search rooms…"
+                placeholder={t?.appointments?.selectRoom ?? 'Select a room'}
+                searchPlaceholder={lang === 'ar' ? 'البحث عن غرفة...' : 'Search rooms…'}
                 options={(rooms ?? []).map((room) => ({
                   value: room.id,
                   label: room.name,
@@ -73,7 +78,11 @@ export function AppointmentSessionFields({
           />
         </FormField>
       ) : (
-        <FormField label="Meeting Link" required error={errors.meetingUrl?.message}>
+        <FormField
+          label={t?.appointments?.meetingLink ?? 'Meeting Link'}
+          required
+          error={errors.meetingUrl?.message}
+        >
           <Input
             type="url"
             inputMode="url"

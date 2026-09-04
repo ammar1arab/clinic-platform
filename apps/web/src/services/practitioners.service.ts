@@ -1,4 +1,5 @@
-import { api } from '@/lib/api';
+import { api } from "@/lib/api";
+import { ENDPOINTS } from "@/constants/endpoints";
 import type {
   AssignServicesInput,
   CreatePractitionerInput,
@@ -8,7 +9,7 @@ import type {
   ReplaceAvailabilityInput,
   ReplaceTimeOffInput,
   UpdatePractitionerInput,
-} from '@clinic/types';
+} from "@clinic/types";
 
 export type {
   AssignServicesInput,
@@ -24,43 +25,56 @@ export type {
 export const practitionersService = {
   getAll: (clinicId: string) =>
     api
-      .get<Practitioner[]>('/practitioners', { params: { clinicId } })
+      .get<
+        Practitioner[]
+      >(ENDPOINTS.PRACTITIONERS.BASE, { params: { clinicId } })
       .then((r) => r.data),
 
   getOne: (id: string) =>
-    api.get<PractitionerDetail>(`/practitioners/${id}`).then((r) => r.data),
+    api
+      .get<PractitionerDetail>(ENDPOINTS.PRACTITIONERS.BY_ID(id))
+      .then((r) => r.data),
 
   create: (data: CreatePractitionerInput) =>
     api
-      .post<CreatePractitionerResult>('/practitioners', data)
+      .post<CreatePractitionerResult>(ENDPOINTS.PRACTITIONERS.BASE, data)
       .then((r) => r.data),
 
   update: (id: string, data: UpdatePractitionerInput) =>
     api
-      .patch<PractitionerDetail>(`/practitioners/${id}`, data)
+      .patch<PractitionerDetail>(ENDPOINTS.PRACTITIONERS.BY_ID(id), data)
       .then((r) => r.data),
 
   deactivate: (id: string) =>
-    api.patch(`/practitioners/${id}/deactivate`).then((r) => r.data),
+    api.patch(ENDPOINTS.PRACTITIONERS.DEACTIVATE(id)).then((r) => r.data),
 
   reactivate: (id: string) =>
-    api.patch(`/practitioners/${id}/reactivate`).then((r) => r.data),
+    api.patch(ENDPOINTS.PRACTITIONERS.REACTIVATE(id)).then((r) => r.data),
 
   remove: (id: string) =>
-    api.delete(`/practitioners/${id}`).then((r) => r.data),
+    api.delete(ENDPOINTS.PRACTITIONERS.BY_ID(id)).then((r) => r.data),
 
   replaceServices: (id: string, data: AssignServicesInput) =>
     api
-      .put<PractitionerDetail>(`/practitioners/${id}/services`, data)
+      .put<PractitionerDetail>(
+        ENDPOINTS.PRACTITIONERS.REPLACE_SERVICES(id),
+        data,
+      )
       .then((r) => r.data),
 
   replaceAvailability: (id: string, data: ReplaceAvailabilityInput) =>
     api
-      .put<PractitionerDetail>(`/practitioners/${id}/availability`, data)
+      .put<PractitionerDetail>(
+        ENDPOINTS.PRACTITIONERS.REPLACE_AVAILABILITY(id),
+        data,
+      )
       .then((r) => r.data),
 
   replaceTimeOff: (id: string, data: ReplaceTimeOffInput) =>
     api
-      .put<PractitionerDetail>(`/practitioners/${id}/time-off`, data)
+      .put<PractitionerDetail>(
+        ENDPOINTS.PRACTITIONERS.REPLACE_TIME_OFF(id),
+        data,
+      )
       .then((r) => r.data),
 };

@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui';
 import { EmptyState } from '@/components/primitives';
 import { StatusBadgeBlock } from '@/components/blocks/appointments';
-import { ProfileSection } from '@/components/blocks/profile';
+import {  ProfileSection  } from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import {
   computePayable,

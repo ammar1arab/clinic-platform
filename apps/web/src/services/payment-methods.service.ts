@@ -1,4 +1,5 @@
-﻿import { api } from "@/lib/api";
+import { api } from "@/lib/api";
+import { ENDPOINTS } from "@/constants/endpoints";
 import type {
   CreatePaymentMethodInput,
   PaymentMethodDto,
@@ -11,22 +12,33 @@ export type { CreatePaymentMethodInput, UpdatePaymentMethodInput };
 export const paymentMethodsService = {
   getAll: (clinicId: string) =>
     api
-      .get<PaymentMethod[]>("/payment-methods", { params: { clinicId } })
+      .get<
+        PaymentMethod[]
+      >(ENDPOINTS.PAYMENT_METHODS.BASE, { params: { clinicId } })
       .then((r) => r.data),
 
   create: (data: CreatePaymentMethodInput) =>
-    api.post<PaymentMethod>("/payment-methods", data).then((r) => r.data),
+    api
+      .post<PaymentMethod>(ENDPOINTS.PAYMENT_METHODS.BASE, data)
+      .then((r) => r.data),
 
   update: (id: string, data: UpdatePaymentMethodInput) =>
-    api.patch<PaymentMethod>(`/payment-methods/${id}`, data).then((r) => r.data),
+    api
+      .patch<PaymentMethod>(ENDPOINTS.PAYMENT_METHODS.BY_ID(id), data)
+      .then((r) => r.data),
 
   deactivate: (id: string) =>
-    api.patch(`/payment-methods/${id}/deactivate`).then((r) => r.data),
+    api.patch(ENDPOINTS.PAYMENT_METHODS.DEACTIVATE(id)).then((r) => r.data),
 
-  remove: (id: string) => api.delete(`/payment-methods/${id}`).then((r) => r.data),
+  remove: (id: string) =>
+    api.delete(ENDPOINTS.PAYMENT_METHODS.BY_ID(id)).then((r) => r.data),
 
   reorder: (clinicId: string, orderedIds: string[]) =>
     api
-      .patch("/payment-methods/reorder", { orderedIds }, { params: { clinicId } })
+      .patch(
+        ENDPOINTS.PAYMENT_METHODS.REORDER,
+        { orderedIds },
+        { params: { clinicId } },
+      )
       .then((r) => r.data),
 };

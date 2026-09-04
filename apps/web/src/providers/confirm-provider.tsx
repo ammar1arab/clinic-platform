@@ -1,5 +1,6 @@
 'use client';
 
+import { useLanguage } from './language-provider';
 import { createContext, useContext, useState } from 'react';
 import {
   AlertDialog,
@@ -10,7 +11,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '@/components/ui';
 
 interface ConfirmOptions {
   title: string;
@@ -25,6 +26,7 @@ type ConfirmFn = (options: ConfirmOptions) => Promise<boolean>;
 const ConfirmContext = createContext<ConfirmFn>(() => Promise.resolve(false));
 
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const [state, setState] = useState<ConfirmOptions | null>(null);
   const [resolver, setResolver] = useState<((value: boolean) => void) | null>(null);
 
@@ -54,7 +56,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => handle(false)}>
-              {state?.cancelLabel ?? 'Cancel'}
+              {state?.cancelLabel ?? t.common.cancel}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handle(true)}
@@ -64,7 +66,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                   : ''
               }
             >
-              {state?.confirmLabel ?? 'Confirm'}
+              {state?.confirmLabel ?? t.common.confirm}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

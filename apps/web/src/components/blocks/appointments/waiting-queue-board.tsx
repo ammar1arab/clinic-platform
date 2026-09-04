@@ -9,7 +9,7 @@ import {
 import { Appointment, AppointmentStatus } from '@/services/appointments.service';
 import { useUpdateAppointment, useMarkAppointmentPaid } from '@/hooks/api/use-appointments';
 import { AppointmentStatusSelect } from './appointment-status-select';
-import { formatApptTimeRange, patientDisplayName } from './appointment-display';
+import { doctorDisplayName, formatApptTimeRange, patientDisplayName } from './appointment-display';
 import { STATUS_COLORS } from './status-badge';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
@@ -18,6 +18,7 @@ import { CardGridSkeleton, SoftTip } from '@/components/primitives';
 import { ViewFocusToggle } from './view-focus';
 import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
 import { IconActivate, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
 type Tone = 'default' | 'warning' | 'info' | 'muted' | 'success';
@@ -35,6 +36,7 @@ export function WaitingQueueBoard({
   focused = false,
   onEventClick,
 }: Props) {
+  const { t, lang } = useLanguage();
   const [stageTab, setStageTab] = useState<StageTab>('all');
   const now = useNow(10_000);
   const updateMutation = useUpdateAppointment();
@@ -133,32 +135,32 @@ export function WaitingQueueBoard({
     icon: React.ReactNode;
     variant: Tone;
   }[] = [
-    { key: 'all', label: 'All', short: 'All', icon: null, variant: 'default' },
+    { key: 'all', label: t.common.all, short: t.common.all, icon: null, variant: 'default' },
     {
       key: 'waiting',
-      label: `Waiting (${waitingList.length})`,
-      short: `Wait (${waitingList.length})`,
+      label: `${t.queue.waiting} (${waitingList.length})`,
+      short: `${t.queue.waiting} (${waitingList.length})`,
       icon: <IconTimer className="size-3" />,
       variant: 'warning',
     },
     {
       key: 'in_progress',
-      label: `Consulting (${inProgressList.length})`,
-      short: `Live (${inProgressList.length})`,
+      label: `${t.queue.inSession} (${inProgressList.length})`,
+      short: `${t.queue.inSession} (${inProgressList.length})`,
       icon: <IconService className="size-3" />,
       variant: 'info',
     },
     {
       key: 'upcoming',
-      label: `Upcoming (${upcomingList.length})`,
-      short: `Next (${upcomingList.length})`,
+      label: `${t.queue.upcomingToday} (${upcomingList.length})`,
+      short: `${t.queue.upcomingToday} (${upcomingList.length})`,
       icon: <IconPatients className="size-3" />,
       variant: 'muted',
     },
     {
       key: 'completed',
-      label: `Done (${completedList.length})`,
-      short: `Done (${completedList.length})`,
+      label: `${t.queue.completed} (${completedList.length})`,
+      short: `${t.queue.completed} (${completedList.length})`,
       icon: <IconCheckCircle className="size-3" />,
       variant: 'success',
     },
@@ -208,14 +210,14 @@ export function WaitingQueueBoard({
       >
         {isVisible('waiting') && (
           <StageColumn
-            title="Waiting Room"
+            title={t.queue.waiting}
             count={waitingList.length}
             accentClass="bg-warning"
             badgeVariant="warning"
             icon={<IconTimer className="size-4 text-warning" />}
           >
             {waitingList.length === 0 ? (
-              <EmptyStageMessage icon={<IconTimer className="size-6 text-warning/40" />} text="No patients waiting right now" />
+              <EmptyStageMessage icon={<IconTimer className="size-6 text-warning/40" />} text={t.queue.noPatientsWaiting} />
             ) : (
               waitingList.map((appt) => {
                 const waitMins = elapsedMinutesSince(
@@ -224,7 +226,7 @@ export function WaitingQueueBoard({
                 );
                 const timerVariant =
                   waitMins >= 25 ? 'destructive' : waitMins >= 12 ? 'warning' : 'success';
-                const waitLabel = waitMins >= 25 ? 'Long Wait' : waitMins >= 12 ? 'Moderate' : 'On Track';
+                const waitLabel = waitMins >= 25 ? t.queue.longWait : waitMins >= 12 ? t.queue.moderateWait : t.queue.onTrack;
 
                 return (
                   <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
@@ -244,8 +246,8 @@ export function WaitingQueueBoard({
                         disabled={updateMutation.isPending}
                         onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, 'in_progress'); }}
                       >
-                        <IconPlay className="mr-1.5 size-3.5 fill-current" />
-                        Start Consultation
+                        <IconPlay className="me-1.5 size-3.5 fill-current" />
+                        {t.queue.startConsultation}
                       </Button>
                     </div>
                   </QueueCard>
@@ -257,14 +259,14 @@ export function WaitingQueueBoard({
 
         {isVisible('in_progress') && (
           <StageColumn
-            title="In Consultation"
+            title={t.queue.inSession}
             count={inProgressList.length}
             accentClass="bg-primary"
             badgeVariant="info"
             icon={<IconService className="size-4 text-primary" />}
           >
             {inProgressList.length === 0 ? (
-              <EmptyStageMessage icon={<IconService className="size-6 text-primary/40" />} text="No consultations currently in session" />
+              <EmptyStageMessage icon={<IconService className="size-6 text-primary/40" />} text={t.queue.noConsultationsInSession} />
             ) : (
               inProgressList.map((appt) => {
                 const sessionMins = elapsedMinutesSince(
@@ -294,8 +296,8 @@ export function WaitingQueueBoard({
                         disabled={updateMutation.isPending}
                         onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, 'completed'); }}
                       >
-                        <IconCheckCircle className="mr-1.5 size-3.5" />
-                        Finish Consultation
+                        <IconCheckCircle className="me-1.5 size-3.5" />
+                        {t.queue.finishConsultation}
                       </Button>
                     </div>
                   </QueueCard>
@@ -307,21 +309,21 @@ export function WaitingQueueBoard({
 
         {isVisible('upcoming') && (
           <StageColumn
-            title="Upcoming Today"
+            title={t.queue.upcomingToday}
             count={upcomingList.length}
             accentClass="bg-muted-foreground"
             badgeVariant="muted"
             icon={<IconCalendarClock className="size-4 text-muted-foreground" />}
           >
             {upcomingList.length === 0 ? (
-              <EmptyStageMessage icon={<IconCalendarClock className="size-6 text-muted-foreground/40" />} text="No upcoming visits left today" />
+              <EmptyStageMessage icon={<IconCalendarClock className="size-6 text-muted-foreground/40" />} text={t.queue.noUpcomingVisitsToday} />
             ) : (
               upcomingList.map((appt) => (
                 <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="muted" className="font-semibold">
                       <IconTime className="size-3" />
-                      {formatApptTimeRange(appt)}
+                      {formatApptTimeRange(appt, lang)}
                     </Badge>
                     <div onClick={(e) => e.stopPropagation()}>
                       <AppointmentStatusSelect appointment={appt} compact />
@@ -335,8 +337,8 @@ export function WaitingQueueBoard({
                       disabled={updateMutation.isPending}
                       onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, 'waiting'); }}
                     >
-                      <IconActivate className="mr-1.5 size-3.5 text-primary" />
-                      Patient Arrived
+                      <IconActivate className="me-1.5 size-3.5 text-primary" />
+                      {t.queue.patientArrived}
                     </Button>
                   </div>
                 </QueueCard>
@@ -347,21 +349,21 @@ export function WaitingQueueBoard({
 
         {isVisible('completed') && (
           <StageColumn
-            title="Done / Closed"
+            title={t.queue.completed}
             count={completedList.length}
             accentClass="bg-success"
             badgeVariant="success"
             icon={<IconCheckCircle className="size-4 text-success" />}
           >
             {completedList.length === 0 ? (
-              <EmptyStageMessage icon={<IconCheckCircle className="size-6 text-success/40" />} text="No completed visits yet today" />
+              <EmptyStageMessage icon={<IconCheckCircle className="size-6 text-success/40" />} text={t.queue.noCompletedVisitsToday} />
             ) : (
               completedList.map((appt) => (
                 <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="success" className="font-semibold">
                       <IconCheckCircle className="size-3" />
-                      Visit Completed
+                      {t.appointments.markCompleted}
                     </Badge>
                     <div onClick={(e) => e.stopPropagation()}>
                       <AppointmentStatusSelect appointment={appt} compact />
@@ -369,11 +371,11 @@ export function WaitingQueueBoard({
                   </div>
 
                   <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-[11px]">
-                    <span className="text-muted-foreground font-medium">Billing:</span>
+                    <span className="text-muted-foreground font-medium">{t.appointments.paymentStatus}:</span>
                     {appt.isPaid ? (
                       <Badge variant="success">
                         <IconCreditCard className="size-3" />
-                        Paid
+                        {t.appointments.paid}
                       </Badge>
                     ) : (
                       <Badge asChild variant="warning">
@@ -382,22 +384,22 @@ export function WaitingQueueBoard({
                           onClick={(e) => {
                             e.stopPropagation();
                             if (!appt.paymentMethodId) {
-                              toast.info('Open appointment details to select a payment method first');
+                              toast.info(t.queue.selectPaymentMethodFirst);
                               onEventClick(appt);
                               return;
                             }
                             markPaidMutation.mutate(
                               { id: appt.id, paymentMethodId: appt.paymentMethodId },
                               {
-                                onSuccess: () => toast.success('Marked as paid'),
-                                onError: (err) => toast.error(extractErrorMessage(err) || 'Failed to mark as paid'),
+                                onSuccess: () => toast.success(t.queue.markedAsPaid),
+                                onError: (err) => toast.error(extractErrorMessage(err) || t.queue.failedToMarkPaid),
                               },
                             );
                           }}
                           className="cursor-pointer"
                         >
                           <IconCreditCard className="size-3" />
-                          Unpaid · Mark Paid
+                          {t.appointments.unpaid} · {t.appointments.markPaid}
                         </button>
                       </Badge>
                     )}
@@ -455,23 +457,25 @@ function QueueCard({
   onClick: () => void;
   children: React.ReactNode;
 }) {
+  const { t, lang } = useLanguage();
   const accent = STATUS_COLORS[appt.status];
-  const docInitials = appt.doctor?.name?.substring(0, 2).toUpperCase() || 'DR';
+  const docLabel = doctorDisplayName(appt.doctor, lang);
+  const docInitials = docLabel.substring(0, 2).toUpperCase() || 'DR';
 
   return (
     <div
       onClick={onClick}
       className="card-aura group relative flex flex-col rounded-xl border bg-card p-3 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/50 hover:ring-1 hover:ring-primary/25 active:scale-[0.985] cursor-pointer sm:p-3.5"
-      style={{ borderLeftWidth: '4px', borderLeftColor: accent }}
+      style={{ borderInlineStartWidth: '4px', borderInlineStartColor: accent }}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs font-bold break-words text-foreground group-hover:text-primary transition-colors">
-            {patientDisplayName(appt)}
+            {patientDisplayName(appt, lang)}
           </p>
           <p className="mt-0.5 text-[10px] text-muted-foreground font-medium flex items-center gap-1">
             <IconTime className="size-2.5" />
-            {formatApptTimeRange(appt)}
+            {formatApptTimeRange(appt, lang)}
           </p>
         </div>
         <div className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-[9px] font-bold text-muted-foreground ring-2 ring-background">
@@ -483,19 +487,19 @@ function QueueCard({
         <div className="flex items-start gap-1.5">
           <IconService className="mt-0.5 size-3 shrink-0 text-primary" />
           <span className="min-w-0 break-words font-medium text-foreground/90">
-            {appt.doctor?.name} · {appt.service?.name || 'General Visit'}
+            {docLabel} · {appt.service ? ((lang === 'ar' && appt.service.nameAr) || appt.service.name) : t.appointments.generalVisit}
           </span>
         </div>
         {appt.sessionType === 'online' ? (
           <div className="flex items-center gap-1.5 text-primary font-medium">
             <IconOnline className="size-3 shrink-0" />
-            <span>Online session</span>
+            <span>{t.appointments.onlineSession}</span>
           </div>
         ) : (
           appt.room && (
             <div className="flex items-center gap-1.5">
               <IconRoom className="size-3 shrink-0" />
-              <span>Room: {appt.room.name}</span>
+              <span>{t.appointments.room}: {(lang === 'ar' && appt.room.nameAr) || appt.room.name}</span>
             </div>
           )
         )}

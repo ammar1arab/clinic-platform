@@ -1,4 +1,4 @@
-import { FormPageSkeleton } from '@/components/primitives/skeleton-presets';
+import { FormPageSkeleton } from '@/components/primitives';
 
 export default function EditAppointmentLoading() {
   return (

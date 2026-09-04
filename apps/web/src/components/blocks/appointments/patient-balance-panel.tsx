@@ -2,7 +2,7 @@
 
 import { Badge, Button, Skeleton } from '@/components/ui';
 import { IconWell, SoftTip } from '@/components/primitives';
-import { ButtonSpinner } from '@/components/blocks/feedback';
+import { ButtonSpinner } from '@/components/primitives';;
 import { cn } from '@/lib/utils';
 import type { PatientBillingSummary, PatientPackageDto } from '@clinic/types';
 import {
@@ -12,6 +12,7 @@ import {
   formatPackageRedeemCost,
 } from '@/lib/package-balance';
 import { IconPackage, IconPayment } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 interface Props {
   billing: PatientBillingSummary | undefined;
@@ -45,6 +46,7 @@ export function PatientBalancePanel({
   releasePending,
   disabledReason,
 }: Props) {
+  const { t, lang } = useLanguage();
   const packages = billing?.packages ?? [];
   const outstanding = Number(billing?.outstanding ?? 0);
   const unpaidVisits = billing?.unpaidVisits ?? 0;
@@ -72,9 +74,9 @@ export function PatientBalancePanel({
       <div className="flex items-center gap-2">
         <IconWell icon={IconPayment} size="sm" accent="muted" />
         <div className="min-w-0">
-          <p className="text-sm font-medium">Patient balance</p>
+          <p className="text-sm font-medium">{t.appointments.patientBalance}</p>
           <p className="text-[11px] text-muted-foreground">
-            Package credit and previous dues for this visit
+            {t.appointments.balanceDesc}
           </p>
         </div>
       </div>
@@ -82,9 +84,9 @@ export function PatientBalancePanel({
       {outstanding > 0 && (
         <div className="flex items-center justify-between rounded-md border border-destructive/20 bg-destructive/5 px-2.5 py-2 text-sm">
           <span className="text-muted-foreground">
-            Previous dues
-            <span className="ml-1 text-xs">
-              ({unpaidVisits} unpaid {unpaidVisits === 1 ? 'visit' : 'visits'})
+            {t.appointments.previousDues}
+            <span className="ms-1 text-xs">
+              ({unpaidVisits} {unpaidVisits === 1 ? t.appointments.unpaidVisit : t.appointments.unpaidVisits})
             </span>
           </span>
           <span className="font-semibold tabular-nums text-destructive">
@@ -142,8 +144,9 @@ function PackageRow({
   onRedeem: (id: string) => void;
   onRelease: () => void;
 }) {
+  const { t, lang } = useLanguage();
   const covers = canCoverVisit(pkg, payable);
-  const costLabel = formatPackageRedeemCost(pkg, payable);
+  const costLabel = formatPackageRedeemCost(pkg, payable, lang);
   const busy = redeemPending || releasePending;
 
   return (
@@ -163,19 +166,19 @@ function PackageRow({
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{pkg.packageName}</p>
             <p className="text-xs tabular-nums text-muted-foreground">
-              {formatPackageBalance(pkg)}
+              {formatPackageBalance(pkg, lang)}
             </p>
             {covering ? (
               <Badge variant="success" className="mt-1">
-                Covering this visit · charged {costLabel}
+                {t.appointments.coveringThisVisitCharged.replace('{cost}', costLabel)}
               </Badge>
             ) : covers ? (
               <p className="mt-0.5 text-[11px] text-muted-foreground">
-                Use for this visit: {costLabel}
+                {t.appointments.useForThisVisit.replace('{cost}', costLabel)}
               </p>
             ) : (
               <Badge variant="destructive" className="mt-1">
-                Not enough balance for this visit
+                {t.appointments.notEnoughBalance}
               </Badge>
             )}
           </div>
@@ -190,10 +193,10 @@ function PackageRow({
               disabled={busy}
               onClick={onRelease}
             >
-              {releasePending ? <ButtonSpinner className="mr-0" /> : 'Remove'}
+              {releasePending ? <ButtonSpinner className="me-0" /> : t.common.remove}
             </Button>
           ) : canRedeem ? (
-            <SoftTip label={!covers ? 'Insufficient balance' : 'Use package'}>
+            <SoftTip label={!covers ? t.appointments.insufficientBalance : t.appointments.usePackage}>
               <Button
                 type="button"
                 variant="secondary"
@@ -201,15 +204,15 @@ function PackageRow({
                 disabled={busy || !covers}
                 onClick={() => onRedeem(pkg.id)}
               >
-                {redeemPending ? <ButtonSpinner className="mr-0" /> : 'Use package'}
+                {redeemPending ? <ButtonSpinner className="me-0" /> : t.appointments.usePackage}
               </Button>
             </SoftTip>
           ) : onSelectPending ? (
             <SoftTip
               label={
                 !covers
-                  ? 'Insufficient balance'
-                  : disabledReason ?? 'Will apply after you create the appointment'
+                  ? t.appointments.insufficientBalance
+                  : disabledReason ?? t.appointments.packageAppliedAfterCreate
               }
             >
               <Button
@@ -219,13 +222,13 @@ function PackageRow({
                 disabled={!covers || busy}
                 onClick={() => onSelectPending(pending ? null : pkg.id)}
               >
-                {pending ? 'Selected' : 'Use package'}
+                {pending ? t.appointments.selected : t.appointments.usePackage}
               </Button>
             </SoftTip>
           ) : (
-            <SoftTip label={disabledReason ?? 'Use package'}>
+            <SoftTip label={disabledReason ?? t.appointments.usePackage}>
               <Button type="button" variant="secondary" size="sm" disabled>
-                Use package
+                {t.appointments.usePackage}
               </Button>
             </SoftTip>
           )}

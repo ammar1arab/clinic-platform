@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
 import {
   Button,
   Table,
@@ -22,11 +23,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+  } from '@/components/ui';
 import {
   RowActionsMenu,
   EmptyState,
@@ -35,12 +32,13 @@ import {
   TruncatedText,
   SearchInput,
   Pagination,
-} from '@/components/primitives';
-import {
+  PageBack,
   TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data';
+} from '@/components/primitives';
+
+import { ROUTES } from '@/constants/routes';
 import {
   IconAdd,
   IconDelete,
@@ -57,6 +55,7 @@ import {
 } from '@/hooks/api/use-packages';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useListFilter } from '@/hooks/shared/use-list-filter';
+import { useLanguage } from '@/providers';
 import type { ClinicPackage } from '@/services/packages.service';
 import type { DiscountType } from '@/services/appointments.service';
 
@@ -71,6 +70,7 @@ function formatPackageDiscount(p: ClinicPackage) {
 
 export default function PackagesPage() {
   const clinicId = useClinicId();
+  const { t, lang } = useLanguage();
   const { data: packages, isLoading } = usePackages(clinicId);
   const {
     search,
@@ -156,9 +156,9 @@ export default function PackagesPage() {
   const rowActions = (p: ClinicPackage) => (
     <RowActionsMenu
       items={[
-        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(p) },
+        { label: t.common.edit, icon: IconEdit, onSelect: () => openEdit(p) },
         {
-          label: 'Delete',
+          label: t.common.delete,
           icon: IconDelete,
           variant: 'destructive',
           onSelect: () => del.ask({ id: p.id, name: p.name }),
@@ -168,18 +168,20 @@ export default function PackagesPage() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
+      <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
+
       <div className="flex items-center gap-2">
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search packages…"
+          placeholder={t.settings.searchPackages}
           className="min-w-0 flex-1 sm:max-w-sm"
         />
         <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 mr-1.5" />
-          <span className="hidden sm:inline">Add Package</span>
-          <span className="sm:hidden">Add</span>
+          <IconAdd className="size-4 me-1.5" />
+          <span className="hidden sm:inline">{t.settings.addPackage}</span>
+          <span className="sm:hidden">{t.common.add}</span>
         </Button>
       </div>
 
@@ -188,11 +190,11 @@ export default function PackagesPage() {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[36%]">Name</TableHead>
-                <TableHead className="w-[12%]">Sessions</TableHead>
-                <TableHead className="w-[14%]">Price</TableHead>
-                <TableHead className="w-[14%]">Discount</TableHead>
-                <TableHead className="w-[10%]">Active</TableHead>
+                <TableHead className="w-[36%]">{t.common.name}</TableHead>
+                <TableHead className="w-[12%]">{t.settings.sessions}</TableHead>
+                <TableHead className="w-[14%]">{t.common.fee}</TableHead>
+                <TableHead className="w-[14%]">{t.appointments.discount}</TableHead>
+                <TableHead className="w-[10%]">{t.common.active}</TableHead>
                 <TableHead className="w-[14%]" />
               </TableRow>
             </TableHeader>
@@ -224,11 +226,11 @@ export default function PackagesPage() {
                   <TableCell colSpan={6} className="p-0">
                     <EmptyState
                       icon={IconPackage}
-                      title={search ? 'No matching packages' : 'No packages yet'}
+                      title={search ? t.settings.noMatchingPackages : t.settings.noPackages}
                       description={
                         search
-                          ? 'Try a different search term.'
-                          : 'Create session bundles with optional price and discount defaults for appointments.'
+                          ? t.common.noResults
+                          : t.settings.packagesDesc
                       }
                     />
                   </TableCell>
@@ -243,11 +245,13 @@ export default function PackagesPage() {
                       <p className="truncate text-xs text-muted-foreground">{p.description}</p>
                     )}
                   </TableCell>
-                  <TableCell>{p.sessionCount ?? '—'}</TableCell>
-                  <TableCell>
-                    {p.price != null ? Number(p.price).toFixed(3) : '—'}
+                  <TableCell className="text-muted-foreground">{p.sessionCount ?? '—'}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {p.price != null ? `${Number(p.price).toFixed(3)} JOD` : '—'}
                   </TableCell>
-                  <TableCell>{formatPackageDiscount(p)}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatPackageDiscount(p)}
+                  </TableCell>
                   <TableCell>
                     <Switch
                       checked={p.isActive}
@@ -265,19 +269,21 @@ export default function PackagesPage() {
         </TableFrame>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 md:hidden">
+      <div className="space-y-2 md:hidden">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-[4.5rem] w-full rounded-xl" />
+            <div key={i} className="rounded-xl border border-border/70 bg-card p-4">
+              <Skeleton className="h-4 w-28" />
+            </div>
           ))}
         {!isLoading && totalItems === 0 && (
           <EmptyState
             icon={IconPackage}
-            title={search ? 'No matching packages' : 'No packages yet'}
+            title={search ? t.settings.noMatchingPackages : t.settings.noPackages}
             description={
               search
-                ? 'Try a different search term.'
-                : 'Create session bundles with optional price and discount defaults for appointments.'
+                ? t.common.noResults
+                : t.settings.packagesDesc
             }
           />
         )}
@@ -292,12 +298,12 @@ export default function PackagesPage() {
             actions={rowActions(p)}
             meta={
               <>
-                <EntityMetaStat label="Sessions" value={p.sessionCount ?? '—'} />
+                <EntityMetaStat label={t.settings.sessions} value={p.sessionCount ?? '—'} />
                 <EntityMetaStat
-                  label="Price"
+                  label={t.common.fee}
                   value={p.price != null ? Number(p.price).toFixed(3) : '—'}
                 />
-                <EntityMetaStat label="Discount" value={formatPackageDiscount(p)} />
+                <EntityMetaStat label={t.appointments.discount} value={formatPackageDiscount(p)} />
               </>
             }
           />
@@ -313,12 +319,12 @@ export default function PackagesPage() {
       />
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit package' : 'New package'}</DialogTitle>
+            <DialogTitle>{editing ? t.common.edit : t.settings.addPackage}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <FormField label="Name" htmlFor="pkg-name">
+          <div className="py-2 space-y-3">
+            <FormField label={t.common.name} htmlFor="pkg-name">
               <Input
                 id="pkg-name"
                 value={name}
@@ -326,16 +332,16 @@ export default function PackagesPage() {
                 placeholder="e.g. 5-session physio pack"
               />
             </FormField>
-            <FormField label="Description" htmlFor="pkg-desc">
+            <FormField label={t.common.description} htmlFor="pkg-desc">
               <Input
                 id="pkg-desc"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional"
+                placeholder="e.g. Initial assessment + 4 follow-ups"
               />
             </FormField>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="Sessions" htmlFor="pkg-sessions">
+              <FormField label={t.settings.sessions} htmlFor="pkg-sessions">
                 <Input
                   id="pkg-sessions"
                   type="number"
@@ -344,7 +350,7 @@ export default function PackagesPage() {
                   onChange={(e) => setSessionCount(e.target.value)}
                 />
               </FormField>
-              <FormField label="Price" htmlFor="pkg-price">
+              <FormField label={t.common.fee} htmlFor="pkg-price">
                 <Input
                   id="pkg-price"
                   type="number"
@@ -356,7 +362,7 @@ export default function PackagesPage() {
               </FormField>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <FormField label="Discount type">
+              <FormField label={t.appointments.discountType}>
                 <Select
                   value={discountType || FORM_NONE}
                   onValueChange={(v) =>
@@ -364,16 +370,16 @@ export default function PackagesPage() {
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None" />
+                    <SelectValue placeholder={t.common.none} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_NONE}>None</SelectItem>
-                    <SelectItem value="fixed">Fixed</SelectItem>
-                    <SelectItem value="percentage">Percentage</SelectItem>
+                    <SelectItem value={FORM_NONE}>{t.common.none}</SelectItem>
+                    <SelectItem value="fixed">{t.appointments.fixed}</SelectItem>
+                    <SelectItem value="percentage">{t.appointments.percentage}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label="Discount value" htmlFor="pkg-disc">
+              <FormField label={t.appointments.discountValue} htmlFor="pkg-disc">
                 <Input
                   id="pkg-disc"
                   type="number"
@@ -385,16 +391,12 @@ export default function PackagesPage() {
                 />
               </FormField>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Price and discount are applied as defaults when this package is linked to a patient
-              or selected on an appointment.
-            </p>
           </div>
           <DialogFooter>
             <FormActions
               variant="dialog"
               onCancel={() => setOpen(false)}
-              submitLabel={editing ? 'Save' : 'Create'}
+              submitLabel={editing ? t.common.save : t.common.create}
               pending={isSaving}
               disabled={!name.trim()}
               onSubmitClick={handleSubmit}

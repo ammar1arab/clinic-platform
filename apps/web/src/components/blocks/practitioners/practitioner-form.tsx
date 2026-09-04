@@ -29,14 +29,14 @@ import {
   AvatarUpload,
 } from '@/components/primitives';
 import { FORM_NONE } from '@/constants/form';
-import { PRACTITIONER_LANGUAGES } from '@/constants/practitioner';
-import { GENDERS } from '@/constants/patient';
+import { getPractitionerLanguages } from '@/constants/practitioner';
+import { getGenders } from '@/constants/patient';
 import { practitionerSchema, type PractitionerFormData } from '@/lib/validations';
 import { useCreatePractitioner, useUpdatePractitioner } from '@/hooks/api/use-practitioners';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useRooms } from '@/hooks/api/use-rooms';
 import { useServices } from '@/hooks/api/use-services';
-import { useConfirm } from '@/providers';
+import { useConfirm, useLanguage } from '@/providers';
 import type { PractitionerDetail } from '@/services/practitioners.service';
 import {
   emptyPractitionerValues,
@@ -56,6 +56,7 @@ type Props = {
 export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }: Props) {
   const isEdit = !!practitioner;
   const confirm = useConfirm();
+  const { t } = useLanguage();
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [welcomeEmailSent, setWelcomeEmailSent] = useState(false);
@@ -296,14 +297,14 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
               name="languages"
               render={({ field }) => (
                 <MultiSelect
-                  options={PRACTITIONER_LANGUAGES.map((l) => ({
+                  options={getPractitionerLanguages(t).map((l) => ({
                     value: l.value,
-                    label: l.label,
+                    label: t?.constants?.languages?.[l.value] ?? l.label,
                   }))}
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder="Select languages spoken"
-                  emptyText="No languages"
+                  placeholder={t?.practitioner?.selectLanguages || "Select languages spoken"}
+                  emptyText={t?.practitioner?.noLanguages || "No languages"}
                   disabled={pending}
                 />
               )}
@@ -336,10 +337,10 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_NONE}>Not specified</SelectItem>
-                    {GENDERS.map((g) => (
+                    <SelectItem value={FORM_NONE}>{t?.common?.notSpecified || 'Not specified'}</SelectItem>
+                    {getGenders(t).map((g) => (
                       <SelectItem key={g.value} value={g.value}>
-                        {g.label}
+                        {t?.constants?.gender?.[g.value] ?? g.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -434,10 +435,10 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
                     <SelectValue placeholder="Not set" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_NONE}>Not set</SelectItem>
-                    <SelectItem value="salaried">Salaried</SelectItem>
-                    <SelectItem value="commission">Commission</SelectItem>
-                    <SelectItem value="mixed">Mixed</SelectItem>
+                    <SelectItem value={FORM_NONE}>{t?.common?.notSpecified || 'Not set'}</SelectItem>
+                    <SelectItem value="salaried">{t?.constants?.employment?.salaried || 'Salaried'}</SelectItem>
+                    <SelectItem value="commission">{t?.constants?.employment?.commission || 'Commission'}</SelectItem>
+                    <SelectItem value="mixed">{t?.constants?.employment?.mixed || 'Mixed'}</SelectItem>
                   </SelectContent>
                 </Select>
               )}

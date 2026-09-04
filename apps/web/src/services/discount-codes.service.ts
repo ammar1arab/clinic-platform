@@ -1,4 +1,5 @@
-﻿import { api } from "@/lib/api";
+import { api } from "@/lib/api";
+import { ENDPOINTS } from "@/constants/endpoints";
 import type {
   CreateDiscountCodeInput,
   DiscountCodeDto,
@@ -14,22 +15,32 @@ export type { CreateDiscountCodeInput, DiscountType, UpdateDiscountCodeInput };
 export const discountCodesService = {
   getAll: (clinicId: string) =>
     api
-      .get<DiscountCode[]>("/discount-codes", { params: { clinicId } })
+      .get<
+        DiscountCode[]
+      >(ENDPOINTS.DISCOUNT_CODES.BASE, { params: { clinicId } })
       .then((r) => r.data),
 
   create: (data: CreateDiscountCodeInput) =>
-    api.post<DiscountCode>("/discount-codes", data).then((r) => r.data),
+    api
+      .post<DiscountCode>(ENDPOINTS.DISCOUNT_CODES.BASE, data)
+      .then((r) => r.data),
 
   update: (id: string, data: UpdateDiscountCodeInput) =>
-    api.patch<DiscountCode>(`/discount-codes/${id}`, data).then((r) => r.data),
+    api
+      .patch<DiscountCode>(ENDPOINTS.DISCOUNT_CODES.BY_ID(id), data)
+      .then((r) => r.data),
 
   deactivate: (id: string) =>
-    api.patch(`/discount-codes/${id}/deactivate`).then((r) => r.data),
+    api.patch(ENDPOINTS.DISCOUNT_CODES.DEACTIVATE(id)).then((r) => r.data),
 
-  remove: (id: string) => api.delete(`/discount-codes/${id}`).then((r) => r.data),
+  remove: (id: string) =>
+    api.delete(ENDPOINTS.DISCOUNT_CODES.BY_ID(id)).then((r) => r.data),
 
   validate: (clinicId: string, code: string) =>
     api
-      .post<ValidatedDiscountCode>("/discount-codes/validate", { clinicId, code })
+      .post<ValidatedDiscountCode>("/discount-codes/validate", {
+        clinicId,
+        code,
+      })
       .then((r) => r.data),
 };

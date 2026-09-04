@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { TableFrame, useTwoStepDelete } from '@/components/primitives';
 import { useRouter } from 'next/navigation';
+import { TwoStepDeleteDialogs } from '@/components/primitives';
 import {
   Table,
   TableBody,
@@ -11,7 +13,7 @@ import {
   TableRow,
   Switch,
   Badge,
-} from '@/components/ui';
+  } from '@/components/ui';
 import {
   PreviewableAvatar,
   isRowControlClick,
@@ -25,16 +27,13 @@ import {
   RowActionsMenu,
   SoftTip,
 } from '@/components/primitives';
-import { TableFrame } from '@/components/blocks/data';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+
 import { format } from 'date-fns';
 import { useTogglePatientStatus, useDeletePatient } from '@/hooks/api/use-patients';
 import type { Patient } from '@/services/patients.service';
 import { genderLabel, patientAgeLabel } from '@/constants/patient';
 import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconLoyal, IconPatients, IconPhone, IconView } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 const PAGE_SIZE = 15;
 
@@ -46,8 +45,12 @@ interface Props {
   emptyAction?: React.ReactNode;
 }
 
-function patientName(p: Patient) {
-  return `${p.firstNameEn} ${p.lastNameEn}`.trim();
+function patientName(p: Patient, lang?: string) {
+  if (lang === 'ar') {
+    const ar = `${p.firstNameAr ?? ''} ${p.lastNameAr ?? ''}`.trim();
+    if (ar) return ar;
+  }
+  return `${p.firstNameEn ?? ''} ${p.lastNameEn ?? ''}`.trim();
 }
 
 function visit(date: string | null) {
@@ -61,6 +64,7 @@ export function PatientsList({
   hasActiveFilters = false,
   emptyAction,
 }: Props) {
+  const { t, lang } = useLanguage();
   const router = useRouter();
   const toggleStatus = useTogglePatientStatus(clinicId);
   const deleteMutation = useDeletePatient(clinicId);
@@ -88,17 +92,17 @@ export function PatientsList({
   const rowMenu = (p: Patient, fullName: string) => (
     <RowActionsMenu
       items={[
-        { label: 'View', icon: IconView, href: `/patients/${p.id}` },
-        { label: 'Edit', icon: IconEdit, href: `/patients/${p.id}/edit` },
+        { label: t?.common?.view ?? 'View', icon: IconView, href: `/patients/${p.id}` },
+        { label: t?.common?.edit ?? 'Edit', icon: IconEdit, href: `/patients/${p.id}/edit` },
         {
-          label: p.isActive ? 'Deactivate' : 'Reactivate',
+          label: p.isActive ? (t?.common?.deactivate ?? 'Deactivate') : (t?.common?.reactivate ?? 'Reactivate'),
           icon: p.isActive ? IconDeactivate : IconActivate,
           disabled: toggleStatus.isPending,
           onSelect: () =>
             toggleStatus.mutate({ id: p.id, isActive: !p.isActive }),
         },
         {
-          label: 'Delete',
+          label: t?.common?.delete ?? 'Delete',
           icon: IconDelete,
           variant: 'destructive',
           onSelect: () => del.ask({ id: p.id, name: fullName }),
@@ -116,11 +120,11 @@ export function PatientsList({
       <TableFrame>
         <EmptyState
           icon={IconPatients}
-          title={hasActiveFilters ? 'No matches' : 'No patients'}
+          title={hasActiveFilters ? (t?.patient?.noMatches ?? 'No matches') : (t?.patient?.noPatients ?? 'No patients')}
           description={
             hasActiveFilters
-              ? 'Try adjusting your search or filters.'
-              : 'Create a patient to start booking visits and tracking care.'
+              ? (t?.patient?.noMatchesDesc ?? 'Try adjusting your search or filters.')
+              : (t?.patient?.noPatientsDesc ?? 'Create a patient to start booking visits and tracking care.')
           }
           action={hasActiveFilters ? undefined : emptyAction}
         />
@@ -135,21 +139,23 @@ export function PatientsList({
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[20%]">Patient</TableHead>
-                <TableHead className="hidden lg:table-cell w-[12%]">National ID</TableHead>
-                <TableHead className="w-[13%]">Phone</TableHead>
-                <TableHead className="w-[8%]">Gender</TableHead>
-                <TableHead className="w-[8%]">Age</TableHead>
-                <TableHead className="hidden lg:table-cell w-[14%]">Practitioner</TableHead>
-                <TableHead className="w-[8%]">Sessions</TableHead>
-                <TableHead className="hidden xl:table-cell w-[11%]">Last Visit</TableHead>
-                <TableHead className="w-[8%]">Active</TableHead>
+                <TableHead className="w-[20%]">{t?.patient?.patient ?? 'Patient'}</TableHead>
+                <TableHead className="hidden lg:table-cell w-[12%]">{t?.patient?.nationalId ?? 'National ID'}</TableHead>
+                <TableHead className="w-[13%]">{t?.patient?.phone ?? 'Phone'}</TableHead>
+                <TableHead className="w-[8%]">{t?.patient?.gender ?? 'Gender'}</TableHead>
+                <TableHead className="w-[8%]">{t?.patient?.age ?? 'Age'}</TableHead>
+                <TableHead className="hidden lg:table-cell w-[14%]">{t?.patient?.practitioner ?? 'Practitioner'}</TableHead>
+                <TableHead className="w-[8%]">{t?.patient?.sessions ?? 'Sessions'}</TableHead>
+                <TableHead className="hidden xl:table-cell w-[11%]">{t?.patient?.lastVisit ?? 'Last Visit'}</TableHead>
+                <TableHead className="w-[8%]">{t?.common?.active ?? 'Active'}</TableHead>
                 <TableHead className="w-[8%]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {pageItems.map((p) => {
-                const fullName = patientName(p);
+                const fullName = patientName(p, lang);
+                const gLabel = genderLabel(p.gender, t);
+                const aLabel = patientAgeLabel(p.dob, t);
                 return (
                   <TableRow
                     key={p.id}
@@ -170,7 +176,7 @@ export function PatientsList({
                         <span className="flex min-w-0 items-center gap-1.5 font-medium">
                           <TruncatedText className="font-medium">{fullName}</TruncatedText>
                           {p.isLoyal && (
-                            <SoftTip label="Loyal patient">
+                            <SoftTip label={t?.patient?.loyalPatient ?? "Loyal patient"}>
                               <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
                             </SoftTip>
                           )}
@@ -187,17 +193,17 @@ export function PatientsList({
                       <PhoneLink value={p.phone} className="block" />
                     </TableCell>
                     <TableCell>
-                      {genderLabel(p.gender) ? (
-                        <SoftTip label={genderLabel(p.gender)}>
+                      {gLabel ? (
+                        <SoftTip label={gLabel}>
                           <Badge
                             variant={
-                              genderLabel(p.gender).toLowerCase() === 'female'
+                              p.gender === 'female'
                                 ? 'warning'
                                 : 'info'
                             }
                             className="font-normal"
                           >
-                            {genderLabel(p.gender)}
+                            {gLabel}
                           </Badge>
                         </SoftTip>
                       ) : (
@@ -205,7 +211,7 @@ export function PatientsList({
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {patientAgeLabel(p.dob) || '—'}
+                      {aLabel || '—'}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden text-muted-foreground">
                       <TruncatedText>{p.primaryDoctorName ?? '—'}</TruncatedText>
@@ -236,7 +242,9 @@ export function PatientsList({
 
       <div className="grid grid-cols-1 gap-2.5 md:hidden">
         {pageItems.map((p) => {
-          const fullName = patientName(p);
+          const fullName = patientName(p, lang);
+          const gLabel = genderLabel(p.gender, t);
+          const aLabel = patientAgeLabel(p.dob, t);
           return (
             <div
               key={p.id}
@@ -262,30 +270,30 @@ export function PatientsList({
                   <div className="flex min-w-0 items-center gap-1.5 font-medium">
                     <TruncatedText className="font-medium">{fullName}</TruncatedText>
                     {p.isLoyal && (
-                      <SoftTip label="Loyal patient">
+                      <SoftTip label={t?.patient?.loyalPatient ?? "Loyal patient"}>
                         <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
                       </SoftTip>
                     )}
                   </div>
-                  {genderLabel(p.gender) || patientAgeLabel(p.dob) ? (
+                  {gLabel || aLabel ? (
                     <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                      {genderLabel(p.gender) ? (
-                        <SoftTip label={genderLabel(p.gender)}>
+                      {gLabel ? (
+                        <SoftTip label={gLabel}>
                           <Badge
                             variant={
-                              genderLabel(p.gender).toLowerCase() === 'female'
+                              p.gender === 'female'
                                 ? 'warning'
                                 : 'info'
                             }
                             className="font-normal"
                           >
-                            {genderLabel(p.gender)}
+                            {gLabel}
                           </Badge>
                         </SoftTip>
                       ) : null}
-                      {patientAgeLabel(p.dob) ? (
+                      {aLabel ? (
                         <span className="text-xs text-muted-foreground">
-                          {patientAgeLabel(p.dob)}
+                          {aLabel}
                         </span>
                       ) : null}
                     </div>
@@ -314,10 +322,10 @@ export function PatientsList({
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs">
-                <MetaStat label="National ID" value={p.nationalId ?? '—'} />
-                <MetaStat label="Practitioner" value={p.primaryDoctorName ?? '—'} />
-                <MetaStat label="Sessions" value={String(p.totalSessions)} />
-                <MetaStat label="Last visit" value={visit(p.lastVisit)} />
+                <MetaStat label={t?.patient?.nationalId ?? "National ID"} value={p.nationalId ?? '—'} />
+                <MetaStat label={t?.patient?.practitioner ?? "Practitioner"} value={p.primaryDoctorName ?? '—'} />
+                <MetaStat label={t?.patient?.sessions ?? "Sessions"} value={String(p.totalSessions)} />
+                <MetaStat label={t?.patient?.lastVisit ?? "Last visit"} value={visit(p.lastVisit)} />
               </div>
             </div>
           );
@@ -343,9 +351,9 @@ export function PatientsList({
           deleteMutation.mutate(del.step2.id, { onSuccess: del.clear });
         }}
         isPending={deleteMutation.isPending}
-        warning="This permanently removes the patient and their visit history. This cannot be undone. To just hide the patient, use Deactivate instead."
-        finalWarning="This permanently deletes the patient and every appointment linked to them. This action cannot be undone."
-        confirmLabel="Yes, delete patient"
+        warning={t?.patient?.deleteWarning1 ?? "This permanently removes the patient and their visit history. This cannot be undone. To just hide the patient, use Deactivate instead."}
+        finalWarning={t?.patient?.deleteWarning2 ?? "This permanently deletes the patient and every appointment linked to them. This action cannot be undone."}
+        confirmLabel={t?.patient?.deleteConfirm ?? "Yes, delete patient"}
       />
     </>
   );

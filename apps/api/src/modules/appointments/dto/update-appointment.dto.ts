@@ -6,6 +6,7 @@ import {
   IsEnum,
 } from "class-validator";
 import { SessionTypeDto, DiscountTypeDto } from "./create-appointment.dto";
+import type { UpdateAppointmentInput } from "@clinic/types";
 
 export enum AppointmentStatusDto {
   unconfirmed = "unconfirmed",
@@ -18,7 +19,7 @@ export enum AppointmentStatusDto {
   cancelled = "cancelled",
 }
 
-export class UpdateAppointmentDto {
+export class UpdateAppointmentDto implements UpdateAppointmentInput {
   @IsOptional()
   @IsString()
   doctorId?: string;

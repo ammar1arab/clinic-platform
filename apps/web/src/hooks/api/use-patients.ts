@@ -8,6 +8,7 @@ import {
 } from '@/services/patients.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { useFetchData, type TResponseError, useApiMutation, INVALIDATE } from '../query';
+import { useLanguage } from '@/providers';
 
 export function usePatients(filters: PatientFilters) {
   return useFetchData<Patient[]>({
@@ -30,14 +31,16 @@ export function usePatient(id: string) {
 }
 
 export function useCreatePatient(_clinicId?: string) {
+  const { t } = useLanguage();
   return useApiMutation<PatientDetail, TResponseError, CreatePatientInput>({
     request: (data) => patientsService.create(data),
     invalidateQueries: [...INVALIDATE.patientWrite],
-    successMessage: 'Patient added',
+    successMessage: t.common.patientAdded,
   });
 }
 
 export function useUpdatePatient(_clinicId?: string) {
+  const { t } = useLanguage();
   return useApiMutation<
     PatientDetail,
     TResponseError,
@@ -45,11 +48,12 @@ export function useUpdatePatient(_clinicId?: string) {
   >({
     request: ({ id, data }) => patientsService.update(id, data),
     invalidateQueries: [...INVALIDATE.patientWrite],
-    successMessage: 'Patient updated',
+    successMessage: t.common.patientUpdated,
   });
 }
 
 export function useTogglePatientStatus(_clinicId?: string) {
+  const { t } = useLanguage();
   return useApiMutation<
     null,
     TResponseError,
@@ -62,17 +66,20 @@ export function useTogglePatientStatus(_clinicId?: string) {
     },
     invalidateQueries: [...INVALIDATE.patientStatus],
     successMessage: (_data, variables) =>
-      variables.isActive ? 'Patient reactivated' : 'Patient deactivated',
+      variables.isActive
+        ? t.common.patientReactivated
+        : t.common.patientDeactivated,
   });
 }
 
 export function useDeletePatient(_clinicId?: string) {
+  const { t } = useLanguage();
   return useApiMutation<null, TResponseError, string>({
     request: async (id) => {
       await patientsService.remove(id);
       return null;
     },
     invalidateQueries: [...INVALIDATE.patientStatus],
-    successMessage: 'Patient deleted',
+    successMessage: t.common.patientDeleted,
   });
 }

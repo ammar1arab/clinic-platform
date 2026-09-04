@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
 import {
   Button,
   Table,
@@ -21,11 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui';
-import {
-  TwoStepDeleteDialogs,
-  useTwoStepDelete,
-} from '@/components/blocks/feedback';
+  } from '@/components/ui';
 import {
   RowActionsMenu,
   EmptyState,
@@ -36,12 +33,12 @@ import {
   Pagination,
   BilingualNameFields,
   optionalArabicName,
-} from '@/components/primitives';
-import {
+  PageBack,
   TableFrame,
   EntityMetaStat,
   EntityMobileCard,
-} from '@/components/blocks/data';
+} from '@/components/primitives';
+
 import {
   IconAdd,
   IconDelete,
@@ -49,6 +46,7 @@ import {
   IconRoom,
 } from '@/constants/icons';
 import { FORM_NONE } from '@/constants/form';
+import { ROUTES } from '@/constants/routes';
 import {
   useRooms,
   useCreateRoom,
@@ -60,12 +58,14 @@ import {
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useListFilter } from '@/hooks/shared/use-list-filter';
-import { Room } from '@/services/rooms.service';
+import { useLanguage } from '@/providers';
+import type { Room } from '@/services/rooms.service';
 
 const searchFields = (r: Room) => [r.name];
 
 export default function RoomsPage() {
   const clinicId = useClinicId();
+  const { t, lang } = useLanguage();
   const { data: rooms, isLoading } = useRooms(clinicId);
   const { data: departments } = useDepartments(clinicId);
   const {
@@ -94,8 +94,11 @@ export default function RoomsPage() {
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const isToggling = deactivateMutation.isPending || reactivateMutation.isPending;
 
-  const departmentName = (id: string | null) =>
-    departments?.find((d) => d.id === id)?.name ?? '—';
+  const departmentName = (id: string | null) => {
+    const dept = departments?.find((d) => d.id === id);
+    if (!dept) return '—';
+    return lang === 'ar' && dept.nameAr ? dept.nameAr : dept.name;
+  };
 
   const openCreate = () => {
     setEditing(null);
@@ -140,9 +143,9 @@ export default function RoomsPage() {
   const rowActions = (room: Room) => (
     <RowActionsMenu
       items={[
-        { label: 'Edit', icon: IconEdit, onSelect: () => openEdit(room) },
+        { label: t.common.edit, icon: IconEdit, onSelect: () => openEdit(room) },
         {
-          label: 'Delete',
+          label: t.common.delete,
           icon: IconDelete,
           variant: 'destructive',
           onSelect: () => del.ask({ id: room.id, name: room.name }),
@@ -152,18 +155,20 @@ export default function RoomsPage() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
+      <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
+
       <div className="flex items-center gap-2">
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search rooms…"
+          placeholder={t.settings.searchRooms}
           className="min-w-0 flex-1 sm:max-w-sm"
         />
         <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 mr-1.5" />
-          <span className="hidden sm:inline">Add Room</span>
-          <span className="sm:hidden">Add</span>
+          <IconAdd className="size-4 me-1.5" />
+          <span className="hidden sm:inline">{t.settings.addRoom}</span>
+          <span className="sm:hidden">{t.common.add}</span>
         </Button>
       </div>
 
@@ -172,9 +177,9 @@ export default function RoomsPage() {
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[45%]">Name</TableHead>
-                <TableHead className="w-[25%]">Department</TableHead>
-                <TableHead className="w-[15%]">Active</TableHead>
+                <TableHead className="w-[45%]">{t.common.name}</TableHead>
+                <TableHead className="w-[25%]">{t.settings.departments}</TableHead>
+                <TableHead className="w-[15%]">{t.common.active}</TableHead>
                 <TableHead className="w-[15%]" />
               </TableRow>
             </TableHeader>
@@ -200,11 +205,11 @@ export default function RoomsPage() {
                   <TableCell colSpan={4} className="p-0">
                     <EmptyState
                       icon={IconRoom}
-                      title={search ? 'No matching rooms' : 'No rooms yet'}
+                      title={search ? t.settings.noMatchingRooms : t.settings.noRooms}
                       description={
                         search
-                          ? 'Try a different search term.'
-                          : 'Add a room to assign appointments and procedures.'
+                          ? t.common.noResults
+                          : t.settings.roomsDesc
                       }
                     />
                   </TableCell>
@@ -214,10 +219,14 @@ export default function RoomsPage() {
               {pageItems.map((room) => (
                 <TableRow key={room.id} className={!room.isActive ? 'opacity-60' : undefined}>
                   <TableCell className="max-w-0 overflow-hidden">
-                    <TruncatedText className="font-medium">{room.name}</TruncatedText>
+                    <TruncatedText className="font-medium">
+                      {lang === 'ar' && room.nameAr ? room.nameAr : room.name}
+                    </TruncatedText>
                   </TableCell>
-                  <TableCell className="max-w-0 overflow-hidden text-muted-foreground">
-                    <TruncatedText>{departmentName(room.departmentId)}</TruncatedText>
+                  <TableCell className="max-w-0 overflow-hidden">
+                    <TruncatedText className="text-muted-foreground">
+                      {departmentName(room.departmentId)}
+                    </TruncatedText>
                   </TableCell>
                   <TableCell>
                     <Switch
@@ -236,36 +245,38 @@ export default function RoomsPage() {
         </TableFrame>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5 md:hidden">
+      <div className="space-y-2 md:hidden">
         {isLoading &&
           Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-[4.5rem] w-full rounded-xl" />
+            <div key={i} className="rounded-xl border border-border/70 bg-card p-4">
+              <Skeleton className="h-4 w-28" />
+            </div>
           ))}
         {!isLoading && totalItems === 0 && (
           <EmptyState
             icon={IconRoom}
-            title={search ? 'No matching rooms' : 'No rooms yet'}
+            title={search ? t.settings.noMatchingRooms : t.settings.noRooms}
             description={
               search
-                ? 'Try a different search term.'
-                : 'Add a room to assign appointments and procedures.'
+                ? t.common.noResults
+                : t.settings.roomsDesc
             }
           />
         )}
         {pageItems.map((room) => (
           <EntityMobileCard
             key={room.id}
-            title={room.name}
+            title={lang === 'ar' && room.nameAr ? room.nameAr : room.name}
             active={room.isActive}
             onActiveChange={(checked) => handleToggleActive(room, checked)}
             activeDisabled={isToggling}
             actions={rowActions(room)}
             meta={
               <>
-                <EntityMetaStat label="Department" value={departmentName(room.departmentId)} />
+                <EntityMetaStat label={t.settings.departments} value={departmentName(room.departmentId)} />
                 <EntityMetaStat
-                  label="Status"
-                  value={room.isActive ? 'Active' : 'Inactive'}
+                  label={t.common.status}
+                  value={room.isActive ? t.common.active : t.common.inactive}
                 />
               </>
             }
@@ -282,30 +293,32 @@ export default function RoomsPage() {
       />
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Room' : 'New Room'}</DialogTitle>
+            <DialogTitle>
+              {editing ? t.common.edit : t.settings.addRoom}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="py-2 space-y-3">
             <BilingualNameFields
               name={name}
               nameAr={nameAr}
               onNameChange={setName}
               onNameArChange={setNameAr}
             />
-            <FormField label="Department">
+            <FormField label={t.settings.departments}>
               <Select
                 value={departmentId || FORM_NONE}
                 onValueChange={(v) => setDepartmentId(v === FORM_NONE ? '' : v)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="No department" />
+                  <SelectValue placeholder={t.common.none} />
                 </SelectTrigger>
                 <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
-                  <SelectItem value={FORM_NONE}>No department</SelectItem>
+                  <SelectItem value={FORM_NONE}>{t.common.none}</SelectItem>
                   {departments?.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
-                      <span className="truncate">{d.name}</span>
+                      <span className="truncate">{lang === 'ar' && d.nameAr ? d.nameAr : d.name}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -316,7 +329,7 @@ export default function RoomsPage() {
             <FormActions
               variant="dialog"
               onCancel={() => setOpen(false)}
-              submitLabel={editing ? 'Save' : 'Create'}
+              submitLabel={editing ? t.common.save : t.common.create}
               pending={isSaving}
               disabled={!name.trim()}
               onSubmitClick={handleSubmit}

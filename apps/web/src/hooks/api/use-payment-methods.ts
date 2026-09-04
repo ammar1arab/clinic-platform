@@ -1,3 +1,4 @@
+import type { Translations } from '@/i18n';
 import {
   paymentMethodsService,
   CreatePaymentMethodInput,
@@ -15,8 +16,8 @@ const {
   useRemove: useDeletePaymentMethod,
 } = createCrudHooks<PaymentMethod, CreatePaymentMethodInput, UpdatePaymentMethodInput>({
   keys: QUERY_KEYS.paymentMethods,
-  entity: 'Payment method',
-  labels: { removed: 'Payment method permanently deleted' },
+  entity: 'paymentMethod',
+  labels: (t: Translations) => ({ removed: t.common.paymentMethodDeleted }),
   service: {
     getAll: paymentMethodsService.getAll,
     create: paymentMethodsService.create,

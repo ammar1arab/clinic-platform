@@ -13,12 +13,13 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 import { EmploymentType } from "@prisma/client";
+import type { UpdatePractitionerInput } from "@clinic/types";
 import {
   AvailabilitySlotDto,
   TimeOffEntryDto,
 } from "./create-practitioner.dto";
 
-export class UpdatePractitionerDto {
+export class UpdatePractitionerDto implements UpdatePractitionerInput {
   @IsOptional()
   @IsString()
   name?: string;

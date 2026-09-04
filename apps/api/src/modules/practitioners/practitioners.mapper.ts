@@ -11,7 +11,9 @@ export function initialsFromName(name: string): string {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-function toNumber(value: { toNumber?: () => number } | number | null | undefined) {
+function toNumber(
+  value: { toNumber?: () => number } | number | null | undefined,
+) {
   if (value == null) return null;
   if (typeof value === "number") return value;
   if (typeof value.toNumber === "function") return value.toNumber();
@@ -76,7 +78,6 @@ export function mapPractitioner(row: Row) {
     updatedAt: row.updatedAt.toISOString(),
   };
 }
-
 
 export function optStr(value: string | null | undefined) {
   if (value === undefined) return undefined;

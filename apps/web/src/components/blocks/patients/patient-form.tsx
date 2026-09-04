@@ -23,13 +23,14 @@ import {
   AvatarUpload,
 } from '@/components/primitives';
 import { FORM_NONE } from '@/constants/form';
-import { GENDERS, BLOOD_TYPES } from '@/constants/patient';
+import { getGenders, BLOOD_TYPES } from '@/constants/patient';
 import { patientSchema, PatientFormData } from '@/lib/validations';
 import { useCreatePatient, useUpdatePatient } from '@/hooks/api/use-patients';
 import { usePackages } from '@/hooks/api/use-packages';
 import { useDiscountCodes } from '@/hooks/api/use-discount-codes';
 import type { PatientDetail, CreatePatientInput } from '@/services/patients.service';
 import { pickRandomAvatarUrl, persistableImageUrl, resolveAvatarUrl } from '@/lib/avatars';
+import { useLanguage } from '@/providers';
 
 interface Props {
   clinicId: string;
@@ -111,6 +112,7 @@ function toPayload(data: PatientFormData): Omit<CreatePatientInput, 'clinicId'> 
 
 export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
   const isEdit = !!patient;
+  const { t } = useLanguage();
   const createMutation = useCreatePatient(clinicId);
   const updateMutation = useUpdatePatient(clinicId);
   const { data: packages } = usePackages(clinicId);
@@ -219,10 +221,10 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_NONE}>Not specified</SelectItem>
-                    {GENDERS.map((g) => (
+                    <SelectItem value={FORM_NONE}>{t?.common?.notSpecified || 'Not specified'}</SelectItem>
+                    {getGenders(t).map((g) => (
                       <SelectItem key={g.value} value={g.value}>
-                        {g.label}
+                        {t?.constants?.gender?.[g.value] ?? g.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
