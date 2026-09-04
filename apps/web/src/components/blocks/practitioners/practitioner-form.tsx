@@ -216,7 +216,6 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
               }
               fallbackLabel={name || 'DR'}
               disabled={pending}
-              alt="Practitioner photo"
             />
           </FormField>
 

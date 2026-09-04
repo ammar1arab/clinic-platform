@@ -164,7 +164,6 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               }
               fallbackLabel={`${watch('firstNameEn') || 'P'}${watch('lastNameEn') || ''}`}
               disabled={isPending}
-              alt={t?.patient?.patientPhoto}
             />
           </FormField>
           <FormField label={t?.patient?.firstNameEn} required error={errors.firstNameEn?.message}>

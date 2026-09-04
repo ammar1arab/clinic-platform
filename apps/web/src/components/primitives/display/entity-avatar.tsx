@@ -26,12 +26,11 @@ function needsUnoptimized(src: string) {
 
 export function AvatarImage({
   src,
-  alt,
   className,
   onLoad,
   onError,
   ...props
-}: ComponentProps<typeof Image> & { src: string }) {
+}: Omit<ComponentProps<typeof Image>, 'alt'> & { src: string }) {
   const [prev, setPrev] = useState(src);
   const [ready, setReady] = useState(false);
   if (src !== prev) {
@@ -50,7 +49,7 @@ export function AvatarImage({
         unoptimized={needsUnoptimized(src)}
         {...props}
         src={src}
-        alt={alt}
+        alt=""
         className={cn('size-full object-cover', !ready && 'opacity-0', className)}
         onLoad={(e) => {
           setReady(true);
@@ -65,14 +64,12 @@ export function AvatarImage({
 export function EntityAvatar({
   src,
   seed,
-  alt,
   size = 'default',
   priority = false,
   className,
 }: {
   src?: string | null;
   seed: string;
-  alt: string;
   size?: Size;
   priority?: boolean;
   className?: string;
@@ -101,7 +98,6 @@ export function EntityAvatar({
     >
       <AvatarImage
         src={url}
-        alt={alt}
         width={px}
         height={px}
         sizes={`${px}px`}

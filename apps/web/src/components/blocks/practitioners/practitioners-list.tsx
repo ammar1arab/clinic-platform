@@ -20,9 +20,12 @@ import {
 import type { Practitioner } from '@/services/practitioners.service';
 import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconPhone, IconPractitioner, IconView } from '@/constants/icons';
 import { useLanguage } from '@/providers';
+import { getBilingualName } from '@/i18n';
 
-function displayName(p: Practitioner) {
-  return p.title ? `${p.title} ${p.name}` : p.name;
+function displayName(p: Practitioner, lang?: string) {
+  const name = getBilingualName(p.name, p.nameAr, lang);
+  if (lang === 'ar') return name;
+  return p.title ? `${p.title} ${name}` : name;
 }
 
 function CellBadge({
@@ -160,7 +163,7 @@ export function PractitionersList({
           label: t.practitioner.delete,
           icon: IconDelete,
           variant: 'destructive',
-          onSelect: () => del.ask({ id: p.id, name: displayName(p) }),
+          onSelect: () => del.ask({ id: p.id, name: displayName(p, lang) }),
         },
       ]}
     />
@@ -222,7 +225,6 @@ export function PractitionersList({
                       <PreviewableAvatar
                         src={p.imageUrl}
                         seed={p.id}
-                        alt={displayName(p)}
                         size="sm"
                       />
                       <div
@@ -230,7 +232,7 @@ export function PractitionersList({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <TruncatedText className="font-medium">
-                          {displayName(p)}
+                          {displayName(p, lang)}
                         </TruncatedText>
                         <EmailLink
                           value={p.email}
@@ -252,7 +254,7 @@ export function PractitionersList({
                     <CellBadge value={lang === 'ar' && p.specialtyAr ? p.specialtyAr : p.specialty} />
                   </TableCell>
                   <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden">
-                    <CellBadge value={lang === 'ar' && (p as any).departmentNameAr ? (p as any).departmentNameAr : p.departmentName} variant="outline" />
+                    <CellBadge value={getBilingualName(p.departmentName, p.departmentNameAr, lang)} variant="outline" />
                   </TableCell>
                   <TableCell
                     className="hidden xl:table-cell max-w-0 overflow-hidden"
@@ -324,9 +326,9 @@ export function PractitionersList({
             }`}
           >
             <div className="flex items-start gap-3">
-              <PreviewableAvatar src={p.imageUrl} seed={p.id} alt={displayName(p)} />
+              <PreviewableAvatar src={p.imageUrl} seed={p.id} />
               <div className="min-w-0 flex-1">
-                <TruncatedText className="font-medium">{displayName(p)}</TruncatedText>
+                <TruncatedText className="font-medium">{displayName(p, lang)}</TruncatedText>
                 <div className="mt-0.5 min-w-0" onClick={(e) => e.stopPropagation()}>
                   <EmailLink
                     value={p.email}

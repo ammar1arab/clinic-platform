@@ -49,6 +49,7 @@ export interface Practitioner {
   licenseExpiry: string | null;
   departmentId: string | null;
   departmentName: string | null;
+  departmentNameAr: string | null;
   defaultRoomId: string | null;
   defaultRoomName: string | null;
   employmentType: EmploymentType | null;

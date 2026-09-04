@@ -4,7 +4,7 @@ import {
   formatTime,
   formatTimeRange,
 } from '@/lib/datetime';
-import { getTranslations } from '@/i18n';
+import { getBilingualName, getTranslations } from '@/i18n';
 
 export type EventDensity = 'xs' | 'sm' | 'md' | 'lg';
 
@@ -54,7 +54,10 @@ export function doctorDisplayName(
 ) {
   const fallback = getTranslations(lang).appointments.doctor;
   if (!doctor) return fallback;
-  const name = typeof doctor === 'string' ? doctor : (lang === 'ar' && doctor.nameAr ? doctor.nameAr : doctor.name);
+  const name =
+    typeof doctor === 'string'
+      ? doctor
+      : getBilingualName(doctor.name, doctor.nameAr, lang);
   const trimmed = name?.trim() ?? '';
   if (!trimmed) return fallback;
   return trimmed.replace(/^(?:dr\.?|د\.?\s*)/i, '');
@@ -103,14 +106,23 @@ export function formatApptTip(
     extras?.rangeLabel ?? formatApptTimeRange(appt, extras?.lang),
     formatDoctorLabel(extras?.doctorName ?? appt.doctor, { lang: extras?.lang }),
   ];
-  if (appt.service?.name) bits.push(appt.service.name);
+  if (appt.service) {
+    bits.push(getBilingualName(appt.service.name, appt.service.nameAr, extras?.lang));
+  }
   return bits.join(' · ');
 }
 
 export function matchesAppointmentSearch(appt: Appointment, term: string) {
   const q = term.trim().toLowerCase();
   if (!q) return true;
-  return [formatPersonName(appt.patient), appt.service?.name, appt.doctor?.name]
+  return [
+    formatPersonName(appt.patient, 'en'),
+    formatPersonName(appt.patient, 'ar'),
+    appt.service?.name,
+    appt.service?.nameAr,
+    appt.doctor?.name,
+    appt.doctor?.nameAr,
+  ]
     .filter(Boolean)
     .join(' ')
     .toLowerCase()

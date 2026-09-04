@@ -1,4 +1,4 @@
-import { getTranslations, getLanguage, type Translations } from '@/i18n';
+import { getBilingualName, getTranslations, getLanguage, type Translations } from '@/i18n';
 import { genderLabel } from '@/constants/patient';
 import type { Practitioner } from '@/services/practitioners.service';
 import { formatPhoneDisplay } from '@/lib/contact';
@@ -10,10 +10,14 @@ import {
 
 export type PractitionerExportFormat = TableExportFormat;
 
-const getColumns = (t: Translations) => [
+const getColumns = (t: Translations, lang: string) => [
   {
     header: t.exports.name,
-    value: (p: Practitioner) => (p.title ? `${p.title} ${p.name}` : p.name),
+    value: (p: Practitioner) => {
+      const name = getBilingualName(p.name, p.nameAr, lang);
+      if (lang === 'ar') return name;
+      return p.title ? `${p.title} ${name}` : name;
+    },
   },
   { header: t.exports.nameAr, value: (p: Practitioner) => p.nameAr ?? '' },
   { header: t.exports.email, value: (p: Practitioner) => p.email ?? '' },
@@ -84,7 +88,7 @@ export function exportPractitioners(
     t,
     lang,
     rows: practitioners,
-    columns: getColumns(t),
+    columns: getColumns(t, lang),
     format,
     title: t.exports.practitionersDirectory,
     sheetName: t.exports.practitioners,

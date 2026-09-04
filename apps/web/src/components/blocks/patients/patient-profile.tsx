@@ -101,7 +101,6 @@ export function PatientProfile({ patientId }: { patientId: string }) {
           <PreviewableAvatar
             src={patient.imageUrl}
             seed={patient.id}
-            alt={fullName}
             size="xl"
             priority
           />

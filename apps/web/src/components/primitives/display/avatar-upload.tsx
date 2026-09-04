@@ -26,7 +26,6 @@ type Props = {
   fallbackLabel?: string;
   disabled?: boolean;
   className?: string;
-  alt?: string;
 };
 
 export function AvatarUpload({
@@ -35,7 +34,6 @@ export function AvatarUpload({
   fallbackLabel = '',
   disabled,
   className,
-  alt,
 }: Props) {
   const { t } = useLanguage();
   const inputId = useId();
@@ -88,7 +86,6 @@ export function AvatarUpload({
       {value ? (
         <AvatarImage
           src={value}
-          alt=""
           width={112}
           height={112}
           sizes="112px"
@@ -173,7 +170,6 @@ export function AvatarUpload({
 
       <ImagePreview
         src={value}
-        alt={alt ?? t.ui.photo}
         open={previewOpen}
         onOpenChange={setPreviewOpen}
       />

@@ -32,19 +32,11 @@ function TooltipTrigger({
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
-function TipCursor() {
-  return (
-    <svg viewBox="0 0 16 16" aria-hidden className="tip-cursor">
-      <path d="M1.4 1.25 2.2 13.7l3.55-3.4 2.7 5.85 2.15-1-2.7-5.85h4.75L1.4 1.25Z" />
-    </svg>
-  );
-}
-
 function TooltipContent({
   className,
   side = 'top',
-  sideOffset = 6,
-  align = 'start',
+  sideOffset = 8,
+  align = 'center',
   children,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Content>) {
@@ -58,15 +50,13 @@ function TooltipContent({
         avoidCollisions
         collisionPadding={10}
         className={cn(
-          'overlay-pop overlay-pop-tip z-150 border-0 bg-transparent p-0 shadow-none outline-none',
+          'overlay-pop overlay-pop-tip z-150 overflow-visible border-0 bg-transparent p-0 shadow-none outline-none',
           className,
         )}
         {...props}
       >
-        <span className="tip-cursor-cluster">
-          <TipCursor />
-          <span className="tip-cursor-label">{children}</span>
-        </span>
+        <span className="tip-bubble-body">{children}</span>
+        <TooltipPrimitive.Arrow width={12} height={7} className="tip-bubble-tail" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );

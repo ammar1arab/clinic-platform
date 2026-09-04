@@ -139,11 +139,13 @@ export function AppointmentCalendar({
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const appt = readCalendarAppointment(arg.event.extendedProps);
     if (!appt) return;
-    setDayPopover(null);
-    setAppointmentPopover({
-      appointment: appt,
-      anchor: popoverAnchorFromElement(arg.el),
-    });
+    arg.jsEvent.preventDefault();
+    arg.jsEvent.stopPropagation();
+    const anchor = popoverAnchorFromElement(arg.el);
+    window.setTimeout(() => {
+      setDayPopover(null);
+      setAppointmentPopover({ appointment: appt, anchor });
+    }, 0);
   }, []);
 
   const handleDateClick = useCallback(
@@ -259,6 +261,22 @@ export function AppointmentCalendar({
     [t],
   );
 
+  const openDayPopover = useCallback(
+    (link: Element, date: Date) => {
+      const rawDate = toDateParam(date);
+      const anchor = popoverAnchorFromElement(link);
+      window.setTimeout(() => {
+        setAppointmentPopover(null);
+        setDayPopover({
+          date,
+          appointments: appointmentsByDay.get(rawDate) ?? [],
+          anchor,
+        });
+      }, 0);
+    },
+    [appointmentsByDay],
+  );
+
   const handleCalendarClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       const target = event.target;
@@ -273,14 +291,9 @@ export function AppointmentCalendar({
       const dayElement = link.closest<HTMLElement>('[data-date]');
       const rawDate = dayElement?.getAttribute('data-date');
       const date = rawDate ? new Date(`${rawDate}T00:00:00`) : new Date();
-      setAppointmentPopover(null);
-      setDayPopover({
-        date,
-        appointments: appointmentsByDay.get(rawDate ?? toDateParam(date)) ?? [],
-        anchor: popoverAnchorFromElement(link),
-      });
+      openDayPopover(link, date);
     },
-    [appointmentsByDay],
+    [openDayPopover],
   );
 
   const handleEventDidMount = useCallback((info: EventMountArg) => {
@@ -328,10 +341,11 @@ export function AppointmentCalendar({
 
   return (
     <div
+      data-schedule-host=""
       className={cn(
-        'relative bg-card [&_.fc]:text-sm',
+        'relative flex h-0 min-h-0 flex-1 flex-col overflow-hidden bg-card [&_.fc]:text-sm',
         focused
-          ? 'flex h-0 min-h-0 flex-1 flex-col overflow-hidden rounded-none border-0 p-1.5 sm:p-2'
+          ? 'rounded-none border-0 p-1.5 sm:p-2'
           : 'card-aura rounded-xl border p-2 sm:p-2.5',
       )}
       aria-busy={isFetching || undefined}
@@ -339,11 +353,14 @@ export function AppointmentCalendar({
       <div
         ref={sizeHostRef}
         onClickCapture={handleCalendarClickCapture}
-        className={cn(
-          'relative [&_.fc-header-toolbar]:pe-9 sm:[&_.fc-header-toolbar]:pe-10',
-          focused &&
-            'flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0',
-        )}
+        onPointerDown={(event) => {
+          if (!(event.target instanceof Element)) return;
+          if (event.target.closest('[data-calendar-popover]')) return;
+          if (event.target.closest('.fc-event, .fc-more-link')) return;
+          setAppointmentPopover(null);
+          setDayPopover(null);
+        }}
+        className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-header-toolbar]:pe-9 [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0 sm:[&_.fc-header-toolbar]:pe-10"
       >
         <div className="absolute top-0 inset-e-0 z-20">
           <ViewFocusToggle />
@@ -367,7 +384,7 @@ export function AppointmentCalendar({
             week: t.appointments.week,
             month: t.appointments.month,
           }}
-          height={focused ? '100%' : 'auto'}
+          height="100%"
           slotMinTime="07:00:00"
           slotMaxTime="21:00:00"
           allDaySlot={false}
@@ -403,6 +420,14 @@ export function AppointmentCalendar({
           eventMinHeight={isMobile ? 28 : 32}
           moreLinkContent={renderMoreLinkContent}
           moreLinkClassNames={['block', 'w-full']}
+          moreLinkClick={(info) => {
+            info.jsEvent.preventDefault();
+            info.jsEvent.stopPropagation();
+            const target = info.jsEvent.target;
+            const link =
+              target instanceof Element ? target.closest('.fc-more-link') : null;
+            if (link) openDayPopover(link, info.date);
+          }}
           expandRows
           stickyHeaderDates
           views={{
@@ -430,9 +455,12 @@ export function AppointmentCalendar({
       {dayPopover ? (
         <DayAppointmentsPopover
           state={dayPopover}
-          onClose={() => setDayPopover(null)}
-          onSelect={(appointment, anchor) => {
+          placement={view === 'month' ? 'month' : 'vertical'}
+          onClose={() => {
             setDayPopover(null);
+            setAppointmentPopover(null);
+          }}
+          onSelect={(appointment, anchor) => {
             setAppointmentPopover({ appointment, anchor });
           }}
         />

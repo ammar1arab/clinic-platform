@@ -34,7 +34,7 @@ th, td {
   --error: var(--destructive);
 
   
-  --background: oklch(0.99 0 0);
+  --background: #fff;
   --foreground: oklch(0.13 0.01 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.13 0.01 260);
@@ -342,89 +342,31 @@ th, td {
     animation-name: overlay-out;
   }
 
-  .overlay-pop-tip {
+  .overlay-pop-tip,
+  [data-calendar-popover] {
     --overlay-duration: 160ms;
-    --overlay-from: 4px;
-    --overlay-scale-from: 0.96;
+    --overlay-from: 0px;
+    --overlay-scale-from: 1;
   }
 
-  .tip-cursor-cluster {
-    display: inline-flex;
+  .tip-bubble-body {
+    display: block;
     max-width: min(16rem, calc(100vw - 2rem));
-    pointer-events: none;
-  }
-
-  .tip-cursor {
-    width: 0.9rem;
-    height: 0.9rem;
-    flex-shrink: 0;
-    fill: var(--color-primary);
-    filter: drop-shadow(
-      0 1px 1px color-mix(in oklch, var(--color-foreground) 16%, transparent)
-    );
-  }
-
-  .tip-cursor-label {
-    border-radius: 0.375rem;
+    border-radius: 1.25rem;
     background-color: var(--color-primary);
     color: var(--color-primary-foreground);
-    padding: 0.15rem 0.5rem;
+    padding: 0.4rem 0.7rem;
+    text-align: center;
     font-size: 0.6875rem;
     font-weight: 600;
-    line-height: 1.3;
-    box-shadow: 0 8px 18px -10px color-mix(in oklch, var(--color-primary) 70%, transparent);
+    line-height: 1.35;
+    pointer-events: none;
+    box-shadow: 0 10px 22px -12px color-mix(in oklch, var(--color-primary) 55%, transparent);
   }
 
-  .overlay-pop-tip[data-side='right'] .tip-cursor-cluster {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-
-  .overlay-pop-tip[data-side='right'] .tip-cursor {
-    transform: rotate(-90deg);
-  }
-
-  .overlay-pop-tip[data-side='right'] .tip-cursor-label {
-    margin-inline-start: -0.12rem;
-    margin-block-start: 0.7rem;
-  }
-
-  .overlay-pop-tip[data-side='left'] .tip-cursor-cluster {
-    flex-direction: row-reverse;
-    align-items: flex-start;
-  }
-
-  .overlay-pop-tip[data-side='left'] .tip-cursor {
-    transform: rotate(90deg);
-  }
-
-  .overlay-pop-tip[data-side='left'] .tip-cursor-label {
-    margin-inline-end: -0.12rem;
-    margin-block-start: 0.7rem;
-  }
-
-  .overlay-pop-tip[data-side='bottom'] .tip-cursor-cluster {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .overlay-pop-tip[data-side='bottom'] .tip-cursor-label {
-    margin-inline-start: 0.7rem;
-    margin-block-start: -0.12rem;
-  }
-
-  .overlay-pop-tip[data-side='top'] .tip-cursor-cluster {
-    flex-direction: column-reverse;
-    align-items: flex-start;
-  }
-
-  .overlay-pop-tip[data-side='top'] .tip-cursor {
-    transform: rotate(180deg);
-  }
-
-  .overlay-pop-tip[data-side='top'] .tip-cursor-label {
-    margin-inline-start: 0.7rem;
-    margin-block-end: -0.12rem;
+  .tip-bubble-tail {
+    fill: var(--color-primary);
+    pointer-events: none;
   }
 
   @keyframes overlay-in {
@@ -753,12 +695,17 @@ html[data-view-focus='true'] [data-view-focus='true'] {
   height: 100%;
 }
 
-[data-view-focus='true'] .fc,
-[data-view-focus='true'] .fc .fc-view-harness {
+[data-schedule-host],
+[data-calendar-popover] {
+  touch-action: manipulation;
+}
+
+[data-schedule-host] .fc,
+[data-schedule-host] .fc .fc-view-harness {
   height: 100% !important;
 }
 
-[data-view-focus='true'] .fc .fc-scroller {
+[data-schedule-host] .fc .fc-scroller {
   overflow: auto !important;
 }
 
@@ -1184,7 +1131,15 @@ html[data-view-focus='true'] [data-view-focus='true'] {
 .fc .fc-daygrid-day-frame {
   position: relative;
   min-height: 8.25rem;
+  overflow: visible;
   transition: background-color 0.12s ease;
+}
+
+.fc .fc-daygrid-day-bottom,
+.fc .fc-more-link,
+.fc .fc-timegrid-more-link {
+  position: relative;
+  z-index: 30;
 }
 
 .fc .fc-daygrid-day-events {
@@ -1319,7 +1274,16 @@ html[data-view-focus='true'] [data-view-focus='true'] {
   color: var(--color-primary);
 }
 
+.fc .fc-more-popover,
 .fc .fc-popover {
+  display: none !important;
+}
+
+.fc-native-popover-hidden {
+  display: none !important;
+}
+
+.fc .fc-popover-unused {
   --overlay-tx: 0px;
   --overlay-ty: calc(var(--overlay-from) * -1);
   z-index: 90;

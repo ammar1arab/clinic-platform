@@ -13,6 +13,7 @@ import {
 import { formatTime, formatTimeRange } from '@/lib/datetime';
 import { IconInPerson, IconOnline } from '@/constants/icons';
 import { SoftTip } from '@/components/primitives';
+import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
 
 function isAppointment(value: object): value is Appointment {
@@ -55,7 +56,7 @@ export function CalendarEventChip({ arg }: { arg: EventContentArg }) {
 
   if (isMonth) {
     return (
-      <SoftTip label={tip}>
+      <SoftTip label={tip} className="flex w-full min-w-0">
         <div className="fc-event-chip fc-event-chip--month">
           <span className="fc-event-chip__time">{startLabel}</span>
           <span className="fc-event-chip__name">{fullName}</span>
@@ -65,7 +66,7 @@ export function CalendarEventChip({ arg }: { arg: EventContentArg }) {
   }
 
   return (
-    <SoftTip label={tip}>
+    <SoftTip label={tip} className="flex h-full min-h-0 w-full min-w-0">
       <div className="fc-event-chip fc-event-chip--time">
         <div className="fc-event-chip__primary">
           <Icon className="fc-event-chip__icon" aria-hidden />
@@ -81,9 +82,9 @@ export function CalendarEventChip({ arg }: { arg: EventContentArg }) {
               {formatDoctorLabel(appt?.doctor ?? doctorName, { short: true, lang })}
             </span>
           ) : null}
-          {appt?.service?.name ? (
+          {appt?.service ? (
             <span className="fc-event-chip__service">
-              {lang === 'ar' && appt.service.nameAr ? appt.service.nameAr : appt.service.name}
+              {getBilingualName(appt.service.name, appt.service.nameAr, lang)}
             </span>
           ) : null}
         </div>

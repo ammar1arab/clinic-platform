@@ -11,6 +11,11 @@ import { useUpdateAppointment, useMarkAppointmentPaid } from '@/hooks/api/use-ap
 import { AppointmentStatusSelect } from '../shared/appointment-status-select';
 import { doctorDisplayName, formatApptTimeRange, patientDisplayName } from '../shared/appointment-display';
 import { STATUS_COLORS } from '../shared/status-badge';
+import {
+  AppointmentPopover,
+  popoverAnchorFromElement,
+  type AppointmentPopoverState,
+} from './appointment-popovers';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -18,6 +23,7 @@ import { CardGridSkeleton, SoftTip } from '@/components/primitives';
 import { ViewFocusToggle } from './view-focus';
 import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
 import { IconActivate, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
+import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
 
 type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
@@ -38,6 +44,8 @@ export function WaitingQueueBoard({
 }: Props) {
   const { t, lang } = useLanguage();
   const [stageTab, setStageTab] = useState<StageTab>('all');
+  const [appointmentPopover, setAppointmentPopover] =
+    useState<AppointmentPopoverState | null>(null);
   const now = useNow(10_000);
   const updateMutation = useUpdateAppointment();
   const markPaidMutation = useMarkAppointmentPaid();
@@ -168,8 +176,9 @@ export function WaitingQueueBoard({
 
   return (
     <div
+      data-schedule-host=""
       className={cn(
-        'flex flex-col overflow-hidden border bg-card shadow-xs',
+        'relative flex flex-col overflow-hidden border bg-card shadow-xs',
         focused
           ? 'h-0 min-h-0 flex-1 rounded-none border-0'
           : 'card-aura min-h-0 flex-1 rounded-xl sm:rounded-2xl',
@@ -229,7 +238,7 @@ export function WaitingQueueBoard({
                 const waitLabel = waitMins >= 25 ? t.queue.longWait : waitMins >= 12 ? t.queue.moderateWait : t.queue.onTrack;
 
                 return (
-                  <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
+                  <QueueCard key={appt.id} appointment={appt} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant={timerVariant} className={cn('font-semibold', waitMins >= 25 && 'animate-pulse')}>
                         <IconTime className="size-3" />
@@ -276,7 +285,7 @@ export function WaitingQueueBoard({
                 const isLong = sessionMins > appt.durationMins;
 
                 return (
-                  <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
+                  <QueueCard key={appt.id} appointment={appt} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                     <div className="flex items-center justify-between gap-2">
                       <Badge
                         variant={isLong ? 'destructive' : 'info'}
@@ -319,7 +328,7 @@ export function WaitingQueueBoard({
               <EmptyStageMessage icon={<IconCalendarClock className="size-6 text-muted-foreground/40" />} text={t.queue.noUpcomingVisitsToday} />
             ) : (
               upcomingList.map((appt) => (
-                <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
+                <QueueCard key={appt.id} appointment={appt} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="muted" className="font-semibold">
                       <IconTime className="size-3" />
@@ -359,7 +368,7 @@ export function WaitingQueueBoard({
               <EmptyStageMessage icon={<IconCheckCircle className="size-6 text-success/40" />} text={t.queue.noCompletedVisitsToday} />
             ) : (
               completedList.map((appt) => (
-                <QueueCard key={appt.id} appointment={appt} onClick={() => onEventClick(appt)}>
+                <QueueCard key={appt.id} appointment={appt} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="success" className="font-semibold">
                       <IconCheckCircle className="size-3" />
@@ -410,6 +419,18 @@ export function WaitingQueueBoard({
           </StageColumn>
         )}
       </div>
+
+      {appointmentPopover ? (
+        <AppointmentPopover
+          key={appointmentPopover.appointment.id}
+          state={appointmentPopover}
+          onClose={() => setAppointmentPopover(null)}
+          onExpand={(appt) => {
+            setAppointmentPopover(null);
+            onEventClick(appt);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -454,7 +475,7 @@ function QueueCard({
   children,
 }: {
   appointment: Appointment;
-  onClick: () => void;
+  onClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   children: React.ReactNode;
 }) {
   const { t, lang } = useLanguage();
@@ -465,6 +486,7 @@ function QueueCard({
   return (
     <div
       onClick={onClick}
+      data-queue-card=""
       className="card-aura group relative flex flex-col rounded-xl border bg-card p-3 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/50 hover:ring-1 hover:ring-primary/25 active:scale-[0.985] cursor-pointer sm:p-3.5"
       style={{ borderInlineStartWidth: '4px', borderInlineStartColor: accent }}
     >
@@ -487,7 +509,7 @@ function QueueCard({
         <div className="flex items-start gap-1.5">
           <IconService className="mt-0.5 size-3 shrink-0 text-primary" />
           <span className="min-w-0 break-words font-medium text-foreground/90">
-            {docLabel} · {appt.service ? ((lang === 'ar' && appt.service.nameAr) || appt.service.name) : t.appointments.generalVisit}
+            {docLabel} · {appt.service ? getBilingualName(appt.service.name, appt.service.nameAr, lang) : t.appointments.generalVisit}
           </span>
         </div>
         {appt.sessionType === 'online' ? (
@@ -499,7 +521,7 @@ function QueueCard({
           appt.room && (
             <div className="flex items-center gap-1.5">
               <IconRoom className="size-3 shrink-0" />
-              <span>{t.appointments.room}: {(lang === 'ar' && appt.room.nameAr) || appt.room.name}</span>
+              <span>{t.appointments.room}: {getBilingualName(appt.room.name, appt.room.nameAr, lang)}</span>
             </div>
           )
         )}

@@ -42,6 +42,7 @@ import { cn } from '@/lib/utils';
 import { useNow } from '@/hooks/shared/use-now';
 import { ViewFocusToggle } from './view-focus';
 import { IconAdd, IconChevronLeft, IconChevronRight, IconOnline, IconPatients, IconRoom, IconService, IconVisit } from '@/constants/icons';
+import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
 
 interface Props {
@@ -69,7 +70,7 @@ function TimelineEventBlock({
   const statusCfg = getStatusConfig(t)[appt.status];
   const density = densityFromHeight(height);
   const isCancelled = appt.status === 'cancelled';
-  const doctorName = doctorDisplayName(doctor?.name ?? appt.doctor?.name, lang);
+  const doctorName = doctorDisplayName(appt.doctor ?? doctor, lang);
   const fullName = patientDisplayName(appt, lang);
   const timeLabel = `${formatApptStartAmPm(appt, lang)} · ${appt.durationMins} ${t.appointments.minutesShort}`;
   const narrow = widthPct < 34;
@@ -190,7 +191,7 @@ function TimelineEventBlock({
                   className="flex min-w-0 max-w-full items-center gap-1 truncate font-medium text-foreground/75"
                 >
                   <IconService className="size-2.5 shrink-0 text-primary" />
-                  <span className="truncate">{(lang === 'ar' && appt.service.nameAr) || appt.service.name}</span>
+                  <span className="truncate">{getBilingualName(appt.service.name, appt.service.nameAr, lang)}</span>
                 </span>
               ) : null}
               {appt.sessionType === 'online' ? (
@@ -203,7 +204,7 @@ function TimelineEventBlock({
                   className="inline-flex min-w-0 items-center gap-1 truncate font-medium"
                 >
                   <IconRoom className="size-2.5 shrink-0" />
-                  <span className="truncate">{(lang === 'ar' && appt.room.nameAr) || appt.room.name}</span>
+                  <span className="truncate">{getBilingualName(appt.room.name, appt.room.nameAr, lang)}</span>
                 </span>
               ) : null}
             </div>
@@ -244,7 +245,7 @@ export function DoctorTimeline({
     doctors?.forEach((d) => {
       map.set(d.id, {
         id: d.id,
-        name: lang === 'ar' && (d as { nameAr?: string }).nameAr ? (d as { nameAr?: string }).nameAr! : d.name,
+        name: getBilingualName(d.name, d.nameAr, lang),
         color: TIMELINE_DOCTOR_COLORS[i++ % TIMELINE_DOCTOR_COLORS.length],
       });
     });
@@ -253,7 +254,7 @@ export function DoctorTimeline({
       if (doc?.id && !map.has(doc.id)) {
         map.set(doc.id, {
           id: doc.id,
-          name: lang === 'ar' && (doc as { nameAr?: string }).nameAr ? (doc as { nameAr?: string }).nameAr! : doc.name,
+          name: getBilingualName(doc.name, doc.nameAr, lang),
           color: TIMELINE_DOCTOR_COLORS[i++ % TIMELINE_DOCTOR_COLORS.length],
         });
       }
@@ -375,8 +376,9 @@ export function DoctorTimeline({
 
   return (
     <div
+      data-schedule-host=""
       className={cn(
-        'flex flex-col overflow-hidden border bg-card shadow-xs',
+        'relative flex flex-col overflow-hidden border bg-card shadow-xs',
         focused
           ? 'h-0 min-h-0 flex-1 rounded-none border-0'
           : 'card-aura min-h-0 flex-1 rounded-2xl',

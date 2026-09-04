@@ -47,6 +47,7 @@ export function mapPractitioner(row: Row) {
     licenseExpiry: row.licenseExpiry?.toISOString() ?? null,
     departmentId: row.departmentId,
     departmentName: row.department?.name ?? null,
+    departmentNameAr: row.department?.nameAr ?? null,
     defaultRoomId: row.defaultRoomId,
     defaultRoomName: row.defaultRoom?.name ?? null,
     employmentType: row.employmentType,

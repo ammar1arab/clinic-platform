@@ -49,17 +49,14 @@ function suppressClickThrough() {
 
 export function ImagePreview({
   src,
-  alt,
   open,
   onOpenChange,
 }: {
   src: string | null | undefined;
-  alt?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useLanguage();
-  const resolvedAlt = alt ?? t.ui.preview;
   if (!src) return null;
 
   return (
@@ -78,11 +75,10 @@ export function ImagePreview({
         onPointerDownOutside={(e) => e.stopPropagation()}
         onInteractOutside={(e) => e.stopPropagation()}
       >
-        <DialogTitle className="sr-only">{resolvedAlt}</DialogTitle>
+        <DialogTitle className="sr-only">{t.ui.preview}</DialogTitle>
         <div className="relative mx-auto aspect-square w-[min(calc(100vw-4rem),20rem)] overflow-hidden rounded-full bg-background ring-4 ring-background shadow-xl">
           <AvatarImage
             src={src}
-            alt={resolvedAlt}
             fill
             sizes="20rem"
             priority
@@ -102,7 +98,7 @@ export function PreviewableAvatar(props: ComponentProps<typeof EntityAvatar>) {
       <button
         type="button"
         data-no-row-nav=""
-        aria-label={t.ui.previewName.replace('{name}', props.alt)}
+        aria-label={t.ui.preview}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -121,7 +117,6 @@ export function PreviewableAvatar(props: ComponentProps<typeof EntityAvatar>) {
       </button>
       <ImagePreview
         src={resolveAvatarUrl(props.src, props.seed)}
-        alt={props.alt}
         open={open}
         onOpenChange={setOpen}
       />

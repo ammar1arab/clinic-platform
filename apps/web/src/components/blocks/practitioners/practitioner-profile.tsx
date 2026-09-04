@@ -40,7 +40,7 @@ import { formatDate, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
 import { IconActivate, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
 import { useLanguage } from '@/providers';
-import type { Translations } from '@/i18n';
+import { getBilingualName, type Translations } from '@/i18n';
 
 function employmentLabel(type: string | null | undefined, t: Translations) {
   if (!type) return null;
@@ -62,9 +62,22 @@ export function PractitionerProfile({
   const { t, lang } = useLanguage();
 
   const toggling = deactivate.isPending || reactivate.isPending;
-  const titleName = practitioner.title
-    ? `${practitioner.title} ${practitioner.name}`
-    : practitioner.name;
+  const titleName = (() => {
+    const name = getBilingualName(practitioner.name, practitioner.nameAr, lang);
+    if (lang === 'ar') return name;
+    return practitioner.title ? `${practitioner.title} ${name}` : name;
+  })();
+  const specialtyName = getBilingualName(
+    practitioner.specialty,
+    practitioner.specialtyAr,
+    lang,
+  );
+  const departmentName = getBilingualName(
+    practitioner.departmentName,
+    practitioner.departmentNameAr,
+    lang,
+  );
+  const bioText = getBilingualName(practitioner.bio, practitioner.bioAr, lang);
   const nationality = practitioner.nationality
     ? countryLabel(practitioner.nationality, lang) ?? practitioner.nationality
     : null;
@@ -117,7 +130,6 @@ export function PractitionerProfile({
           <PreviewableAvatar
             src={practitioner.imageUrl}
             seed={practitioner.id}
-            alt={practitioner.name}
             size="xl"
             priority
           />
@@ -136,7 +148,7 @@ export function PractitionerProfile({
             ) : null}
           </>
         }
-        subtitle={practitioner.specialty ? <p>{practitioner.specialty}</p> : null}
+        subtitle={specialtyName ? <p>{specialtyName}</p> : null}
         meta={<ContactLine phone={practitioner.phone} email={practitioner.email} />}
         stats={[
           {
@@ -157,8 +169,8 @@ export function PractitionerProfile({
 
       <ProfileSection title={t.practitioner.overview}>
         <ProfileInfoGrid className="lg:grid-cols-3">
-          <ProfileInfoField label={t.practitioner.specialty} value={practitioner.specialty} />
-          <ProfileInfoField label={t.practitioner.department} value={practitioner.departmentName} />
+          <ProfileInfoField label={t.practitioner.specialty} value={specialtyName} />
+          <ProfileInfoField label={t.practitioner.department} value={departmentName} />
           <ProfileInfoField label={t.practitioner.defaultRoom} value={practitioner.defaultRoomName} />
           <ProfileInfoField label={t.practitioner.employment} value={employment}>
             {employment && practitioner.employmentType ? (
@@ -232,10 +244,10 @@ export function PractitionerProfile({
         </ProfileInfoGrid>
       </ProfileSection>
 
-      {practitioner.bio?.trim() ? (
+      {bioText.trim() ? (
         <ProfileSection title={t.practitioner.bio}>
           <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-            {practitioner.bio}
+            {bioText}
           </p>
         </ProfileSection>
       ) : null}
@@ -259,7 +271,9 @@ export function PractitionerProfile({
                   key={s.id}
                   className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2.5 text-sm"
                 >
-                  <span className="min-w-0 truncate font-medium">{s.name}</span>
+                  <span className="min-w-0 truncate font-medium">
+                    {getBilingualName(s.name, s.nameAr, lang)}
+                  </span>
                   <span className="shrink-0 tabular-nums text-muted-foreground">
                     {s.durationMins}m
                   </span>
