@@ -243,7 +243,7 @@ export default function ServicesPage() {
                     <TruncatedText>{departmentName(svc.departmentId)}</TruncatedText>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {svc.durationMins} {t.common.mins}
+                    {svc.durationMins}{t.common.minsCompact}
                   </TableCell>
                   <TableCell className="font-mono text-xs">
                     {Number(svc.fee).toFixed(3)} JOD
@@ -294,7 +294,7 @@ export default function ServicesPage() {
             meta={
               <>
                 <EntityMetaStat label={t.settings.departments} value={departmentName(svc.departmentId)} />
-                <EntityMetaStat label={t.common.duration} value={`${svc.durationMins} ${t.common.mins}`} />
+                <EntityMetaStat label={t.common.duration} value={`${svc.durationMins}${t.common.minsCompact}`} />
                 <EntityMetaStat label={t.common.fee} value={`${Number(svc.fee).toFixed(3)} JOD`} />
               </>
             }
@@ -343,7 +343,7 @@ export default function ServicesPage() {
               </Select>
             </FormField>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <FormField label={`${t.common.duration} (${t.common.mins})`} htmlFor="duration">
+              <FormField label={`${t.common.duration} (${t.common.minsCompact})`} htmlFor="duration">
                 <Input
                   id="duration"
                   type="number"

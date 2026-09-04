@@ -15,19 +15,20 @@ import {
 } from '@/components/primitives';
 import { Button } from '@/components/ui';
 import { useAppointment, useUpdateAppointment } from '@/hooks/api/use-appointments';
-import { useAuth, useConfirm } from '@/providers';
+import { useAuth, useConfirm, useLanguage } from '@/providers';
 import { IconBan, IconVisit } from '@/constants/icons';
 
 function EditAppointmentInner({ id }: { id: string }) {
   const router = useRouter();
   const params = useSearchParams();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const confirm = useConfirm();
   const { data: appointment, isLoading, isError } = useAppointment(id);
   const update = useUpdateAppointment();
   const backHref = schedulePath(parseScheduleView(params.get('view')));
 
-  const doctorName = appointment?.doctor?.name ?? user?.name ?? 'You';
+  const doctorName = appointment?.doctor?.name ?? user?.name ?? t.appointments.doctor;
   const canCancel =
     appointment &&
     appointment.status !== 'cancelled' &&
@@ -37,21 +38,21 @@ function EditAppointmentInner({ id }: { id: string }) {
     <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">
       <PageBack
         backHref={backHref}
-        backLabel="Back to Schedule"
+        backLabel={t.appointments.backToSchedule}
         actions={
           canCancel ? (
             <RowActionsMenu
               items={[
                 {
-                  label: 'Cancel appointment',
+                  label: t.appointments.cancelAppointment,
                   icon: IconBan,
                   variant: 'destructive',
                   disabled: update.isPending,
                   onSelect: async () => {
                     const ok = await confirm({
-                      title: 'Cancel this appointment?',
-                      description: 'The slot will be released and the visit marked cancelled.',
-                      confirmLabel: 'Cancel appointment',
+                      title: t.appointments.cancelConfirmTitle,
+                      description: t.appointments.cancelConfirmDesc,
+                      confirmLabel: t.appointments.cancelAppointment,
                       variant: 'destructive',
                     });
                     if (!ok) return;
@@ -72,11 +73,11 @@ function EditAppointmentInner({ id }: { id: string }) {
       ) : isError || !appointment ? (
         <EmptyState
           icon={IconVisit}
-          title="Appointment not found"
-          description="This visit may have been removed or the link is out of date."
+          title={t.appointments.notFound}
+          description={t.appointments.notFoundDesc}
           action={
             <Button variant="outline" size="sm" onClick={() => router.push(backHref)}>
-              Back to Schedule
+              {t.appointments.backToSchedule}
             </Button>
           }
         />

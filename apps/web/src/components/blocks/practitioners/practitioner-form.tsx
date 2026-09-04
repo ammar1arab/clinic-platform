@@ -457,7 +457,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
             </FormField>
           ) : null}
 
-          <FormField label="Buffer (mins)" required error={errors.bufferMins?.message}>
+          <FormField label={`${t.practitioner.buffer} (${t.common.minsCompact})`} required error={errors.bufferMins?.message}>
             <Input type="number" min={0} max={240} {...register('bufferMins')} />
           </FormField>
 

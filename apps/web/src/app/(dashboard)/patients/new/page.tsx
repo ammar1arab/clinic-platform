@@ -7,16 +7,18 @@ import { PageBack } from '@/components/primitives';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { ROUTES } from '@/constants/routes';
 import { resolveReturnTo } from '@/components/blocks/appointments';
+import { useLanguage } from '@/providers';
 
 function NewPatientInner() {
   const clinicId = useClinicId();
   const router = useRouter();
   const params = useSearchParams();
+  const { t } = useLanguage();
 
   const returnTo = resolveReturnTo(params.get('returnTo'), ROUTES.PATIENTS);
   const fromSchedule = returnTo.startsWith(ROUTES.SCHEDULE);
   const backHref = returnTo;
-  const backLabel = fromSchedule ? 'Back to Schedule' : 'Back to Patients';
+  const backLabel = fromSchedule ? t.appointments.backToSchedule : t.patient.backToPatients;
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">

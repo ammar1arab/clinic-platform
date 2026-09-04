@@ -13,18 +13,18 @@ const badgeVariants = cva(
         secondary:
           "border-border/80 bg-secondary text-secondary-foreground [a]:hover:bg-secondary/75",
         destructive:
-          "border-destructive/30 bg-destructive/12 text-destructive shadow-destructive/10 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
+          "border-destructive/30 bg-destructive/12 text-destructive shadow-destructive/10 focus-visible:ring-destructive/20 dark:border-transparent dark:bg-destructive dark:text-primary-foreground dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20 dark:[a]:hover:bg-destructive/90",
         outline:
           "border-border/90 bg-background/70 text-foreground [a]:hover:bg-muted",
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
         success:
-          "border-success/30 bg-success/12 text-success shadow-success/10",
+          "border-success/30 bg-success/12 text-success shadow-success/10 dark:border-transparent dark:bg-success dark:text-primary-foreground",
         warning:
-          "border-warning/35 bg-warning/15 text-warning shadow-warning/10",
+          "border-warning/35 bg-warning/15 text-warning shadow-warning/10 dark:border-transparent dark:bg-warning dark:text-primary-foreground",
         info:
-          "border-primary/30 bg-primary/12 text-primary shadow-primary/10",
+          "border-primary/30 bg-primary/12 text-primary shadow-primary/10 dark:border-transparent dark:bg-primary dark:text-primary-foreground",
         muted:
           "border-border/80 bg-muted/80 text-muted-foreground",
       },

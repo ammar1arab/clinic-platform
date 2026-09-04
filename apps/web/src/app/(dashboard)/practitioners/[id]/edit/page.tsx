@@ -20,6 +20,7 @@ import {
 } from '@/hooks/api/use-practitioners';
 import { ROUTES } from '@/constants/routes';
 import { IconActivate, IconDeactivate, IconDelete, IconPractitioner, IconView } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 export default function EditPractitionerPage({
   params,
@@ -29,6 +30,7 @@ export default function EditPractitionerPage({
   const { id } = use(params);
   const clinicId = useClinicId();
   const router = useRouter();
+  const { t } = useLanguage();
   const { data, isLoading, isError } = usePractitioner(id);
   const deactivate = useDeactivatePractitioner(clinicId);
   const reactivate = useReactivatePractitioner(clinicId);
@@ -45,18 +47,18 @@ export default function EditPractitionerPage({
     <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">
       <PageBack
         backHref={ROUTES.PRACTITIONER_DETAIL(id)}
-        backLabel="Back to profile"
+        backLabel={t.practitioner.backToProfile}
         actions={
           data ? (
             <RowActionsMenu
               items={[
                 {
-                  label: 'View',
+                  label: t.practitioner.view,
                   icon: IconView,
                   href: ROUTES.PRACTITIONER_DETAIL(id),
                 },
                 {
-                  label: data.isActive ? 'Deactivate' : 'Reactivate',
+                  label: data.isActive ? t.practitioner.deactivate : t.practitioner.reactivate,
                   icon: data.isActive ? IconDeactivate : IconActivate,
                   disabled: toggling,
                   onSelect: () =>
@@ -65,7 +67,7 @@ export default function EditPractitionerPage({
                       : reactivate.mutate(data.id),
                 },
                 {
-                  label: 'Delete',
+                  label: t.practitioner.delete,
                   icon: IconDelete,
                   variant: 'destructive',
                   onSelect: () => del.ask({ id: data.id, name: titleName }),
@@ -80,8 +82,8 @@ export default function EditPractitionerPage({
       ) : isError || !data ? (
         <EmptyState
           icon={IconPractitioner}
-          title="Practitioner not found"
-          description="This practitioner may have been removed."
+          title={t.practitioner.notFound}
+          description={t.practitioner.notFoundDesc}
         />
       ) : (
         <PractitionerForm
@@ -108,9 +110,9 @@ export default function EditPractitionerPage({
           });
         }}
         isPending={remove.isPending}
-        warning="This permanently removes the practitioner, their schedule, and their appointments. This cannot be undone. To just hide them, use Deactivate instead."
-        finalWarning="This permanently deletes the practitioner and every appointment assigned to them. This action cannot be undone."
-        confirmLabel="Yes, delete practitioner"
+        warning={t.practitioner.deleteWarning1}
+        finalWarning={t.practitioner.deleteWarning2}
+        confirmLabel={t.practitioner.deleteConfirm}
       />
     </div>
   );

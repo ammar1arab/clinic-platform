@@ -13,11 +13,13 @@ import {
 import { usePatient, useDeletePatient, useTogglePatientStatus } from '@/hooks/api/use-patients';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { IconActivate, IconDeactivate, IconDelete, IconView } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 export default function EditPatientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const clinicId = useClinicId();
   const router = useRouter();
+  const { t } = useLanguage();
   const { data: patient, isLoading } = usePatient(id);
   const deleteMutation = useDeletePatient(clinicId);
   const toggleStatus = useTogglePatientStatus(clinicId);
@@ -31,14 +33,14 @@ export default function EditPatientPage({ params }: { params: Promise<{ id: stri
     <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">
       <PageBack
         backHref={`/patients/${id}`}
-        backLabel="Back to Patient"
+        backLabel={t.patient.backToPatient}
         actions={
           patient ? (
             <RowActionsMenu
               items={[
-                { label: 'View', icon: IconView, href: `/patients/${id}` },
+                { label: t.common.view, icon: IconView, href: `/patients/${id}` },
                 {
-                  label: patient.isActive ? 'Deactivate' : 'Reactivate',
+                  label: patient.isActive ? t.common.deactivate : t.common.reactivate,
                   icon: patient.isActive ? IconDeactivate : IconActivate,
                   disabled: toggleStatus.isPending,
                   onSelect: () =>
@@ -48,7 +50,7 @@ export default function EditPatientPage({ params }: { params: Promise<{ id: stri
                     }),
                 },
                 {
-                  label: 'Delete',
+                  label: t.common.delete,
                   icon: IconDelete,
                   variant: 'destructive',
                   onSelect: () => del.ask({ id: patient.id, name: fullName }),
@@ -67,7 +69,7 @@ export default function EditPatientPage({ params }: { params: Promise<{ id: stri
       )}
 
       {!isLoading && !patient && (
-        <p className="text-sm text-muted-foreground">Patient not found</p>
+        <p className="text-sm text-muted-foreground">{t.patient.notFound}</p>
       )}
 
       {patient && (
@@ -95,9 +97,9 @@ export default function EditPatientPage({ params }: { params: Promise<{ id: stri
           });
         }}
         isPending={deleteMutation.isPending}
-        warning="This permanently removes the patient and their visit history. This cannot be undone. To just hide the patient, use Deactivate instead."
-        finalWarning="This permanently deletes the patient and every appointment linked to them."
-        confirmLabel="Yes, delete patient"
+        warning={t.patient.deleteWarning1}
+        finalWarning={t.patient.deleteWarning2}
+        confirmLabel={t.patient.deleteConfirm}
       />
     </div>
   );

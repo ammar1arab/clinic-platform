@@ -157,7 +157,7 @@ export function PractitionerProfile({
           },
           {
             label: t.practitioner.bufferTime,
-            value: `${practitioner.bufferMins}m`,
+            value: `${practitioner.bufferMins}${t.common.minsCompact}`,
           },
           {
             label: t.practitioner.experience,
@@ -275,7 +275,7 @@ export function PractitionerProfile({
                     {getBilingualName(s.name, s.nameAr, lang)}
                   </span>
                   <span className="shrink-0 tabular-nums text-muted-foreground">
-                    {s.durationMins}m
+                    {s.durationMins}{t.common.minsCompact}
                   </span>
                 </li>
               ))}

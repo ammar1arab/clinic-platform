@@ -292,7 +292,7 @@ export function WaitingQueueBoard({
                         className={cn('font-semibold', isLong && 'animate-pulse')}
                       >
                         <IconTimer className="size-3 animate-spin" />
-                        {formatWaitingMins(sessionMins, true, t)} / {appt.durationMins}m
+                        {formatWaitingMins(sessionMins, true, t)} / {appt.durationMins}{t.appointments.minutesShort}
                       </Badge>
                       <div onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />

@@ -5,6 +5,7 @@ import {
   Button,
   Popover,
   PopoverAnchor,
+  PopoverArrow,
   PopoverContent,
 } from "@/components/ui";
 import { SoftTip } from "@/components/primitives";
@@ -64,7 +65,7 @@ export function popoverAnchorFromElement(element: Element): Element {
 }
 
 const POPOVER_SURFACE =
-  "z-110 flex w-[min(calc(100vw-1rem),20rem)] max-h-[min(var(--radix-popover-content-available-height),70dvh)] flex-col overflow-hidden overflow-y-hidden p-0 text-xs touch-manipulation sm:w-[min(calc(100vw-1.5rem),22rem)]";
+  "z-110 flex w-[min(calc(100vw-1rem),20rem)] max-h-[min(var(--radix-popover-content-available-height),70dvh)] flex-col overflow-visible overflow-y-visible p-0 text-xs touch-manipulation sm:w-[min(calc(100vw-1.5rem),22rem)]";
 
 function scheduleHostOf(element: Element): HTMLElement | null {
   return element.closest<HTMLElement>(`[${SCHEDULE_HOST}]`);
@@ -119,13 +120,18 @@ function SchedulePopover({
         hideWhenDetached
         align={compact ? "start" : "center"}
         side={side}
-        sideOffset={compact ? 6 : 8}
+        sideOffset={compact ? 10 : 12}
         collisionPadding={compact ? OVERLAY_COLLISION_PADDING : 12}
         sticky="partial"
         onInteractOutside={keepNestedPortals}
-        className={cn(POPOVER_SURFACE, kind === "appointment" && "z-120")}
+        className={cn(
+          POPOVER_SURFACE,
+          kind === "more" && "border-0",
+          kind === "appointment" && "z-120",
+        )}
       >
         {children}
+        <PopoverArrow />
       </PopoverContent>
     </Popover>
   );
@@ -235,7 +241,7 @@ export function DayAppointmentsPopover({
                   <p className="text-[10px] font-medium tabular-nums text-muted-foreground">
                     {formatApptTimeRange(appointment, lang)}
                     <span className="mx-1 text-border">·</span>
-                    {appointment.durationMins} {t.appointments.minutesShort}
+                    {appointment.durationMins}{t.appointments.minutesShort}
                   </p>
                   <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
                     <span className="inline-flex min-w-0 max-w-full items-center gap-1 truncate">
@@ -394,7 +400,7 @@ export function AppointmentPopover({
           <DetailRow
             icon={<IconTime />}
             label={t.appointments.appointmentDetails}
-            value={`${appointment.durationMins} ${t.appointments.minutesShort} · ${formatClinicAmount(pricing.payable)}`}
+            value={`${appointment.durationMins}${t.appointments.minutesShort} · ${formatClinicAmount(pricing.payable)}`}
           />
           {waitingMins != null ? (
             <DetailRow

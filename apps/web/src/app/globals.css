@@ -119,7 +119,7 @@ th, td {
   --input: oklch(0.28 0.014 260);
   --ring: var(--primary);
   --primary: oklch(0.62 0.17 240);
-  --primary-foreground: oklch(0.15 0.01 260);
+  --primary-foreground: oklch(0.98 0.005 260);
   --secondary: oklch(0.25 0.014 260);
   --secondary-foreground: oklch(0.96 0.005 260);
   --destructive: oklch(0.65 0.2 25);
@@ -344,29 +344,118 @@ th, td {
 
   .overlay-pop-tip,
   [data-calendar-popover] {
-    --overlay-duration: 160ms;
+    --overlay-duration: 220ms;
     --overlay-from: 0px;
     --overlay-scale-from: 1;
   }
 
+  .overlay-pop-tip {
+    --overlay-duration: 420ms;
+  }
+
   .tip-bubble-body {
+    position: relative;
     display: block;
+    overflow: hidden;
     max-width: min(16rem, calc(100vw - 2rem));
-    border-radius: 1.25rem;
-    background-color: var(--color-primary);
+    border-radius: 1.35rem;
+    background:
+      linear-gradient(
+        165deg,
+        color-mix(in oklch, var(--color-primary-foreground) 16%, var(--color-primary)) 0%,
+        var(--color-primary) 42%,
+        color-mix(in oklch, var(--color-primary) 82%, var(--color-foreground)) 100%
+      );
     color: var(--color-primary-foreground);
-    padding: 0.4rem 0.7rem;
+    padding: 0.45rem 0.8rem;
     text-align: center;
     font-size: 0.6875rem;
     font-weight: 600;
+    letter-spacing: 0.01em;
     line-height: 1.35;
     pointer-events: none;
-    box-shadow: 0 10px 22px -12px color-mix(in oklch, var(--color-primary) 55%, transparent);
+    transform-origin: inherit;
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--color-primary-foreground) 12%, transparent),
+      0 12px 28px -10px color-mix(in oklch, var(--color-primary) 62%, transparent),
+      0 0 24px color-mix(in oklch, var(--color-primary) 28%, transparent);
+    animation: tip-bubble-in 520ms var(--overlay-ease) both;
   }
 
-  .tip-bubble-tail {
-    fill: var(--color-primary);
+  .tip-bubble-body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--color-primary-foreground) 26%, transparent),
+      transparent 58%
+    );
     pointer-events: none;
+  }
+
+  .tip-bubble-body::after {
+    content: '';
+    position: absolute;
+    inset-inline-start: -35%;
+    top: -120%;
+    width: 70%;
+    height: 220%;
+    background: linear-gradient(
+      115deg,
+      transparent 35%,
+      color-mix(in oklch, var(--color-primary-foreground) 34%, transparent) 50%,
+      transparent 65%
+    );
+    pointer-events: none;
+    animation: tip-sheen 1.1s var(--overlay-ease) 0.12s both;
+  }
+
+  .tip-bubble-swoosh {
+    display: block;
+    color: var(--color-primary);
+    filter: drop-shadow(0 6px 10px color-mix(in oklch, var(--color-primary) 40%, transparent));
+    overflow: visible;
+  }
+
+  .tip-bubble-swoosh-inner {
+    transform-origin: 20px 0;
+    animation: tip-swoosh-in 560ms var(--overlay-ease) both;
+  }
+
+  .tip-bubble-swoosh-fill {
+    fill: currentColor;
+  }
+
+  .tip-bubble-swoosh-wire {
+    fill: none;
+    stroke: color-mix(in oklch, var(--color-primary-foreground) 55%, var(--color-primary));
+    stroke-width: 1.15;
+    stroke-linecap: round;
+    stroke-dasharray: 42;
+    stroke-dashoffset: 42;
+    animation: tip-wire-draw 640ms var(--overlay-ease) 80ms both;
+  }
+
+  .tip-bubble-spark {
+    fill: var(--color-primary-foreground);
+    transform-origin: center;
+    animation: tip-spark 1.15s ease-in-out infinite;
+  }
+
+  .schedule-pop-arrow {
+    fill: var(--color-popover);
+    animation: tip-fade-in 420ms var(--overlay-ease) both;
+  }
+
+  [data-calendar-popover='more'] {
+    border-width: 0;
+  }
+
+  [data-calendar-popover] {
+    overflow: visible;
+    overflow-y: visible;
   }
 
   @keyframes overlay-in {
@@ -393,11 +482,90 @@ th, td {
     }
   }
 
+  @keyframes tip-bubble-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.64);
+      filter: blur(5px);
+    }
+    58% {
+      opacity: 1;
+      transform: scale(1.06);
+      filter: blur(0);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes tip-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes tip-swoosh-in {
+    from {
+      opacity: 0;
+      transform: scale(0.35);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes tip-wire-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes tip-sheen {
+    from {
+      transform: translate3d(-20%, 0, 0) rotate(12deg);
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    to {
+      transform: translate3d(180%, 0, 0) rotate(12deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes tip-spark {
+    0%,
+    100% {
+      opacity: 0.45;
+      transform: scale(0.75);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.25);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .overlay-pop {
       --overlay-from: 0px;
       --overlay-scale-from: 1;
       animation-duration: 1ms;
+    }
+
+    .tip-bubble-body,
+    .tip-bubble-swoosh-inner,
+    .tip-bubble-swoosh-wire,
+    .tip-bubble-body::after,
+    .tip-bubble-spark,
+    .schedule-pop-arrow {
+      animation: none;
     }
 
     @keyframes overlay-in {

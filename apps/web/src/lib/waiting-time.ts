@@ -12,14 +12,13 @@ export function elapsedMinutesSince(
 
 export function formatWaitingMins(
   mins: number | null | undefined,
-  compact = false,
+  _compact = false,
   t: Translations = translations.en,
 ): string {
   if (mins == null || Number.isNaN(mins)) return '—';
   const m = Math.max(0, Math.floor(mins));
   if (m < 1) return t.common.lessThanOneMin;
-  if (m < 60)
-    return compact ? `${m}${t.common.minsCompact}` : `${m} ${t.common.mins}`;
+  if (m < 60) return `${m}${t.common.minsCompact}`;
   const h = Math.floor(m / 60);
   const rem = m % 60;
   const hLabel = t.common.hours;

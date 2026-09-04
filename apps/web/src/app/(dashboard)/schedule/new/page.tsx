@@ -8,12 +8,13 @@ import {
   schedulePath,
 } from '@/components/blocks/appointments';
 import { PageBack, FormPageSkeleton } from '@/components/primitives';
-import { useAuth } from '@/providers';
+import { useAuth, useLanguage } from '@/providers';
 
 function NewAppointmentInner() {
   const router = useRouter();
   const params = useSearchParams();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const defaultDate = params.get('date') ?? '';
   const defaultTime = params.get('time') ?? '';
@@ -22,13 +23,13 @@ function NewAppointmentInner() {
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">
-      <PageBack backHref={backHref} backLabel="Back to Schedule" />
+      <PageBack backHref={backHref} backLabel={t.appointments.backToSchedule} />
 
       <AppointmentForm
         defaultDate={defaultDate}
         defaultTime={defaultTime}
         currentDoctorId={defaultDoctorId}
-        currentDoctorName={user?.name ?? 'Doctor'}
+        currentDoctorName={user?.name ?? t.appointments.doctor}
         onCancel={() => router.push(backHref)}
         onSuccess={() => router.push(backHref)}
       />

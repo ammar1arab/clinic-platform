@@ -72,7 +72,7 @@ function TimelineEventBlock({
   const isCancelled = appt.status === 'cancelled';
   const doctorName = doctorDisplayName(appt.doctor ?? doctor, lang);
   const fullName = patientDisplayName(appt, lang);
-  const timeLabel = `${formatApptStartAmPm(appt, lang)} · ${appt.durationMins} ${t.appointments.minutesShort}`;
+  const timeLabel = `${formatApptStartAmPm(appt, lang)} · ${appt.durationMins}${t.appointments.minutesShort}`;
   const narrow = widthPct < 34;
   const tip = formatApptTip(appt, { doctorName, lang });
   const gapPx = widthPct < 50 ? 5 : 4;
