@@ -71,3 +71,11 @@ No hardcoded hex/rgb. No parallel palette.
 - Keep EN and AR in sync when i18n or bilingual fields apply
 - Verify UI with IronBee browser tools only
 - Close ports opened during the session when finishing
+
+## Persistent project guidance
+
+Read .agents/README.md for the skill catalog and .agents/memory/project-context.md for durable decisions. New cross-editor skills live in .agents/skills; existing skills remain in .cursor/skills. Canonical detailed rules remain in .cursor/rules. Read only relevant skills.
+
+Also follow agent-efficiency.mdc always, hydration-and-locale.mdc for locale/provider work, tenant-and-data-integrity.mdc for API data work, verification.mdc for checks, and time-and-money.mdc for scheduling/billing. Paths above are under .cursor/rules.
+
+These instructions persist in the repository; they do not grant standing authorization for destructive actions or guarantee cross-chat memory. User instructions and host-level policies take precedence.

@@ -18,7 +18,10 @@ async function toBitmap(source: Blob): Promise<ImageBitmap> {
   throw new ImageCompressError(getTranslations().uploads.browser);
 }
 
-async function toJpeg(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+async function toJpeg(
+  canvas: HTMLCanvasElement,
+  quality: number,
+): Promise<Blob> {
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, 'image/jpeg', quality),
   );
@@ -71,7 +74,10 @@ export async function compressImageToJpeg(
 
     const base =
       input instanceof File
-        ? input.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9_-]+/g, '-').slice(0, 60)
+        ? input.name
+            .replace(/\.[^.]+$/, '')
+            .replace(/[^a-zA-Z0-9_-]+/g, '-')
+            .slice(0, 60)
         : 'image';
 
     return new File([blob], `${base || 'image'}.jpg`, {

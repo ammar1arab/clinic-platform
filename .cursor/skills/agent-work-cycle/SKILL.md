@@ -9,13 +9,13 @@ disable-model-invocation: true
 
 # Agent work cycle (Cureva)
 
-## Phase 1: Plan (no edits unless user insists)
+## Phase 1: Scope
 
 1. Restate the goal in one sentence (owner vs practitioner vs both).
 2. List in-scope / out-of-scope under `apps/web`, `apps/api`, `packages/types`.
 3. Note rules/skills: `theme`, `theme-ui`, `sync-i18n`, `clinic-feature`, `ship-check`, IronBee.
 4. Confirm Prisma / Nest / web contracts or list minimal schema + DTO + types work.
-5. Short step list. Wait for approval on non-trivial work.
+5. Give a short step list and continue authorized work. Pause after planning only when the user explicitly requested plan approval or a material decision is missing.
 
 ## Phase 2: Implement
 
@@ -33,10 +33,10 @@ disable-model-invocation: true
 2. Run ship-check when shipping
 3. IronBee browser for visible UI
 4. Close ports you started
-5. Suggest a fresh chat when the feature/week is done
+5. Report the result and remaining work in the current task.
 
 ## Token discipline
 
 - No unrelated handbook dumps
 - Prefer specific file reads once the map is known
-- New Phase 2 week or unrelated bug → new chat
+- Start a new task only when the user asks.

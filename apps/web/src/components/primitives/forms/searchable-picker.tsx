@@ -1,7 +1,14 @@
 'use client';
 
+import { useLanguage } from '@/providers/language-provider';
+
 import { useMemo, useState, type ReactNode } from 'react';
-import { Button, Popover, PopoverContent, PopoverTrigger } from '@/components/ui';
+import {
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui';
 import { SearchInput } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { IconCheck, IconChevronsUpDown } from '@/constants/icons';
@@ -14,7 +21,7 @@ export type PickerOption = {
 export function PickerSearch({
   value,
   onChange,
-  placeholder = 'Search…',
+  placeholder,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -37,9 +44,9 @@ export function SearchablePicker({
   options,
   value,
   onChange,
-  placeholder = 'Select…',
-  searchPlaceholder = 'Search…',
-  emptyText = 'No matches',
+  placeholder,
+  searchPlaceholder,
+  emptyText,
   extraOption,
   leading,
   className,
@@ -56,6 +63,7 @@ export function SearchablePicker({
   className?: string;
   size?: 'default' | 'sm';
 }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -97,13 +105,13 @@ export function SearchablePicker({
         >
           <span
             className={cn(
-              'flex min-w-0 flex-1 items-center gap-2 text-left',
+              'flex min-w-0 flex-1 items-center gap-2 text-start',
               !selected && 'text-muted-foreground',
             )}
           >
             {leading}
             <span className="min-w-0 break-words whitespace-normal">
-              {selected?.label ?? placeholder}
+              {selected?.label ?? placeholder ?? t.ui.select}
             </span>
           </span>
           <IconChevronsUpDown className="size-4 shrink-0 opacity-50" />
@@ -113,10 +121,16 @@ export function SearchablePicker({
         className="w-[min(100vw-1.5rem,var(--radix-popover-trigger-width))] max-w-[calc(100vw-1.5rem)] p-0"
         align="start"
       >
-        <PickerSearch value={query} onChange={setQuery} placeholder={searchPlaceholder} />
+        <PickerSearch
+          value={query}
+          onChange={setQuery}
+          placeholder={searchPlaceholder}
+        />
         <div className="max-h-60 overflow-y-auto p-1">
           {filtered.length === 0 ? (
-            <p className="px-2.5 py-4 text-center text-sm text-muted-foreground">{emptyText}</p>
+            <p className="px-2.5 py-4 text-center text-sm text-muted-foreground">
+              {emptyText ?? t.common.noMatches}
+            </p>
           ) : (
             filtered.map((option) => (
               <button
@@ -124,11 +138,13 @@ export function SearchablePicker({
                 type="button"
                 onClick={() => pick(option.value)}
                 className={cn(
-                  'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-muted',
+                  'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-start text-sm hover:bg-muted',
                   option.value === value && 'bg-muted',
                 )}
               >
-                <span className="min-w-0 flex-1 break-words whitespace-normal">{option.label}</span>
+                <span className="min-w-0 flex-1 break-words whitespace-normal">
+                  {option.label}
+                </span>
                 {option.value === value ? (
                   <IconCheck className="size-4 shrink-0 text-primary" />
                 ) : null}

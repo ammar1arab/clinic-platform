@@ -18,7 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 import { IconCamera, IconImage, IconUpload } from '@/constants/icons';
 
-import { useLanguage } from '@/providers';
+import { useLanguage } from '@/providers/language-provider';
 
 type Props = {
   value?: string | null;
@@ -32,10 +32,10 @@ type Props = {
 export function AvatarUpload({
   value,
   onChange,
-  fallbackLabel = 'DR',
+  fallbackLabel = '',
   disabled,
   className,
-  alt = 'Photo',
+  alt,
 }: Props) {
   const { t } = useLanguage();
   const inputId = useId();
@@ -173,7 +173,7 @@ export function AvatarUpload({
 
       <ImagePreview
         src={value}
-        alt={alt}
+        alt={alt ?? t.ui.photo}
         open={previewOpen}
         onOpenChange={setPreviewOpen}
       />

@@ -40,7 +40,12 @@ export function TableSkeleton({
   className?: string;
 }) {
   return (
-    <div className={cn('rounded-xl border bg-card overflow-hidden shadow-xs', className)}>
+    <div
+      className={cn(
+        'rounded-xl border bg-card overflow-hidden shadow-xs',
+        className,
+      )}
+    >
       {hasHeader && (
         <div className="flex items-center justify-between border-b bg-muted/30 p-3.5 gap-4">
           <Skeleton className="h-4 w-32" />
@@ -64,10 +69,7 @@ export function TableSkeleton({
               </div>
             </div>
             {Array.from({ length: cols - 2 }).map((_, c) => (
-              <Skeleton
-                key={c}
-                className="h-3.5 w-20 hidden md:block"
-              />
+              <Skeleton key={c} className="h-3.5 w-20 hidden md:block" />
             ))}
             <Skeleton className="h-6 w-16 rounded-md shrink-0" />
           </div>
@@ -131,10 +133,16 @@ export function FormSkeleton({
   className?: string;
 }) {
   const colClass =
-    cols === 1 ? 'grid-cols-1' : cols === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2';
+    cols === 1
+      ? 'grid-cols-1'
+      : cols === 3
+        ? 'grid-cols-1 md:grid-cols-3'
+        : 'grid-cols-1 md:grid-cols-2';
 
   return (
-    <div className={cn('card-aura space-y-5 rounded-xl bg-card p-5', className)}>
+    <div
+      className={cn('card-aura space-y-5 rounded-xl bg-card p-5', className)}
+    >
       <div className="space-y-1.5 border-b pb-3.5">
         <Skeleton className="h-5 w-48" />
         <Skeleton className="h-3 w-72" />
@@ -190,12 +198,17 @@ export function TimelineSkeleton({
   className?: string;
 }) {
   return (
-    <div className={cn('rounded-xl border bg-card shadow-xs overflow-hidden', className)}>
+    <div
+      className={cn(
+        'rounded-xl border bg-card shadow-xs overflow-hidden',
+        className,
+      )}
+    >
       <div className="flex items-center justify-between border-b bg-muted/20 p-3">
         <div className="flex items-center gap-2">
           <Skeleton className="h-8 w-16 rounded-md" />
           <Skeleton className="h-8 w-16 rounded-md" />
-          <Skeleton className="h-5 w-32 ml-2" />
+          <Skeleton className="h-5 w-32 ms-2" />
         </div>
         <Skeleton className="h-4 w-28" />
       </div>
@@ -242,7 +255,12 @@ export function PageHeaderSkeleton({
   className?: string;
 }) {
   return (
-    <div className={cn('flex flex-wrap items-center justify-between gap-3 mb-4', className)}>
+    <div
+      className={cn(
+        'flex flex-wrap items-center justify-between gap-3 mb-4',
+        className,
+      )}
+    >
       <div className="space-y-1.5">
         <Skeleton className="h-6 w-44" />
         <Skeleton className="h-3.5 w-64" />

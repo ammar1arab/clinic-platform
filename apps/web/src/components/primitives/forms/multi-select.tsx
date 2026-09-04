@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from '@/providers/language-provider';
+
 import { useState } from 'react';
 import {
   Button,
@@ -9,7 +11,12 @@ import {
   Input,
 } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { IconCheck, IconChevronsUpDown, IconClose, IconSearch } from '@/constants/icons';
+import {
+  IconCheck,
+  IconChevronsUpDown,
+  IconClose,
+  IconSearch,
+} from '@/constants/icons';
 
 export type MultiSelectOption = {
   value: string;
@@ -31,12 +38,13 @@ export function MultiSelect({
   options,
   value,
   onChange,
-  placeholder = 'Select…',
-  searchPlaceholder = 'IconSearch…',
-  emptyText = 'No options',
+  placeholder,
+  searchPlaceholder,
+  emptyText,
   className,
   disabled,
 }: Props) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -69,9 +77,11 @@ export function MultiSelect({
             className,
           )}
         >
-          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-left">
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-start">
             {selected.length === 0 ? (
-              <span className="text-muted-foreground">{placeholder}</span>
+              <span className="text-muted-foreground">
+                {placeholder ?? t.ui.select}
+              </span>
             ) : (
               selected.map((item) => (
                 <span
@@ -81,6 +91,7 @@ export function MultiSelect({
                   <span className="truncate">{item.label}</span>
                   <span
                     role="button"
+                    aria-label={t.ui.removeItem.replace('{name}', item.label)}
                     tabIndex={0}
                     className="rounded-sm text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
@@ -105,29 +116,46 @@ export function MultiSelect({
           <IconChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-64 p-0" align="start">
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] min-w-64 p-0"
+        align="start"
+      >
         <div className="border-b border-border p-2">
           <div className="relative">
             <IconSearch className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={searchPlaceholder}
+              placeholder={searchPlaceholder ?? t.common.search}
               className="h-8 ps-8"
             />
           </div>
           <div className="mt-2 flex gap-2">
-            <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={selectAll}>
-              Select all
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={selectAll}
+            >
+              {t.ui.selectAll}
             </Button>
-            <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={clear}>
-              Clear
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={clear}
+            >
+              {t.common.clear}
             </Button>
           </div>
         </div>
         <div className="max-h-56 overflow-y-auto p-1">
           {filtered.length === 0 ? (
-            <p className="px-2 py-6 text-center text-xs text-muted-foreground">{emptyText}</p>
+            <p className="px-2 py-6 text-center text-xs text-muted-foreground">
+              {emptyText ?? t.ui.noOptions}
+            </p>
           ) : (
             filtered.map((option) => {
               const isSelected = value.includes(option.value);
@@ -144,12 +172,15 @@ export function MultiSelect({
                   <span
                     className={cn(
                       'flex size-4 shrink-0 items-center justify-center rounded-sm border border-border',
-                      isSelected && 'border-primary bg-primary text-primary-foreground',
+                      isSelected &&
+                        'border-primary bg-primary text-primary-foreground',
                     )}
                   >
                     {isSelected ? <IconCheck className="size-3" /> : null}
                   </span>
-                  <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                  <span className="min-w-0 flex-1 truncate">
+                    {option.label}
+                  </span>
                 </button>
               );
             })

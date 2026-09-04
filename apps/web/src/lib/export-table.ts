@@ -57,7 +57,16 @@ export function exportTable<T>(opts: {
   t?: Translations;
   lang?: string;
 }) {
-  const { rows, columns, format, title, sheetName, filename, lang = getLanguage(), t = getTranslations(lang) } = opts;
+  const {
+    rows,
+    columns,
+    format,
+    title,
+    sheetName,
+    filename,
+    lang = getLanguage(),
+    t = getTranslations(lang),
+  } = opts;
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
   const headers = columns.map((c) => c.header);
 
@@ -68,7 +77,9 @@ export function exportTable<T>(opts: {
       `# ${t.common.count}: ${rows.length}`,
       '#',
     ];
-    const body = rows.map((row) => rowValues(row, columns).map(csvEscape).join(','));
+    const body = rows.map((row) =>
+      rowValues(row, columns).map(csvEscape).join(','),
+    );
     triggerDownload(
       `\uFEFF${[...preface, headers.join(','), ...body].join('\r\n')}`,
       `${filename}.csv`,
@@ -79,7 +90,10 @@ export function exportTable<T>(opts: {
 
   if (format === 'xlsx') {
     const headerCells = headers
-      .map((h) => `<Cell ss:StyleID="Header"><Data ss:Type="String">${xmlEscape(h)}</Data></Cell>`)
+      .map(
+        (h) =>
+          `<Cell ss:StyleID="Header"><Data ss:Type="String">${xmlEscape(h)}</Data></Cell>`,
+      )
       .join('');
     const dataRows =
       rows.length === 0

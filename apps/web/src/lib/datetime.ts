@@ -12,7 +12,9 @@ export function pad2(n: number) {
   return String(n).padStart(2, '0');
 }
 
-export function parseClock(value: string | null | undefined): ClockParts | null {
+export function parseClock(
+  value: string | null | undefined,
+): ClockParts | null {
   if (!value) return null;
   const match = CLOCK_RE.exec(value.trim());
   if (!match) return null;
@@ -26,7 +28,11 @@ export function toClockValue(hours: number, minutes: number) {
   return `${pad2(hours)}:${pad2(minutes)}`;
 }
 
-export function formatClockParts(hours: number, minutes: number, lang?: string) {
+export function formatClockParts(
+  hours: number,
+  minutes: number,
+  lang?: string,
+) {
   const hour12 = hours % 12 || 12;
   const t = getTranslations(lang ?? 'en');
   const period = hours < 12 ? t.time.am : t.time.pm;
@@ -39,7 +45,11 @@ export function formatHour(hour: number, lang?: string) {
   return formatClockParts(normalized, 0, lang);
 }
 
-export function formatClock(value: string | null | undefined, empty = EMPTY, lang?: string) {
+export function formatClock(
+  value: string | null | undefined,
+  empty = EMPTY,
+  lang?: string,
+) {
   const clock = parseClock(value);
   if (!clock) return empty;
   return formatClockParts(clock.hours, clock.minutes, lang);

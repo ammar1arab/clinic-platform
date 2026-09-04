@@ -28,7 +28,9 @@ const ConfirmContext = createContext<ConfirmFn>(() => Promise.resolve(false));
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const { t } = useLanguage();
   const [state, setState] = useState<ConfirmOptions | null>(null);
-  const [resolver, setResolver] = useState<((value: boolean) => void) | null>(null);
+  const [resolver, setResolver] = useState<((value: boolean) => void) | null>(
+    null,
+  );
 
   const confirm: ConfirmFn = (options) => {
     setState(options);
@@ -51,7 +53,9 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           <AlertDialogHeader>
             <AlertDialogTitle>{state?.title}</AlertDialogTitle>
             {state?.description && (
-              <AlertDialogDescription>{state.description}</AlertDialogDescription>
+              <AlertDialogDescription>
+                {state.description}
+              </AlertDialogDescription>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>

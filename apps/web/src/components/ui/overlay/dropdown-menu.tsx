@@ -1,21 +1,27 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
+import * as React from 'react';
+import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 import {
   OVERLAY_COLLISION_PADDING,
   OVERLAY_POP_CLASS,
   overlayPointerProps,
-} from "@/lib/overlay"
-import { IconCheck, IconChevronRight } from '@/constants/icons'
+} from '@/lib/overlay';
+import { IconCheck, IconChevronRight } from '@/constants/icons';
 
 function DropdownMenu({
   modal = false,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" modal={modal} {...props} />
+  return (
+    <DropdownMenuPrimitive.Root
+      data-slot="dropdown-menu"
+      modal={modal}
+      {...props}
+    />
+  );
 }
 
 function DropdownMenuPortal({
@@ -23,7 +29,7 @@ function DropdownMenuPortal({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
   return (
     <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
-  )
+  );
 }
 
 function DropdownMenuTrigger({
@@ -34,13 +40,13 @@ function DropdownMenuTrigger({
       data-slot="dropdown-menu-trigger"
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuContent({
   className,
-  align = "start",
-  side = "bottom",
+  align = 'start',
+  side = 'bottom',
   sideOffset = 6,
   avoidCollisions = true,
   collisionPadding = OVERLAY_COLLISION_PADDING,
@@ -59,16 +65,16 @@ function DropdownMenuContent({
         collisionPadding={collisionPadding}
         className={cn(
           OVERLAY_POP_CLASS,
-          "z-50 max-h-(--radix-dropdown-menu-content-available-height)",
-          "w-[min(100vw-1.5rem,var(--radix-dropdown-menu-trigger-width))] min-w-36 max-w-[calc(100vw-1.5rem)]",
-          "overflow-y-auto overscroll-contain p-1.5",
-          className
+          'z-50 max-h-(--radix-dropdown-menu-content-available-height)',
+          'w-[min(100vw-1.5rem,var(--radix-dropdown-menu-trigger-width))] min-w-36 max-w-[calc(100vw-1.5rem)]',
+          'overflow-y-auto overscroll-contain p-1.5',
+          className,
         )}
         {...props}
         {...overlayPointerProps({ onPointerDownOutside, onInteractOutside })}
       />
     </DropdownMenuPrimitive.Portal>
-  )
+  );
 }
 
 function DropdownMenuGroup({
@@ -76,17 +82,17 @@ function DropdownMenuGroup({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
   return (
     <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
-  )
+  );
 }
 
 function DropdownMenuItem({
   className,
   inset,
-  variant = "default",
+  variant = 'default',
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
-  inset?: boolean
-  variant?: "default" | "destructive"
+  inset?: boolean;
+  variant?: 'default' | 'destructive';
 }) {
   return (
     <DropdownMenuPrimitive.Item
@@ -94,34 +100,33 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
+        'group/menu-item relative flex cursor-pointer items-center gap-2',
+        'rounded-lg px-2.5 py-2 text-sm outline-hidden select-none',
 
-        "group/menu-item relative flex cursor-pointer items-center gap-2",
-        "rounded-lg px-2.5 py-2 text-sm outline-hidden select-none",
+        'transition-all duration-100',
 
-        "transition-all duration-100",
-
-        "focus:bg-accent/70 focus:text-accent-foreground",
-        "not-data-[variant=destructive]:focus:**:text-accent-foreground",
+        'focus:bg-accent/70 focus:text-accent-foreground',
+        'not-data-[variant=destructive]:focus:**:text-accent-foreground',
 
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        "[&_svg]:text-muted-foreground [&_svg]:transition-colors [&_svg]:duration-100",
-        "focus:[&_svg]:text-accent-foreground",
+        '[&_svg]:text-muted-foreground [&_svg]:transition-colors [&_svg]:duration-100',
+        'focus:[&_svg]:text-accent-foreground',
 
-        "active:scale-[0.98]",
+        'active:scale-[0.98]',
 
-        "data-inset:pl-8",
+        'data-inset:ps-8',
 
-        "data-disabled:pointer-events-none data-disabled:opacity-40",
+        'data-disabled:pointer-events-none data-disabled:opacity-40',
 
-        "data-[variant=destructive]:text-destructive",
-        "data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20",
-        "data-[variant=destructive]:focus:text-destructive",
-        "data-[variant=destructive]:*:[svg]:text-destructive",
-        className
+        'data-[variant=destructive]:text-destructive',
+        'data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20',
+        'data-[variant=destructive]:focus:text-destructive',
+        'data-[variant=destructive]:*:[svg]:text-destructive',
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuCheckboxItem({
@@ -131,20 +136,20 @@ function DropdownMenuCheckboxItem({
   inset,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem> & {
-  inset?: boolean
+  inset?: boolean;
 }) {
   return (
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
       data-inset={inset}
       className={cn(
-        "relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-sm outline-hidden select-none",
-        "transition-all duration-100",
-        "focus:bg-accent/70 focus:text-accent-foreground focus:**:text-accent-foreground",
-        "data-inset:ps-8 data-disabled:pointer-events-none data-disabled:opacity-40",
+        'relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-sm outline-hidden select-none',
+        'transition-all duration-100',
+        'focus:bg-accent/70 focus:text-accent-foreground focus:**:text-accent-foreground',
+        'data-inset:ps-8 data-disabled:pointer-events-none data-disabled:opacity-40',
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        "active:scale-[0.98]",
-        className
+        'active:scale-[0.98]',
+        className,
       )}
       checked={checked}
       {...props}
@@ -159,7 +164,7 @@ function DropdownMenuCheckboxItem({
       </span>
       {children}
     </DropdownMenuPrimitive.CheckboxItem>
-  )
+  );
 }
 
 function DropdownMenuRadioGroup({
@@ -170,7 +175,7 @@ function DropdownMenuRadioGroup({
       data-slot="dropdown-menu-radio-group"
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuRadioItem({
@@ -179,20 +184,20 @@ function DropdownMenuRadioItem({
   inset,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem> & {
-  inset?: boolean
+  inset?: boolean;
 }) {
   return (
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
       data-inset={inset}
       className={cn(
-        "relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-sm outline-hidden select-none",
-        "transition-all duration-100",
-        "focus:bg-accent/70 focus:text-accent-foreground focus:**:text-accent-foreground",
-        "data-inset:ps-8 data-disabled:pointer-events-none data-disabled:opacity-40",
+        'relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-sm outline-hidden select-none',
+        'transition-all duration-100',
+        'focus:bg-accent/70 focus:text-accent-foreground focus:**:text-accent-foreground',
+        'data-inset:ps-8 data-disabled:pointer-events-none data-disabled:opacity-40',
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        "active:scale-[0.98]",
-        className
+        'active:scale-[0.98]',
+        className,
       )}
       {...props}
     >
@@ -206,7 +211,7 @@ function DropdownMenuRadioItem({
       </span>
       {children}
     </DropdownMenuPrimitive.RadioItem>
-  )
+  );
 }
 
 function DropdownMenuLabel({
@@ -214,19 +219,19 @@ function DropdownMenuLabel({
   inset,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
-  inset?: boolean
+  inset?: boolean;
 }) {
   return (
     <DropdownMenuPrimitive.Label
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
-        "px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 data-inset:pl-8",
-        className
+        'px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 data-inset:ps-8',
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuSeparator({
@@ -236,34 +241,34 @@ function DropdownMenuSeparator({
   return (
     <DropdownMenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn("-mx-1.5 my-1.5 h-px bg-border/60", className)}
+      className={cn('-mx-1.5 my-1.5 h-px bg-border/60', className)}
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuShortcut({
   className,
   ...props
-}: React.ComponentProps<"span">) {
+}: React.ComponentProps<'span'>) {
   return (
     <span
       data-slot="dropdown-menu-shortcut"
       className={cn(
-        "ms-auto inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono font-semibold tracking-widest text-muted-foreground",
-        "group-focus/menu-item:border-accent-foreground/30 group-focus/menu-item:bg-accent-foreground/10 group-focus/menu-item:text-accent-foreground/80",
-        "transition-all duration-100",
-        className
+        'ms-auto inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono font-semibold tracking-widest text-muted-foreground',
+        'group-focus/menu-item:border-accent-foreground/30 group-focus/menu-item:bg-accent-foreground/10 group-focus/menu-item:text-accent-foreground/80',
+        'transition-all duration-100',
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function DropdownMenuSub({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
-  return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />
+  return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />;
 }
 
 function DropdownMenuSubTrigger({
@@ -272,26 +277,26 @@ function DropdownMenuSubTrigger({
   children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
-  inset?: boolean
+  inset?: boolean;
 }) {
   return (
     <DropdownMenuPrimitive.SubTrigger
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm outline-hidden select-none",
-        "transition-all duration-100",
-        "focus:bg-accent/70 focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground",
-        "data-inset:ps-8 data-open:bg-accent data-open:text-accent-foreground",
+        'flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm outline-hidden select-none',
+        'transition-all duration-100',
+        'focus:bg-accent/70 focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground',
+        'data-inset:ps-8 data-open:bg-accent data-open:text-accent-foreground',
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
+        className,
       )}
       {...props}
     >
       {children}
       <IconChevronRight className="ms-auto size-4 text-muted-foreground rtl:rotate-180" />
     </DropdownMenuPrimitive.SubTrigger>
-  )
+  );
 }
 
 function DropdownMenuSubContent({
@@ -301,14 +306,10 @@ function DropdownMenuSubContent({
   return (
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
-        className={cn(
-          OVERLAY_POP_CLASS,
-          "z-50 min-w-30 p-1.5",
-          className
-        )}
+      className={cn(OVERLAY_POP_CLASS, 'z-50 min-w-30 p-1.5', className)}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -327,4 +328,4 @@ export {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
-}
+};

@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from '@/providers/language-provider';
+
 import { Fragment } from 'react';
 import Link from 'next/link';
 import {
@@ -31,26 +33,30 @@ function runSelect(onSelect?: () => void) {
 export function RowActionsMenu({
   items,
   align = 'end',
-  label = 'Actions',
+  label,
 }: {
   items: RowActionItem[];
   align?: 'start' | 'center' | 'end';
   label?: string;
 }) {
+  const { t } = useLanguage();
+  const resolvedLabel = label ?? t.ui.actions;
   const visible = items.filter(Boolean);
   if (visible.length === 0) return null;
 
-  const firstDestructive = visible.findIndex((item) => item.variant === 'destructive');
+  const firstDestructive = visible.findIndex(
+    (item) => item.variant === 'destructive',
+  );
 
   return (
     <DropdownMenu modal={false}>
-      <SoftTip label={label}>
+      <SoftTip label={resolvedLabel}>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label={label}
+            aria-label={resolvedLabel}
             className="size-8 rounded-full text-muted-foreground hover:bg-muted/80 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground"
           >
             <MoreDotsIcon />
@@ -66,7 +72,11 @@ export function RowActionsMenu({
                 <DropdownMenuSeparator />
               ) : null}
               {item.href ? (
-                <DropdownMenuItem variant={item.variant} disabled={item.disabled} asChild>
+                <DropdownMenuItem
+                  variant={item.variant}
+                  disabled={item.disabled}
+                  asChild
+                >
                   <Link href={item.href}>
                     {Icon ? <Icon /> : null}
                     {item.label}

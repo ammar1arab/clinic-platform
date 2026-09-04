@@ -1,30 +1,7 @@
 # Cureva agent assets
 
-Canonical rules and skills:
+Follow the repository root [AGENTS.md](../AGENTS.md). Canonical rules are in [.cursor/rules](../.cursor/rules). Read the [catalog](README.md) to choose a relevant skill, then open only that skill.
 
-- `.cursor/rules/`
-- `.cursor/skills/`
-- `AGENTS.md` (repo root)
+New portable skills live in .agents/skills. The five existing workflows remain in .cursor/skills. Read [project context](memory/project-context.md) for durable decisions; never store secrets or patient data here.
 
-This folder mirrors the Cureva agent contract for tools that look under `.agents/`.
-
-## Theme first
-
-Every UI task stands on `apps/web/src/app/globals.css`.
-See `.cursor/rules/theme.mdc` and `.cursor/skills/theme-ui/SKILL.md`.
-
-## Quick pointers
-
-- Identity + workflow: `.cursor/rules/00-project-core.mdc`
-- Architecture: `.cursor/rules/architecture.mdc`
-- Full-stack feature: `.cursor/skills/clinic-feature/SKILL.md`
-- Ship: `.cursor/skills/ship-check/SKILL.md`
-- Plan cycle: `.cursor/skills/agent-work-cycle/SKILL.md`
-- i18n: `.cursor/skills/sync-i18n/SKILL.md`
-
-## Hard preferences
-- Banned: fallback operator with hardcoded string `t?.foo ?? 'String'`. Stand directly on `t.foo`
-- Banned: inline language ternaries `lang === 'ar' ? '...' : '...'`. Put all strings in `en.ts` and `ar.ts`
-- Banned: physical directional classes (`pl-`, `pr-`, `left-`, `right-`). Use logical properties (`ps-`, `pe-`, `start-`, `end-`)
-- Prefer no `any`
-
+Do not duplicate rules into this file. Update their canonical source and catalog links when paths change.

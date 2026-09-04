@@ -1,9 +1,16 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { format, setMonth as setDateMonth, setYear, addMonths, subMonths } from "date-fns"
+import * as React from 'react';
+import {
+  format,
+  setMonth as setDateMonth,
+  setYear,
+  addMonths,
+  subMonths,
+} from 'date-fns';
 
-import { cn } from "@/lib/utils"
+import { ar, enUS } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import {
   Button,
   Calendar,
@@ -15,47 +22,46 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui"
-import { IconCalendar, IconChevronLeft, IconChevronRight, IconClose } from '@/constants/icons'
-import { keepNestedPortals } from '@/lib/overlay'
-import { useLanguage } from '@/providers'
+} from '@/components/ui';
+import {
+  IconCalendar,
+  IconChevronLeft,
+  IconChevronRight,
+  IconClose,
+} from '@/constants/icons';
+import { keepNestedPortals } from '@/lib/overlay';
+import { useLanguage } from '@/providers/language-provider';
 
 interface Props {
+  value?: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+  fromDate?: Date;
+  toDate?: Date;
 
-  value?: string
-  onChange: (value: string) => void
-  placeholder?: string
-  disabled?: boolean
-  className?: string
-  fromDate?: Date
-  toDate?: Date
-
-  withDropdown?: boolean
+  withDropdown?: boolean;
 }
 
 function parseISO(value?: string): Date | undefined {
-  if (!value) return undefined
-  const [y, m, d] = value.split("-").map(Number)
-  if (!y || !m || !d) return undefined
-  return new Date(y, m - 1, d)
+  if (!value) return undefined;
+  const [y, m, d] = value.split('-').map(Number);
+  if (!y || !m || !d) return undefined;
+  return new Date(y, m - 1, d);
 }
 
-const MONTHS = Array.from({ length: 12 }, (_, i) => ({
-  value: String(i),
-  label: format(new Date(2020, i, 1), "MMM"),
-}))
-
 function buildYears(from: Date, to: Date, reverse: boolean) {
-  const years: number[] = []
-  for (let y = from.getFullYear(); y <= to.getFullYear(); y++) years.push(y)
-  return reverse ? years.reverse() : years
+  const years: number[] = [];
+  for (let y = from.getFullYear(); y <= to.getFullYear(); y++) years.push(y);
+  return reverse ? years.reverse() : years;
 }
 
 function clampToRange(date: Date, from?: Date, to?: Date) {
-  let next = date
-  if (from && next < from) next = from
-  if (to && next > to) next = to
-  return next
+  let next = date;
+  if (from && next < from) next = from;
+  if (to && next > to) next = to;
+  return next;
 }
 
 export function DatePicker({
@@ -69,9 +75,14 @@ export function DatePicker({
   withDropdown = false,
 }: Props) {
   const { t, lang } = useLanguage();
-  const resolvedPlaceholder = placeholder ?? t?.common?.pickDate ?? "Pick a date";
-  const [open, setOpen] = React.useState(false)
-  const selected = parseISO(value)
+  const locale = lang === 'ar' ? ar : enUS;
+  const months = Array.from({ length: 12 }, (_, i) => ({
+    value: String(i),
+    label: format(new Date(2020, i, 1), 'MMM', { locale }),
+  }));
+  const resolvedPlaceholder = placeholder ?? t.common.pickDate;
+  const [open, setOpen] = React.useState(false);
+  const selected = parseISO(value);
 
   const rangeStart = React.useMemo(() => {
     return fromDate ?? (withDropdown ? new Date(1920, 0, 1) : undefined);
@@ -102,21 +113,29 @@ export function DatePicker({
   const disabledMatcher = [
     ...(fromDate ? [{ before: fromDate }] : []),
     ...(toDate ? [{ after: toDate }] : []),
-  ]
+  ];
 
   const goMonth = (delta: number) => {
     setMonth((prev) =>
-      clampToRange(delta > 0 ? addMonths(prev, 1) : subMonths(prev, 1), rangeStart, rangeEnd),
-    )
-  }
+      clampToRange(
+        delta > 0 ? addMonths(prev, 1) : subMonths(prev, 1),
+        rangeStart,
+        rangeEnd,
+      ),
+    );
+  };
 
   const onMonthSelect = (m: string) => {
-    setMonth((prev) => clampToRange(setDateMonth(prev, Number(m)), rangeStart, rangeEnd))
-  }
+    setMonth((prev) =>
+      clampToRange(setDateMonth(prev, Number(m)), rangeStart, rangeEnd),
+    );
+  };
 
   const onYearSelect = (y: string) => {
-    setMonth((prev) => clampToRange(setYear(prev, Number(y)), rangeStart, rangeEnd))
-  }
+    setMonth((prev) =>
+      clampToRange(setYear(prev, Number(y)), rangeStart, rangeEnd),
+    );
+  };
 
   return (
     <Popover modal open={open} onOpenChange={setOpen}>
@@ -127,24 +146,26 @@ export function DatePicker({
           disabled={disabled}
           data-empty={!selected}
           className={cn(
-            "h-8 w-full cursor-pointer justify-start px-2.5 font-normal data-[empty=true]:text-muted-foreground",
+            'h-8 w-full cursor-pointer justify-start px-2.5 font-normal data-[empty=true]:text-muted-foreground',
             className,
           )}
         >
           <IconCalendar className="size-4 opacity-70" />
           <span className="flex-1 truncate text-start">
-            {selected ? format(selected, "MMM d, yyyy") : resolvedPlaceholder}
+            {selected
+              ? format(selected, 'MMM d, yyyy', { locale })
+              : resolvedPlaceholder}
           </span>
           {selected && !disabled && (
             <span
               role="button"
               tabIndex={-1}
-              aria-label="Clear date"
+              aria-label={t.ui.clearDate}
               className="cursor-pointer rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onChange("")
+                e.preventDefault();
+                e.stopPropagation();
+                onChange('');
               }}
             >
               <IconClose className="size-3.5" />
@@ -167,31 +188,45 @@ export function DatePicker({
                 size="icon-sm"
                 className="cursor-pointer"
                 onClick={() => goMonth(-1)}
-                aria-label={t?.common?.previous ?? "Previous month"}
+                aria-label={t.ui.previousMonth}
               >
                 <IconChevronLeft className="size-4 rtl:rotate-180" />
               </Button>
 
-              <Select value={String(month.getMonth())} onValueChange={onMonthSelect}>
+              <Select
+                value={String(month.getMonth())}
+                onValueChange={onMonthSelect}
+              >
                 <SelectTrigger className="h-8 flex-1 cursor-pointer">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="z-200 max-h-60">
-                  {MONTHS.map((m) => (
-                    <SelectItem key={m.value} value={m.value} className="cursor-pointer">
+                  {months.map((m) => (
+                    <SelectItem
+                      key={m.value}
+                      value={m.value}
+                      className="cursor-pointer"
+                    >
                       {m.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={String(month.getFullYear())} onValueChange={onYearSelect}>
+              <Select
+                value={String(month.getFullYear())}
+                onValueChange={onYearSelect}
+              >
                 <SelectTrigger className="h-8 w-[5.5rem] cursor-pointer">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="z-200 max-h-60">
                   {years.map((y) => (
-                    <SelectItem key={y} value={String(y)} className="cursor-pointer">
+                    <SelectItem
+                      key={y}
+                      value={String(y)}
+                      className="cursor-pointer"
+                    >
                       {y}
                     </SelectItem>
                   ))}
@@ -204,7 +239,7 @@ export function DatePicker({
                 size="icon-sm"
                 className="cursor-pointer"
                 onClick={() => goMonth(1)}
-                aria-label={t?.common?.next ?? "Next month"}
+                aria-label={t.ui.nextMonth}
               >
                 <IconChevronRight className="size-4 rtl:rotate-180" />
               </Button>
@@ -222,9 +257,9 @@ export function DatePicker({
             endMonth={rangeEnd}
             disabled={disabledMatcher.length ? disabledMatcher : undefined}
             onSelect={(date) => {
-              onChange(date ? format(date, "yyyy-MM-dd") : "")
-              if (date) setMonth(date)
-              setOpen(false)
+              onChange(date ? format(date, 'yyyy-MM-dd') : '');
+              if (date) setMonth(date);
+              setOpen(false);
             }}
             className="rounded-none border-0"
           />
@@ -236,11 +271,11 @@ export function DatePicker({
               size="sm"
               className="cursor-pointer"
               onClick={() => {
-                onChange("")
-                setOpen(false)
+                onChange('');
+                setOpen(false);
               }}
             >
-              {t?.common?.clear ?? (lang === 'ar' ? 'مسح' : 'Clear')}
+              {t.common.clear}
             </Button>
             <Button
               type="button"
@@ -249,20 +284,21 @@ export function DatePicker({
               className="cursor-pointer"
               disabled={
                 !!rangeEnd &&
-                new Date(new Date().toDateString()) > new Date(rangeEnd.toDateString())
+                new Date(new Date().toDateString()) >
+                  new Date(rangeEnd.toDateString())
               }
               onClick={() => {
-                const today = clampToRange(new Date(), rangeStart, rangeEnd)
-                onChange(format(today, "yyyy-MM-dd"))
-                setMonth(today)
-                setOpen(false)
+                const today = clampToRange(new Date(), rangeStart, rangeEnd);
+                onChange(format(today, 'yyyy-MM-dd'));
+                setMonth(today);
+                setOpen(false);
               }}
             >
-              {t?.appointments?.today ?? (lang === 'ar' ? 'اليوم' : 'Today')}
+              {t.appointments.today}
             </Button>
           </div>
         </div>
       </PopoverContent>
     </Popover>
-  )
+  );
 }

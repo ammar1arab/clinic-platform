@@ -15,7 +15,7 @@ import { SearchInput } from '@/components/primitives';
 import { SoftTip } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { IconChevronsUpDown } from '@/constants/icons';
-import { useLanguage } from '@/providers';
+import { useLanguage } from '@/providers/language-provider';
 
 export const DIRECTORY_ACTION_CLASS =
   'size-8 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5';
@@ -40,7 +40,9 @@ export function DirectoryToolbar({
         className="min-w-0 flex-1"
         inputClassName="h-9 bg-background/50"
       />
-      <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">{actions}</div>
+      <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+        {actions}
+      </div>
     </div>
   );
 }
@@ -55,7 +57,8 @@ export function DirectorySortMenu({
   options: readonly { value: string; label: string }[];
 }) {
   const { t } = useLanguage();
-  const current = options.find((o) => o.value === value)?.label ?? t.common.sort;
+  const current =
+    options.find((o) => o.value === value)?.label ?? t.common.sort;
 
   return (
     <DropdownMenu>
@@ -66,10 +69,15 @@ export function DirectorySortMenu({
             variant="outline"
             size="sm"
             aria-label={`${t.common.sort}: ${current}`}
-            className={cn(DIRECTORY_ACTION_CLASS, 'border-border/70 bg-background/50')}
+            className={cn(
+              DIRECTORY_ACTION_CLASS,
+              'border-border/70 bg-background/50',
+            )}
           >
             <IconChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="hidden max-w-28 truncate font-semibold sm:inline">{current}</span>
+            <span className="hidden max-w-28 truncate font-semibold sm:inline">
+              {current}
+            </span>
           </Button>
         </DropdownMenuTrigger>
       </SoftTip>

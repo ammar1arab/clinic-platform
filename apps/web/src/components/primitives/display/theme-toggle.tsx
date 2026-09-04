@@ -11,7 +11,7 @@ import {
 import { useMounted } from '@/hooks/shared/use-mounted';
 import { SoftTip } from '@/components/primitives';
 import { IconMoon, IconSun, IconSystem } from '@/constants/icons';
-import { useLanguage } from '@/providers';
+import { useLanguage } from '@/providers/language-provider';
 
 const OPTIONS = [
   { value: 'light', label: 'Light', icon: IconSun },
@@ -43,7 +43,11 @@ export function ThemeToggle() {
             data-active={mounted && theme === value}
           >
             <Icon className="size-4 me-2" />
-            {value === 'light' ? t.layout.light : value === 'dark' ? t.layout.dark : t.layout.system}
+            {value === 'light'
+              ? t.layout.light
+              : value === 'dark'
+                ? t.layout.dark
+                : t.layout.system}
             {mounted && theme === value && (
               <span className="ms-auto size-1.5 rounded-full bg-primary" />
             )}

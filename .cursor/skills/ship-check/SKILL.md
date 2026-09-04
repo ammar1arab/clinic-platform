@@ -15,7 +15,7 @@ disable-model-invocation: true
 3. **Data:** Pages do not call Axios; services + hooks + `@clinic/types` align with Nest DTOs; `clinicId` scoping intact.
 4. **Roles:** Practitioner surfaces do not expose owner-only finance/admin controls.
 5. **Constraints:** Prefer no new `useEffect`, no drive-by comments, no em dash.
-6. **Lint:** `npm run lint` in `apps/web` and/or `apps/api` when possible.
+6. **Lint:** Read package scripts first. API lint includes --fix; use a non-mutating invocation for review-only checks. Run only affected checks.
 7. **Build:** For non-trivial changes, web and/or api build/typecheck when feasible.
 8. **Runtime:** IronBee browser for UI; stop servers you started.
 9. Report pass / fail / skipped. Do not commit or push unless asked.

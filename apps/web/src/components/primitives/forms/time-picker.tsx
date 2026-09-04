@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui';
-import { useLanguage } from '@/providers';
+import { useLanguage } from '@/providers/language-provider';
 
 interface Props {
   value?: string;
@@ -32,10 +32,10 @@ interface Props {
   step?: 5 | 10 | 15 | 30;
 }
 
-function formatDisplay(value?: string) {
+function formatDisplay(value: string | undefined, lang: string) {
   const t = parseClock(value);
   if (!t) return null;
-  return formatClockParts(t.hours, t.minutes);
+  return formatClockParts(t.hours, t.minutes, lang);
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -48,7 +48,7 @@ export function TimePicker({
   className,
   step = 5,
 }: Props) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [open, setOpen] = React.useState(false);
   const parsed = parseClock(value);
 
@@ -64,7 +64,13 @@ export function TimePicker({
   const minute = parsed
     ? minutes.includes(parsed.minutes)
       ? parsed.minutes
-      : minutes.reduce((best, m) => (Math.abs(m - parsed.minutes) < Math.abs(best - parsed.minutes) ? m : best), 0)
+      : minutes.reduce(
+          (best, m) =>
+            Math.abs(m - parsed.minutes) < Math.abs(best - parsed.minutes)
+              ? m
+              : best,
+          0,
+        )
     : 0;
 
   const setHour = (h: string) => {
@@ -90,7 +96,7 @@ export function TimePicker({
         >
           <IconTime className="size-4 opacity-70" />
           <span className="flex-1 truncate text-start">
-            {formatDisplay(value) ?? resolvedPlaceholder}
+            {formatDisplay(value, lang) ?? resolvedPlaceholder}
           </span>
           {parsed && !disabled && (
             <span
@@ -125,29 +131,41 @@ export function TimePicker({
       >
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1.5">
-            <p className="text-[11px] font-medium text-muted-foreground">{t.common.hour}</p>
+            <p className="text-[11px] font-medium text-muted-foreground">
+              {t.common.hour}
+            </p>
             <Select value={String(hour)} onValueChange={setHour}>
               <SelectTrigger className="h-9 w-full cursor-pointer">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="z-200 max-h-56">
                 {HOURS.map((h) => (
-                  <SelectItem key={h} value={String(h)} className="cursor-pointer">
-                    {formatHour(h)}
+                  <SelectItem
+                    key={h}
+                    value={String(h)}
+                    className="cursor-pointer"
+                  >
+                    {formatHour(h, lang)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <p className="text-[11px] font-medium text-muted-foreground">{t.common.minute}</p>
+            <p className="text-[11px] font-medium text-muted-foreground">
+              {t.common.minute}
+            </p>
             <Select value={String(minute)} onValueChange={setMinute}>
               <SelectTrigger className="h-9 w-full cursor-pointer">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="z-200 max-h-56">
                 {minutes.map((m) => (
-                  <SelectItem key={m} value={String(m)} className="cursor-pointer">
+                  <SelectItem
+                    key={m}
+                    value={String(m)}
+                    className="cursor-pointer"
+                  >
                     {pad2(m)}
                   </SelectItem>
                 ))}
@@ -177,7 +195,10 @@ export function TimePicker({
               const now = new Date();
               const m = minutes.reduce(
                 (best, n) =>
-                  Math.abs(n - now.getMinutes()) < Math.abs(best - now.getMinutes()) ? n : best,
+                  Math.abs(n - now.getMinutes()) <
+                  Math.abs(best - now.getMinutes())
+                    ? n
+                    : best,
                 0,
               );
               onChange(toClockValue(now.getHours(), m));

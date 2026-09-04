@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui';
 import { ButtonSpinner } from '@/components/primitives/states/button-spinner';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/providers';
+import { useLanguage } from '@/providers/language-provider';
 
 type FormActionsProps = {
   onCancel: () => void;
@@ -17,7 +17,6 @@ type FormActionsProps = {
 
   onSubmitClick?: () => void;
 };
-
 
 export function FormActions({
   onCancel,
@@ -48,7 +47,7 @@ export function FormActions({
         onClick={onCancel}
         disabled={pending}
       >
-        {cancelLabel || t?.common?.cancel || 'Cancel'}
+        {cancelLabel || t.common.cancel}
       </Button>
       <Button
         type={onSubmitClick ? 'button' : 'submit'}

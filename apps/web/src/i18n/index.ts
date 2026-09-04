@@ -11,6 +11,8 @@ export function getLanguage(): Language {
   return localStorage.getItem('language') === 'ar' ? 'ar' : 'en';
 }
 
-export function getTranslations(language: string = getLanguage()): Translations {
+export function getTranslations(
+  language: string = getLanguage(),
+): Translations {
   return translations[language === 'ar' ? 'ar' : 'en'];
 }

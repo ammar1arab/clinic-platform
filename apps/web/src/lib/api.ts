@@ -1,4 +1,4 @@
-import { getTranslations } from '@/i18n';
+import { getTranslations, getLanguage } from '@/i18n';
 import axios, { type AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { env } from './env';
@@ -16,10 +16,9 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
-  
-  const lang = typeof window !== 'undefined' ? localStorage.getItem('language') : null;
-  config.headers['Accept-Language'] = lang === 'ar' ? 'ar' : 'en';
-  
+
+  config.headers['Accept-Language'] = getLanguage();
+
   return config;
 });
 
@@ -43,7 +42,9 @@ export type ApiErrorLike =
       };
     };
 
-function readBodyMessage(data: Exclude<ApiErrorBody, string> | undefined): string | null {
+function readBodyMessage(
+  data: Exclude<ApiErrorBody, string> | undefined,
+): string | null {
   if (!data) return null;
   if (Array.isArray(data.message)) return data.message.join(', ');
   if (typeof data.message === 'string') return data.message;
@@ -72,10 +73,12 @@ function extractErrorMessage(error: ApiErrorLike): string {
 
   if (typeof error === 'object' && error !== null) {
     if (Array.isArray(error.message)) return error.message.join(', ');
-    if (typeof error.message === 'string' && error.message) return error.message;
+    if (typeof error.message === 'string' && error.message)
+      return error.message;
     if ('response' in error) {
       const data = error.response?.data;
-      if (typeof data === 'string' && data.trim()) return data.trim().slice(0, 200);
+      if (typeof data === 'string' && data.trim())
+        return data.trim().slice(0, 200);
       const fromBody = readBodyMessage(
         typeof data === 'object' && data !== null ? data : undefined,
       );

@@ -29,7 +29,9 @@ export const STATUS_COLORS: Record<AppointmentStatus, string> = {
   cancelled: 'var(--color-muted-foreground)',
 };
 
-export const getStatusConfig = (t: Translations): Record<
+export const getStatusConfig = (
+  t: Translations,
+): Record<
   AppointmentStatus,
   { label: string; short: string; dotClassName: string }
 > => ({

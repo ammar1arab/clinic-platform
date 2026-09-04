@@ -13,7 +13,6 @@ type FormFieldProps = {
   children: ReactNode;
 };
 
-
 export function FormField({
   label,
   error,
@@ -29,7 +28,7 @@ export function FormField({
       {label != null && label !== '' ? (
         <Label htmlFor={htmlFor} className={labelClassName}>
           {label}
-          {required ? <span className="ml-0.5 text-destructive">*</span> : null}
+          {required ? <span className="ms-0.5 text-destructive">*</span> : null}
         </Label>
       ) : null}
       {children}

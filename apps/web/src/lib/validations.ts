@@ -1,31 +1,62 @@
-import { getTranslations } from '@/i18n';
+import { getTranslations, getLanguage } from '@/i18n';
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'react-phone-number-input';
+
+const validationLocales = { en: z.locales.en(), ar: z.locales.ar() };
+z.config({
+  customError: (issue) => validationLocales[getLanguage()].localeError(issue),
+});
 
 export const personName = (max = 50) =>
   z
     .string()
     .trim()
     .min(1, { error: () => getTranslations().validation.required })
-    .max(max, { error: () => getTranslations().validation.maxCharacters.replace('{max}', String(max)) })
+    .max(max, {
+      error: () =>
+        getTranslations().validation.maxCharacters.replace(
+          '{max}',
+          String(max),
+        ),
+    })
     .transform((val) => val.replace(/\s+/g, ' '))
-    .refine((val) => /^[\p{L}\s'-]+$/u.test(val), { error: () => getTranslations().validation.lettersOnly });
+    .refine((val) => /^[\p{L}\s'-]+$/u.test(val), {
+      error: () => getTranslations().validation.lettersOnly,
+    });
 
 export const requiredText = (max = 60) =>
-  z.string().trim().min(1, { error: () => getTranslations().validation.required }).max(max, { error: () => getTranslations().validation.maxCharacters.replace('{max}', String(max)) });
+  z
+    .string()
+    .trim()
+    .min(1, { error: () => getTranslations().validation.required })
+    .max(max, {
+      error: () =>
+        getTranslations().validation.maxCharacters.replace(
+          '{max}',
+          String(max),
+        ),
+    });
 
 export const optionalText = (max = 60) =>
   z
     .string()
     .trim()
-    .max(max, { error: () => getTranslations().validation.maxCharacters.replace('{max}', String(max)) })
+    .max(max, {
+      error: () =>
+        getTranslations().validation.maxCharacters.replace(
+          '{max}',
+          String(max),
+        ),
+    })
     .optional()
     .or(z.literal(''));
 
 export const internationalPhone = z
   .string()
   .optional()
-  .refine((val) => !val || isValidPhoneNumber(val), { error: () => getTranslations().validation.phone });
+  .refine((val) => !val || isValidPhoneNumber(val), {
+    error: () => getTranslations().validation.phone,
+  });
 
 export const optionalEmail = z
   .string()
@@ -38,9 +69,20 @@ export const optionalPastDate = z
   .string()
   .optional()
   .or(z.literal(''))
-  .refine((val) => !val || new Date(val) <= new Date(), { error: () => getTranslations().validation.pastDate });
+  .refine((val) => !val || new Date(val) <= new Date(), {
+    error: () => getTranslations().validation.pastDate,
+  });
 
-export const positiveNumber = (max = 100000) => z.coerce.number({ error: () => getTranslations().validation.number }).min(0, { error: () => getTranslations().validation.minNumber.replace('{min}', '0') }).max(max, { error: () => getTranslations().validation.maxNumber.replace('{max}', String(max)) });
+export const positiveNumber = (max = 100000) =>
+  z.coerce
+    .number({ error: () => getTranslations().validation.number })
+    .min(0, {
+      error: () => getTranslations().validation.minNumber.replace('{min}', '0'),
+    })
+    .max(max, {
+      error: () =>
+        getTranslations().validation.maxNumber.replace('{max}', String(max)),
+    });
 
 export const patientSchema = z.object({
   firstNameEn: personName(50),
@@ -83,28 +125,47 @@ export const serviceSchema = z.object({
 
 export const appointmentSchema = z
   .object({
-    patientId: z.string().min(1, { error: () => getTranslations().validation.patient }),
-    doctorId: z.string().min(1, { error: () => getTranslations().validation.doctor }),
+    patientId: z
+      .string()
+      .min(1, { error: () => getTranslations().validation.patient }),
+    doctorId: z
+      .string()
+      .min(1, { error: () => getTranslations().validation.doctor }),
     departmentId: z.string(),
     roomId: z.string(),
     serviceId: z.string(),
     date: z.string().min(1, { error: () => getTranslations().validation.date }),
     time: z.string().min(1, { error: () => getTranslations().validation.time }),
-    durationMins: z.string().min(1, { error: () => getTranslations().validation.required }),
+    durationMins: z
+      .string()
+      .min(1, { error: () => getTranslations().validation.required }),
     sessionType: z.enum(['in_person', 'online']),
     meetingUrl: z.string(),
     feeOverride: z.string(),
     discount: z.string(),
     discountType: z.enum(['fixed', 'percentage']),
     discountReason: z.string(),
-    notes: z.string().max(1000, { error: () => getTranslations().validation.maxCharacters.replace('{max}', '1000') }),
+    notes: z
+      .string()
+      .max(1000, {
+        error: () =>
+          getTranslations().validation.maxCharacters.replace('{max}', '1000'),
+      }),
   })
   .superRefine((v, ctx) => {
     const duration = Number(v.durationMins);
     if (!Number.isFinite(duration) || duration < 5) {
-      ctx.addIssue({ path: ['durationMins'], code: 'custom', message: getTranslations().validation.minDuration });
+      ctx.addIssue({
+        path: ['durationMins'],
+        code: 'custom',
+        message: getTranslations().validation.minDuration,
+      });
     } else if (duration > 600) {
-      ctx.addIssue({ path: ['durationMins'], code: 'custom', message: getTranslations().validation.maxDuration });
+      ctx.addIssue({
+        path: ['durationMins'],
+        code: 'custom',
+        message: getTranslations().validation.maxDuration,
+      });
     }
 
     if (v.sessionType === 'in_person') {
@@ -137,16 +198,28 @@ export const appointmentSchema = z
     if (v.feeOverride.trim()) {
       const fee = Number(v.feeOverride);
       if (!Number.isFinite(fee) || fee < 0) {
-        ctx.addIssue({ path: ['feeOverride'], code: 'custom', message: getTranslations().validation.amount });
+        ctx.addIssue({
+          path: ['feeOverride'],
+          code: 'custom',
+          message: getTranslations().validation.amount,
+        });
       }
     }
 
     if (v.discount.trim()) {
       const d = Number(v.discount);
       if (!Number.isFinite(d) || d < 0) {
-        ctx.addIssue({ path: ['discount'], code: 'custom', message: getTranslations().validation.amount });
+        ctx.addIssue({
+          path: ['discount'],
+          code: 'custom',
+          message: getTranslations().validation.amount,
+        });
       } else if (v.discountType === 'percentage' && d > 100) {
-        ctx.addIssue({ path: ['discount'], code: 'custom', message: getTranslations().validation.maxPercent });
+        ctx.addIssue({
+          path: ['discount'],
+          code: 'custom',
+          message: getTranslations().validation.maxPercent,
+        });
       } else if (d > 0 && !v.discountReason.trim()) {
         ctx.addIssue({
           path: ['discountReason'],
@@ -159,13 +232,21 @@ export const appointmentSchema = z
 
 const availabilitySlotSchema = z.object({
   dayOfWeek: z.number().int().min(0).max(6),
-  startTime: z.string().min(1, { error: () => getTranslations().validation.required }),
-  endTime: z.string().min(1, { error: () => getTranslations().validation.required }),
+  startTime: z
+    .string()
+    .min(1, { error: () => getTranslations().validation.required }),
+  endTime: z
+    .string()
+    .min(1, { error: () => getTranslations().validation.required }),
 });
 
 const timeOffSchema = z.object({
-  startDate: z.string().min(1, { error: () => getTranslations().validation.required }),
-  endDate: z.string().min(1, { error: () => getTranslations().validation.required }),
+  startDate: z
+    .string()
+    .min(1, { error: () => getTranslations().validation.required }),
+  endDate: z
+    .string()
+    .min(1, { error: () => getTranslations().validation.required }),
   reason: z.string().optional().or(z.literal('')),
 });
 
@@ -174,7 +255,12 @@ export const practitionerSchema = z
     name: requiredText(80),
     nameAr: optionalText(80),
     title: optionalText(40),
-    email: z.string().trim().email({ error: () => getTranslations().validation.email }).optional().or(z.literal('')),
+    email: z
+      .string()
+      .trim()
+      .email({ error: () => getTranslations().validation.email })
+      .optional()
+      .or(z.literal('')),
     phone: internationalPhone,
     whatsapp: internationalPhone,
     nationality: optionalText(2),
@@ -189,11 +275,15 @@ export const practitionerSchema = z
     imageUrl: optionalText(500),
     licenseNumber: optionalText(80),
     licenseExpiry: z.string().optional().or(z.literal('')),
-    departmentId: z.string().min(1, { error: () => getTranslations().validation.department }),
+    departmentId: z
+      .string()
+      .min(1, { error: () => getTranslations().validation.department }),
     defaultRoomId: z.string().optional().or(z.literal('')),
     employmentType: z.enum(['salaried', 'commission', 'mixed', '']).optional(),
     commissionPercent: z.string().optional().or(z.literal('')),
-    bufferMins: z.string().min(1, { error: () => getTranslations().validation.required }),
+    bufferMins: z
+      .string()
+      .min(1, { error: () => getTranslations().validation.required }),
     serviceIds: z.array(z.string()),
     availabilities: z.array(availabilitySlotSchema),
     timeOffs: z.array(timeOffSchema),

@@ -6,8 +6,6 @@ import PhoneInput, {
   getCountryCallingCode,
 } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import en from 'react-phone-number-input/locale/en.json';
-import ar from 'react-phone-number-input/locale/ar.json';
 import {
   Input,
   Popover,
@@ -16,7 +14,7 @@ import {
 } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { IconCheck, IconChevronDown, IconSearch } from '@/constants/icons';
-import { useLanguage } from '@/providers';
+import { useLanguage } from '@/providers/language-provider';
 
 interface Props {
   value: string;
@@ -177,9 +175,13 @@ function PhoneCountrySelect({
                 </span>
                 <span className="min-w-0 flex-1 truncate">{option.label}</span>
                 {code && (
-                  <span className="shrink-0 text-xs text-muted-foreground">{code}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {code}
+                  </span>
                 )}
-                {active && <IconCheck className="size-3.5 shrink-0 text-primary" />}
+                {active && (
+                  <IconCheck className="size-3.5 shrink-0 text-primary" />
+                )}
               </button>
             );
           })}
@@ -189,13 +191,18 @@ function PhoneCountrySelect({
   );
 }
 
-export function PhoneInputField({ value, onChange, className, disabled }: Props) {
-  const { lang } = useLanguage();
+export function PhoneInputField({
+  value,
+  onChange,
+  className,
+  disabled,
+}: Props) {
+  const { t } = useLanguage();
   return (
     <PhoneInput
       international
       defaultCountry="JO"
-      labels={lang === 'ar' ? ar : en}
+      labels={t.countries}
       value={value}
       disabled={disabled}
       onChange={(val) => onChange(val ?? '')}

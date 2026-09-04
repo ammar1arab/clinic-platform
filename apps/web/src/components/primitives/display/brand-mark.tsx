@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from '@/providers/language-provider';
+
 import { useId } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -57,7 +59,7 @@ export function BrandMark({
               strokeDasharray="48 84"
             />
           </svg>
-          <span className="absolute left-1/2 top-0 size-2 -translate-x-1/2 rounded-full bg-accent-teal animate-clinic-spark" />
+          <span className="absolute start-1/2 top-0 size-2 -translate-x-1/2 rtl:translate-x-1/2 rounded-full bg-accent-teal animate-clinic-spark" />
         </>
       )}
 
@@ -77,10 +79,11 @@ export function BrandMark({
 }
 
 export function LoadingDots({ className }: { className?: string }) {
+  const { t } = useLanguage();
   return (
     <span
       className={cn('inline-flex items-center gap-1', className)}
-      aria-label="Loading"
+      aria-label={t.common.loading}
       role="status"
     >
       {[0, 1, 2].map((dot) => (

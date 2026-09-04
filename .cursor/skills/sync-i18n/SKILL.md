@@ -40,3 +40,9 @@ Namespaces: `common`, `auth`, `practitioner`, `queue`, `notes`, `reports`, `sett
 
 - EN/AR keys match and/or `*Ar` fields are present
 - No leftover hard-coded English on touched Phase 2 UI
+
+## Current implementation
+
+Use apps/web/src/i18n/en.ts and ar.ts, useLanguage for renders, and getTranslations for event-time utilities. Pass context t/lang into rendering helpers. Options come from translation-aware factories in constants; do not freeze English labels at module load. Validation messages must resolve the language at parse time.
+
+Run rtk proxy node scripts/check-i18n.cjs from the root. Inspect both placeholder parity and caller behavior; structural parity alone is insufficient.

@@ -298,7 +298,7 @@ export function PractitionerProfile({
               {practitioner.timeOffs.map((block, index) => (
                 <ProfileSoftRow
                   key={block.id ?? `${block.startDate}-${index}`}
-                  title={`${formatDate(block.startDate)} - ${formatDate(block.endDate)}`}
+                  title={`${formatDate(block.startDate, undefined, lang)} - ${formatDate(block.endDate, undefined, lang)}`}
                   detail={block.reason}
                 />
               ))}

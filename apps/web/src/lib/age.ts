@@ -1,4 +1,4 @@
-import { getTranslations, type Translations } from '@/i18n';
+import { translations, type Translations } from '@/i18n';
 export function calcAge(
   dob: string | Date | null | undefined,
   now: Date = new Date(),
@@ -18,7 +18,7 @@ export function calcAge(
 export function ageLabel(
   dob: string | Date | null | undefined,
   now: Date = new Date(),
-  t: Translations = getTranslations(),
+  t: Translations = translations.en,
 ): string {
   const age = calcAge(dob, now);
   const suffix = t.common.years;

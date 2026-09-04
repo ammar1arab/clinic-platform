@@ -42,7 +42,7 @@ function CellBadge({
   );
 }
 
-function LanguageBadges({ codes, t }: { codes: string[] | null | undefined, t: Partial<Translations> }) {
+function LanguageBadges({ codes, t }: { codes: string[] | null | undefined, t: Translations }) {
   const labels = languageLabelList(codes, t);
   if (!labels.length) return <span className="text-muted-foreground">—</span>;
   const shown = labels.slice(0, 2);
@@ -382,7 +382,7 @@ export function PractitionersList({
                 <LanguageBadges codes={p.languages} t={t} />
               </div>
               <MetaStat label={t.practitioner.services} value={String(p.serviceIds.length)} />
-              <MetaStat label={t.practitioner.age} value={ageLabel(p.dob) || '—'} />
+              <MetaStat label={t.practitioner.age} value={ageLabel(p.dob, undefined, t) || '—'} />
             </div>
           </div>
         ))}

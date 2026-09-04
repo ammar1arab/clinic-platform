@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui';
 import { IconChevronLeft, IconChevronRight } from '@/constants/icons';
-import { useLanguage } from '@/providers';
+import { useLanguage } from '@/providers/language-provider';
 
 interface Props {
   page: number;
@@ -20,7 +20,13 @@ function goToPage(page: number, onPageChange: (page: number) => void) {
   }
 }
 
-export function Pagination({ page, pageCount, totalItems, pageSize, onPageChange }: Props) {
+export function Pagination({
+  page,
+  pageCount,
+  totalItems,
+  pageSize,
+  onPageChange,
+}: Props) {
   const { t, dir } = useLanguage();
   if (totalItems === 0 || pageCount <= 1) return null;
 
@@ -51,7 +57,10 @@ export function Pagination({ page, pageCount, totalItems, pageSize, onPageChange
         </Button>
         <span className="min-w-12 px-1 text-center text-xs font-medium tabular-nums text-foreground">
           {page}
-          <span className="font-normal text-muted-foreground"> / {pageCount}</span>
+          <span className="font-normal text-muted-foreground">
+            {' '}
+            / {pageCount}
+          </span>
         </span>
         <Button
           variant="outline"

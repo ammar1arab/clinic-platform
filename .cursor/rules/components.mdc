@@ -36,5 +36,5 @@ No hex. No off-palette ramps (`blue-500`, `gray-700`) when a semantic token exis
 
 - Fork `components/ui` off design tokens
 - Call Axios or services from `ui/` or dumb primitives
-- Duplicate shell chrome - use `components/blocks/layout`
+- Duplicate shell chrome - use `components/layout`
 - Import marketing-site layout patterns; match Cureva dashboard density and tokens

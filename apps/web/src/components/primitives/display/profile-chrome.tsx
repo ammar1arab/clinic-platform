@@ -10,7 +10,7 @@ import {
 } from '@/components/ui';
 import { PageBack, SoftTip, TruncatedText } from '@/components/primitives';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/providers';
+import { useLanguage } from '@/providers/language-provider';
 
 export function ProfileShell({
   backHref,
@@ -78,14 +78,13 @@ export function ProfileHero({
           )}
         >
           {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="px-3 py-3.5 text-center sm:px-4"
-            >
+            <div key={stat.label} className="px-3 py-3.5 text-center sm:px-4">
               <p className="text-lg font-semibold tabular-nums tracking-tight">
                 {stat.value}
               </p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{stat.label}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {stat.label}
+              </p>
             </div>
           ))}
         </div>
@@ -125,7 +124,11 @@ export function ProfileSection({
         {action ? <div className="shrink-0">{action}</div> : null}
       </CardHeader>
       <CardContent
-        className={cn('px-4 pb-4 sm:px-5 sm:pb-5', fillHeight && 'flex-1', contentClassName)}
+        className={cn(
+          'px-4 pb-4 sm:px-5 sm:pb-5',
+          fillHeight && 'flex-1',
+          contentClassName,
+        )}
       >
         {children}
       </CardContent>
@@ -167,18 +170,17 @@ export function ProfileInfoField({
         {label}
       </p>
       <div
-        className="min-w-0 flex-1 text-right text-sm font-medium leading-snug text-foreground sm:flex-none sm:text-left"
+        className="min-w-0 flex-1 text-end text-sm font-medium leading-snug text-foreground sm:flex-none sm:text-start"
         dir={dir}
       >
-        {children ?? (
-          filled ? (
+        {children ??
+          (filled ? (
             <SoftTip label={value} className="justify-end sm:justify-start">
               <span className="break-words">{value}</span>
             </SoftTip>
           ) : (
             '—'
-          )
-        )}
+          ))}
       </div>
     </div>
   );
@@ -245,7 +247,9 @@ export function ProfileSoftRow({
       <div className="min-w-0">
         <TruncatedText className="font-medium">{title}</TruncatedText>
         {detail ? (
-          <TruncatedText className="text-xs text-muted-foreground">{detail}</TruncatedText>
+          <TruncatedText className="text-xs text-muted-foreground">
+            {detail}
+          </TruncatedText>
         ) : null}
       </div>
       {children}

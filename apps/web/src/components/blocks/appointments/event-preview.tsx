@@ -268,7 +268,7 @@ export function EventPreview({
               <Row
                 icon={<IconTime className="size-3.5" />}
                 label={t.queue.estimatedWait}
-                value={formatWaitingMins(waitingMins)}
+                value={formatWaitingMins(waitingMins, false, t)}
               />
             ) : null}
           </div>

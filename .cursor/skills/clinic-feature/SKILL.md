@@ -15,7 +15,7 @@ description: >-
 2. Types - `packages/types`
 3. Nest - `apps/api/src/modules/<feature>/`
 4. Web service - `apps/web/src/services/<feature>.service.ts`
-5. Hooks - `apps/web/src/hooks/use-<feature>.ts`
+5. Hooks - `apps/web/src/hooks/api/use-<feature>.ts`
 6. UI - `apps/web/src/components/blocks/<feature>/`
 7. Route - `apps/web/src/app/(dashboard|auth)/...` (+ practitioner group when it exists) and `constants/routes.ts`
 

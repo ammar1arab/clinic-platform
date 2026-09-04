@@ -1,21 +1,25 @@
-import { getTranslations, type Translations } from '@/i18n';
+import { translations, type Translations } from '@/i18n';
 export function elapsedMinutesSince(
   dateString: string | Date | null | undefined,
   now: Date = new Date(),
 ) {
   if (!dateString) return 0;
-  return Math.max(0, Math.floor((now.getTime() - new Date(dateString).getTime()) / 60_000));
+  return Math.max(
+    0,
+    Math.floor((now.getTime() - new Date(dateString).getTime()) / 60_000),
+  );
 }
 
 export function formatWaitingMins(
   mins: number | null | undefined,
   compact = false,
-  t: Translations = getTranslations(),
+  t: Translations = translations.en,
 ): string {
   if (mins == null || Number.isNaN(mins)) return '—';
   const m = Math.max(0, Math.floor(mins));
   if (m < 1) return t.common.lessThanOneMin;
-  if (m < 60) return compact ? `${m}${t.common.minsCompact}` : `${m} ${t.common.mins}`;
+  if (m < 60)
+    return compact ? `${m}${t.common.minsCompact}` : `${m} ${t.common.mins}`;
   const h = Math.floor(m / 60);
   const rem = m % 60;
   const hLabel = t.common.hours;

@@ -61,11 +61,21 @@ export function createCrudHooks<TEntity, TCreate, TUpdate>(
     const entityName = t.entities[entity];
     const userLabels = config.labels?.(t) ?? {};
     return {
-      created: userLabels.created ?? t.mutations.created.replace('{entity}', entityName),
-      updated: userLabels.updated ?? t.mutations.updated.replace('{entity}', entityName),
-      removed: userLabels.removed ?? t.mutations.removed.replace('{entity}', entityName),
-      deactivated: userLabels.deactivated ?? t.mutations.deactivated.replace('{entity}', entityName),
-      reactivated: userLabels.reactivated ?? t.mutations.reactivated.replace('{entity}', entityName),
+      created:
+        userLabels.created ??
+        t.mutations.created.replace('{entity}', entityName),
+      updated:
+        userLabels.updated ??
+        t.mutations.updated.replace('{entity}', entityName),
+      removed:
+        userLabels.removed ??
+        t.mutations.removed.replace('{entity}', entityName),
+      deactivated:
+        userLabels.deactivated ??
+        t.mutations.deactivated.replace('{entity}', entityName),
+      reactivated:
+        userLabels.reactivated ??
+        t.mutations.reactivated.replace('{entity}', entityName),
     };
   }
 

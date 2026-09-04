@@ -1,15 +1,10 @@
 'use client';
 
+import { useLanguage } from '@/providers/language-provider';
+
 import { useState, type ComponentProps, type SyntheticEvent } from 'react';
-import {
-  AvatarImage,
-  EntityAvatar,
-} from './entity-avatar';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui';
+import { AvatarImage, EntityAvatar } from './entity-avatar';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui';
 import { resolveAvatarUrl } from '@/lib/avatars';
 
 const ROW_CONTROL =
@@ -29,7 +24,9 @@ function suppressClickThrough() {
   const until = Date.now() + 500;
   const block = (e: Event) => {
     if (Date.now() > until) {
-      LISTENERS.forEach((type) => document.removeEventListener(type, block, true));
+      LISTENERS.forEach((type) =>
+        document.removeEventListener(type, block, true),
+      );
       return;
     }
     const target = e.target;
@@ -44,13 +41,15 @@ function suppressClickThrough() {
   };
   LISTENERS.forEach((type) => document.addEventListener(type, block, true));
   window.setTimeout(() => {
-    LISTENERS.forEach((type) => document.removeEventListener(type, block, true));
+    LISTENERS.forEach((type) =>
+      document.removeEventListener(type, block, true),
+    );
   }, 500);
 }
 
 export function ImagePreview({
   src,
-  alt = 'Preview',
+  alt,
   open,
   onOpenChange,
 }: {
@@ -59,6 +58,8 @@ export function ImagePreview({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useLanguage();
+  const resolvedAlt = alt ?? t.ui.preview;
   if (!src) return null;
 
   return (
@@ -77,9 +78,15 @@ export function ImagePreview({
         onPointerDownOutside={(e) => e.stopPropagation()}
         onInteractOutside={(e) => e.stopPropagation()}
       >
-        <DialogTitle className="sr-only">{alt}</DialogTitle>
+        <DialogTitle className="sr-only">{resolvedAlt}</DialogTitle>
         <div className="relative mx-auto aspect-square w-[min(calc(100vw-4rem),20rem)] overflow-hidden rounded-full bg-background ring-4 ring-background shadow-xl">
-          <AvatarImage src={src} alt={alt} fill sizes="20rem" priority />
+          <AvatarImage
+            src={src}
+            alt={resolvedAlt}
+            fill
+            sizes="20rem"
+            priority
+          />
         </div>
       </DialogContent>
     </Dialog>
@@ -87,6 +94,7 @@ export function ImagePreview({
 }
 
 export function PreviewableAvatar(props: ComponentProps<typeof EntityAvatar>) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   return (
@@ -94,7 +102,7 @@ export function PreviewableAvatar(props: ComponentProps<typeof EntityAvatar>) {
       <button
         type="button"
         data-no-row-nav=""
-        aria-label={`Preview ${props.alt}`}
+        aria-label={t.ui.previewName.replace('{name}', props.alt)}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();

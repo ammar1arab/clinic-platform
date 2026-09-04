@@ -1,5 +1,7 @@
 'use client';
 
+import { useLanguage } from '@/providers/language-provider';
+
 import { Input } from '@/components/ui';
 import { FormField } from '../forms/form-field';
 import { cn } from '@/lib/utils';
@@ -19,7 +21,6 @@ type Props = {
   arabicError?: string;
 };
 
-
 export function BilingualNameFields({
   name,
   nameAr,
@@ -33,19 +34,27 @@ export function BilingualNameFields({
   englishError,
   arabicError,
 }: Props) {
+  const { t } = useLanguage();
   return (
     <div className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2', className)}>
-      <FormField label="Name (English)" htmlFor={nameId} required={required} error={englishError}>
+      <FormField
+        label={t.ui.nameEnglish}
+        htmlFor={nameId}
+        required={required}
+        error={englishError}
+      >
         <Input
           id={nameId}
+          dir="ltr"
+          lang="en"
           maxLength={maxLength}
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
-          placeholder="English name"
+          placeholder={t.ui.englishName}
           autoComplete="off"
         />
       </FormField>
-      <FormField label="Name (Arabic)" htmlFor={nameArId} error={arabicError}>
+      <FormField label={t.ui.nameArabic} htmlFor={nameArId} error={arabicError}>
         <Input
           id={nameArId}
           dir="rtl"
@@ -53,17 +62,18 @@ export function BilingualNameFields({
           maxLength={maxLength}
           value={nameAr}
           onChange={(e) => onNameArChange(e.target.value)}
-          placeholder="الاسم بالعربي"
+          placeholder={t.ui.arabicName}
           autoComplete="off"
-          className="text-right"
+          className="text-start"
         />
       </FormField>
     </div>
   );
 }
 
-
-export function optionalArabicName(value: string | undefined | null): string | undefined {
+export function optionalArabicName(
+  value: string | undefined | null,
+): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
 }

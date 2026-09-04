@@ -11,18 +11,25 @@ import { ConfirmProvider } from './confirm-provider';
 import { SidebarProvider } from './sidebar-provider';
 import { LanguageProvider } from './language-provider';
 
-export { ThemeProvider, QueryProvider, AuthProvider, ConfirmProvider, SidebarProvider, LanguageProvider };
+export {
+  ThemeProvider,
+  QueryProvider,
+  AuthProvider,
+  ConfirmProvider,
+  SidebarProvider,
+  LanguageProvider,
+};
 export { useAuth } from './auth-provider';
 export { useConfirm } from './confirm-provider';
 export { useLanguage } from './language-provider';
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <QueryProvider>
-          <AuthProvider>
-            <LanguageProvider>
+    <LanguageProvider>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <QueryProvider>
+            <AuthProvider>
               <SidebarProvider>
                 <ConfirmProvider>
                   <TooltipProvider>
@@ -32,10 +39,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
                   </TooltipProvider>
                 </ConfirmProvider>
               </SidebarProvider>
-            </LanguageProvider>
-          </AuthProvider>
-        </QueryProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+            </AuthProvider>
+          </QueryProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
+    </LanguageProvider>
   );
 }

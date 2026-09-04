@@ -19,7 +19,7 @@ import {
 } from '@/components/ui';
 import { ButtonSpinner } from '@/components/primitives/states/button-spinner';
 import { TruncatedText } from '@/components/primitives';
-import { useLanguage } from '@/providers';
+import { useLanguage } from '@/providers/language-provider';
 
 export type TwoStepDeleteTarget = { id: string; name: string } | null;
 
@@ -91,7 +91,9 @@ export function TwoStepDeleteDialogs({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => onStep2OpenChange(false)}>{t.common.cancel}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => onStep2OpenChange(false)}>
+              {t.common.cancel}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={onConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

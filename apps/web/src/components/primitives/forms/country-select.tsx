@@ -1,12 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import {
-  getCountries,
-  type Country,
-} from 'react-phone-number-input';
-import en from 'react-phone-number-input/locale/en.json';
-import ar from 'react-phone-number-input/locale/ar.json';
+import { getCountries, type Country } from 'react-phone-number-input';
 import flags from 'react-phone-number-input/flags';
 import {
   Input,
@@ -16,7 +11,8 @@ import {
 } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { IconCheck, IconChevronDown, IconSearch } from '@/constants/icons';
-import { useLanguage } from '@/providers';
+import { getTranslations } from '@/i18n';
+import { useLanguage } from '@/providers/language-provider';
 
 export type CountryCode = Country;
 
@@ -25,9 +21,14 @@ type CountryOption = {
   label: string;
 };
 
-export function countryLabel(code: string | null | undefined, lang?: string): string | null {
+export function countryLabel(
+  code: string | null | undefined,
+  lang?: string,
+): string | null {
   if (!code) return null;
-  const labels = lang === 'ar' ? (ar as Record<string, string>) : (en as Record<string, string>);
+  const labels: Record<string, string> = getTranslations(
+    lang ?? 'en',
+  ).countries;
   return labels[code] ?? code;
 }
 
@@ -71,14 +72,14 @@ export function CountrySelect({
   const resolvedPlaceholder = placeholder ?? t.common.selectCountry;
 
   const countryOptions: CountryOption[] = useMemo(() => {
-    const labels = lang === 'ar' ? (ar as Record<string, string>) : (en as Record<string, string>);
+    const labels: Record<string, string> = t.countries;
     return getCountries()
       .map((code) => ({
         value: code,
         label: labels[code] ?? code,
       }))
-      .sort((a, b) => a.label.localeCompare(b.label, lang === 'ar' ? 'ar' : 'en'));
-  }, [lang]);
+      .sort((a, b) => a.label.localeCompare(b.label, lang));
+  }, [lang, t]);
 
   const selected = useMemo(
     () => countryOptions.find((option) => option.value === value),
@@ -124,9 +125,14 @@ export function CountrySelect({
               </span>
             </>
           ) : (
-            <span className="min-w-0 flex-1 truncate text-start">{resolvedPlaceholder}</span>
+            <span className="min-w-0 flex-1 truncate text-start">
+              {resolvedPlaceholder}
+            </span>
           )}
-          <IconChevronDown className="size-3.5 shrink-0 opacity-60" aria-hidden />
+          <IconChevronDown
+            className="size-3.5 shrink-0 opacity-60"
+            aria-hidden
+          />
         </button>
       </PopoverTrigger>
 
@@ -183,8 +189,12 @@ export function CountrySelect({
                   )}
                 >
                   <Flag country={option.value} title={option.label} />
-                  <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                  {active ? <IconCheck className="size-3.5 shrink-0 text-primary" /> : null}
+                  <span className="min-w-0 flex-1 truncate">
+                    {option.label}
+                  </span>
+                  {active ? (
+                    <IconCheck className="size-3.5 shrink-0 text-primary" />
+                  ) : null}
                 </button>
               );
             })
