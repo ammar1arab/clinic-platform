@@ -12,6 +12,7 @@ export { EmptyState } from './states/empty';
 export { AvatarImage, EntityAvatar } from './display/entity-avatar';
 export { FormActions } from './forms/form-actions';
 export { FormField } from './forms/form-field';
+export { IconCard, type IconCardProps } from './display/icon-card';
 export { IconWell, type IconWellAccent } from './display/icon-well';
 export { ImagePreview, PreviewableAvatar, isRowControlClick } from './display/image-preview';
 export { InlineLoading, PageLoadingState, SectionLoader, Spinner, LoadingState } from './states/loading';

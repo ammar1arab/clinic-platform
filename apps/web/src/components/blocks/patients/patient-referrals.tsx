@@ -148,14 +148,14 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                           {ref.status}
                         </Badge>
                       </div>
-                      <p className="break-words text-xs text-muted-foreground">
+                      <p className="wrap-break-word text-xs text-muted-foreground">
                         {formatDateTime(ref.createdAt)}
                         <br />
                         {ref.fromDoctor?.name ?? t?.referral?.doctor} →{' '}
                         {ref.toDoctor?.name ?? t?.referral?.doctor}
                       </p>
                       {ref.appointment?.scheduledAt ? (
-                        <p className="break-words text-xs text-muted-foreground">
+                        <p className="wrap-break-word text-xs text-muted-foreground">
                           {t?.referral?.visit} {formatDateTime(ref.appointment.scheduledAt)}
                         </p>
                       ) : null}
@@ -185,11 +185,11 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                       </div>
                     ) : null}
                   </div>
-                  <p className="break-words whitespace-pre-wrap text-muted-foreground">
+                  <p className="wrap-break-word whitespace-pre-wrap text-muted-foreground">
                     {ref.reason}
                   </p>
                   {ref.opinion ? (
-                    <p className="break-words rounded-lg bg-background/70 px-2.5 py-2 text-xs whitespace-pre-wrap ring-1 ring-border/50">
+                    <p className="wrap-break-word rounded-lg bg-background/70 px-2.5 py-2 text-xs whitespace-pre-wrap ring-1 ring-border/50">
                       <span className="font-medium text-foreground">
                         {t?.referral?.opinion}:{' '}
                       </span>

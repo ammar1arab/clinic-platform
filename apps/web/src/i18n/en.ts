@@ -772,6 +772,8 @@ export const en = {
     lockedNote: 'Locked note (48h reached)',
   },
   reports: {
+    pdfPrintOpened: 'Print dialog opened - choose Save as PDF',
+    downloadedPatients: 'Downloaded {count} patients',
     title: 'Reports & Analytics',
     totalRevenue: 'Total Revenue',
     completedVisits: 'Completed Visits',

@@ -52,7 +52,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
-  preventClose = false,
+  preventClose = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
@@ -65,7 +65,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'fixed top-1/2 start-1/2 z-50 flex w-[min(100%-1.5rem,28rem)] max-h-[min(90dvh,calc(100dvh-1.5rem))] -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-x-hidden overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:w-full sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+          'fixed top-1/2 inset-s-1/2 z-50 flex w-[min(100%-1.5rem,28rem)] max-h-[min(90dvh,calc(100dvh-1.5rem))] -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-x-hidden overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:w-full sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           className,
         )}
         {...(preventClose && {

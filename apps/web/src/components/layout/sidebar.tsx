@@ -8,7 +8,7 @@ import { ROUTES } from '@/constants/routes';
 import { schedulePath } from '@/components/blocks/appointments/schedule-nav';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
-import { IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
+import { IconCard, IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
 import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
 import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
 import { useLanguage } from '@/providers';

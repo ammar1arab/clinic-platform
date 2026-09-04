@@ -1,12 +1,5 @@
-import {
-  Card,
-  CardContent,
-  Skeleton,
-} from '@/components/ui';
-import {
-  IconWell,
-  type IconWellAccent,
-} from '@/components/primitives';
+import { Skeleton } from '@/components/ui';
+import { IconCard, type IconWellAccent } from '@/components/primitives';
 import type { LucideIcon } from '@/constants/icons';
 
 interface Props {
@@ -25,22 +18,21 @@ export function KpiCardBlock({
   isLoading = false,
 }: Props) {
   return (
-    <Card className="transition-all duration-200 cursor-default">
-      <CardContent className="flex flex-col gap-3 p-4 md:p-5">
-        <IconWell icon={icon} size="md" accent={accent} />
-        <div className="min-w-0 space-y-1">
-          {isLoading || value === undefined || value === null ? (
-            <Skeleton className="h-7 w-16 rounded-md" />
-          ) : (
-            <p className="font-heading text-2xl font-semibold tracking-tight tabular-nums leading-none">
-              {value}
-            </p>
-          )}
-          <p className="truncate text-xs font-medium text-muted-foreground">
-            {label}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+    <IconCard
+      icon={icon}
+      accent={accent}
+      title={
+        isLoading || value === undefined || value === null ? (
+          <Skeleton className="h-7 w-16 rounded-md mb-1" />
+        ) : (
+          <span className="font-heading text-2xl font-semibold tracking-tight tabular-nums leading-none">
+            {value}
+          </span>
+        )
+      }
+      description={label}
+      orientation="horizontal"
+      className="cursor-default border border-border"
+    />
   );
 }

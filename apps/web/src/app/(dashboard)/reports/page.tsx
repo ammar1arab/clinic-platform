@@ -60,30 +60,30 @@ export default function ReportsPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <ReportCard
           icon={IconPerson}
-          title={t?.reports?.patientMedical ?? 'Patient medical'}
-          description={t?.reports?.patientMedicalDesc ?? 'Visit history and profile for one patient.'}
+          title={t?.reports?.patientMedical}
+          description={t?.reports?.patientMedicalDesc}
           onClick={() => setPatientModalOpen(true)}
         />
 
         <ReportCard
           icon={IconPatients}
-          title={t?.reports?.patientsDirectory ?? 'Patients directory'}
-          description={t?.reports?.patientsDirectoryDesc ?? 'Export the active patients roster (A–Z).'}
+          title={t?.reports?.patientsDirectory}
+          description={t?.reports?.patientsDirectoryDesc}
           onClick={() => setDirectoryModalOpen(true)}
         />
 
         <ReportCard
           icon={IconReferral}
-          title={t?.reports?.referralsConsultations ?? 'Referrals & consultations'}
-          description={t?.reports?.referralsConsultationsDesc ?? 'Referrals in a date range. Optionally filter by patient.'}
+          title={t?.reports?.referralsConsultations}
+          description={t?.reports?.referralsConsultationsDesc}
           onClick={() => setReferralsModalOpen(true)}
         />
 
         {canFinance && (
           <ReportCard
             icon={IconPayment}
-            title={t?.reports?.finance ?? 'Finance'}
-            description={t?.reports?.financeDesc ?? 'Revenue, unpaid balances, by payment method and doctor.'}
+            title={t?.reports?.finance}
+            description={t?.reports?.financeDesc}
             onClick={() => setFinanceModalOpen(true)}
           />
         )}
@@ -116,8 +116,8 @@ export default function ReportsPage() {
           );
           toast.success(
             fmt === 'pdf'
-              ? 'Print dialog opened - choose Save as PDF'
-              : `Downloaded ${patients.length} patients`,
+              ? t.reports.pdfPrintOpened
+              : t.reports.downloadedPatients.replace('{count}', patients.length.toString()),
           );
         }}
       />

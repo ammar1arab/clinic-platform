@@ -767,6 +767,8 @@ export const ar: Translations = {
     lockedNote: 'ملاحظة مقفلة (تم الوصول إلى 48 ساعة)',
   },
   reports: {
+    pdfPrintOpened: 'تم فتح نافذة الطباعة - اختر حفظ كملف PDF',
+    downloadedPatients: 'تم تنزيل {count} مرضى',
     title: 'التقارير والإحصائيات',
     totalRevenue: 'إجمالي الإيرادات',
     completedVisits: 'الزيارات المكتملة',

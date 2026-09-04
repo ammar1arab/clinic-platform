@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ROUTES } from '@/constants/routes';
 import {
+  IconCard,
   IconWell,
   type IconWellAccent,
 } from '@/components/primitives';
@@ -85,20 +86,17 @@ export default function SettingsPage() {
     <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
       <div className="flex flex-col gap-2.5">
         {settingsLinks.map(({ href, title, description, icon: Icon, accent }) => (
-          <Link
+          <IconCard
             key={href}
             href={href}
-            className="card-aura group flex w-full items-center gap-4 rounded-xl bg-card px-4 py-3.5 transition-colors hover:border-primary/40"
-          >
-            <IconWell icon={Icon} size="lg" accent={accent} />
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold tracking-tight">{title}</span>
-              <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                {description}
-              </span>
-            </span>
-            <ChevronIcon className="size-4 shrink-0 text-muted-foreground/70 transition-transform duration-300 group-hover:text-foreground" />
-          </Link>
+            title={title}
+            description={description}
+            icon={Icon}
+            accent={accent}
+            endContent={
+              <ChevronIcon className="size-4 text-muted-foreground/70 transition-transform duration-300 group-hover:text-foreground" />
+            }
+          />
         ))}
       </div>
     </div>
