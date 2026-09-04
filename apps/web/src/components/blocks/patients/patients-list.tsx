@@ -92,17 +92,17 @@ export function PatientsList({
   const rowMenu = (p: Patient, fullName: string) => (
     <RowActionsMenu
       items={[
-        { label: t?.common?.view ?? 'View', icon: IconView, href: `/patients/${p.id}` },
-        { label: t?.common?.edit ?? 'Edit', icon: IconEdit, href: `/patients/${p.id}/edit` },
+        { label: t?.common?.view, icon: IconView, href: `/patients/${p.id}` },
+        { label: t?.common?.edit, icon: IconEdit, href: `/patients/${p.id}/edit` },
         {
-          label: p.isActive ? (t?.common?.deactivate ?? 'Deactivate') : (t?.common?.reactivate ?? 'Reactivate'),
+          label: p.isActive ? t?.common?.deactivate : t?.common?.reactivate,
           icon: p.isActive ? IconDeactivate : IconActivate,
           disabled: toggleStatus.isPending,
           onSelect: () =>
             toggleStatus.mutate({ id: p.id, isActive: !p.isActive }),
         },
         {
-          label: t?.common?.delete ?? 'Delete',
+          label: t?.common?.delete,
           icon: IconDelete,
           variant: 'destructive',
           onSelect: () => del.ask({ id: p.id, name: fullName }),
@@ -120,11 +120,11 @@ export function PatientsList({
       <TableFrame>
         <EmptyState
           icon={IconPatients}
-          title={hasActiveFilters ? (t?.patient?.noMatches ?? 'No matches') : (t?.patient?.noPatients ?? 'No patients')}
+          title={hasActiveFilters ? t?.patient?.noMatches : t?.patient?.noPatients}
           description={
             hasActiveFilters
-              ? (t?.patient?.noMatchesDesc ?? 'Try adjusting your search or filters.')
-              : (t?.patient?.noPatientsDesc ?? 'Create a patient to start booking visits and tracking care.')
+              ? t?.patient?.noMatchesDesc
+              : t?.patient?.noPatientsDesc
           }
           action={hasActiveFilters ? undefined : emptyAction}
         />
@@ -139,15 +139,15 @@ export function PatientsList({
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[20%]">{t?.patient?.patient ?? 'Patient'}</TableHead>
-                <TableHead className="hidden lg:table-cell w-[12%]">{t?.patient?.nationalId ?? 'National ID'}</TableHead>
-                <TableHead className="w-[13%]">{t?.patient?.phone ?? 'Phone'}</TableHead>
-                <TableHead className="w-[8%]">{t?.patient?.gender ?? 'Gender'}</TableHead>
-                <TableHead className="w-[8%]">{t?.patient?.age ?? 'Age'}</TableHead>
-                <TableHead className="hidden lg:table-cell w-[14%]">{t?.patient?.practitioner ?? 'Practitioner'}</TableHead>
-                <TableHead className="w-[8%]">{t?.patient?.sessions ?? 'Sessions'}</TableHead>
-                <TableHead className="hidden xl:table-cell w-[11%]">{t?.patient?.lastVisit ?? 'Last Visit'}</TableHead>
-                <TableHead className="w-[8%]">{t?.common?.active ?? 'Active'}</TableHead>
+                <TableHead className="w-[20%]">{t?.patient?.patient}</TableHead>
+                <TableHead className="hidden lg:table-cell w-[12%]">{t?.patient?.nationalId}</TableHead>
+                <TableHead className="w-[13%]">{t?.patient?.phone}</TableHead>
+                <TableHead className="w-[8%]">{t?.patient?.gender}</TableHead>
+                <TableHead className="w-[8%]">{t?.patient?.age}</TableHead>
+                <TableHead className="hidden lg:table-cell w-[14%]">{t?.patient?.practitioner}</TableHead>
+                <TableHead className="w-[8%]">{t?.patient?.sessions}</TableHead>
+                <TableHead className="hidden xl:table-cell w-[11%]">{t?.patient?.lastVisit}</TableHead>
+                <TableHead className="w-[8%]">{t?.common?.active}</TableHead>
                 <TableHead className="w-[8%]" />
               </TableRow>
             </TableHeader>
@@ -176,7 +176,7 @@ export function PatientsList({
                         <span className="flex min-w-0 items-center gap-1.5 font-medium">
                           <TruncatedText className="font-medium">{fullName}</TruncatedText>
                           {p.isLoyal && (
-                            <SoftTip label={t?.patient?.loyalPatient ?? "Loyal patient"}>
+                            <SoftTip label={t?.patient?.loyalPatient}>
                               <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
                             </SoftTip>
                           )}
@@ -270,7 +270,7 @@ export function PatientsList({
                   <div className="flex min-w-0 items-center gap-1.5 font-medium">
                     <TruncatedText className="font-medium">{fullName}</TruncatedText>
                     {p.isLoyal && (
-                      <SoftTip label={t?.patient?.loyalPatient ?? "Loyal patient"}>
+                      <SoftTip label={t?.patient?.loyalPatient}>
                         <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
                       </SoftTip>
                     )}
@@ -322,10 +322,10 @@ export function PatientsList({
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs">
-                <MetaStat label={t?.patient?.nationalId ?? "National ID"} value={p.nationalId ?? '—'} />
-                <MetaStat label={t?.patient?.practitioner ?? "Practitioner"} value={p.primaryDoctorName ?? '—'} />
-                <MetaStat label={t?.patient?.sessions ?? "Sessions"} value={String(p.totalSessions)} />
-                <MetaStat label={t?.patient?.lastVisit ?? "Last visit"} value={visit(p.lastVisit)} />
+                <MetaStat label={t?.patient?.nationalId} value={p.nationalId ?? '—'} />
+                <MetaStat label={t?.patient?.practitioner} value={p.primaryDoctorName ?? '—'} />
+                <MetaStat label={t?.patient?.sessions} value={String(p.totalSessions)} />
+                <MetaStat label={t?.patient?.lastVisit} value={visit(p.lastVisit)} />
               </div>
             </div>
           );
@@ -351,9 +351,9 @@ export function PatientsList({
           deleteMutation.mutate(del.step2.id, { onSuccess: del.clear });
         }}
         isPending={deleteMutation.isPending}
-        warning={t?.patient?.deleteWarning1 ?? "This permanently removes the patient and their visit history. This cannot be undone. To just hide the patient, use Deactivate instead."}
-        finalWarning={t?.patient?.deleteWarning2 ?? "This permanently deletes the patient and every appointment linked to them. This action cannot be undone."}
-        confirmLabel={t?.patient?.deleteConfirm ?? "Yes, delete patient"}
+        warning={t?.patient?.deleteWarning1}
+        finalWarning={t?.patient?.deleteWarning2}
+        confirmLabel={t?.patient?.deleteConfirm}
       />
     </>
   );

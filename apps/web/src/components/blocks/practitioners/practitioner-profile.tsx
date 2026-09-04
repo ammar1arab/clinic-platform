@@ -5,7 +5,6 @@ import {
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui';
 import {
-  languageLabelList,
   LANGUAGE_BADGE_VARIANT,
   getPractitionerEmploymentLabels,
   PRACTITIONER_EMPLOYMENT_VARIANT,
@@ -18,9 +17,8 @@ import {
   PreviewableAvatar,
   RowActionsMenu,
   } from '@/components/primitives';
-import { genderLabel } from '@/constants/patient';
 import { TwoStepDeleteDialogs,
-  useTwoStepDelete } from '@/components/primitives';;
+  useTwoStepDelete } from '@/components/primitives';
 import {
   ProfileEmpty,
   ProfileHero,
@@ -30,7 +28,7 @@ import {
   ProfileShell,
   ProfileSoftRow,
   ProfileStatusBadge
-} from '@/components/primitives';;
+} from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import {
   useDeletePractitioner,

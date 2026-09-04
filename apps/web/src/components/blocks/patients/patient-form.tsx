@@ -153,7 +153,7 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Personal Information</CardTitle>
+          <CardTitle className="text-sm">{t?.patient?.personalInfo}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField error={errors.imageUrl?.message} className="sm:col-span-2">
@@ -164,36 +164,36 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               }
               fallbackLabel={`${watch('firstNameEn') || 'P'}${watch('lastNameEn') || ''}`}
               disabled={isPending}
-              alt="Patient photo"
+              alt={t?.patient?.patientPhoto}
             />
           </FormField>
-          <FormField label="First Name (English)" required error={errors.firstNameEn?.message}>
-            <Input maxLength={50} {...register('firstNameEn')} placeholder="First name" />
+          <FormField label={t?.patient?.firstNameEn} required error={errors.firstNameEn?.message}>
+            <Input maxLength={50} {...register('firstNameEn')} placeholder={t?.patient?.firstNamePlaceholder} />
           </FormField>
-          <FormField label="Last Name (English)" required error={errors.lastNameEn?.message}>
-            <Input maxLength={50} {...register('lastNameEn')} placeholder="Last name" />
+          <FormField label={t?.patient?.lastNameEn} required error={errors.lastNameEn?.message}>
+            <Input maxLength={50} {...register('lastNameEn')} placeholder={t?.patient?.lastNamePlaceholder} />
           </FormField>
-          <FormField label="First Name (Arabic)" error={errors.firstNameAr?.message}>
+          <FormField label={t?.patient?.firstNameAr} error={errors.firstNameAr?.message}>
             <Input
               maxLength={50}
               dir="rtl"
               lang="ar"
-              className="text-right"
+              className="text-end"
               placeholder="الاسم الأول"
               {...register('firstNameAr')}
             />
           </FormField>
-          <FormField label="Last Name (Arabic)" error={errors.lastNameAr?.message}>
+          <FormField label={t?.patient?.lastNameAr} error={errors.lastNameAr?.message}>
             <Input
               maxLength={50}
               dir="rtl"
               lang="ar"
-              className="text-right"
+              className="text-end"
               placeholder="اسم العائلة"
               {...register('lastNameAr')}
             />
           </FormField>
-          <FormField label="Date of Birth" error={errors.dob?.message}>
+          <FormField label={t?.patient?.dateOfBirth} error={errors.dob?.message}>
             <Controller
               control={control}
               name="dob"
@@ -201,14 +201,14 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                 <DatePicker
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder="Select date"
+                  placeholder={t?.common?.selectDate}
                   withDropdown
                   toDate={new Date()}
                 />
               )}
             />
           </FormField>
-          <FormField label="Gender" error={errors.gender?.message}>
+          <FormField label={t?.common?.gender} error={errors.gender?.message}>
             <Controller
               control={control}
               name="gender"
@@ -218,10 +218,10 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                   onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select gender" />
+                    <SelectValue placeholder={t?.common?.selectGender} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_NONE}>{t?.common?.notSpecified || 'Not specified'}</SelectItem>
+                    <SelectItem value={FORM_NONE}>{t?.common?.notSpecified}</SelectItem>
                     {getGenders(t).map((g) => (
                       <SelectItem key={g.value} value={g.value}>
                         {t?.constants?.gender?.[g.value] ?? g.label}
@@ -237,10 +237,10 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Contact</CardTitle>
+          <CardTitle className="text-sm">{t?.patient?.contact}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Phone" error={errors.phone?.message} className="sm:col-span-2">
+          <FormField label={t?.patient?.phone} error={errors.phone?.message} className="sm:col-span-2">
             <Controller
               control={control}
               name="phone"
@@ -250,13 +250,13 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
             />
           </FormField>
           <FormField
-            label="Emergency Contact Name"
+            label={t?.patient?.emergencyContactName}
             error={errors.emergencyContactName?.message}
           >
             <Input maxLength={80} {...register('emergencyContactName')} />
           </FormField>
           <FormField
-            label="Emergency Contact Phone"
+            label={t?.patient?.emergencyContactPhone}
             error={errors.emergencyContactPhone?.message}
           >
             <Controller
@@ -267,24 +267,24 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               )}
             />
           </FormField>
-          <FormField label="Email" error={errors.email?.message}>
+          <FormField label={t?.patient?.email} error={errors.email?.message}>
             <Input type="email" maxLength={120} {...register('email')} />
           </FormField>
-          <FormField label="National ID" error={errors.nationalId?.message}>
+          <FormField label={t?.patient?.nationalId} error={errors.nationalId?.message}>
             <Input maxLength={20} {...register('nationalId')} />
           </FormField>
-          <FormField label="Address" error={errors.address?.message} className="sm:col-span-2">
-            <Textarea rows={2} maxLength={200} placeholder="Home address" {...register('address')} />
+          <FormField label={t?.patient?.address} error={errors.address?.message} className="sm:col-span-2">
+            <Textarea rows={2} maxLength={200} placeholder={t?.patient?.addressPlaceholder} {...register('address')} />
           </FormField>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Medical</CardTitle>
+          <CardTitle className="text-sm">{t?.patient?.medical}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Blood Type" error={errors.bloodType?.message}>
+          <FormField label={t?.patient?.bloodType} error={errors.bloodType?.message}>
             <Controller
               control={control}
               name="bloodType"
@@ -294,10 +294,10 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                   onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select blood type" />
+                    <SelectValue placeholder={t?.patient?.selectBloodType} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_NONE}>Not specified</SelectItem>
+                    <SelectItem value={FORM_NONE}>{t?.common?.notSpecified}</SelectItem>
                     {BLOOD_TYPES.map((b) => (
                       <SelectItem key={b} value={b}>
                         {b}
@@ -308,11 +308,11 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               )}
             />
           </FormField>
-          <FormField label="Allergies" error={errors.allergies?.message} className="sm:col-span-2">
+          <FormField label={t?.patient?.allergies} error={errors.allergies?.message} className="sm:col-span-2">
             <Textarea
               rows={2}
               maxLength={500}
-              placeholder="Known allergies, if any"
+              placeholder={t?.patient?.allergiesPlaceholder}
               {...register('allergies')}
             />
           </FormField>
@@ -321,14 +321,14 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Billing defaults</CardTitle>
+          <CardTitle className="text-sm">{t?.patient?.billingDefaults}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
-              label="Package"
+              label={t?.patient?.packages}
               error={errors.packageId?.message}
               className="sm:col-span-2"
-              hint="Applied automatically when booking an appointment for this patient."
+              hint={t?.patient?.packageHint}
             >
               <Controller
                 control={control}
@@ -339,10 +339,10 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                     onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="None — optional" />
+                      <SelectValue placeholder={t?.common?.optional} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={FORM_NONE}>None</SelectItem>
+                      <SelectItem value={FORM_NONE}>{t?.common?.none}</SelectItem>
                       {activePackages.map((pkg) => (
                         <SelectItem key={pkg.id} value={pkg.id}>
                           {pkg.name}
@@ -355,7 +355,7 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               />
             </FormField>
           <FormField
-            label="Promocode"
+            label={t?.patient?.promocode}
             error={errors.discountCodeId?.message}
             className="sm:col-span-2"
           >
@@ -368,10 +368,10 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
                   onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None — optional" />
+                    <SelectValue placeholder={t?.common?.optional} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_NONE}>None</SelectItem>
+                    <SelectItem value={FORM_NONE}>{t?.common?.none}</SelectItem>
                     {activeCodes.map((code) => (
                       <SelectItem key={code.id} value={code.id}>
                         {code.code} ·{' '}
@@ -391,7 +391,7 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
       <FormActions
         onCancel={onCancel}
         pending={isPending}
-        submitLabel={isEdit ? 'Save Changes' : 'Create Patient'}
+        submitLabel={isEdit ? t?.common?.saveChanges : t?.patient?.createPatient}
       />
     </form>
   );

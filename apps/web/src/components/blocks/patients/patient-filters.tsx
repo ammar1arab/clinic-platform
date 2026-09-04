@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import {
   Button,
@@ -47,6 +48,36 @@ export type PatientFilterState = {
   sort: string;
 };
 
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  placeholder,
+  children,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  children: ReactNode;
+}) {
+  const { t } = useLanguage();
+  const anyText = placeholder ?? t?.common?.any;
+  return (
+    <FormField label={label} labelClassName="text-xs">
+      <Select value={value || FORM_ANY} onValueChange={(v) => onChange(v === FORM_ANY ? '' : v)}>
+        <SelectTrigger className="h-8 w-full rounded-lg">
+          <SelectValue placeholder={anyText} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={FORM_ANY}>{anyText}</SelectItem>
+          {children}
+        </SelectContent>
+      </Select>
+    </FormField>
+  );
+}
+
 type Props = {
   values: PatientFilterState;
   onChange: (patch: Partial<PatientFilterState>) => void;
@@ -82,7 +113,7 @@ export function PatientFiltersBlock({
     <DirectoryToolbar
       search={values.search}
       onSearchChange={(search) => onChange({ search })}
-      searchPlaceholder={t?.common?.search ?? "Search by name, phone, ID, or email…"}
+      searchPlaceholder={t?.common?.search}
       actions={
         <>
           <DirectorySortMenu
@@ -92,13 +123,13 @@ export function PatientFiltersBlock({
           />
 
           <Popover>
-            <SoftTip label={t?.common?.filters ?? "Filters"}>
+            <SoftTip label={t?.common?.filters}>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  aria-label={t?.common?.filters ?? "Filters"}
+                  aria-label={t?.common?.filters}
                   className={cn(
                     DIRECTORY_ACTION_CLASS,
                     'border-border/70 bg-background/50',
@@ -106,7 +137,7 @@ export function PatientFiltersBlock({
                   )}
                 >
                   <IconFilters className="size-3.5 shrink-0 text-muted-foreground" />
-                  <span className="hidden font-semibold sm:inline">{t?.common?.filters ?? "Filters"}</span>
+                  <span className="hidden font-semibold sm:inline">{t?.common?.filters}</span>
                   {activeCount > 0 ? (
                     <Badge variant="info" className="ms-0 h-5 min-w-5 justify-center px-1 text-xs">
                       {activeCount}
@@ -122,16 +153,16 @@ export function PatientFiltersBlock({
               onFocusOutside={keepNestedPortals}
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{t?.common?.filters ?? "Filters"}</p>
+                <p className="text-sm font-medium">{t?.common?.filters}</p>
                 {activeCount > 0 ? (
                   <Button variant="ghost" size="xs" onClick={onReset}>
                     <IconClose className="size-3.5" />
-                    {t?.common?.clear ?? "Clear"}
+                    {t?.common?.clear}
                   </Button>
                 ) : null}
               </div>
 
-              <FormField label={t?.common?.status ?? "Status"} labelClassName="text-xs">
+              <FormField label={t?.common?.status} labelClassName="text-xs">
                 <Select
                   value={values.status}
                   onValueChange={(v) => onChange({ status: v })}
@@ -140,131 +171,95 @@ export function PatientFiltersBlock({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{t?.common?.allStatus ?? "All Status"}</SelectItem>
-                    <SelectItem value="active">{t?.common?.active ?? "Active"}</SelectItem>
-                    <SelectItem value="inactive">{t?.common?.inactive ?? "Inactive"}</SelectItem>
+                    <SelectItem value="all">{t?.common?.allStatus}</SelectItem>
+                    <SelectItem value="active">{t?.common?.active}</SelectItem>
+                    <SelectItem value="inactive">{t?.common?.inactive}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
 
-              <FormField label={t?.patient?.practitioner ?? t?.practitioner?.practitioner ?? "Practitioner"} labelClassName="text-xs">
-                <Select
-                  value={values.primaryDoctorId || FORM_ANY}
-                  onValueChange={(v) =>
-                    onChange({ primaryDoctorId: v === FORM_ANY ? '' : v })
-                  }
-                >
-                  <SelectTrigger className="h-8 w-full rounded-lg">
-                    <SelectValue placeholder={t?.common?.any ?? "Any"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={FORM_ANY}>{t?.common?.any ?? "Any"}</SelectItem>
-                    {staff?.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormField>
+              <FilterSelect
+                label={t?.patient?.practitioner ?? t?.practitioner?.practitioner}
+                value={values.primaryDoctorId}
+                onChange={(primaryDoctorId) => onChange({ primaryDoctorId })}
+              >
+                {staff?.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </FilterSelect>
 
-              <FormField label={t?.practitioner?.department ?? "Department"} labelClassName="text-xs">
-                <Select
-                  value={values.departmentId || FORM_ANY}
-                  onValueChange={(v) =>
-                    onChange({ departmentId: v === FORM_ANY ? '' : v })
-                  }
-                >
-                  <SelectTrigger className="h-8 w-full rounded-lg">
-                    <SelectValue placeholder={t?.common?.any ?? "Any"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={FORM_ANY}>{t?.common?.any ?? "Any"}</SelectItem>
-                    {departments?.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormField>
+              <FilterSelect
+                label={t?.practitioner?.department}
+                value={values.departmentId}
+                onChange={(departmentId) => onChange({ departmentId })}
+              >
+                {departments?.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.name}
+                  </SelectItem>
+                ))}
+              </FilterSelect>
 
               <div className="grid grid-cols-2 gap-3">
-                <FormField label={t?.common?.gender ?? "Gender"} labelClassName="text-xs">
-                  <Select
-                    value={values.gender || FORM_ANY}
-                    onValueChange={(v) =>
-                      onChange({ gender: v === FORM_ANY ? '' : v })
-                    }
-                  >
-                    <SelectTrigger className="h-8 w-full rounded-lg">
-                      <SelectValue placeholder={t?.common?.any ?? "Any"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={FORM_ANY}>{t?.common?.any ?? "Any"}</SelectItem>
-                      {getGenders(t).map((g) => (
-                        <SelectItem key={g.value} value={g.value}>
-                          {t?.constants?.gender?.[g.value] ?? g.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormField>
+                <FilterSelect
+                  label={t?.common?.gender}
+                  value={values.gender}
+                  onChange={(gender) => onChange({ gender })}
+                >
+                  {getGenders(t).map((g) => (
+                    <SelectItem key={g.value} value={g.value}>
+                      {t?.constants?.gender?.[g.value] ?? g.label}
+                    </SelectItem>
+                  ))}
+                </FilterSelect>
 
-                <FormField label={t?.patient?.bloodType ?? "Blood Type"} labelClassName="text-xs">
-                  <Select
-                    value={values.bloodType || FORM_ANY}
-                    onValueChange={(v) =>
-                      onChange({ bloodType: v === FORM_ANY ? '' : v })
-                    }
-                  >
-                    <SelectTrigger className="h-8 w-full rounded-lg">
-                      <SelectValue placeholder={t?.common?.any ?? "Any"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={FORM_ANY}>{t?.common?.any ?? "Any"}</SelectItem>
-                      {BLOOD_TYPES.map((b) => (
-                        <SelectItem key={b} value={b}>
-                          {b}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormField>
+                <FilterSelect
+                  label={t?.patient?.bloodType}
+                  value={values.bloodType}
+                  onChange={(bloodType) => onChange({ bloodType })}
+                >
+                  {BLOOD_TYPES.map((b) => (
+                    <SelectItem key={b} value={b}>
+                      {b}
+                    </SelectItem>
+                  ))}
+                </FilterSelect>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <FormField label={t?.patient?.visitFrom ?? "Visit from"} labelClassName="text-xs">
+                <FormField label={t?.patient?.visitFrom} labelClassName="text-xs">
                   <DatePicker
                     value={values.visitFrom}
                     onChange={(v) => onChange({ visitFrom: v })}
-                    placeholder={t?.common?.from ?? "From"}
+                    placeholder={t?.common?.from}
                   />
                 </FormField>
-                <FormField label={t?.patient?.visitTo ?? "Visit to"} labelClassName="text-xs">
+                <FormField label={t?.patient?.visitTo} labelClassName="text-xs">
                   <DatePicker
                     value={values.visitTo}
                     onChange={(v) => onChange({ visitTo: v })}
-                    placeholder={t?.common?.to ?? "To"}
+                    placeholder={t?.common?.to}
                   />
                 </FormField>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <FormField label={t?.patient?.bornAfter ?? "Born after"} labelClassName="text-xs">
+                <FormField label={t?.patient?.bornAfter} labelClassName="text-xs">
                   <DatePicker
                     value={values.dobFrom}
                     onChange={(v) => onChange({ dobFrom: v })}
-                    placeholder={t?.common?.from ?? "From"}
+                    placeholder={t?.common?.from}
                     withDropdown
                     toDate={new Date()}
                   />
                 </FormField>
-                <FormField label={t?.patient?.bornBefore ?? "Born before"} labelClassName="text-xs">
+                <FormField label={t?.patient?.bornBefore} labelClassName="text-xs">
                   <DatePicker
                     value={values.dobTo}
                     onChange={(v) => onChange({ dobTo: v })}
-                    placeholder={t?.common?.to ?? "To"}
+                    placeholder={t?.common?.to}
                     withDropdown
                     toDate={new Date()}
                   />
@@ -282,11 +277,11 @@ export function PatientFiltersBlock({
             />
           ) : null}
 
-          <SoftTip label={t?.patient?.addPatient ?? "Add patient"}>
+          <SoftTip label={t?.patient?.addPatient}>
             <Button asChild size="sm" className={DIRECTORY_ACTION_CLASS}>
-              <Link href={ROUTES.PATIENT_NEW} aria-label={t?.patient?.addPatient ?? "Add patient"}>
+              <Link href={ROUTES.PATIENT_NEW} aria-label={t?.patient?.addPatient}>
                 <IconNewPatient className="size-3.5 shrink-0" />
-                <span className="hidden font-semibold sm:inline">{t?.patient?.patient ?? "Patient"}</span>
+                <span className="hidden font-semibold sm:inline">{t?.patient?.patient}</span>
               </Link>
             </Button>
           </SoftTip>

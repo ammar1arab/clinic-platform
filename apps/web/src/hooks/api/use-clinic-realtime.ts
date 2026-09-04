@@ -1,5 +1,5 @@
 import { getTranslations } from '@/i18n';
-import { useMemo, useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSocket } from '@/lib/socket';
@@ -82,11 +82,10 @@ export function useClinicRealtime(
     };
   }, [clinicId, notify, queryClient]);
 
-  const connected = useSyncExternalStore(
-    subscribe,
-    () => (clinicId ? getSocket().connected : false),
-    () => false,
-  );
+  const getSnapshot = useCallback(() => (clinicId ? getSocket().connected : false), [clinicId]);
+  const getServerSnapshot = useCallback(() => false, []);
+
+  const connected = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   return { connected };
 }

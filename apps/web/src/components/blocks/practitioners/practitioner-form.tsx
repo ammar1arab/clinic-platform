@@ -162,7 +162,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Practitioner created</CardTitle>
+          <CardTitle className="text-sm">{t?.practitioner?.practitioner} {t?.common?.created}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
@@ -205,7 +205,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
     <form onSubmit={handleSubmit(onSubmit)} className="min-w-0 space-y-4" noValidate>
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Profile</CardTitle>
+          <CardTitle className="text-sm">{t?.practitioner?.overview}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField error={errors.imageUrl?.message} className="sm:col-span-2">
@@ -359,7 +359,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Clinic</CardTitle>
+          <CardTitle className="text-sm">{t?.practitioner?.department}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Department" required error={errors.departmentId?.message}>
@@ -501,7 +501,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
 
       <FormActions
         onCancel={onCancel}
-        submitLabel={isEdit ? 'Save' : 'Create practitioner'}
+        submitLabel={isEdit ? t?.common?.save : t?.practitioner?.addPractitioner}
         pending={pending}
       />
     </form>

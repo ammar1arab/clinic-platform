@@ -70,7 +70,7 @@ function FilterSelect({
   children: ReactNode;
 }) {
   const { t } = useLanguage();
-  const anyText = placeholder ?? t?.common?.any ?? 'Any';
+  const anyText = placeholder ?? t?.common?.any;
   return (
     <FormField label={label} labelClassName="text-xs">
       <Select value={value || FORM_ANY} onValueChange={(v) => onChange(v === FORM_ANY ? '' : v)}>
@@ -127,13 +127,13 @@ export function PractitionerFiltersBlock({
           />
 
           <Popover>
-            <SoftTip label={t?.common?.filters ?? "Filters"}>
+            <SoftTip label={t?.common?.filters}>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  aria-label={t?.common?.filters ?? "Filters"}
+                  aria-label={t?.common?.filters}
                   className={cn(
                     DIRECTORY_ACTION_CLASS,
                     'border-border/70 bg-background/50',
@@ -141,7 +141,7 @@ export function PractitionerFiltersBlock({
                   )}
                 >
                   <IconFilters className="size-3.5 shrink-0 text-muted-foreground" />
-                  <span className="hidden font-semibold sm:inline">{t?.common?.filters ?? "Filters"}</span>
+                  <span className="hidden font-semibold sm:inline">{t?.common?.filters}</span>
                   {activeCount > 0 ? (
                     <Badge variant="info" className="ms-0 h-5 min-w-5 justify-center px-1 text-xs">
                       {activeCount}
@@ -157,16 +157,16 @@ export function PractitionerFiltersBlock({
               onFocusOutside={keepNestedPortals}
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{t?.common?.filters ?? "Filters"}</p>
+                <p className="text-sm font-medium">{t?.common?.filters}</p>
                 {activeCount > 0 ? (
                   <Button variant="ghost" size="xs" onClick={onReset}>
                     <IconClose className="size-3.5" />
-                    {t?.common?.clear ?? "Clear"}
+                    {t?.common?.clear}
                   </Button>
                 ) : null}
               </div>
 
-              <FormField label={t?.common?.status ?? "Status"} labelClassName="text-xs">
+              <FormField label={t?.common?.status} labelClassName="text-xs">
                 <Select
                   value={values.status}
                   onValueChange={(status) => onChange({ status })}
@@ -175,15 +175,15 @@ export function PractitionerFiltersBlock({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{t?.common?.allStatus ?? "All status"}</SelectItem>
-                    <SelectItem value="active">{t?.common?.active ?? "Active"}</SelectItem>
-                    <SelectItem value="inactive">{t?.common?.inactive ?? "Inactive"}</SelectItem>
+                    <SelectItem value="all">{t?.common?.allStatus}</SelectItem>
+                    <SelectItem value="active">{t?.common?.active}</SelectItem>
+                    <SelectItem value="inactive">{t?.common?.inactive}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
 
               <FilterSelect
-                label={t?.practitioner?.department ?? "Department"}
+                label={t?.practitioner?.department}
                 value={values.departmentId}
                 onChange={(departmentId) => onChange({ departmentId })}
               >
@@ -195,7 +195,7 @@ export function PractitionerFiltersBlock({
               </FilterSelect>
 
               <FilterSelect
-                label={t?.practitioner?.employment ?? "Employment"}
+                label={t?.practitioner?.employment}
                 value={values.employmentType}
                 onChange={(employmentType) => onChange({ employmentType })}
               >
@@ -208,7 +208,7 @@ export function PractitionerFiltersBlock({
 
               <div className="grid grid-cols-2 gap-3">
                 <FilterSelect
-                  label={t?.common?.gender ?? "Gender"}
+                  label={t?.common?.gender}
                   value={values.gender}
                   onChange={(gender) => onChange({ gender })}
                 >
@@ -220,7 +220,7 @@ export function PractitionerFiltersBlock({
                 </FilterSelect>
 
                 <FilterSelect
-                  label={t?.practitioner?.languages ?? "Language"}
+                  label={t?.practitioner?.languages}
                   value={values.language}
                   onChange={(language) => onChange({ language })}
                 >
@@ -233,7 +233,7 @@ export function PractitionerFiltersBlock({
               </div>
 
               <FilterSelect
-                label={t?.practitioner?.specialty ?? "Specialty"}
+                label={t?.practitioner?.specialty}
                 value={values.specialty}
                 onChange={(specialty) => onChange({ specialty })}
               >
@@ -245,7 +245,7 @@ export function PractitionerFiltersBlock({
               </FilterSelect>
 
               <FilterSelect
-                label={t?.practitioner?.defaultRoom ?? "Default room"}
+                label={t?.practitioner?.defaultRoom}
                 value={values.roomId}
                 onChange={(roomId) => onChange({ roomId })}
               >
@@ -257,7 +257,7 @@ export function PractitionerFiltersBlock({
               </FilterSelect>
 
               <FilterSelect
-                label={t?.practitioner?.nationality ?? "Nationality"}
+                label={t?.practitioner?.nationality}
                 value={values.nationality}
                 onChange={(nationality) => onChange({ nationality })}
               >
@@ -268,7 +268,7 @@ export function PractitionerFiltersBlock({
                 ))}
               </FilterSelect>
 
-              <FormField label={t?.practitioner?.licenseNumber ?? "License"} labelClassName="text-xs">
+              <FormField label={t?.practitioner?.licenseNumber} labelClassName="text-xs">
                 <Select
                   value={values.license}
                   onValueChange={(license) => onChange({ license })}
@@ -315,11 +315,11 @@ export function PractitionerFiltersBlock({
             />
           ) : null}
 
-          <SoftTip label={t?.practitioner?.addPractitioner ?? "Add practitioner"}>
+          <SoftTip label={t?.practitioner?.addPractitioner}>
             <Button asChild size="sm" className={DIRECTORY_ACTION_CLASS}>
-              <Link href={ROUTES.PRACTITIONERS_NEW} aria-label={t?.practitioner?.addPractitioner ?? "Add practitioner"}>
+              <Link href={ROUTES.PRACTITIONERS_NEW} aria-label={t?.practitioner?.addPractitioner}>
                 <IconAdd className="size-3.5 shrink-0" />
-                <span className="hidden font-semibold sm:inline">{t?.practitioner?.practitioner ?? "Practitioner"}</span>
+                <span className="hidden font-semibold sm:inline">{t?.practitioner?.practitioner}</span>
               </Link>
             </Button>
           </SoftTip>

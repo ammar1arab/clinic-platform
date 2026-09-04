@@ -5,35 +5,19 @@ import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives'
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui';
 import {
-  ContactLine, EmailLink, PhoneLink, EmptyState, PreviewableAvatar, SectionLoader, RowActionsMenu } from '@/components/primitives';
+  ContactLine, EmailLink, PhoneLink, EmptyState, PreviewableAvatar, SectionLoader, RowActionsMenu,
+  ProfileHero, ProfileInfoField, ProfileInfoGrid, ProfileSection, ProfileShell, ProfileStatusBadge,
+} from '@/components/primitives';
 import { ExportFormatButton } from '@/components/blocks/reports';
 import { PatientReferralsBlock } from './patient-referrals';
 import { PatientTimelineBlock } from './patient-timeline';
-import {
-  ProfileHero,
-  ProfileInfoField,
-  ProfileInfoGrid,
-  ProfileSection,
-  ProfileShell,
-  ProfileStatusBadge,
-} from '@/components/primitives';
-
 import { genderLabel } from '@/constants/patient';
 import { ROUTES } from '@/constants/routes';
 import {
-  IconActivate,
-  IconDeactivate,
-  IconDelete,
-  IconEdit,
-  IconLoyal,
-  IconPerson,
+  IconActivate, IconDeactivate, IconDelete, IconEdit, IconLoyal, IconPerson,
 } from '@/constants/icons';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
-import {
-  useDeletePatient,
-  usePatient,
-  useTogglePatientStatus,
-} from '@/hooks/api/use-patients';
+import { useDeletePatient, usePatient, useTogglePatientStatus } from '@/hooks/api/use-patients';
 import { useDownloadPatientReport } from '@/hooks/api/use-reports';
 import { calcAge } from '@/lib/age';
 import { useLanguage } from '@/providers';
@@ -48,13 +32,13 @@ export function PatientProfile({ patientId }: { patientId: string }) {
   const downloadReport = useDownloadPatientReport(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
-  if (isLoading) return <SectionLoader label="Loading patient…" />;
+  if (isLoading) return <SectionLoader label={t?.common?.loading} />;
   if (!patient) {
     return (
       <EmptyState
         icon={IconPerson}
-        title="Patient not found"
-        description="This record may have been removed."
+        title={t?.patient?.notFound}
+        description={t?.patient?.notFoundDesc}
       />
     );
   }
@@ -64,7 +48,7 @@ export function PatientProfile({ patientId }: { patientId: string }) {
   const age = calcAge(patient.dob);
   const dobText = patient.dob
     ? `${format(new Date(patient.dob), 'MMM d, yyyy')}${
-        age != null ? ` (${age} yrs)` : ''
+        age != null ? ` (${age} ${(t?.patient as any)?.yrs})` : ''
       }`
     : null;
   const isLoyal =
@@ -75,7 +59,7 @@ export function PatientProfile({ patientId }: { patientId: string }) {
   return (
     <ProfileShell
       backHref={ROUTES.PATIENTS}
-      backLabel="Back to Patients"
+      backLabel={t?.patient?.patients}
       actions={
         <div className="flex items-center gap-2">
           <ExportFormatButton
@@ -87,12 +71,12 @@ export function PatientProfile({ patientId }: { patientId: string }) {
           <RowActionsMenu
             items={[
               {
-                label: 'Edit',
+                label: t?.common?.edit,
                 icon: IconEdit,
                 href: `${ROUTES.PATIENT_DETAIL(patient.id)}/edit`,
               },
               {
-                label: patient.isActive ? 'Deactivate' : 'Reactivate',
+                label: patient.isActive ? t?.common?.deactivate : t?.common?.reactivate,
                 icon: patient.isActive ? IconDeactivate : IconActivate,
                 disabled: toggleStatus.isPending,
                 onSelect: () =>
@@ -102,7 +86,7 @@ export function PatientProfile({ patientId }: { patientId: string }) {
                   }),
               },
               {
-                label: 'Delete',
+                label: t?.common?.delete,
                 icon: IconDelete,
                 variant: 'destructive',
                 onSelect: () => del.ask({ id: patient.id, name: fullName }),
@@ -132,37 +116,37 @@ export function PatientProfile({ patientId }: { patientId: string }) {
         meta={<ContactLine phone={patient.phone} email={patient.email} />}
         stats={[
           {
-            label: 'Sessions',
+            label: t?.patient?.sessions,
             value: String(patient.appointments.length),
           },
           {
-            label: 'First visit',
+            label: t?.patient?.visitFrom,
             value: firstVisit
               ? format(new Date(firstVisit), 'MMM yyyy')
               : '—',
           },
           {
-            label: 'Last visit',
+            label: t?.patient?.lastVisit,
             value: lastVisit ? format(new Date(lastVisit), 'MMM yyyy') : '—',
           },
         ]}
       />
 
-      <ProfileSection title="Details">
+      <ProfileSection title={t?.patient?.personalDetails}>
         <ProfileInfoGrid className="lg:grid-cols-3">
           {patient.phone ? (
-            <ProfileInfoField label="Phone" value={patient.phone}>
+            <ProfileInfoField label={t?.patient?.phone} value={patient.phone}>
               <PhoneLink value={patient.phone} className="text-sm font-medium" />
             </ProfileInfoField>
           ) : null}
           {patient.email ? (
-            <ProfileInfoField label="Email" value={patient.email}>
+            <ProfileInfoField label={t?.patient?.email} value={patient.email}>
               <EmailLink value={patient.email} className="text-sm font-medium" />
             </ProfileInfoField>
           ) : null}
-          <ProfileInfoField label="National ID" value={patient.nationalId} />
-          <ProfileInfoField label="Date of birth" value={dobText} />
-          <ProfileInfoField label="Gender" value={genderLbl ?? null}>
+          <ProfileInfoField label={t?.patient?.nationalId} value={patient.nationalId} />
+          <ProfileInfoField label={t?.patient?.dateOfBirth} value={dobText} />
+          <ProfileInfoField label={t?.common?.gender} value={genderLbl ?? null}>
             {genderLbl ? (
               <Badge
                 variant={patient.gender?.toLowerCase() === 'female' ? 'warning' : 'info'}
@@ -172,7 +156,7 @@ export function PatientProfile({ patientId }: { patientId: string }) {
               </Badge>
             ) : null}
           </ProfileInfoField>
-          <ProfileInfoField label="Blood type" value={patient.bloodType}>
+          <ProfileInfoField label={t?.patient?.bloodType} value={patient.bloodType}>
             {patient.bloodType ? (
               <Badge
                 variant={patient.bloodType.endsWith('-') ? 'warning' : 'success'}
@@ -183,12 +167,12 @@ export function PatientProfile({ patientId }: { patientId: string }) {
             ) : null}
           </ProfileInfoField>
           <ProfileInfoField
-            label="Emergency contact"
+            label={t?.patient?.emergencyContact}
             value={patient.emergencyContactName}
           />
           {patient.emergencyContactPhone ? (
             <ProfileInfoField
-              label="Emergency phone"
+              label={t?.patient?.emergencyContactPhone}
               value={patient.emergencyContactPhone}
             >
               <PhoneLink
@@ -197,9 +181,9 @@ export function PatientProfile({ patientId }: { patientId: string }) {
               />
             </ProfileInfoField>
           ) : null}
-          <ProfileInfoField label="Address" value={patient.address} />
+          <ProfileInfoField label={t?.patient?.address} value={patient.address} />
           <ProfileInfoField
-            label="Allergies"
+            label={t?.patient?.allergies}
             value={patient.allergies}
             className="sm:col-span-2 lg:col-span-3"
           />
@@ -233,9 +217,9 @@ export function PatientProfile({ patientId }: { patientId: string }) {
           });
         }}
         isPending={deleteMutation.isPending}
-        warning="This permanently removes the patient and their visit history. This cannot be undone. To just hide the patient, use Deactivate instead."
-        finalWarning="This permanently deletes the patient and every appointment linked to them. This action cannot be undone."
-        confirmLabel="Yes, delete patient"
+        warning={t?.patient?.deleteWarning1}
+        finalWarning={t?.patient?.deleteWarning2}
+        confirmLabel={t?.patient?.deleteConfirm}
       />
     </ProfileShell>
   );

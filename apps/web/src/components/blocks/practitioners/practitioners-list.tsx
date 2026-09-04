@@ -281,7 +281,7 @@ export function PractitionersList({
                     )}
                   </TableCell>
                   <TableCell className="hidden xl:table-cell text-muted-foreground">
-                    {p.bufferMins}{t?.common?.minsCompact ?? 'm'}
+                    {p.bufferMins}{t?.common?.minsCompact}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Switch

@@ -3,10 +3,9 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { Badge } from '@/components/ui';
-import { EmptyState } from '@/components/primitives';
+import { Badge, Button } from '@/components/ui';
+import { EmptyState, ProfileSection } from '@/components/primitives';
 import { StatusBadgeBlock } from '@/components/blocks/appointments';
-import {  ProfileSection  } from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import {
   computePayable,
@@ -17,17 +16,10 @@ import type { PatientDetail } from '@/services/patients.service';
 import { cn } from '@/lib/utils';
 import { formatTime } from '@/lib/datetime';
 import {
-  IconChevronRight,
-  IconInPerson,
-  IconOnline,
-  IconPayment,
-  IconPerson,
-  IconReferral,
-  IconRoom,
-  IconService,
-  IconTime,
-  IconVisit,
+  IconChevronRight, IconInPerson, IconOnline, IconPayment,
+  IconPerson, IconReferral, IconRoom, IconService, IconTime, IconVisit,
 } from '@/constants/icons';
+import { useLanguage } from '@/providers';
 
 const TIMELINE_PREVIEW = 12;
 
@@ -44,30 +36,10 @@ interface TimelineItem {
   meta?: { label: string; icon: typeof IconTime }[];
 }
 
-const KIND_META: Record<
-  TimelineKind,
-  { label: string; icon: typeof IconVisit; className: string }
-> = {
-  visit: {
-    label: 'Visit',
-    icon: IconVisit,
-    className: 'bg-muted text-foreground',
-  },
-  referral: {
-    label: 'Referral',
-    icon: IconReferral,
-    className: 'bg-muted text-muted-foreground',
-  },
-  payment: {
-    label: 'Payment',
-    icon: IconPayment,
-    className: 'bg-muted text-foreground',
-  },
-};
-
 function buildTimeline(
   appointments: PatientDetail['appointments'],
   referrals: NonNullable<PatientDetail['referrals']>,
+  t: ReturnType<typeof useLanguage>['t'],
 ): TimelineItem[] {
   const items: TimelineItem[] = [];
 
@@ -80,18 +52,18 @@ function buildTimeline(
       meta.push({ label: appt.service.name, icon: IconService });
     }
     if (appt.sessionType === 'online') {
-      meta.push({ label: 'Online', icon: IconOnline });
+      meta.push({ label: t?.appointments?.online, icon: IconOnline });
     } else if (appt.room?.name) {
       meta.push({ label: appt.room.name, icon: IconRoom });
     } else {
-      meta.push({ label: 'In person', icon: IconInPerson });
+      meta.push({ label: t?.appointments?.inPerson, icon: IconInPerson });
     }
 
     items.push({
       id: `visit-${appt.id}`,
       kind: 'visit',
       at: new Date(appt.scheduledAt),
-      title: appt.service?.name ?? 'Consultation',
+      title: appt.service?.name ?? t?.appointments?.consultation,
       subtitle: format(new Date(appt.scheduledAt), 'EEE, MMM d, yyyy'),
       status: appt.status,
       href: ROUTES.SCHEDULE_EDIT(appt.id),
@@ -109,10 +81,10 @@ function buildTimeline(
         id: `payment-${appt.id}`,
         kind: 'payment',
         at: new Date(appt.paidAt),
-        title: `Paid ${payable.toFixed(3)} JOD`,
+        title: `${t?.patient?.paid} ${payable.toFixed(3)} JOD`,
         subtitle: [
           appt.paymentMethodRef?.name ?? appt.paymentMethod ?? null,
-          appt.service?.name ?? 'Consultation',
+          appt.service?.name ?? t?.appointments?.consultation,
         ]
           .filter(Boolean)
           .join(' · '),
@@ -122,23 +94,25 @@ function buildTimeline(
         id: `unpaid-${appt.id}`,
         kind: 'payment',
         at: new Date(appt.scheduledAt),
-        title: `Unpaid ${payable.toFixed(3)} JOD`,
-        subtitle: appt.service?.name ?? 'Consultation',
+        title: `${t?.patient?.unpaid} ${payable.toFixed(3)} JOD`,
+        subtitle: appt.service?.name ?? t?.appointments?.consultation,
         status: 'unpaid',
       });
     }
   }
 
   for (const ref of referrals) {
-    const typeLabel = ref.type === 'consultation' ? 'Consultation' : 'Referral';
+    const typeLabel = ref.type === 'consultation'
+      ? t?.referral?.consultation
+      : t?.referral?.referral;
     items.push({
       id: `referral-${ref.id}`,
       kind: 'referral',
       at: new Date(ref.createdAt),
       title: `${typeLabel} · ${ref.status}`,
       subtitle: [
-        ref.fromDoctor?.name ? `From Dr. ${ref.fromDoctor.name}` : null,
-        ref.toDoctor?.name ? `to Dr. ${ref.toDoctor.name}` : null,
+        ref.fromDoctor?.name ? `${t?.referral?.fromDr} ${ref.fromDoctor.name}` : null,
+        ref.toDoctor?.name ? `${t?.referral?.toDr} ${ref.toDoctor.name}` : null,
         ref.reason,
       ]
         .filter(Boolean)
@@ -156,10 +130,11 @@ interface Props {
 }
 
 export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
   const items = useMemo(
-    () => buildTimeline(appointments, referrals),
-    [appointments, referrals],
+    () => buildTimeline(appointments, referrals, t),
+    [appointments, referrals, t],
   );
   const hiddenCount = Math.max(0, items.length - TIMELINE_PREVIEW);
   const visibleItems =
@@ -167,16 +142,37 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
 
   const visitCount = appointments.length;
 
+  const KIND_META: Record<
+    TimelineKind,
+    { label: string; icon: typeof IconVisit; className: string }
+  > = {
+    visit: {
+      label: t?.patient?.visit,
+      icon: IconVisit,
+      className: 'bg-muted text-foreground',
+    },
+    referral: {
+      label: t?.referral?.referral,
+      icon: IconReferral,
+      className: 'bg-muted text-muted-foreground',
+    },
+    payment: {
+      label: t?.patient?.payment,
+      icon: IconPayment,
+      className: 'bg-muted text-foreground',
+    },
+  };
+
   return (
     <ProfileSection
       title="Activity"
-      description={`${visitCount} visit${visitCount === 1 ? '' : 's'} · referrals & payments`}
+      description={`${visitCount} ${visitCount === 1 ? 'visit' : 'visits'} · referrals & payments`}
     >
       {items.length === 0 ? (
         <EmptyState
           icon={IconVisit}
-          title="No activity yet"
-          description="Visits, referrals, and payments will show here."
+          title={'No activity yet'}
+          description={'Visits, referrals, and payments will show here.'}
           className="py-8"
         />
       ) : (
@@ -275,15 +271,16 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
           })}
           </ol>
           {hiddenCount > 0 ? (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              className="mt-3 w-full"
               onClick={() => setExpanded((v) => !v)}
-              className="mt-3 w-full rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               {expanded
                 ? 'Show less activity'
                 : `Show ${hiddenCount} more item${hiddenCount === 1 ? '' : 's'}`}
-            </button>
+              </Button>
           ) : null}
         </>
       )}
