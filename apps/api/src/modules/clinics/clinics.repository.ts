@@ -17,7 +17,13 @@ export class ClinicsRepository {
   findStaff(clinicId: string) {
     return this.prisma.clinicUser.findMany({
       where: { clinicId, isActive: true },
-      select: { id: true, name: true, role: true, initials: true },
+      select: {
+        id: true,
+        name: true,
+        nameAr: true,
+        role: true,
+        initials: true,
+      },
       orderBy: { name: "asc" },
     });
   }

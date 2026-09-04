@@ -4,9 +4,9 @@ import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui';
 import { Appointment } from '@/services/appointments.service';
 import { ClinicStaffMember } from '@/services/clinics.service';
-import { STATUS_COLORS, getStatusConfig, StatusBadgeBlock } from './status-badge';
-import { AppointmentStatusSelect } from './appointment-status-select';
-import { DoctorCombobox } from './doctor-combobox';
+import { STATUS_COLORS, getStatusConfig, StatusBadgeBlock } from '../shared/status-badge';
+import { AppointmentStatusSelect } from '../shared/appointment-status-select';
+import { DoctorCombobox } from '../shared/doctor-combobox';
 import {
   patientDisplayName,
   doctorDisplayName,
@@ -16,21 +16,24 @@ import {
   formatHourLabel,
   densityFromHeight,
   isSameDay,
-} from './appointment-display';
+} from '../shared/appointment-display';
 import {
   layoutTimelineAppts,
   TIMELINE_DOCTOR_COLORS,
   TIMELINE_HOUR_HEIGHT,
   TIMELINE_HOURS,
   TIMELINE_START_HOUR,
-  TIMELINE_END_HOUR,
   TIMELINE_TOTAL_HEIGHT,
   TIMELINE_PX_PER_MIN,
   type PositionedAppt,
   type TimelineDoctor,
 } from './timeline-layout';
-import { EventPreview, type EventPreviewState } from './event-preview';
-import { rectFromElement } from './popover-position';
+import {
+  AppointmentPopover,
+  popoverAnchorFromElement,
+  type AppointmentPopoverState,
+  type PopoverAnchorRect,
+} from './appointment-popovers';
 import {
   SoftTip,
   TimelineSkeleton,
@@ -59,7 +62,7 @@ function TimelineEventBlock({
   widthPct,
   onOpen,
 }: PositionedAppt & {
-  onOpen: (appt: Appointment, el: HTMLElement, x: number, y: number) => void;
+  onOpen: (appt: Appointment, anchor: PopoverAnchorRect) => void;
 }) {
   const { t, lang } = useLanguage();
   const accent = STATUS_COLORS[appt.status];
@@ -68,17 +71,11 @@ function TimelineEventBlock({
   const isCancelled = appt.status === 'cancelled';
   const doctorName = doctorDisplayName(doctor?.name ?? appt.doctor?.name, lang);
   const fullName = patientDisplayName(appt, lang);
-  const timeLabel = `${formatApptStartAmPm(appt, lang)} · ${appt.durationMins}m`;
+  const timeLabel = `${formatApptStartAmPm(appt, lang)} · ${appt.durationMins} ${t.appointments.minutesShort}`;
   const narrow = widthPct < 34;
   const tip = formatApptTip(appt, { doctorName, lang });
   const gapPx = widthPct < 50 ? 5 : 4;
   const blockH = Math.max(height - 2, 28);
-
-  const openFromEvent = (e: React.MouseEvent | React.KeyboardEvent, el: HTMLElement) => {
-    const x = 'clientX' in e ? e.clientX : el.getBoundingClientRect().left + el.clientWidth / 2;
-    const y = 'clientY' in e ? e.clientY : el.getBoundingClientRect().top + el.clientHeight / 2;
-    onOpen(appt, el, x, y);
-  };
 
   return (
     <SoftTip label={tip}>
@@ -88,13 +85,13 @@ function TimelineEventBlock({
         tabIndex={0}
       onClick={(e) => {
         e.stopPropagation();
-        openFromEvent(e, e.currentTarget);
+        onOpen(appt, popoverAnchorFromElement(e.currentTarget));
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           e.stopPropagation();
-          openFromEvent(e, e.currentTarget);
+          onOpen(appt, popoverAnchorFromElement(e.currentTarget));
         }
       }}
       className={cn(
@@ -231,22 +228,15 @@ export function DoctorTimeline({
     const d = new Date(); d.setHours(0, 0, 0, 0); return d;
   });
   const [activeDoctorId, setActiveDoctorId] = useState<string>('all');
-  const [preview, setPreview] = useState<EventPreviewState | null>(null);
+  const [appointmentPopover, setAppointmentPopover] =
+    useState<AppointmentPopoverState | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const now = useNow(30_000);
   const isToday = isSameDay(selectedDate, now);
 
-  const openPreview = useCallback(
-    (appt: Appointment, el: HTMLElement, x: number, y: number) => {
-      setPreview({
-        appointment: appt,
-        x,
-        y,
-        anchor: rectFromElement(el, x, y),
-      });
-    },
-    [],
-  );
+  const openPreview = useCallback((appointment: Appointment, anchor: PopoverAnchorRect) => {
+    setAppointmentPopover({ appointment, anchor });
+  }, []);
 
   const doctorMap = useMemo<Map<string, TimelineDoctor>>(() => {
     const map = new Map<string, TimelineDoctor>();
@@ -323,7 +313,7 @@ export function DoctorTimeline({
 
   const dateLabel = useMemo(
     () =>
-      selectedDate.toLocaleDateString(lang === 'ar' ? 'ar' : undefined, {
+      selectedDate.toLocaleDateString(lang, {
         weekday: 'long',
         month: 'short',
         day: 'numeric',
@@ -334,7 +324,7 @@ export function DoctorTimeline({
   const handleGridClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if ((e.target as HTMLElement).closest('[data-appt]')) return;
-      setPreview(null);
+      setAppointmentPopover(null);
       const rect = e.currentTarget.getBoundingClientRect();
       const offsetY = e.clientY - rect.top + e.currentTarget.scrollTop;
       const pxPerMin = TIMELINE_HOUR_HEIGHT / 60;
@@ -504,13 +494,13 @@ export function DoctorTimeline({
         </div>
       </div>
 
-      {preview ? (
-        <EventPreview
-          preview={preview}
-          placement="auto"
-          onClose={() => setPreview(null)}
+      {appointmentPopover ? (
+        <AppointmentPopover
+          key={appointmentPopover.appointment.id}
+          state={appointmentPopover}
+          onClose={() => setAppointmentPopover(null)}
           onExpand={(appt) => {
-            setPreview(null);
+            setAppointmentPopover(null);
             onEventClick(appt);
           }}
         />

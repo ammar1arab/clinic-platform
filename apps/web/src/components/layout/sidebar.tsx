@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/constants/routes';
-import { schedulePath } from '@/components/blocks/appointments/schedule-nav';
+import { schedulePath } from '@/components/blocks/appointments/schedule/schedule-nav';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
 import { IconCard, IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';

@@ -25,19 +25,19 @@ function PopoverTrigger({
 
 function PopoverContent({
   className,
-  align = "start",
+  align = "center",
   side = "bottom",
   sideOffset = 6,
+  portal = true,
   avoidCollisions = true,
   collisionPadding = OVERLAY_COLLISION_PADDING,
   onPointerDownOutside,
   onInteractOutside,
   ref,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
-  return (
-    <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content
+}: React.ComponentProps<typeof PopoverPrimitive.Content> & { portal?: boolean }) {
+  const content = (
+    <PopoverPrimitive.Content
         ref={ref}
         data-slot="popover-content"
         align={align}
@@ -52,9 +52,10 @@ function PopoverContent({
         )}
         {...props}
         {...overlayPointerProps({ onPointerDownOutside, onInteractOutside })}
-      />
-    </PopoverPrimitive.Portal>
+    />
   )
+
+  return portal ? <PopoverPrimitive.Portal>{content}</PopoverPrimitive.Portal> : content
 }
 
 function PopoverAnchor({

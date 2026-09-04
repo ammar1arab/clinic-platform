@@ -54,6 +54,7 @@ export interface AuthTokenResponse {
 export interface ClinicStaffMember {
   id: string;
   name: string;
+  nameAr: string | null;
   role: Role | string;
   initials: string | null;
 }

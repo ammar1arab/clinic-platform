@@ -1,24 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Alexandria, Tajawal } from "next/font/google";
+import { Plus_Jakarta_Sans, Alexandria } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/providers";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-clinic",
+  variable: "--font-latin",
   display: "swap",
 });
 
 const alexandria = Alexandria({
   subsets: ["arabic", "latin"],
-  variable: "--font-alexandria",
-  display: "swap",
-});
-
-const tajawal = Tajawal({
-  subsets: ["arabic", "latin"],
-  weight: ["300", "400", "500", "700"],
-  variable: "--font-tajawal",
+  variable: "--font-arabic",
   display: "swap",
 });
 
@@ -43,7 +36,7 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${jakarta.variable} ${alexandria.variable} ${tajawal.variable}`}
+      className={`${jakarta.variable} ${alexandria.variable}`}
     >
       <body className="font-sans antialiased">
         <AppProviders>{children}</AppProviders>

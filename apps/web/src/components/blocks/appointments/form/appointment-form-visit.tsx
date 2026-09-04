@@ -1,6 +1,6 @@
 'use client';
 
-import { Controller, type Control, type FieldErrors } from 'react-hook-form';
+import { Controller, useFormContext } from 'react-hook-form';
 import { FormField } from '@/components/primitives';
 import { formatClinicAmount } from '@/lib/package-balance';
 import type { AppointmentFormData } from '@/lib/validations';
@@ -9,14 +9,12 @@ import type { Department } from '@/services/departments.service';
 import type { Patient } from '@/services/patients.service';
 import type { ServiceItem } from '@/services/services.service';
 import { PatientCombobox } from './patient-combobox';
-import { DoctorCombobox } from './doctor-combobox';
+import { DoctorCombobox } from '../shared/doctor-combobox';
 import { FormSection, OptionalSelect } from './appointment-form-controls';
-import { formatDoctorLabel } from './appointment-display';
+import { formatDoctorLabel } from '../shared/appointment-display';
 import { useLanguage } from '@/providers';
 
 export function AppointmentVisitFields({
-  control,
-  errors,
   patients,
   staff,
   departments,
@@ -25,8 +23,6 @@ export function AppointmentVisitFields({
   onPatientChange,
   onServiceChange,
 }: {
-  control: Control<AppointmentFormData>;
-  errors: FieldErrors<AppointmentFormData>;
   patients: Patient[] | undefined;
   staff: ClinicStaffMember[] | undefined;
   departments: Department[] | undefined;
@@ -36,14 +32,18 @@ export function AppointmentVisitFields({
   onServiceChange: (serviceId: string) => void;
 }) {
   const { t, lang } = useLanguage();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext<AppointmentFormData>();
 
   return (
     <FormSection
-      title={t?.appointments?.appointmentDetails ?? (lang === 'ar' ? 'تفاصيل الزيارة' : 'Visit Details')}
+      title={t.appointments.appointmentDetails}
       contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-2"
     >
       <FormField
-        label={t?.appointments?.patient ?? (lang === 'ar' ? 'المريض' : 'Patient')}
+        label={t.appointments.patient}
         required
         error={errors.patientId?.message}
         className="sm:col-span-2"
@@ -65,7 +65,7 @@ export function AppointmentVisitFields({
       </FormField>
 
       <FormField
-        label={t?.practitioner?.practitioner ?? (lang === 'ar' ? 'الطبيب' : 'Doctor')}
+        label={t.practitioner.practitioner}
         required
         error={errors.doctorId?.message}
       >
@@ -89,7 +89,7 @@ export function AppointmentVisitFields({
       </FormField>
 
       <FormField
-        label={t?.practitioner?.department ?? (lang === 'ar' ? 'القسم' : 'Department')}
+        label={t.practitioner.department}
         error={errors.departmentId?.message}
       >
         <Controller
@@ -99,10 +99,10 @@ export function AppointmentVisitFields({
             <OptionalSelect
               value={field.value}
               onChange={field.onChange}
-              searchPlaceholder={lang === 'ar' ? 'البحث عن قسم...' : 'Search departments…'}
+              searchPlaceholder={t.appointments.searchDepartments}
               options={(departments ?? []).map((dept) => ({
                 value: dept.id,
-                label: (lang === 'ar' && (dept as any).nameAr) ? (dept as any).nameAr : dept.name,
+                label: (lang === 'ar' && dept.nameAr) || dept.name,
               }))}
             />
           )}
@@ -110,7 +110,7 @@ export function AppointmentVisitFields({
       </FormField>
 
       <FormField
-        label={t?.practitioner?.services ?? (lang === 'ar' ? 'الخدمة' : 'Service')}
+        label={t.practitioner.services}
         error={errors.serviceId?.message}
         className="sm:col-span-2"
       >
@@ -124,9 +124,9 @@ export function AppointmentVisitFields({
                 field.onChange(id);
                 if (id) onServiceChange(id);
               }}
-              searchPlaceholder={lang === 'ar' ? 'البحث عن خدمة...' : 'Search services…'}
+              searchPlaceholder={t.appointments.searchServices}
               options={(services ?? []).map((service) => {
-                const svcName = (lang === 'ar' && (service as any).nameAr) ? (service as any).nameAr : service.name;
+                const svcName = (lang === 'ar' && service.nameAr) || service.name;
                 return {
                   value: service.id,
                   label: `${svcName} · ${formatClinicAmount(service.fee)}`,

@@ -23,11 +23,6 @@ export function isProtectedOverlayTarget(target: EventTarget | null) {
   return target instanceof Element && Boolean(target.closest(PROTECTED_OVERLAY));
 }
 
-export function stopNativeOverlayEvent(event: DismissEvent) {
-  const native = event.detail?.originalEvent;
-  native?.stopPropagation();
-}
-
 export function preventDismissOnOwnTrigger(event: DismissEvent) {
   const target = overlayEventTarget(event);
   const content = event.currentTarget as HTMLElement | null;
@@ -59,26 +54,5 @@ export function overlayPointerProps<TPointer, TInteract>(handlers?: {
     onCloseAutoFocus: (event: Event) => {
       event.preventDefault();
     },
-  };
-}
-
-export function holdCalendarMorePopover(node: HTMLElement | null) {
-  if (!node) return;
-  const onMouseDown = (event: MouseEvent) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    if (target.closest('.fc-popover-close')) return;
-    if (target.closest('.fc-popover')) return;
-    event.stopPropagation();
-  };
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key !== 'Escape') return;
-    event.stopPropagation();
-  };
-  document.body.addEventListener('mousedown', onMouseDown);
-  document.body.addEventListener('keydown', onKeyDown);
-  return () => {
-    document.body.removeEventListener('mousedown', onMouseDown);
-    document.body.removeEventListener('keydown', onKeyDown);
   };
 }

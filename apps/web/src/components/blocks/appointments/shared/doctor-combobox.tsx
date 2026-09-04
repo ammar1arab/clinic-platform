@@ -2,8 +2,7 @@
 
 import { SearchablePicker } from '@/components/primitives';
 import { IconPractitioner } from '@/constants/icons';
-import { formatDoctorLabel } from './appointment-display';
-import { staffRoleLabel } from './appointment-form.mapper';
+import { formatDoctorLabel, staffRoleLabel } from './appointment-display';
 import { useLanguage } from '@/providers';
 
 export type DoctorOption = {
@@ -40,12 +39,9 @@ export function DoctorCombobox({
       }))}
       value={value}
       onChange={onChange}
-      placeholder={placeholder || (t?.appointments?.selectDoctor ?? 'Select doctor')}
-      searchPlaceholder={lang === 'ar' ? 'البحث عن طبيب...' : 'Search doctors…'}
-      emptyText={
-        t?.practitioner?.noPractitioners ??
-        (lang === 'ar' ? 'لم يتم العثور على أطباء.' : 'No doctors found.')
-      }
+      placeholder={placeholder || t.appointments.selectDoctor}
+      searchPlaceholder={t.appointments.searchDoctors}
+      emptyText={t.practitioner.noPractitioners}
       extraOption={extraOption}
       leading={<IconPractitioner className="size-4 shrink-0 opacity-70" />}
       className={className}

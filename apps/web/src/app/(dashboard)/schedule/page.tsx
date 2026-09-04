@@ -33,7 +33,7 @@ import { toDateParam, toTimeParam } from "@/lib/datetime";
 
 const AppointmentCalendar = dynamic(
   () =>
-    import("@/components/blocks/appointments/appointment-calendar").then(
+    import("@/components/blocks/appointments/schedule/appointment-calendar").then(
       (m) => m.AppointmentCalendar,
     ),
   { ssr: false, loading: () => <CalendarSkeleton /> },
@@ -46,6 +46,10 @@ function SchedulePageInner() {
 
   const { data: clinic } = useClinic(clinicId);
   const { data: staff } = useClinicStaff(clinicId);
+  const practitioners = useMemo(
+    () => staff?.filter((member) => member.role === "practitioner"),
+    [staff],
+  );
   const viewParam = searchParams.get("view");
 
   const [view, setCurrentView] = useSessionStorageState<ScheduleView>(
@@ -94,7 +98,7 @@ function SchedulePageInner() {
       setCurrentView(next);
       router.replace(schedulePath(next), { scroll: false });
     },
-    [router],
+    [router, setCurrentView],
   );
 
   const toggleStatus = useCallback((status: AppointmentStatus) => {
@@ -115,7 +119,7 @@ function SchedulePageInner() {
         ? prev
         : next,
     );
-  }, []);
+  }, [setRange]);
 
   const filteredAppointments = useMemo(() => {
     let list = appointments;
@@ -177,7 +181,7 @@ function SchedulePageInner() {
           {(focused) => (
             <DoctorTimeline
               appointments={filteredAppointments}
-              doctors={staff}
+              doctors={practitioners}
               isLoading={isLoading}
               focused={focused}
               onSelectSlot={goNewAppointment}

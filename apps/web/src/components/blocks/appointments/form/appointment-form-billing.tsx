@@ -1,9 +1,9 @@
 'use client';
 
-import { Controller, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form';
+import { Controller, useFormContext } from 'react-hook-form';
 import { Badge, Button, Input, Switch } from '@/components/ui';
 import { FormField } from '@/components/primitives';
-import { ButtonSpinner } from '@/components/primitives';;
+import { ButtonSpinner } from '@/components/primitives';
 import { CLINIC_CURRENCY } from '@/constants/appointment';
 import { IconCreditCard, IconWarning } from '@/constants/icons';
 import { formatClinicAmount, formatClinicNumber } from '@/lib/package-balance';
@@ -25,9 +25,6 @@ import { useLanguage } from '@/providers';
 type Pricing = { fee: number; discountAmount: number; payable: number };
 
 export function AppointmentBillingFields({
-  control,
-  errors,
-  register,
   appointment,
   isEdit,
   hasPatient,
@@ -53,9 +50,6 @@ export function AppointmentBillingFields({
   onTogglePaid,
   paidPending,
 }: {
-  control: Control<AppointmentFormData>;
-  errors: FieldErrors<AppointmentFormData>;
-  register: UseFormRegister<AppointmentFormData>;
   appointment?: Appointment;
   isEdit: boolean;
   hasPatient: boolean;
@@ -82,28 +76,32 @@ export function AppointmentBillingFields({
   paidPending: boolean;
 }) {
   const { t, lang } = useLanguage();
+  const {
+    control,
+    register,
+    formState: { errors },
+  } = useFormContext<AppointmentFormData>();
   const payment = appointment ? paymentStatusMeta(appointment, lang) : null;
 
   return (
-    <FormSection title={t?.billing?.title ?? 'Billing'} contentClassName="space-y-4">
+    <FormSection title={t.billing.title} contentClassName="space-y-4">
       {pricingLocked && (
         <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 px-2.5 py-2">
           <IconWarning className="mt-0.5 size-3.5 shrink-0 text-warning" />
           <p className="text-xs text-muted-foreground">
-            {t?.appointments?.pricingLockedPackage ??
-              'Pricing is locked while this visit is package-covered. Remove package coverage to edit fee or discount.'}
+            {t.appointments.pricingLockedPackage}
           </p>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField
-          label={t?.appointments?.fee ?? 'Fee'}
+          label={t.appointments.fee}
           error={errors.feeOverride?.message}
           hint={
             selectedService
-              ? (t?.appointments?.leaveBlankServiceFee ?? 'Leave blank to use the service fee.')
-              : (t?.appointments?.enterFeeOrService ?? 'Enter a fee or pick a service.')
+              ? t.appointments.leaveBlankServiceFee
+              : t.appointments.enterFeeOrService
           }
         >
           <Input
@@ -117,10 +115,10 @@ export function AppointmentBillingFields({
         </FormField>
 
         <FormField
-          label={t?.appointments?.discount ?? 'Discount'}
+          label={t.appointments.discount}
           error={
             errors.discount?.message ||
-            (fixedExceedsFee ? (t?.appointments?.discountExceedsFee ?? 'Discount cannot exceed the fee.') : undefined)
+            (fixedExceedsFee ? t.appointments.discountExceedsFee : undefined)
           }
         >
           <div className="flex gap-2">
@@ -152,12 +150,12 @@ export function AppointmentBillingFields({
         </FormField>
       </div>
 
-      <FormField label={t?.appointments?.promocode ?? 'Promocode'}>
+      <FormField label={t.appointments.promocode}>
         <div className="flex gap-2">
           <Input
             value={promoCode}
             onChange={(e) => onPromoCodeChange(e.target.value.toUpperCase())}
-            placeholder={t?.appointments?.optionalPromoCode ?? 'Optional promo code'}
+            placeholder={t.appointments.optionalPromoCode}
             className="font-mono"
             disabled={pricingLocked}
           />
@@ -167,14 +165,14 @@ export function AppointmentBillingFields({
             disabled={pricingLocked || !promoCode.trim() || validatePending}
             onClick={onApplyCode}
           >
-            {validatePending ? <ButtonSpinner className="mr-0" /> : (t?.appointments?.apply ?? 'Apply')}
+            {validatePending ? <ButtonSpinner className="me-0" /> : t.appointments.apply}
           </Button>
         </div>
       </FormField>
 
-      <FormField label={t?.appointments?.discountReason ?? 'Discount reason'} error={errors.discountReason?.message}>
+      <FormField label={t.appointments.discountReason} error={errors.discountReason?.message}>
         <Input
-          placeholder={t?.appointments?.requiredWhenDiscountApplied ?? 'Required when a discount is applied'}
+          placeholder={t.appointments.requiredWhenDiscountApplied}
           disabled={pricingLocked}
           {...register('discountReason')}
         />
@@ -194,27 +192,29 @@ export function AppointmentBillingFields({
           redeemPending={redeemPending}
           releasePending={releasePending}
           disabledReason={
-            appointment?.isPaid && !appointment.patientPackageId ? (lang === 'ar' ? 'تم الدفع مسبقاً' : 'Already paid') : undefined
+            appointment?.isPaid && !appointment.patientPackageId
+              ? t.appointments.alreadyPaid
+              : undefined
           }
         />
       ) : null}
 
       <div className="rounded-lg border bg-muted/40 p-3 text-sm">
-        <SummaryRow label={t?.appointments?.baseFee ?? 'Base fee'} value={formatClinicAmount(pricing.fee)} />
+        <SummaryRow label={t.appointments.baseFee} value={formatClinicAmount(pricing.fee)} />
         <SummaryRow
-          label={t?.appointments?.discount ?? 'Discount'}
+          label={t.appointments.discount}
           value={`- ${formatClinicAmount(pricing.discountAmount)}`}
           muted
         />
         <div className="mt-2 flex items-center justify-between border-t pt-2 font-semibold">
-          <span>{t?.appointments?.payable ?? 'Payable'}</span>
+          <span>{t.appointments.payable}</span>
           <span>
             {appointment?.patientPackageId ? formatClinicAmount(0) : formatClinicAmount(pricing.payable)}
           </span>
         </div>
         {appointment?.patientPackageId && (
           <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <Badge variant="success">{t?.appointments?.coveredByPackage ?? 'Covered by package'}</Badge>
+            <Badge variant="success">{t.appointments.coveredByPackage}</Badge>
             <span className="text-muted-foreground">
               {packageCreditLabel(appointment.packageCredit, lang)}
             </span>
@@ -222,7 +222,7 @@ export function AppointmentBillingFields({
         )}
         {!isEdit && pendingPackageId && (
           <p className="mt-1.5">
-            <Badge variant="info">{t?.appointments?.packageWillApplyNotice ?? 'Package will be applied when you create this appointment'}</Badge>
+            <Badge variant="info">{t.appointments.packageWillApplyNotice}</Badge>
           </p>
         )}
       </div>
@@ -232,7 +232,7 @@ export function AppointmentBillingFields({
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-medium">{t?.appointments?.paymentStatus ?? 'Payment status'}</p>
+                <p className="text-sm font-medium">{t.appointments.paymentStatus}</p>
                 <Badge variant={payment.variant}>
                   <IconCreditCard className="size-3" />
                   {payment.label}
@@ -248,7 +248,7 @@ export function AppointmentBillingFields({
                 disabled={releasePending}
                 onClick={onRelease}
               >
-                {releasePending ? <ButtonSpinner className="mr-0" /> : (t?.appointments?.removePackage ?? 'Remove package')}
+                {releasePending ? <ButtonSpinner className="me-0" /> : t.appointments.removePackage}
               </Button>
             ) : (
               <Switch
@@ -259,16 +259,16 @@ export function AppointmentBillingFields({
             )}
           </div>
           {!appointment.isPaid && !appointment.patientPackageId && (
-            <FormField label={t?.settings?.paymentMethod ?? 'Payment method'}>
+            <FormField label={t.settings.paymentMethod}>
               <OptionalSelect
                 value={payMethodId}
                 onChange={onPayMethodChange}
-                placeholder={t?.settings?.selectPaymentMethod ?? 'Select method'}
-                noneLabel={t?.settings?.selectPaymentMethod ?? 'Select method'}
-                searchPlaceholder={t?.settings?.searchPaymentMethod ?? 'Search payment methods…'}
+                placeholder={t.settings.selectPaymentMethod}
+                noneLabel={t.settings.selectPaymentMethod}
+                searchPlaceholder={t.settings.searchPaymentMethod}
                 options={paymentMethods.map((method) => ({
                   value: method.id,
-                  label: lang === 'ar' && (method as any).nameAr ? (method as any).nameAr : method.name,
+                  label: method.name,
                 }))}
               />
             </FormField>

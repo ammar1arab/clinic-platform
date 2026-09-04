@@ -1,11 +1,16 @@
+'use client';
+
 import { Skeleton } from '@/components/ui';
+import { useLanguage } from '@/providers';
 
 export function CalendarSkeleton() {
+  const { t } = useLanguage();
+
   return (
     <div
       className="card-aura rounded-xl bg-card p-2 sm:p-3 lg:p-4"
       role="status"
-      aria-label="Loading calendar"
+      aria-label={t.appointments.calendarLoading}
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">

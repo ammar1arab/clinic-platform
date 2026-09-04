@@ -1,6 +1,7 @@
 import { DEFAULT_DURATION_MINS } from '@/constants/appointment';
 import { toDateParam, toTimeParam } from '@/lib/datetime';
 import { formatClinicAmount } from '@/lib/package-balance';
+import { getTranslations } from '@/i18n';
 import type { AppointmentFormData } from '@/lib/validations';
 import type {
   Appointment,
@@ -124,7 +125,8 @@ export function toUpdateAppointmentInput(
   appliedCodeId: string | null,
   extra: Pick<UpdateAppointmentInput, 'status' | 'cancelReason'>,
 ): UpdateAppointmentInput {
-  const { patientId: _patientId, ...shared } = sharedWriteFields(data);
+  const shared: Partial<CreateAppointmentInput> = sharedWriteFields(data);
+  delete shared.patientId;
   const discount = discountFields(data, appliedCodeId);
   return {
     ...shared,
@@ -144,24 +146,34 @@ export type AppliedDiscount = {
   promoCode?: string;
 };
 
-export function discountFromPackage(pkg: ClinicPackage): AppliedDiscount | null {
+export function discountFromPackage(
+  pkg: ClinicPackage,
+  lang?: string,
+): AppliedDiscount | null {
   if (!pkg.discountType || pkg.discountValue == null || Number(pkg.discountValue) <= 0) {
     return null;
   }
   return {
     discount: String(Number(pkg.discountValue)),
     discountType: pkg.discountType,
-    discountReason: `Package: ${pkg.name}`,
+    discountReason: getTranslations(lang).appointments.packageDiscountReason.replace(
+      '{name}',
+      pkg.name,
+    ),
   };
 }
 
 export function discountFromCode(
   code: Pick<DiscountCode | ValidatedDiscountCode, 'id' | 'code' | 'discountValue' | 'discountType'>,
+  lang?: string,
 ): AppliedDiscount {
   return {
     discount: String(Number(code.discountValue)),
     discountType: code.discountType,
-    discountReason: `Code: ${code.code}`,
+    discountReason: getTranslations(lang).appointments.codeDiscountReason.replace(
+      '{code}',
+      code.code,
+    ),
     appliedCodeId: code.id,
     promoCode: code.code,
   };
@@ -171,39 +183,41 @@ export function billingDefaultsForPatient(
   patient: Patient | undefined,
   packages: ClinicPackage[] | undefined,
   codes: DiscountCode[] | undefined,
+  lang?: string,
 ): AppliedDiscount | null {
   if (!patient) return null;
 
   const pkg = packages?.find((p) => p.id === patient.packageId);
-  const fromPkg = pkg ? discountFromPackage(pkg) : null;
+  const fromPkg = pkg ? discountFromPackage(pkg, lang) : null;
 
   const code = codes?.find((c) => c.id === patient.discountCodeId && c.isActive);
-  if (code) return discountFromCode(code);
+  if (code) return discountFromCode(code, lang);
   return fromPkg;
 }
 
 export function paymentStatusMeta(appt: Appointment, lang?: string) {
+  const t = getTranslations(lang);
   if (appt.isPaid && appt.patientPackageId) {
     return {
       variant: 'info' as const,
-      label: lang === 'ar' ? 'مدفوع · باقة' : 'Paid · Package',
+      label: t.appointments.paidWithPackage,
       detail: appt.paymentMethod
-        ? (lang === 'ar' ? `باقة (${appt.paymentMethod})` : `Package (${appt.paymentMethod})`)
-        : (lang === 'ar' ? 'باقة' : 'Package'),
+        ? `${t.appointments.package} (${appt.paymentMethod})`
+        : t.appointments.package,
     };
   }
   if (appt.isPaid) {
     const method = appt.paymentMethodRef?.name ?? appt.paymentMethod;
     return {
       variant: 'success' as const,
-      label: lang === 'ar' ? 'مدفوع' : 'Paid',
-      detail: method || (lang === 'ar' ? 'لم يتم تسجيل طريقة الدفع' : 'No method recorded'),
+      label: t.appointments.paid,
+      detail: method || t.appointments.noPaymentMethodRecorded,
     };
   }
   return {
     variant: appt.patientPackageId ? ('info' as const) : ('warning' as const),
-    label: lang === 'ar' ? 'غير مدفوع' : 'Unpaid',
-    detail: lang === 'ar' ? 'اختر طريقة، ثم حدد كمدفوع' : 'Select a method, then mark as paid',
+    label: t.appointments.unpaid,
+    detail: t.appointments.selectMethodThenMarkPaid,
   };
 }
 
@@ -211,27 +225,12 @@ export function packageCreditLabel(
   credit: string | number | null | undefined,
   lang?: string,
 ) {
+  const t = getTranslations(lang);
   if (credit != null) {
-    return lang === 'ar'
-      ? `تم استخدام رصيد ${formatClinicAmount(credit)}`
-      : `${formatClinicAmount(credit)} credit used`;
+    return t.appointments.creditUsed.replace(
+      '{amount}',
+      formatClinicAmount(credit),
+    );
   }
-  return lang === 'ar' ? 'تم استخدام جلسة واحدة' : '1 session used';
-}
-
-export function staffRoleLabel(role: string | null | undefined, lang?: string) {
-  if (!role) return '';
-  if (lang === 'ar') {
-    const roleArMap: Record<string, string> = {
-      owner: 'مالك',
-      admin: 'مدير',
-      practitioner: 'طبيب',
-      financial: 'مالي',
-      receptionist: 'استقبال',
-      nurse: 'تمريض',
-    };
-    const translated = roleArMap[role.toLowerCase()] || role.replace(/_/g, ' ');
-    return ` · ${translated}`;
-  }
-  return ` · ${role.replace(/_/g, ' ')}`;
+  return t.appointments.oneSessionUsed;
 }

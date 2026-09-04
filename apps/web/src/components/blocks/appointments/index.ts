@@ -1,19 +1,16 @@
-export { AppointmentForm } from './appointment-form';
-export { AppointmentStatusSelect } from './appointment-status-select';
-export { CalendarSkeleton } from './calendar-skeleton';
-export { DoctorTimeline } from './doctor-timeline';
-export { PatientBalancePanel } from './patient-balance-panel';
-export { DoctorCombobox } from './doctor-combobox';
-export { PatientCombobox } from './patient-combobox';
-export { ScheduleToolbar } from './schedule-toolbar';
-export { StatusBadgeBlock } from './status-badge';
-export { WaitingQueueBoard } from './waiting-queue-board';
+export { AppointmentForm } from './form/appointment-form';
+export { PatientCombobox } from './form/patient-combobox';
+export { StatusBadgeBlock } from './shared/status-badge';
+export { CalendarSkeleton } from './schedule/calendar-skeleton';
+export { DoctorTimeline } from './schedule/doctor-timeline';
+export { ScheduleToolbar } from './schedule/schedule-toolbar';
+export { WaitingQueueBoard } from './schedule/waiting-queue-board';
 export {
   ViewFocus,
   ViewFocusToggle,
   useViewFocusControls,
   useViewFocused,
-} from './view-focus';
+} from './schedule/view-focus';
 export {
   FC_TO_VIEW,
   VIEW_TO_FC,
@@ -23,5 +20,5 @@ export {
   resolveReturnTo,
   schedulePath,
   type ScheduleView,
-} from './schedule-nav';
-export { matchesAppointmentSearch } from './appointment-display';
+} from './schedule/schedule-nav';
+export { matchesAppointmentSearch } from './shared/appointment-display';

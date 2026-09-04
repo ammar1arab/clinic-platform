@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { FormActions } from '@/components/primitives';
@@ -13,10 +13,12 @@ import { resolveWaitingMins } from '@/lib/waiting-time';
 import { useConfirm, useLanguage } from '@/providers';
 import type { Appointment, AppointmentStatus } from '@/services/appointments.service';
 import { AppointmentBillingFields } from './appointment-form-billing';
-import { AppointmentNotesFields } from './appointment-form-notes';
-import { AppointmentScheduleFields } from './appointment-form-schedule';
-import { AppointmentSessionFields } from './appointment-form-session';
-import { AppointmentStatusFields } from './appointment-form-status';
+import {
+  AppointmentNotesFields,
+  AppointmentScheduleFields,
+  AppointmentSessionFields,
+  AppointmentStatusFields,
+} from './appointment-form-sections';
 import { AppointmentVisitFields } from './appointment-form-visit';
 import {
   billingDefaultsForPatient,
@@ -55,13 +57,7 @@ export function AppointmentForm({
   const isEdit = !!appointment;
   const now = useNow(30_000);
 
-  const {
-    control,
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<AppointmentFormData>({
+  const form = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: appointment
       ? toAppointmentFormValues(appointment)
@@ -71,6 +67,7 @@ export function AppointmentForm({
           doctorId: currentDoctorId,
         }),
   });
+  const { control, handleSubmit, setValue } = form;
 
   const sessionType = useWatch({ control, name: 'sessionType' });
   const serviceId = useWatch({ control, name: 'serviceId' });
@@ -147,32 +144,32 @@ export function AppointmentForm({
   const showConflict = async (error: Parameters<typeof extractErrorMessage>[0]) => {
     if (isHttpStatus(error, 409)) {
       await confirm({
-        title: t?.appointments?.schedulingConflict ?? 'Scheduling conflict',
+        title: t.appointments.schedulingConflict,
         description: extractErrorMessage(error),
-        confirmLabel: 'OK',
-        cancelLabel: 'Close',
+        confirmLabel: t.common.confirm,
+        cancelLabel: t.common.close,
       });
     }
   };
 
   const onSubmit = async (data: AppointmentFormData) => {
     if (fixedExceedsFee) {
-      toast.error(t?.appointments?.fixedDiscountExceedsFee ?? 'Fixed discount cannot exceed the fee');
+      toast.error(t.appointments.fixedDiscountExceedsFee);
       return;
     }
 
     if (isEdit && appointment) {
       if (status === 'cancelled' && appointment.status !== 'cancelled') {
         const ok = await confirm({
-          title: t?.appointments?.cancelConfirmTitle ?? 'Cancel this appointment?',
-          description: t?.appointments?.cancelConfirmDesc ?? 'The patient will need to be informed separately.',
+          title: t.appointments.cancelConfirmTitle,
+          description: t.appointments.cancelConfirmDesc,
           variant: 'destructive',
-          confirmLabel: t?.appointments?.cancelAppointment ?? 'Cancel appointment',
+          confirmLabel: t.appointments.cancelAppointment,
         });
         if (!ok) return;
       }
       if (status === 'cancelled' && !cancelReason.trim()) {
-        toast.error(t?.appointments?.cancellationReasonRequired ?? 'Cancellation reason is required');
+        toast.error(t.appointments.cancellationReasonRequired);
         return;
       }
 
@@ -211,28 +208,29 @@ export function AppointmentForm({
   const handleTogglePaid = async (paid: boolean) => {
     if (!appointment) return;
     if (appointment.patientPackageId) {
-      toast.error(t?.appointments?.removePackageCoverageFirst ?? 'Remove package coverage before changing payment status');
+      toast.error(t.appointments.removePackageCoverageFirst);
       return;
     }
     if (paid) {
       if (!payMethodId) {
-        toast.error(t?.appointments?.selectPaymentMethodFirst ?? 'Select a payment method first');
+        toast.error(t.appointments.selectPaymentMethodFirst);
         return;
       }
       markPaidMutation.mutate({ id: appointment.id, paymentMethodId: payMethodId });
       return;
     }
     const ok = await confirm({
-      title: t?.appointments?.markAsUnpaidTitle ?? 'Mark as unpaid?',
-      description: t?.appointments?.markAsUnpaidDesc ?? 'This clears the recorded payment for this appointment.',
-      confirmLabel: t?.appointments?.markUnpaid ?? 'Mark unpaid',
+      title: t.appointments.markAsUnpaidTitle,
+      description: t.appointments.markAsUnpaidDesc,
+      confirmLabel: t.appointments.markUnpaid,
     });
     if (!ok) return;
     markUnpaidMutation.mutate(appointment.id);
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="min-w-0 space-y-4" noValidate>
+    <FormProvider {...form}>
+      <form onSubmit={handleSubmit(onSubmit)} className="min-w-0 space-y-4" noValidate>
       {isEdit && (
         <AppointmentStatusFields
           status={status}
@@ -244,8 +242,6 @@ export function AppointmentForm({
       )}
 
       <AppointmentVisitFields
-        control={control}
-        errors={errors}
         patients={patients}
         staff={staff}
         departments={departments}
@@ -256,6 +252,7 @@ export function AppointmentForm({
             patients?.find((patient) => patient.id === id),
             packages,
             discountCodes,
+            lang,
           );
           if (applied) applyDiscount(applied);
         }}
@@ -269,21 +266,15 @@ export function AppointmentForm({
         }}
       />
 
-      <AppointmentScheduleFields control={control} errors={errors} register={register} />
+      <AppointmentScheduleFields />
 
       <AppointmentSessionFields
-        control={control}
-        errors={errors}
-        register={register}
         sessionType={sessionType}
         selectedService={selectedService}
         rooms={rooms}
       />
 
       <AppointmentBillingFields
-        control={control}
-        errors={errors}
-        register={register}
         appointment={appointment}
         isEdit={isEdit}
         hasPatient={!!patientId}
@@ -297,8 +288,8 @@ export function AppointmentForm({
         onApplyCode={() => {
           validateCode.mutate(promoCode.trim(), {
             onSuccess: (res) => {
-              applyDiscount(discountFromCode(res));
-              toast.success(`Applied ${res.code}`);
+              applyDiscount(discountFromCode(res, lang));
+              toast.success(`${t.appointments.appliedPromo} ${res.code}`);
             },
           });
         }}
@@ -323,17 +314,18 @@ export function AppointmentForm({
         paidPending={markPaidMutation.isPending || markUnpaidMutation.isPending}
       />
 
-      <AppointmentNotesFields register={register} error={errors.notes?.message} />
+      <AppointmentNotesFields />
 
       <FormActions
         onCancel={onCancel}
         pending={isPending}
         submitLabel={
           isEdit
-            ? (t?.common?.saveChanges ?? 'Save Changes')
-            : (t?.appointments?.newAppointment ?? 'Create Appointment')
+            ? t.common.saveChanges
+            : t.appointments.newAppointment
         }
       />
-    </form>
+      </form>
+    </FormProvider>
   );
 }

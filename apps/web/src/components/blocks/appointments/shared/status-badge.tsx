@@ -29,8 +29,8 @@ export function StatusBadgeBlock({
 }: Props) {
   const { t } = useLanguage();
   const config = getStatusConfig(t)[status];
-  const translatedLabel = t?.constants?.status?.[status]?.label ?? config.label;
-  const translatedShort = t?.constants?.status?.[status]?.short ?? config.short;
+  const translatedLabel = config.label;
+  const translatedShort = config.short;
   const text = compact ? translatedShort : translatedLabel;
 
   return (

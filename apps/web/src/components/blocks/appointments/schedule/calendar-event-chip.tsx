@@ -9,7 +9,7 @@ import {
   formatApptTip,
   formatDoctorLabel,
   patientDisplayName,
-} from './appointment-display';
+} from '../shared/appointment-display';
 import { formatTime, formatTimeRange } from '@/lib/datetime';
 import { IconInPerson, IconOnline } from '@/constants/icons';
 import { SoftTip } from '@/components/primitives';

@@ -36,6 +36,7 @@ function TooltipContent({
   className,
   side = 'top',
   sideOffset = 8,
+  align = 'center',
   children,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Content>) {
@@ -45,11 +46,13 @@ function TooltipContent({
         data-slot="tooltip-content"
         side={side}
         sideOffset={sideOffset}
+        align={align}
+        avoidCollisions
+        collisionPadding={8}
         className={cn(
-          'overlay-pop overlay-pop-tip z-50 w-fit max-w-[min(16rem,calc(100vw-1.5rem))]',
-          'rounded-md bg-foreground px-2.5 py-1.5',
-          'text-xs font-medium leading-none text-background',
-          'shadow-[0_8px_24px_-10px_color-mix(in_oklch,var(--foreground)_55%,transparent)]',
+          'overlay-pop overlay-pop-tip z-150 w-fit max-w-[min(18rem,calc(100vw-1rem))]',
+          'rounded-lg border border-border/70 bg-popover px-2.5 py-1.5 text-popover-foreground',
+          'text-center text-xs font-medium leading-snug shadow-lg',
           className,
         )}
         {...props}
@@ -58,7 +61,7 @@ function TooltipContent({
         <TooltipPrimitive.Arrow
           width={10}
           height={5}
-          className="fill-foreground"
+          className="fill-popover stroke-border/70"
         />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>

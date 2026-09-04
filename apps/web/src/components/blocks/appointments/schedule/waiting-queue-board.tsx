@@ -8,9 +8,9 @@ import {
 } from '@/components/ui';
 import { Appointment, AppointmentStatus } from '@/services/appointments.service';
 import { useUpdateAppointment, useMarkAppointmentPaid } from '@/hooks/api/use-appointments';
-import { AppointmentStatusSelect } from './appointment-status-select';
-import { doctorDisplayName, formatApptTimeRange, patientDisplayName } from './appointment-display';
-import { STATUS_COLORS } from './status-badge';
+import { AppointmentStatusSelect } from '../shared/appointment-status-select';
+import { doctorDisplayName, formatApptTimeRange, patientDisplayName } from '../shared/appointment-display';
+import { STATUS_COLORS } from '../shared/status-badge';
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -100,23 +100,23 @@ export function WaitingQueueBoard({
         { id: appt.id, data: { status: targetStatus } },
         {
           onSuccess: () => {
-            const name = patientDisplayName(appt);
+            const name = patientDisplayName(appt, lang);
             const msgs: Partial<Record<AppointmentStatus, string>> = {
-              in_progress: `Started consultation with ${name}`,
-              completed: `Visit completed for ${name}`,
-              waiting: `${name} returned to waiting room`,
-              checked_in: `${name} checked in`,
-              no_show: `${name} marked as no-show`,
+              in_progress: t.appointments.statusStarted.replace('{name}', name),
+              completed: t.appointments.statusCompleted.replace('{name}', name),
+              waiting: t.appointments.statusReturnedWaiting.replace('{name}', name),
+              checked_in: t.appointments.statusCheckedIn.replace('{name}', name),
+              no_show: t.appointments.statusNoShow.replace('{name}', name),
             };
-            toast.success(msgs[targetStatus] || 'Status updated');
+            toast.success(msgs[targetStatus] || t.appointments.statusUpdated);
           },
           onError: (err) => {
-            toast.error(extractErrorMessage(err) || 'Failed to update status');
+            toast.error(extractErrorMessage(err) || t.appointments.statusUpdateFailed);
           },
         },
       );
     },
-    [updateMutation],
+    [lang, t, updateMutation],
   );
 
   const isVisible = useCallback(

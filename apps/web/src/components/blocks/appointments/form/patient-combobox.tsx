@@ -2,7 +2,7 @@
 
 import { SearchablePicker } from '@/components/primitives';
 import { IconPerson } from '@/constants/icons';
-import { formatPersonName } from './appointment-display';
+import { formatPersonName } from '../shared/appointment-display';
 import type { Patient } from '@/services/patients.service';
 import { useLanguage } from '@/providers';
 
@@ -28,15 +28,9 @@ export function PatientCombobox({
       }))}
       value={value}
       onChange={onChange}
-      placeholder={placeholder || (t?.appointments?.selectPatient ?? 'Select patient')}
-      searchPlaceholder={
-        t?.appointments?.searchPlaceholder ??
-        (lang === 'ar' ? 'البحث عن مريض...' : 'Search patients…')
-      }
-      emptyText={
-        t?.patient?.noPatients ??
-        (lang === 'ar' ? 'لم يتم العثور على مرضى.' : 'No patients found.')
-      }
+      placeholder={placeholder || t.appointments.selectPatient}
+      searchPlaceholder={t.appointments.searchPatients}
+      emptyText={t.patient.noPatients}
       leading={<IconPerson className="size-4 shrink-0 opacity-70" />}
       className="w-full"
     />

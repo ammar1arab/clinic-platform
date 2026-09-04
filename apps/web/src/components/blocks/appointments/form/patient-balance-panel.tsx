@@ -2,7 +2,7 @@
 
 import { Badge, Button, Skeleton } from '@/components/ui';
 import { IconWell, SoftTip } from '@/components/primitives';
-import { ButtonSpinner } from '@/components/primitives';;
+import { ButtonSpinner } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import type { PatientBillingSummary, PatientPackageDto } from '@clinic/types';
 import {
@@ -46,7 +46,7 @@ export function PatientBalancePanel({
   releasePending,
   disabledReason,
 }: Props) {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const packages = billing?.packages ?? [];
   const outstanding = Number(billing?.outstanding ?? 0);
   const unpaidVisits = billing?.unpaidVisits ?? 0;

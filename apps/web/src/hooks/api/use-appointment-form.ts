@@ -52,6 +52,10 @@ export function useAppointmentFormResources(
         .sort((a, b) => a.sortOrder - b.sortOrder),
     [paymentMethods],
   );
+  const practitioners = useMemo(
+    () => staff?.filter((member) => member.role === 'practitioner'),
+    [staff],
+  );
 
   const isPending =
     createMutation.isPending ||
@@ -66,7 +70,7 @@ export function useAppointmentFormResources(
     departments,
     rooms,
     services,
-    staff,
+    staff: practitioners,
     packages,
     discountCodes,
     activePayMethods,

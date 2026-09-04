@@ -4,6 +4,7 @@ import {
   formatTime,
   formatTimeRange,
 } from '@/lib/datetime';
+import { getTranslations } from '@/i18n';
 
 export type EventDensity = 'xs' | 'sm' | 'md' | 'lg';
 
@@ -43,34 +44,19 @@ export function formatPersonName(person: NameParts, lang?: string) {
   return `${person.firstNameEn ?? ''} ${person.lastNameEn ?? ''}`.trim();
 }
 
-export function formatPersonShortName(person: NameParts, lang?: string) {
-  if (lang === 'ar') {
-    const ar = formatPersonName(person, 'ar');
-    if (ar) return ar;
-  }
-  const first = person.firstNameEn?.trim() ?? '';
-  const last = person.lastNameEn?.trim() ?? '';
-  if (!first) return last;
-  if (!last) return first;
-  return `${first} ${last.charAt(0)}.`;
-}
-
 export function patientDisplayName(appt: Appointment, lang?: string) {
   return formatPersonName(appt.patient, lang);
-}
-
-export function patientShortName(appt: Appointment, lang?: string) {
-  return formatPersonShortName(appt.patient, lang);
 }
 
 export function doctorDisplayName(
   doctor: { name?: string | null; nameAr?: string | null } | string | null | undefined,
   lang?: string,
 ) {
-  if (!doctor) return lang === 'ar' ? 'طبيب' : 'Doctor';
+  const fallback = getTranslations(lang).appointments.doctor;
+  if (!doctor) return fallback;
   const name = typeof doctor === 'string' ? doctor : (lang === 'ar' && doctor.nameAr ? doctor.nameAr : doctor.name);
   const trimmed = name?.trim() ?? '';
-  if (!trimmed) return lang === 'ar' ? 'طبيب' : 'Doctor';
+  if (!trimmed) return fallback;
   return trimmed.replace(/^(?:dr\.?|د\.?\s*)/i, '');
 }
 
@@ -89,9 +75,23 @@ export function formatDoctorLabel(
   doctor: { name?: string | null; nameAr?: string | null } | string | null | undefined,
   opts?: { short?: boolean; lang?: string },
 ) {
-  const isAr = opts?.lang === 'ar';
+  const prefix = getTranslations(opts?.lang).appointments.doctorPrefix;
   const label = opts?.short ? doctorShortName(doctor, opts?.lang) : doctorDisplayName(doctor, opts?.lang);
-  return isAr ? `د. ${label}` : `Dr. ${label}`;
+  return `${prefix} ${label}`;
+}
+
+export function staffRoleLabel(role: string | null | undefined, lang?: string) {
+  if (!role) return '';
+  const t = getTranslations(lang);
+  const labels: Record<string, string> = {
+    owner: t.appointments.roleOwner,
+    admin: t.appointments.roleAdmin,
+    practitioner: t.appointments.rolePractitioner,
+    financial: t.appointments.roleFinancial,
+    receptionist: t.appointments.roleReceptionist,
+    nurse: t.appointments.roleNurse,
+  };
+  return ` · ${labels[role.toLowerCase()] || role.replace(/_/g, ' ')}`;
 }
 
 export function formatApptTip(
@@ -107,20 +107,14 @@ export function formatApptTip(
   return bits.join(' · ');
 }
 
-export function appointmentSearchText(appt: Appointment) {
-  return [
-    formatPersonName(appt.patient),
-    appt.service?.name ?? '',
-    appt.doctor?.name ?? '',
-  ]
-    .join(' ')
-    .toLowerCase();
-}
-
 export function matchesAppointmentSearch(appt: Appointment, term: string) {
   const q = term.trim().toLowerCase();
   if (!q) return true;
-  return appointmentSearchText(appt).includes(q);
+  return [formatPersonName(appt.patient), appt.service?.name, appt.doctor?.name]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+    .includes(q);
 }
 
 export function isSameDay(a: Date, b: Date) {

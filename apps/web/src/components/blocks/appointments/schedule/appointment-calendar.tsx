@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -16,13 +16,14 @@ import {
 import { Badge } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { Appointment } from '@/services/appointments.service';
-import { STATUS_COLORS } from './status-badge';
-import { formatApptTip, patientDisplayName } from './appointment-display';
-import { hasScheduleConflict } from './appointment-conflict';
+import { STATUS_COLORS } from '../shared/status-badge';
+import { patientDisplayName } from '../shared/appointment-display';
 import { CalendarEventChip, readCalendarAppointment } from './calendar-event-chip';
-import { CalendarMoreList, type CalendarMoreState } from './calendar-more-list';
-import { EventPreview, type EventPreviewState, type PreviewPlacement } from './event-preview';
-import { rectFromElement } from './popover-position';
+import {
+  AppointmentPopover,
+  popoverAnchorFromElement,
+  type AppointmentPopoverState,
+} from './appointment-popovers';
 import { FC_TO_VIEW, ScheduleView, VIEW_TO_FC } from './schedule-nav';
 import { CalendarSkeleton } from './calendar-skeleton';
 import { ViewFocusToggle } from './view-focus';
@@ -37,15 +38,35 @@ import arLocale from '@fullcalendar/core/locales/ar';
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
 
-function dayAppointments(list: Appointment[] | undefined, date: Date) {
-  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-  const end = start + 24 * 60 * 60 * 1000;
-  return (list ?? [])
-    .filter((appt) => {
-      const t = new Date(appt.scheduledAt).getTime();
-      return t >= start && t < end;
-    })
-    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+function hasScheduleConflict(
+  appointments: Appointment[] | undefined,
+  appointment: Appointment,
+  startTime: number,
+  durationMins: number,
+) {
+  const endTime = startTime + durationMins * 60000;
+  return Boolean(
+    appointments?.some((other) => {
+      if (
+        other.id === appointment.id ||
+        other.status === 'cancelled' ||
+        other.status === 'no_show'
+      ) {
+        return false;
+      }
+      const otherStart = new Date(other.scheduledAt).getTime();
+      const overlaps = startTime < otherStart + other.durationMins * 60000 && endTime > otherStart;
+      return (
+        overlaps &&
+        (other.doctorId === appointment.doctorId ||
+          Boolean(
+            appointment.roomId &&
+              other.roomId &&
+              other.roomId === appointment.roomId,
+          ))
+      );
+    }),
+  );
 }
 
 interface Props {
@@ -72,45 +93,39 @@ export function AppointmentCalendar({
   onSelectSlot,
 }: Props) {
   const calendarRef = useRef<FullCalendar>(null);
-  const appointmentsRef = useRef(appointments);
-  appointmentsRef.current = appointments;
   const updateMutation = useUpdateAppointment();
   const isMobile = useIsMobile();
   const { t, lang } = useLanguage();
-  const [preview, setPreview] = useState<EventPreviewState | null>(null);
-  const [overflow, setOverflow] = useState<CalendarMoreState | null>(null);
+  const [appointmentPopover, setAppointmentPopover] =
+    useState<AppointmentPopoverState | null>(null);
 
   const events = useMemo(
     () =>
-      appointments?.map((appt) => ({
-        id: appt.id,
-        title: patientDisplayName(appt, lang),
-        start: appt.scheduledAt,
+      (appointments ?? []).map((appointment) => ({
+        id: appointment.id,
+        title: patientDisplayName(appointment, lang),
+        start: appointment.scheduledAt,
         end: new Date(
-          new Date(appt.scheduledAt).getTime() + appt.durationMins * 60000,
+          new Date(appointment.scheduledAt).getTime() + appointment.durationMins * 60000,
         ).toISOString(),
-        backgroundColor: STATUS_COLORS[appt.status],
-        borderColor: STATUS_COLORS[appt.status],
-        textColor: '#ffffff',
+        backgroundColor: STATUS_COLORS[appointment.status],
+        borderColor: STATUS_COLORS[appointment.status],
+        textColor: 'var(--color-primary-foreground)',
         display: 'block' as const,
-        editable: appt.status !== 'cancelled' && appt.status !== 'completed',
-        classNames: appt.status === 'cancelled' ? ['fc-event-cancelled'] : [],
-        extendedProps: { appointment: appt },
-      })) ?? [],
+        editable:
+          appointment.status !== 'cancelled' && appointment.status !== 'completed',
+        classNames: appointment.status === 'cancelled' ? ['fc-event-cancelled'] : [],
+        extendedProps: { appointment },
+      })),
     [appointments, lang],
   );
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const appt = readCalendarAppointment(arg.event.extendedProps);
     if (!appt) return;
-    const target = arg.jsEvent.target;
-    const fromEvent = target instanceof Element ? target.closest('.fc-event') : null;
-    const el = arg.el ?? fromEvent;
-    setPreview({
+    setAppointmentPopover({
       appointment: appt,
-      x: arg.jsEvent.clientX,
-      y: arg.jsEvent.clientY,
-      anchor: rectFromElement(el, arg.jsEvent.clientX, arg.jsEvent.clientY),
+      anchor: popoverAnchorFromElement(arg.el),
     });
   }, []);
 
@@ -119,8 +134,7 @@ export function AppointmentCalendar({
       if (arg.view.type !== 'dayGridMonth') return;
       const target = arg.jsEvent.target;
       if (target instanceof Element && target.closest('.fc-event, .fc-more-link')) return;
-      setPreview(null);
-      setOverflow(null);
+      setAppointmentPopover(null);
       const slot = new Date(arg.date);
       if (slot.getHours() === 0 && slot.getMinutes() === 0) {
         slot.setHours(9, 0, 0, 0);
@@ -132,8 +146,7 @@ export function AppointmentCalendar({
 
   const handleDateSelect = useCallback(
     (arg: DateSelectArg) => {
-      setPreview(null);
-      setOverflow(null);
+      setAppointmentPopover(null);
       onSelectSlot(arg.start);
     },
     [onSelectSlot],
@@ -156,7 +169,7 @@ export function AppointmentCalendar({
         return;
       }
       if (appt.status === 'cancelled') {
-        toast.error('Cancelled appointments cannot be rescheduled');
+        toast.error(t.appointments.cancelledCannotReschedule);
         info.revert();
         return;
       }
@@ -172,7 +185,7 @@ export function AppointmentCalendar({
       if (
         hasScheduleConflict(appointments, appt, info.event.start.getTime(), durationMins)
       ) {
-        toast.warning('Conflict detected: Doctor or room has overlapping appointment');
+        toast.warning(t.appointments.scheduleConflictWarning);
       }
 
       updateMutation.mutate(
@@ -180,12 +193,12 @@ export function AppointmentCalendar({
         {
           onError: (err) => {
             info.revert();
-            toast.error(extractErrorMessage(err) || 'Failed to reschedule appointment');
+            toast.error(extractErrorMessage(err) || t.appointments.rescheduleFailed);
           },
         },
       );
     },
-    [appointments, updateMutation],
+    [appointments, t, updateMutation],
   );
 
   const handleEventResize = useCallback(
@@ -210,49 +223,21 @@ export function AppointmentCalendar({
         {
           onError: (err) => {
             info.revert();
-            toast.error(extractErrorMessage(err) || 'Failed to update duration');
+            toast.error(extractErrorMessage(err) || t.appointments.durationUpdateFailed);
           },
         },
       );
     },
-    [updateMutation],
+    [t, updateMutation],
   );
 
   const renderMoreLinkContent = useCallback(
     (arg: MoreLinkContentArg) => (
-      <Badge variant="info" className="fc-more-badge pointer-events-none text-[10px] font-semibold">
-        +{arg.num} {t?.appointments?.more ?? (lang === 'ar' ? 'المزيد' : 'more')}
+      <Badge variant="info" className="fc-more-badge pointer-events-none flex w-full justify-center text-[10px] font-semibold">
+        +{arg.num} {t.appointments.more}
       </Badge>
     ),
-    [t, lang],
-  );
-
-  const openDayMore = useCallback((link: Element, clientX: number, clientY: number) => {
-    const dayEl = link.closest<HTMLElement>('[data-date]');
-    const raw = dayEl?.getAttribute('data-date');
-    const date = raw ? new Date(`${raw}T00:00:00`) : new Date();
-    setPreview(null);
-    setOverflow({
-      date,
-      appointments: dayAppointments(appointmentsRef.current, date),
-      x: clientX,
-      y: clientY,
-      anchor: rectFromElement(link, clientX, clientY),
-    });
-  }, []);
-
-  const handleCalendarPointerDown = useCallback(
-    (event: PointerEvent<HTMLDivElement>) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const link = target.closest('.fc-more-link');
-      if (!link || !event.currentTarget.contains(link)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.nativeEvent.stopImmediatePropagation();
-      openDayMore(link, event.clientX, event.clientY);
-    },
-    [openDayMore],
+    [t],
   );
 
   const handleEventDidMount = useCallback((info: EventMountArg) => {
@@ -262,7 +247,6 @@ export function AppointmentCalendar({
       : info.event.backgroundColor || 'var(--color-muted-foreground)';
     info.el.style.setProperty('background-color', color, 'important');
     info.el.style.setProperty('border-color', color, 'important');
-    info.el.setAttribute('title', appt ? formatApptTip(appt) : info.event.title);
   }, []);
 
   const handleDayCellDidMount = useCallback(
@@ -273,14 +257,14 @@ export function AppointmentCalendar({
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'fc-day-add';
-      btn.setAttribute('aria-label', 'Add appointment');
+    btn.setAttribute('aria-label', t.appointments.addAppointment);
       btn.innerHTML =
         '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
       btn.setAttribute('aria-hidden', 'true');
       btn.tabIndex = -1;
       frame.appendChild(btn);
     },
-    [],
+    [t],
   );
 
   const syncCalendarSize = useCallback(() => {
@@ -294,9 +278,6 @@ export function AppointmentCalendar({
   }, []);
 
   const sizeHostRef = useResizeObserver(syncCalendarSize);
-
-  const previewPlacement: PreviewPlacement =
-    isMobile || view === 'day' ? 'vertical' : 'horizontal';
 
   if (isLoading && !appointments) {
     return <CalendarSkeleton />;
@@ -314,14 +295,13 @@ export function AppointmentCalendar({
     >
       <div
         ref={sizeHostRef}
-        onPointerDownCapture={handleCalendarPointerDown}
         className={cn(
           'relative [&_.fc-header-toolbar]:pe-9 sm:[&_.fc-header-toolbar]:pe-10',
           focused &&
             'flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0',
         )}
       >
-        <div className="absolute top-0 end-0 z-20">
+        <div className="absolute top-0 inset-e-0 z-20">
           <ViewFocusToggle />
         </div>
         <FullCalendar
@@ -338,10 +318,10 @@ export function AppointmentCalendar({
             right: 'timeGridDay,timeGridWeek,dayGridMonth',
           }}
           buttonText={{
-            today: t?.appointments?.today ?? 'Today',
-            day: t?.appointments?.day ?? 'Day',
-            week: t?.appointments?.week ?? 'Week',
-            month: t?.appointments?.month ?? 'Month',
+            today: t.appointments.today,
+            day: t.appointments.day,
+            week: t.appointments.week,
+            month: t.appointments.month,
           }}
           height={focused ? '100%' : 'auto'}
           slotMinTime="07:00:00"
@@ -378,6 +358,7 @@ export function AppointmentCalendar({
           slotEventOverlap={false}
           eventMinHeight={isMobile ? 28 : 32}
           moreLinkContent={renderMoreLinkContent}
+          moreLinkClassNames={['block', 'w-full']}
           expandRows
           stickyHeaderDates
           views={{
@@ -402,29 +383,13 @@ export function AppointmentCalendar({
         />
       </div>
 
-      {overflow ? (
-        <CalendarMoreList
-          state={overflow}
-          onClose={() => setOverflow(null)}
-          onSelect={(appt) => {
-            setOverflow(null);
-            setPreview({
-              appointment: appt,
-              x: overflow.x,
-              y: overflow.y,
-              anchor: overflow.anchor,
-            });
-          }}
-        />
-      ) : null}
-
-      {preview ? (
-        <EventPreview
-          preview={preview}
-          placement={previewPlacement}
-          onClose={() => setPreview(null)}
+      {appointmentPopover ? (
+        <AppointmentPopover
+          key={appointmentPopover.appointment.id}
+          state={appointmentPopover}
+          onClose={() => setAppointmentPopover(null)}
           onExpand={(appt) => {
-            setPreview(null);
+            setAppointmentPopover(null);
             onEventClick(appt);
           }}
         />

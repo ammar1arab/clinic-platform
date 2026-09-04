@@ -12,6 +12,7 @@ import {
 import { SearchablePicker, type PickerOption } from '@/components/primitives';
 import { FORM_NONE, fromFormNone, toFormNone } from '@/constants/form';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/providers';
 
 export function FormSection({
   title,
@@ -39,9 +40,9 @@ export function OptionalSelect({
   value,
   onChange,
   options,
-  placeholder = 'None',
-  noneLabel = 'None',
-  searchPlaceholder = 'Search…',
+  placeholder,
+  noneLabel,
+  searchPlaceholder,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -50,14 +51,16 @@ export function OptionalSelect({
   noneLabel?: string;
   searchPlaceholder?: string;
 }) {
+  const { t } = useLanguage();
+
   return (
     <SearchablePicker
       options={options}
       value={toFormNone(value)}
       onChange={(next) => onChange(fromFormNone(next))}
-      placeholder={placeholder}
-      searchPlaceholder={searchPlaceholder}
-      extraOption={{ value: FORM_NONE, label: noneLabel }}
+      placeholder={placeholder ?? t.common.none}
+      searchPlaceholder={searchPlaceholder ?? t.common.search}
+      extraOption={{ value: FORM_NONE, label: noneLabel ?? t.common.none }}
       className="w-full"
     />
   );

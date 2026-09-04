@@ -20,7 +20,7 @@ import type { ScheduleView } from './schedule-nav';
 import { FORM_ALL } from '@/constants/form';
 import { cn } from '@/lib/utils';
 import { IconAdd, IconChevronDown, IconNewPatient, IconPatients, IconSchedule, IconTimer } from '@/constants/icons';
-import { STATUS_MENU_CONTENT_CLASS, StatusFilterItems } from './status-menu';
+import { STATUS_MENU_CONTENT_CLASS, StatusFilterItems } from '../shared/status-menu';
 import { useLanguage } from '@/providers';
 
 const VIEW_TABS: {

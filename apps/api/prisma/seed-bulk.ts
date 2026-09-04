@@ -6,8 +6,8 @@ import {
   type SessionType,
 } from "@prisma/client";
 
-export const BULK_PATIENT_COUNT = 300;
-export const BULK_REFERRAL_COUNT = 40;
+export const BULK_PATIENT_COUNT = 20;
+export const BULK_REFERRAL_COUNT = 20;
 
 const AVATAR_IDS = [1, 2, 3, 5, 7, 8, 11, 12, 13, 14, 16, 17, 18, 22, 26];
 
@@ -366,8 +366,8 @@ export function buildBulkAppointments(params: {
   const rows: BulkAppointmentRow[] = [];
   let apptCount = 0;
 
-  for (let day = -30; day <= 30; day++) {
-    const perDay = day === 0 ? 45 : day < 0 ? 35 : 25;
+  for (let day = -7; day <= 7; day++) {
+    const perDay = 2;
     for (let slot = 0; slot < perDay; slot++) {
       const patient = pick(params.patients, apptCount);
       const service = pick(params.services, apptCount);

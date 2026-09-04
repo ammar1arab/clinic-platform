@@ -16,14 +16,15 @@ import type { AppointmentStatus } from '@/services/appointments.service';
 import { StatusBadgeBlock } from './status-badge';
 import { IconChevronDown, IconSpinner } from '@/constants/icons';
 import { useLanguage } from '@/providers';
+import type { Translations } from '@/i18n';
 
 export const STATUS_MENU_CONTENT_CLASS = 'min-w-56 w-56 p-0';
 
-function filterStatuses(query: string, options: AppointmentStatus[], t?: any) {
+function filterStatuses(query: string, options: AppointmentStatus[], t: Translations) {
   const term = query.trim().toLowerCase();
   if (!term) return options;
   return options.filter((status) => {
-    const label = t?.constants?.status?.[status]?.label ?? getStatusConfig(t)[status].label;
+    const label = getStatusConfig(t)[status].label;
     return label.toLowerCase().includes(term);
   });
 }
@@ -68,10 +69,11 @@ export function StatusMenuItems({
       <StatusSearch
         value={query}
         onChange={setQuery}
-        placeholder={t?.practitioner?.searchStatus || t?.common?.search || 'Search status…'}
+        placeholder={t.practitioner.searchStatus}
       />
       <div className="max-h-60 overflow-y-auto p-1">
         <DropdownMenuRadioGroup
+          aria-label={title ?? t.appointments.updateStatus}
           value={value}
           onValueChange={(next) => onChange(next as AppointmentStatus)}
         >
@@ -87,7 +89,7 @@ export function StatusMenuItems({
         </DropdownMenuRadioGroup>
         {filtered.length === 0 ? (
           <p className="px-2.5 py-3 text-center text-sm text-muted-foreground">
-            {t?.common?.noMatches || t?.practitioner?.noMatches || 'No matches'}
+            {t.common.noMatches}
           </p>
         ) : null}
       </div>
@@ -113,7 +115,7 @@ export function StatusFilterItems({
       <StatusSearch
         value={query}
         onChange={setQuery}
-        placeholder={t?.practitioner?.searchStatus || t?.common?.search || 'Search status…'}
+        placeholder={t.practitioner.searchStatus}
       />
       <div className="max-h-60 overflow-y-auto p-1">
         {filtered.map((status) => (
@@ -129,7 +131,7 @@ export function StatusFilterItems({
         ))}
         {filtered.length === 0 ? (
           <p className="px-2.5 py-3 text-center text-sm text-muted-foreground">
-            {t?.common?.noMatches || t?.practitioner?.noMatches || 'No matches'}
+            {t.common.noMatches}
           </p>
         ) : null}
       </div>
