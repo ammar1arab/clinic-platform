@@ -16,3 +16,12 @@ export function getTranslations(
 ): Translations {
   return translations[language === 'ar' ? 'ar' : 'en'];
 }
+
+export function getBilingualName(
+  enName: string | null | undefined,
+  arName: string | null | undefined,
+  lang?: string
+): string {
+  if (lang === 'ar' && arName) return arName;
+  return enName ?? '';
+}

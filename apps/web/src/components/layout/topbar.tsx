@@ -117,7 +117,7 @@ export function TopbarBlock() {
             </AlertDialogMedia>
             <AlertDialogTitle>{t.auth.logout}?</AlertDialogTitle>
             <AlertDialogDescription>
-              You’ll need to sign in again to access the clinic dashboard.
+              {t.auth.logoutConfirmDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -282,6 +282,7 @@ export const en = {
   auth: {
     login: 'Log in',
     logout: 'Log out',
+    logoutConfirmDescription: 'You’ll need to sign in again to access the clinic dashboard.',
     title: 'Clinic Platform',
     description: 'Sign in to your account to continue',
     notFoundDescription: 'The page you are looking for does not exist.',

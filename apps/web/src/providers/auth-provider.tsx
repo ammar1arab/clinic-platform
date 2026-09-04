@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useMemo, useCallback } from 'react';
+import { createContext, useContext, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { authService, MeResponse } from '@/services/auth.service';
-import { getToken, setToken, clearToken } from '@/lib/auth-token';
+import { getToken, setToken, clearToken, subscribeToToken, getServerTokenSnapshot } from '@/lib/auth-token';
 import { createLogger } from '@/lib/logger';
 import { useFetchData } from '@/hooks/query/use-fetch-data';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,7 +21,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setTokenState] = useState<string | null>(() => getToken());
+  const token = useSyncExternalStore(subscribeToToken, getToken, getServerTokenSnapshot);
   const queryClient = useQueryClient();
 
   const { data: user, isLoading } = useFetchData<MeResponse>({
@@ -35,14 +35,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (newToken: string) => {
     setToken(newToken);
-    setTokenState(newToken);
     log.info('login');
     await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
   }, [queryClient]);
 
   const logout = useCallback(() => {
     clearToken();
-    setTokenState(null);
     queryClient.setQueryData(['auth', 'me', token], null);
     log.info('logout');
   }, [queryClient, token]);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useSyncExternalStore } from 'react';
+import { useRef, useSyncExternalStore, useCallback, useMemo } from 'react';
 
 type ShortcutOptions = {
   ignoreInputs?: boolean;
@@ -81,29 +81,33 @@ export function useKeyboardShortcut(
   const cbRef = useRef(callback);
   cbRef.current = callback;
 
-  const list = Array.isArray(shortcuts) ? shortcuts : [shortcuts];
-  const parsedKey = list.join('|');
-  const parsed = list.map(parse);
+  const shortcutsStr = Array.isArray(shortcuts) ? shortcuts.join('|') : shortcuts;
+  const parsedKey = shortcutsStr;
+  
+  const parsed = useMemo(() => {
+    const list = Array.isArray(shortcuts) ? shortcuts : [shortcuts];
+    return list.map(parse);
+  }, [shortcutsStr]);
 
-  useSyncExternalStore(
-    (onStoreChange) => {
-      if (!enabled) return () => undefined;
+  const subscribeFn = useCallback((onStoreChange: () => void) => {
+    if (!enabled) return () => undefined;
 
-      const handler = (e: KeyboardEvent) => {
-        if (ignoreInputs && isEditableTarget()) return;
-        for (const p of parsed) {
-          if (!matches(e, p)) continue;
-          e.preventDefault();
-          cbRef.current(e);
-          onStoreChange();
-          return;
-        }
-      };
+    const handler = (e: KeyboardEvent) => {
+      if (ignoreInputs && isEditableTarget()) return;
+      for (const p of parsed) {
+        if (!matches(e, p)) continue;
+        e.preventDefault();
+        cbRef.current(e);
+        onStoreChange();
+        return;
+      }
+    };
 
-      window.addEventListener('keydown', handler);
-      return () => window.removeEventListener('keydown', handler);
-    },
-    () => parsedKey,
-    () => parsedKey,
-  );
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [enabled, ignoreInputs, parsed]);
+
+  const getSnapshot = useCallback(() => parsedKey, [parsedKey]);
+
+  useSyncExternalStore(subscribeFn, getSnapshot, getSnapshot);
 }

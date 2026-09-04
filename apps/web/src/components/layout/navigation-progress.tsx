@@ -50,18 +50,28 @@ if (typeof window !== 'undefined') {
   );
 }
 
+function subscribe(onStoreChange: () => void) {
+  listeners.add(onStoreChange);
+  return () => listeners.delete(onStoreChange);
+}
+
+function getSnapshot() {
+  return isNavigating;
+}
+
+function getServerSnapshot() {
+  return false;
+}
+
 export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const key = `${pathname}?${searchParams?.toString() ?? ''}`;
 
   const navigating = useSyncExternalStore(
-    (onStoreChange) => {
-      listeners.add(onStoreChange);
-      return () => listeners.delete(onStoreChange);
-    },
-    () => isNavigating,
-    () => false,
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
   );
 
   return (
@@ -71,7 +81,7 @@ export function NavigationProgress() {
       style={{ opacity: navigating ? 1 : 0 }}
       className="pointer-events-none fixed inset-x-0 top-0 z-300 h-[2.5px] overflow-hidden transition-opacity duration-200"
     >
-      <div className="relative h-full origin-left overflow-hidden rounded-r-full bg-linear-to-r from-primary via-accent-teal to-warning transition-[width] duration-150 ease-out animate-clinic-progress-indeterminate">
+      <div className="relative h-full origin-left rtl:origin-right overflow-hidden rounded-e-full bg-linear-to-r from-primary via-accent-teal to-warning transition-[width] duration-150 ease-out animate-clinic-progress-indeterminate">
         <span className="absolute inset-0 animate-clinic-progress-shimmer bg-linear-to-r from-transparent via-white/60 to-transparent" />
       </div>
     </div>

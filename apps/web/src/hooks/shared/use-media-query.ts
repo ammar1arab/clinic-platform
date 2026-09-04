@@ -1,6 +1,6 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useCallback } from 'react';
 
 function subscribe(query: string, onChange: () => void) {
   const mql = window.matchMedia(query);
@@ -9,11 +9,11 @@ function subscribe(query: string, onChange: () => void) {
 }
 
 export function useMediaQuery(query: string) {
-  return useSyncExternalStore(
-    (onChange) => subscribe(query, onChange),
-    () => window.matchMedia(query).matches,
-    () => false,
-  );
+  const subscribeFn = useCallback((onChange: () => void) => subscribe(query, onChange), [query]);
+  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
+  const getServerSnapshot = useCallback(() => false, []);
+
+  return useSyncExternalStore(subscribeFn, getSnapshot, getServerSnapshot);
 }
 
 export function useIsMobile(breakpoint = 768) {

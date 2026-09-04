@@ -235,7 +235,7 @@ export function SidebarBlock() {
       <aside
         data-app-sidebar=""
         className={cn(
-          'hidden flex-col border-r border-border/80 bg-card/95 backdrop-blur-md md:flex',
+          'hidden flex-col border-e border-border/80 bg-card/95 backdrop-blur-md md:flex',
           'md:static md:shrink-0',
           'transition-all duration-300 ease-in-out',
           isCollapsed ? 'md:w-18' : 'md:w-56 lg:w-64',

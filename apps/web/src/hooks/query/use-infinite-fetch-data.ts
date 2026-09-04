@@ -35,13 +35,13 @@ export function useInfiniteFetchData<TPage>({
   onSuccess,
   onError,
 }: UseInfiniteFetchDataArgs<TPage>): UseInfiniteQueryResult<
-  InfiniteData<TPage>,
+  InfiniteData<TPage, number>,
   TResponseError
 > {
   return useInfiniteQuery<
     TPage,
     TResponseError,
-    InfiniteData<TPage>,
+    InfiniteData<TPage, number>,
     QueryKey,
     number
   >({
@@ -56,7 +56,7 @@ export function useInfiniteFetchData<TPage>({
       } catch (error) {
         onError?.(toMessageError(error));
         const meta = {
-          queryKey: JSON.stringify(queryKey),
+          query: String(queryKey[0]),
           pageParam,
           message: errorText(error),
         };

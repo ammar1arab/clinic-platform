@@ -284,6 +284,7 @@ export const ar: Translations = {
   auth: {
     login: 'تسجيل الدخول',
     logout: 'تسجيل الخروج',
+    logoutConfirmDescription: 'ستحتاج إلى تسجيل الدخول مرة أخرى للوصول إلى لوحة تحكم العيادة.',
     title: 'منصة العيادة',
     description: 'قم بتسجيل الدخول إلى حسابك للمتابعة',
     notFoundDescription: 'الصفحة التي تبحث عنها غير موجودة.',

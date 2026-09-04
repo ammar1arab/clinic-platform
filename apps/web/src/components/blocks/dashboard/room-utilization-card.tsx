@@ -10,6 +10,7 @@ import { RoomUtilization } from '@/services/dashboard.service';
 import { cn } from '@/lib/utils';
 import { IconRoom } from '@/constants/icons';
 import { useLanguage } from '@/providers';
+import { getBilingualName } from '@/i18n';
 
 interface Props {
   rooms: RoomUtilization[] | undefined;
@@ -39,10 +40,7 @@ export function RoomUtilizationCardBlock({ rooms, isLoading }: Props) {
         )}
 
         {rooms?.map((room) => {
-          const displayName =
-            lang === 'ar'
-              ? room.roomNameAr || room.roomName.replace(/^Room\s+(\d+)$/i, 'غرفة $1')
-              : room.roomName;
+          const displayName = getBilingualName(room.roomName, room.roomNameAr, lang);
           return (
             <div key={room.roomId} className="space-y-1">
               <div className="flex items-center justify-between text-sm">

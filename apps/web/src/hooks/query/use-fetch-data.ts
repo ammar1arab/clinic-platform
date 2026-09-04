@@ -53,7 +53,7 @@ export function useFetchData<T>({
         const meta = {
           message: errorText(error),
           status: status ?? null,
-          queryKey: JSON.stringify(queryKey),
+          query: String(queryKey[0]),
         };
         if (axios.isAxiosError(error)) log.warn("fetch_failed", meta);
         else log.error("fetch_failed", meta);
