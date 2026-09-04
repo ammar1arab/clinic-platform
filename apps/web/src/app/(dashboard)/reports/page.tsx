@@ -62,6 +62,7 @@ export default function ReportsPage() {
           icon={IconPerson}
           title={t?.reports?.patientMedical}
           description={t?.reports?.patientMedicalDesc}
+          accent="default"
           onClick={() => setPatientModalOpen(true)}
         />
 
@@ -69,6 +70,7 @@ export default function ReportsPage() {
           icon={IconPatients}
           title={t?.reports?.patientsDirectory}
           description={t?.reports?.patientsDirectoryDesc}
+          accent="teal"
           onClick={() => setDirectoryModalOpen(true)}
         />
 
@@ -76,6 +78,7 @@ export default function ReportsPage() {
           icon={IconReferral}
           title={t?.reports?.referralsConsultations}
           description={t?.reports?.referralsConsultationsDesc}
+          accent="warning"
           onClick={() => setReferralsModalOpen(true)}
         />
 
@@ -84,6 +87,7 @@ export default function ReportsPage() {
             icon={IconPayment}
             title={t?.reports?.finance}
             description={t?.reports?.financeDesc}
+            accent="success"
             onClick={() => setFinanceModalOpen(true)}
           />
         )}

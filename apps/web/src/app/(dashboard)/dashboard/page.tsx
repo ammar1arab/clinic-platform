@@ -60,14 +60,14 @@ export default function DashboardPage() {
           label={t?.dashboard?.avgWait}
           value={formatWaitingMins(kpis?.avgWaitingMins, false, t)}
           icon={IconHourglass}
-          accent="warning"
+          accent="error"
           isLoading={kpisLoading}
         />
         <KpiCardBlock
           label={t?.dashboard?.rooms}
           value={kpis?.roomCount ?? 0}
           icon={IconRoom}
-          accent="teal"
+          accent="muted"
           isLoading={kpisLoading}
         />
       </div>
