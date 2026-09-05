@@ -9,7 +9,7 @@ const copy = {
     email: "Email",
     password: "Temporary password",
     setup:
-      "Your clinic has created your practitioner account. Sign in, verify your email, and choose a new password.",
+      "Your clinic created your account. Sign in with your email as both email and temporary password, then verify and set a new password.",
     signIn: "Sign in to Cureva",
   },
   ar: {
@@ -20,7 +20,7 @@ const copy = {
     email: "البريد الإلكتروني",
     password: "كلمة المرور المؤقتة",
     setup:
-      "أنشأت عيادتك حساب الممارس الخاص بك. سجّل الدخول وتحقق من بريدك الإلكتروني ثم اختر كلمة مرور جديدة.",
+      "أنشأت عيادتك حسابك. سجّل الدخول باستخدام بريدك كالبريد وكلمة المرور المؤقتة، ثم تحقق واختر كلمة مرور جديدة.",
     signIn: "تسجيل الدخول إلى كيوريفا",
   },
 };

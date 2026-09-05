@@ -3,15 +3,17 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import type { Role } from '@clinic/types';
 import { cn } from '@/lib/utils';
+import { canSeeNavHref } from '@/constants/nav-access';
 import { ROUTES } from '@/constants/routes';
 import { schedulePath } from '@/components/blocks/appointments/schedule/schedule-nav';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
-import { IconCard, IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
+import { IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
 import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
 import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
-import { useLanguage } from '@/providers';
+import { useAuth, useLanguage } from '@/providers';
 import {
   IconChevronRight,
   IconClose,
@@ -25,13 +27,15 @@ import {
   type LucideIcon,
 } from '@/constants/icons';
 
-function getNavItems(t: any): {
+type NavItem = {
   label: string;
   href: string;
   icon: LucideIcon;
   accent: IconWellAccent;
-}[] {
-  return [
+};
+
+function getNavItems(t: { layout: { sidebar: Record<string, string> } }, role?: Role | null): NavItem[] {
+  const items: NavItem[] = [
     { label: t.layout.sidebar.dashboard, href: ROUTES.DASHBOARD, icon: IconDashboard, accent: 'default' },
     { label: t.layout.sidebar.schedule, href: schedulePath('month'), icon: IconSchedule, accent: 'teal' },
     { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
@@ -39,6 +43,7 @@ function getNavItems(t: any): {
     { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'warning' },
     { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings, accent: 'muted' },
   ];
+  return items.filter((item) => canSeeNavHref(item.href, role));
 }
 
 function isActivePath(pathname: string, href: string) {
@@ -149,7 +154,8 @@ export function SidebarBlock() {
   const pathname = usePathname();
   const { isCollapsed, toggleSidebar, mobileOpen, setMobileOpen } = useSidebar();
   const { t } = useLanguage();
-  const navItems = getNavItems(t);
+  const { user } = useAuth();
+  const navItems = getNavItems(t, user?.role);
 
   const [prevPathname, setPrevPathname] = useState(pathname);
   if (pathname !== prevPathname) {

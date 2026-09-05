@@ -2,16 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Switch, Badge, Popover, PopoverContent, PopoverTrigger } from '@/components/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Switch, Badge } from '@/components/ui';
 import {
   PreviewableAvatar, isRowControlClick, EmailLink, PhoneLink, TruncatedText, Pagination, EmptyState, MetaStat, TableSkeleton, RowActionsMenu, SoftTip, TableFrame,
 } from '@/components/primitives';
-import {
-  languageLabelList,
-  getPractitionerEmploymentLabels,
-  PRACTITIONER_EMPLOYMENT_VARIANT,
-  LANGUAGE_BADGE_VARIANT,
-} from '@/constants/practitioner';
 import {
   useDeletePractitioner,
   useDeactivatePractitioner,
@@ -20,9 +14,8 @@ import {
 import type { Practitioner } from '@/services/practitioners.service';
 import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconPhone, IconPractitioner, IconView } from '@/constants/icons';
 import { useLanguage } from '@/providers';
-import { getBilingualName, getStaffName, type Translations } from '@/i18n';
+import { getBilingualName, getStaffName } from '@/i18n';
 import { ROUTES } from '@/constants/routes';
-import { ageLabel } from '@/lib/age';
 
 function CellBadge({
   value,
@@ -38,62 +31,6 @@ function CellBadge({
         <span>{value}</span>
       </Badge>
     </SoftTip>
-  );
-}
-
-function LanguageBadges({ codes, t }: { codes: string[] | null | undefined, t: Translations }) {
-  const labels = languageLabelList(codes, t);
-  if (!labels.length) return <span className="text-muted-foreground">—</span>;
-  const shown = labels.slice(0, 2);
-  const rest = labels.slice(2);
-
-  return (
-    <div className="flex min-w-0 items-center gap-1">
-      {shown.map((label, index) => (
-        <Badge
-          key={label}
-          variant={LANGUAGE_BADGE_VARIANT[index % LANGUAGE_BADGE_VARIANT.length]}
-          className="font-normal"
-        >
-          <span>{label}</span>
-        </Badge>
-      ))}
-      {rest.length > 0 ? (
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label={`${rest.length} ${t?.practitioner?.moreLanguages}: ${rest.join(', ')}`}
-              className="shrink-0 rounded-md px-1 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              onClick={(event) => event.stopPropagation()}
-            >
-              {rest.length} {t?.practitioner?.more}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            align="start"
-            className="w-auto max-w-56 p-2"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex flex-wrap gap-1">
-              {rest.map((label, index) => (
-                <Badge
-                  key={label}
-                  variant={
-                    LANGUAGE_BADGE_VARIANT[
-                      (shown.length + index) % LANGUAGE_BADGE_VARIANT.length
-                    ]
-                  }
-                  className="font-normal"
-                >
-                  <span>{label}</span>
-                </Badge>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-      ) : null}
-    </div>
   );
 }
 
@@ -193,17 +130,13 @@ export function PractitionersList({
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[22%]">{t.practitioner.practitioner}</TableHead>
-                <TableHead className="w-[12%]">{t.practitioner.phone}</TableHead>
-                <TableHead className="w-[7%]">{t.practitioner.age}</TableHead>
-                <TableHead className="w-[12%]">{t.practitioner.specialty}</TableHead>
-                <TableHead className="hidden lg:table-cell w-[11%]">{t.practitioner.department}</TableHead>
-                <TableHead className="hidden xl:table-cell w-[11%]">{t.practitioner.languages}</TableHead>
-                <TableHead className="w-[7%]">{t.practitioner.services}</TableHead>
-                <TableHead className="hidden lg:table-cell w-[10%]">{t.practitioner.employment}</TableHead>
-                <TableHead className="hidden xl:table-cell w-[6%]">{t.practitioner.buffer}</TableHead>
-                <TableHead className="w-[7%]">{t.practitioner.active}</TableHead>
-                <TableHead className="w-[7%]" />
+                <TableHead className="w-[28%]">{t.practitioner.practitioner}</TableHead>
+                <TableHead className="w-[16%]">{t.practitioner.phone}</TableHead>
+                <TableHead className="w-[18%]">{t.practitioner.specialty}</TableHead>
+                <TableHead className="hidden lg:table-cell w-[16%]">{t.practitioner.department}</TableHead>
+                <TableHead className="w-[8%]">{t.practitioner.services}</TableHead>
+                <TableHead className="w-[8%]">{t.practitioner.active}</TableHead>
+                <TableHead className="w-[6%]" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -243,43 +176,14 @@ export function PractitionersList({
                   >
                     <PhoneLink value={p.phone} className="block" />
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {ageLabel(p.dob, undefined, t) || '—'}
-                  </TableCell>
                   <TableCell className="max-w-0 overflow-hidden">
                     <CellBadge value={lang === 'ar' && p.specialtyAr ? p.specialtyAr : p.specialty} />
                   </TableCell>
                   <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden">
                     <CellBadge value={getBilingualName(p.departmentName, p.departmentNameAr, lang)} variant="outline" />
                   </TableCell>
-                  <TableCell
-                    className="hidden xl:table-cell max-w-0 overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <LanguageBadges codes={p.languages} t={t} />
-                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {p.serviceIds.length}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden">
-                    {p.employmentType ? (
-                      <CellBadge
-                        value={
-                          (t?.constants?.employment as Record<string, string>)?.[p.employmentType] ??
-                          getPractitionerEmploymentLabels(t)[p.employmentType] ??
-                          p.employmentType
-                        }
-                        variant={
-                          PRACTITIONER_EMPLOYMENT_VARIANT[p.employmentType] ??
-                          'secondary'
-                        }
-                      />
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell text-muted-foreground">
-                    {p.bufferMins}{t.common.minsCompact}
                   </TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Switch
@@ -331,21 +235,9 @@ export function PractitionersList({
                     className="min-w-0 w-full text-xs text-muted-foreground"
                   />
                 </div>
-                {p.specialty || p.employmentType ? (
+                {p.specialty ? (
                   <div className="mt-1 flex flex-wrap gap-1">
-                    {p.specialty ? <CellBadge value={lang === 'ar' && p.specialtyAr ? p.specialtyAr : p.specialty} /> : null}
-                    {p.employmentType ? (
-                      <CellBadge
-                        value={
-                          (t?.constants?.employment as Record<string, string>)?.[p.employmentType] ??
-                          getPractitionerEmploymentLabels(t)[p.employmentType] ??
-                          p.employmentType
-                        }
-                        variant={
-                          PRACTITIONER_EMPLOYMENT_VARIANT[p.employmentType] ?? 'secondary'
-                        }
-                      />
-                    ) : null}
+                    <CellBadge value={lang === 'ar' && p.specialtyAr ? p.specialtyAr : p.specialty} />
                   </div>
                 ) : null}
                 {p.phone ? (
@@ -372,15 +264,11 @@ export function PractitionersList({
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs">
-              <MetaStat label={t.practitioner.department} value={p.departmentName ?? '—'} />
-              <div className="min-w-0">
-                <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-                  {t.practitioner.languages}
-                </p>
-                <LanguageBadges codes={p.languages} t={t} />
-              </div>
+              <MetaStat
+                label={t.practitioner.department}
+                value={getBilingualName(p.departmentName, p.departmentNameAr, lang) || '—'}
+              />
               <MetaStat label={t.practitioner.services} value={String(p.serviceIds.length)} />
-              <MetaStat label={t.practitioner.age} value={ageLabel(p.dob, undefined, t) || '—'} />
             </div>
           </div>
         ))}

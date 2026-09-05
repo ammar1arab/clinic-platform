@@ -1,22 +1,30 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
 import { SidebarBlock, TopbarBlock, PageTransition } from '@/components/layout';
 import { LoadingState } from '@/components/primitives';
+import { canAccessPath } from '@/constants/nav-access';
+import { ROUTES } from '@/constants/routes';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading, isHydrated } = useAuth();
+  const { user, isAuthenticated, isLoading, isHydrated } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
+  const pathname = usePathname();
 
   if (!isHydrated || isLoading) {
     return <LoadingState variant="page" text={t.common.checkingPermissions} />;
   }
 
   if (!isAuthenticated) {
-    router.replace('/login');
+    router.replace(ROUTES.LOGIN);
     return <LoadingState variant="page" text={t.common.loadingSession} />;
+  }
+
+  if (!canAccessPath(pathname, user?.role)) {
+    router.replace(ROUTES.DASHBOARD);
+    return <LoadingState variant="page" text={t.common.checkingPermissions} />;
   }
 
   return (

@@ -129,7 +129,6 @@ export interface UpdatePractitionerInput {
 
 export interface CreatePractitionerResult {
   practitioner: PractitionerDetail;
-  temporaryPassword: string;
   welcomeEmailSent: boolean;
 }
 

@@ -5,7 +5,6 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { randomBytes } from "crypto";
 import * as bcrypt from "bcrypt";
 import {
   EmailService,
@@ -46,14 +45,14 @@ export class PractitionersService {
       throw new ConflictException("Email already registered");
     }
 
-    const temporaryPassword = randomBytes(9).toString("base64url").slice(0, 12);
+    const temporaryPassword = email;
     const row = await this.repo.createWithUser({
       dto: {
         ...dto,
         email,
         imageUrl: persistableImageUrl(dto.imageUrl) || defaultAvatarUrl(email),
       },
-      passwordHash: await bcrypt.hash(temporaryPassword, 10),
+      passwordHash: await bcrypt.hash(temporaryPassword, 12),
       initials: initialsFromName(dto.name),
     });
 
@@ -64,7 +63,7 @@ export class PractitionersService {
       temporaryPassword,
     });
 
-    return { practitioner, temporaryPassword, welcomeEmailSent };
+    return { practitioner, welcomeEmailSent };
   }
 
   async findAll(clinicId: string) {

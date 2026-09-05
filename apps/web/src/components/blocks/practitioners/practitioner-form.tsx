@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -45,7 +45,6 @@ import {
   toPractitionerPayload,
 } from './practitioner-form.mapper';
 import { LeaveBlocksFields, WeeklyAvailabilityFields } from './practitioner-schedule-fields';
-import { IconCopy } from '@/constants/icons';
 
 type Props = {
   clinicId: string;
@@ -58,9 +57,6 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
   const isEdit = !!practitioner;
   const confirm = useConfirm();
   const { t, lang } = useLanguage();
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
-  const [createdId, setCreatedId] = useState<string | null>(null);
-  const [welcomeEmailSent, setWelcomeEmailSent] = useState(false);
 
   const { data: departments } = useDepartments(clinicId);
   const { data: rooms } = useRooms(clinicId);
@@ -150,63 +146,19 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
     createMutation.mutate(
       { clinicId, email: data.email!.trim(), ...base },
       {
-        onSuccess: (res) => {
-          setTempPassword(res.temporaryPassword);
-          setCreatedId(res.practitioner.id);
-          setWelcomeEmailSent(res.welcomeEmailSent);
-          toast.message(
-            res.welcomeEmailSent
-              ? t.practitioner.welcomeEmailSentToast
-              : t.practitioner.copyTempPasswordToast,
-          );
+        onSuccess: async (res) => {
+          if (res.welcomeEmailSent) toast.success(t.practitioner.welcomeEmailSentToast);
+          await confirm({
+            title: t.practitioner.created,
+            description: t.practitioner.credentialsAreEmail,
+            confirmLabel: t.practitioner.viewProfile,
+            hideCancel: true,
+          });
+          onSuccess(res.practitioner.id);
         },
       },
     );
   };
-
-  if (tempPassword && createdId) {
-    const email = watch('email');
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">{t.practitioner.created}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {welcomeEmailSent
-              ? t.practitioner.welcomeEmailBackup
-              : t.practitioner.shareCredentialsOnce}
-          </p>
-          <div className="rounded-lg bg-muted/40 p-3 text-sm">
-            <p>
-              <span className="text-muted-foreground">{t.practitioner.email}: </span>
-              {email}
-            </p>
-            <p className="mt-2 flex items-center gap-2">
-              <span className="text-muted-foreground">{t.auth.password}: </span>
-              <code className="rounded-md bg-background px-1.5 py-0.5 font-mono">
-                {tempPassword}
-              </code>
-              <Button
-                type="button"
-                size="icon-xs"
-                variant="ghost"
-                onClick={() => {
-                  void navigator.clipboard.writeText(tempPassword);
-                  toast.success(t.common.copied);
-                }}
-              >
-                <IconCopy className="size-3.5" />
-              </Button>
-            </p>
-          </div>
-          <Button type="button" onClick={() => onSuccess(createdId)}>
-            {t.practitioner.viewProfile}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="min-w-0 space-y-4" noValidate>

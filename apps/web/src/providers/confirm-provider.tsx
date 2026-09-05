@@ -18,6 +18,7 @@ interface ConfirmOptions {
   description?: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  hideCancel?: boolean;
   variant?: 'default' | 'destructive';
 }
 
@@ -59,9 +60,11 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => handle(false)}>
-              {state?.cancelLabel ?? t.common.cancel}
-            </AlertDialogCancel>
+            {!state?.hideCancel && (
+              <AlertDialogCancel onClick={() => handle(false)}>
+                {state?.cancelLabel ?? t.common.cancel}
+              </AlertDialogCancel>
+            )}
             <AlertDialogAction
               onClick={() => handle(true)}
               className={

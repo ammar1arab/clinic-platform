@@ -267,7 +267,39 @@ th, td {
 }
 
 @layer utilities {
-  
+  .auth-flip {
+    perspective: 1200px;
+  }
+
+  .auth-flip-inner {
+    display: grid;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .auth-flip-inner > * {
+    grid-area: 1 / 1;
+  }
+
+  .auth-flip-face {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  .auth-flip-back {
+    transform: rotateY(180deg);
+  }
+
+  .auth-flip-flipped {
+    transform: rotateY(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .auth-flip-inner {
+      transition: none;
+    }
+  }
+
   .fade-in {
     animation: fadeIn 0.25s ease-out;
   }

@@ -536,12 +536,9 @@ export const en = {
     removeLeaveTitle: 'Remove this leave block?',
     removeLeaveDesc:
       'This blocked range will be dropped from the form until you save.',
-    welcomeEmailSentToast: 'Welcome email sent. Copy the password as backup.',
-    copyTempPasswordToast: 'Copy the temporary password - shown once only.',
-    welcomeEmailBackup:
-      'A welcome email was sent. Keep this password as a backup - they must change it on first login.',
-    shareCredentialsOnce:
-      'Share login credentials once. Password is not shown again. They must change it on first login.',
+    welcomeEmailSentToast: 'Welcome email sent with sign-in details.',
+    credentialsAreEmail:
+      'Sign-in uses their email for both email and temporary password. They must change the password on first login.',
     viewProfile: 'View profile',
   },
   appointments: {
