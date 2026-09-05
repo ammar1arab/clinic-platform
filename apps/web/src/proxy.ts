@@ -4,6 +4,7 @@ import { AUTH_COOKIE_NAME } from '@/constants/auth';
 import { ROUTES } from '@/constants/routes';
 
 const PROTECTED_PREFIXES = [
+  ROUTES.HOME,
   ROUTES.DASHBOARD,
   ROUTES.SCHEDULE,
   ROUTES.PATIENTS,
@@ -32,6 +33,8 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/home',
+    '/home/:path*',
     '/dashboard/:path*',
     '/schedule/:path*',
     '/patients/:path*',

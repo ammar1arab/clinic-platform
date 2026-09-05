@@ -23,6 +23,7 @@ import { SoftTip } from '@/components/primitives';
 import { IconLogout, IconMenu } from '@/constants/icons';
 
 function resolveTitle(pathname: string, t: any): string {
+  if (pathname === '/home') return t.layout.titles.home;
   if (pathname === '/dashboard') return t.layout.titles.dashboard;
   if (pathname === '/schedule') return t.layout.titles.schedule;
   if (pathname === '/schedule/new') return t.layout.titles.newAppointment;
@@ -49,7 +50,7 @@ function resolveTitle(pathname: string, t: any): string {
   return t.layout.titles.default;
 }
 
-export function TopbarBlock() {
+export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   const pathname = usePathname();
   const { logout } = useAuth();
   const router = useRouter();
@@ -70,15 +71,17 @@ export function TopbarBlock() {
         className="relative z-10 flex h-app-header shrink-0 items-center justify-between border-b border-border/70 bg-background/80 px-3 pt-[env(safe-area-inset-top,0px)] shadow-[0_1px_0_0_color-mix(in_oklch,var(--brand)_12%,transparent)] backdrop-blur-md md:px-5"
       >
         <div className="flex min-w-0 items-center gap-2.5">
-          <SoftTip label={t.layout.sidebar.openMenu}>
-            <button
-              aria-label={t.layout.sidebar.openMenu}
-              className="grid size-8 shrink-0 place-items-center rounded-lg border border-border/80 bg-card/80 text-foreground shadow-sm transition-colors hover:bg-muted md:hidden"
-              onClick={() => setMobileOpen(true)}
-            >
-              <IconMenu className="size-4" />
-            </button>
-          </SoftTip>
+          {showNav ? (
+            <SoftTip label={t.layout.sidebar.openMenu}>
+              <button
+                aria-label={t.layout.sidebar.openMenu}
+                className="grid size-8 shrink-0 place-items-center rounded-lg border border-border/80 bg-card/80 text-foreground shadow-sm transition-colors hover:bg-muted md:hidden"
+                onClick={() => setMobileOpen(true)}
+              >
+                <IconMenu className="size-4" />
+              </button>
+            </SoftTip>
+          ) : null}
 
           <div className="flex min-w-0 items-center gap-2.5">
             <span

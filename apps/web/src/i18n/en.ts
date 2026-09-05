@@ -281,6 +281,11 @@ export const en = {
       promocodes: 'Promocodes',
       clinicDefaults: 'Clinic defaults',
       default: 'Cureva Clinic',
+      home: 'Home',
+    },
+    unavailable: {
+      title: 'No pages available yet',
+      description: 'Practitioner access will open here in a later update. You can sign out from the top bar.',
     },
   },
   auth: {

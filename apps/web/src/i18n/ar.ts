@@ -283,6 +283,11 @@ export const ar: Translations = {
       promocodes: 'أكواد الخصم',
       clinicDefaults: 'إعدادات العيادة',
       default: 'Cureva Clinic',
+      home: 'الرئيسية',
+    },
+    unavailable: {
+      title: 'لا توجد صفحات متاحة حالياً',
+      description: 'سيتم تفعيل صفحات الطبيب لاحقاً. يمكنك تسجيل الخروج من الشريط العلوي.',
     },
   },
   auth: {

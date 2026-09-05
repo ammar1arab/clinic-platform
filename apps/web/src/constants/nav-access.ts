@@ -2,22 +2,32 @@ import type { Role } from '@clinic/types';
 import { ROUTES } from './routes';
 
 const STAFF: Role[] = ['owner', 'admin'];
-const CLINIC: Role[] = ['owner', 'admin', 'practitioner'];
 const FINANCE: Role[] = ['owner', 'admin', 'financial'];
 const OPS: Role[] = ['owner', 'admin', 'financial'];
+const PRACTITIONER: Role[] = ['practitioner'];
+
+const SIDEBAR_PREFIXES = [
+  ROUTES.DASHBOARD,
+  ROUTES.SCHEDULE,
+  ROUTES.PATIENTS,
+  ROUTES.PRACTITIONERS,
+  ROUTES.REPORTS,
+  ROUTES.SETTINGS,
+] as const;
 
 /** Routes a role may open. `undefined` roles = all authenticated roles. */
 export const NAV_ACCESS: { prefix: string; roles?: Role[] }[] = [
+  { prefix: ROUTES.HOME, roles: PRACTITIONER },
   { prefix: ROUTES.DASHBOARD, roles: OPS },
-  { prefix: ROUTES.SCHEDULE },
-  { prefix: ROUTES.PATIENTS, roles: CLINIC },
+  { prefix: ROUTES.SCHEDULE, roles: STAFF },
+  { prefix: ROUTES.PATIENTS, roles: STAFF },
   { prefix: ROUTES.PRACTITIONERS, roles: STAFF },
   { prefix: ROUTES.REPORTS, roles: FINANCE },
   { prefix: ROUTES.SETTINGS, roles: STAFF },
 ];
 
 export function homePathForRole(role?: Role | null): string {
-  if (role === 'practitioner') return ROUTES.SCHEDULE;
+  if (role === 'practitioner') return ROUTES.HOME;
   if (role === 'financial') return ROUTES.REPORTS;
   return ROUTES.DASHBOARD;
 }
@@ -34,4 +44,8 @@ export function canAccessPath(pathname: string, role?: Role | null): boolean {
 export function canSeeNavHref(href: string, role?: Role | null): boolean {
   const path = href.split('?')[0] ?? href;
   return canAccessPath(path, role);
+}
+
+export function hasClinicNav(role?: Role | null): boolean {
+  return SIDEBAR_PREFIXES.some((prefix) => canSeeNavHref(prefix, role));
 }
