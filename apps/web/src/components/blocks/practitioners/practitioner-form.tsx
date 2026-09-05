@@ -37,6 +37,7 @@ import { useDepartments } from '@/hooks/api/use-departments';
 import { useRooms } from '@/hooks/api/use-rooms';
 import { useServices } from '@/hooks/api/use-services';
 import { useConfirm, useLanguage } from '@/providers';
+import { getBilingualName } from '@/i18n';
 import type { PractitionerDetail } from '@/services/practitioners.service';
 import {
   emptyPractitionerValues,
@@ -56,7 +57,7 @@ type Props = {
 export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }: Props) {
   const isEdit = !!practitioner;
   const confirm = useConfirm();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [welcomeEmailSent, setWelcomeEmailSent] = useState(false);
@@ -98,17 +99,23 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
   }, [rooms, departmentId]);
 
   const serviceOptions = useMemo(
-    () => (services ?? []).filter((s) => s.isActive).map((s) => ({ value: s.id, label: s.name })),
-    [services],
+    () =>
+      (services ?? [])
+        .filter((s) => s.isActive)
+        .map((s) => ({
+          value: s.id,
+          label: getBilingualName(s.name, s.nameAr, lang),
+        })),
+    [services, lang],
   );
 
   const pending = createMutation.isPending || updateMutation.isPending;
 
   const removeAvailability = async (index: number) => {
     const ok = await confirm({
-      title: 'Remove this availability?',
-      description: 'This weekly slot will be dropped from the form until you save.',
-      confirmLabel: 'Remove',
+      title: t.practitioner.removeAvailabilityTitle,
+      description: t.practitioner.removeAvailabilityDesc,
+      confirmLabel: t.common.remove,
       variant: 'destructive',
     });
     if (ok) availabilities.remove(index);
@@ -116,9 +123,9 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
 
   const removeTimeOff = async (index: number) => {
     const ok = await confirm({
-      title: 'Remove this leave block?',
-      description: 'This blocked range will be dropped from the form until you save.',
-      confirmLabel: 'Remove',
+      title: t.practitioner.removeLeaveTitle,
+      description: t.practitioner.removeLeaveDesc,
+      confirmLabel: t.common.remove,
       variant: 'destructive',
     });
     if (ok) timeOffs.remove(index);
@@ -126,7 +133,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
 
   const onSubmit = (data: PractitionerFormData) => {
     if (!isEdit && !data.email?.trim()) {
-      setError('email', { message: 'Email is required' });
+      setError('email', { message: t.practitioner.emailRequired });
       return;
     }
 
@@ -149,8 +156,8 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
           setWelcomeEmailSent(res.welcomeEmailSent);
           toast.message(
             res.welcomeEmailSent
-              ? 'Welcome email sent. IconCopy the password as backup.'
-              : 'IconCopy the temporary password - shown once only.',
+              ? t.practitioner.welcomeEmailSentToast
+              : t.practitioner.copyTempPasswordToast,
           );
         },
       },
@@ -162,21 +169,21 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">{t?.practitioner?.practitioner} {t?.common?.created}</CardTitle>
+          <CardTitle className="text-sm">{t.practitioner.created}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
             {welcomeEmailSent
-              ? 'A welcome email was sent. Keep this password as a backup - they must change it on first login.'
-              : 'Share login credentials once. Password is not shown again. They must change it on first login.'}
+              ? t.practitioner.welcomeEmailBackup
+              : t.practitioner.shareCredentialsOnce}
           </p>
           <div className="rounded-lg bg-muted/40 p-3 text-sm">
             <p>
-              <span className="text-muted-foreground">Email: </span>
+              <span className="text-muted-foreground">{t.practitioner.email}: </span>
               {email}
             </p>
             <p className="mt-2 flex items-center gap-2">
-              <span className="text-muted-foreground">Password: </span>
+              <span className="text-muted-foreground">{t.auth.password}: </span>
               <code className="rounded-md bg-background px-1.5 py-0.5 font-mono">
                 {tempPassword}
               </code>
@@ -186,7 +193,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
                 variant="ghost"
                 onClick={() => {
                   void navigator.clipboard.writeText(tempPassword);
-                  toast.success('Copied');
+                  toast.success(t.common.copied);
                 }}
               >
                 <IconCopy className="size-3.5" />
@@ -194,7 +201,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
             </p>
           </div>
           <Button type="button" onClick={() => onSuccess(createdId)}>
-            View profile
+            {t.practitioner.viewProfile}
           </Button>
         </CardContent>
       </Card>
@@ -205,7 +212,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
     <form onSubmit={handleSubmit(onSubmit)} className="min-w-0 space-y-4" noValidate>
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">{t?.practitioner?.overview}</CardTitle>
+          <CardTitle className="text-sm">{t.practitioner.overview}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField error={errors.imageUrl?.message} className="sm:col-span-2">
@@ -229,10 +236,10 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
             arabicError={errors.nameAr?.message}
           />
 
-          <FormField label="Title" error={errors.title?.message}>
-            <Input placeholder="Dr, Consultant, Therapist…" {...register('title')} />
+          <FormField label={t.practitioner.nameTitle} error={errors.title?.message}>
+            <Input placeholder={t.practitioner.nameTitlePlaceholder} {...register('title')} />
           </FormField>
-          <FormField label="Nationality" error={errors.nationality?.message}>
+          <FormField label={t.practitioner.nationality} error={errors.nationality?.message}>
             <Controller
               control={control}
               name="nationality"
@@ -240,22 +247,22 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
                 <CountrySelect
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder="Select nationality"
+                  placeholder={t.common.selectCountry}
                   disabled={pending}
                 />
               )}
             />
           </FormField>
-          <FormField label="Specialty" error={errors.specialty?.message}>
-            <Input placeholder="Dermatology, Orthodontics…" {...register('specialty')} />
+          <FormField label={t.practitioner.specialty} error={errors.specialty?.message}>
+            <Input placeholder={t.practitioner.specialtyPlaceholder} {...register('specialty')} />
           </FormField>
-          <FormField label="Specialty (Arabic)" error={errors.specialtyAr?.message}>
-            <Input dir="rtl" placeholder="التخصص" {...register('specialtyAr')} />
+          <FormField label={t.practitioner.specialtyAr} error={errors.specialtyAr?.message}>
+            <Input dir="rtl" placeholder={t.practitioner.specialtyArPlaceholder} {...register('specialtyAr')} />
           </FormField>
-          <FormField label="Email" required={!isEdit} error={errors.email?.message}>
+          <FormField label={t.practitioner.email} required={!isEdit} error={errors.email?.message}>
             <Input type="email" disabled={isEdit} {...register('email')} />
           </FormField>
-          <FormField label="Date of birth" error={errors.dob?.message}>
+          <FormField label={t.practitioner.dob} error={errors.dob?.message}>
             <Controller
               control={control}
               name="dob"
@@ -264,7 +271,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
               )}
             />
           </FormField>
-          <FormField label="Phone" error={errors.phone?.message}>
+          <FormField label={t.practitioner.phone} error={errors.phone?.message}>
             <Controller
               control={control}
               name="phone"
@@ -277,7 +284,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
               )}
             />
           </FormField>
-          <FormField label="WhatsApp" error={errors.whatsapp?.message}>
+          <FormField label={t.practitioner.whatsapp} error={errors.whatsapp?.message}>
             <Controller
               control={control}
               name="whatsapp"
@@ -290,7 +297,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
               )}
             />
           </FormField>
-          <FormField label="Languages" error={errors.languages?.message} className="sm:col-span-2">
+          <FormField label={t.practitioner.languages} error={errors.languages?.message} className="sm:col-span-2">
             <Controller
               control={control}
               name="languages"
@@ -298,31 +305,31 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
                 <MultiSelect
                   options={getPractitionerLanguages(t).map((l) => ({
                     value: l.value,
-                    label: t?.constants?.languages?.[l.value] ?? l.label,
+                    label: l.label,
                   }))}
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder={t?.practitioner?.selectLanguages || "Select languages spoken"}
-                  emptyText={t?.practitioner?.noLanguages || "No languages"}
+                  placeholder={t.practitioner.selectLanguages}
+                  emptyText={t.practitioner.noLanguages}
                   disabled={pending}
                 />
               )}
             />
           </FormField>
-          <FormField label="Years of practice" error={errors.experienceYears?.message}>
+          <FormField label={t.practitioner.yearsOfPractice} error={errors.experienceYears?.message}>
             <Input type="number" min={0} max={80} {...register('experienceYears')} />
           </FormField>
-          <FormField label="License number" error={errors.licenseNumber?.message}>
+          <FormField label={t.practitioner.licenseNumber} error={errors.licenseNumber?.message}>
             <Input {...register('licenseNumber')} />
           </FormField>
-          <FormField label="License expiry" error={errors.licenseExpiry?.message}>
+          <FormField label={t.practitioner.licenseExpiry} error={errors.licenseExpiry?.message}>
             <Controller
               control={control}
               name="licenseExpiry"
               render={({ field }) => <DatePicker value={field.value} onChange={field.onChange} />}
             />
           </FormField>
-          <FormField label="Gender" error={errors.gender?.message}>
+          <FormField label={t.common.gender} error={errors.gender?.message}>
             <Controller
               control={control}
               name="gender"
@@ -333,13 +340,13 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
                   disabled={pending}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select gender" />
+                    <SelectValue placeholder={t.common.selectGender} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_NONE}>{t?.common?.notSpecified || 'Not specified'}</SelectItem>
+                    <SelectItem value={FORM_NONE}>{t.common.notSpecified}</SelectItem>
                     {getGenders(t).map((g) => (
                       <SelectItem key={g.value} value={g.value}>
-                        {t?.constants?.gender?.[g.value] ?? g.label}
+                        {g.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -347,10 +354,10 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
               )}
             />
           </FormField>
-          <FormField label="Bio" error={errors.bio?.message} className="sm:col-span-2">
+          <FormField label={t.practitioner.bio} error={errors.bio?.message} className="sm:col-span-2">
             <Textarea rows={3} {...register('bio')} />
           </FormField>
-          <FormField label="Bio (Arabic)" error={errors.bioAr?.message} className="sm:col-span-2">
+          <FormField label={t.practitioner.bioAr} error={errors.bioAr?.message} className="sm:col-span-2">
             <Textarea rows={3} dir="rtl" {...register('bioAr')} />
           </FormField>
         </CardContent>
@@ -358,10 +365,10 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">{t?.practitioner?.department}</CardTitle>
+          <CardTitle className="text-sm">{t.practitioner.department}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Department" required error={errors.departmentId?.message}>
+          <FormField label={t.practitioner.department} required error={errors.departmentId?.message}>
             <Controller
               control={control}
               name="departmentId"
@@ -374,14 +381,14 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
                   }}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select department" />
+                    <SelectValue placeholder={t.practitioner.selectDepartment} />
                   </SelectTrigger>
                   <SelectContent>
                     {(departments ?? [])
                       .filter((d) => d.isActive)
                       .map((d) => (
                         <SelectItem key={d.id} value={d.id}>
-                          {d.name}
+                          {getBilingualName(d.name, d.nameAr, lang)}
                         </SelectItem>
                       ))}
                   </SelectContent>
@@ -390,7 +397,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
             />
           </FormField>
 
-          <FormField label="Default room" error={errors.defaultRoomId?.message}>
+          <FormField label={t.practitioner.defaultRoom} error={errors.defaultRoomId?.message}>
             <Controller
               control={control}
               name="defaultRoomId"
@@ -400,13 +407,13 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
                   onValueChange={(v) => field.onChange(v === FORM_NONE ? '' : v)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="No default room" />
+                    <SelectValue placeholder={t.practitioner.noDefaultRoom} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_NONE}>No default room</SelectItem>
+                    <SelectItem value={FORM_NONE}>{t.practitioner.noDefaultRoom}</SelectItem>
                     {roomOptions.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
-                        {r.name}
+                        {getBilingualName(r.name, r.nameAr, lang)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -415,7 +422,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
             />
           </FormField>
 
-          <FormField label="Employment" error={errors.employmentType?.message}>
+          <FormField label={t.practitioner.employment} error={errors.employmentType?.message}>
             <Controller
               control={control}
               name="employmentType"
@@ -431,13 +438,13 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
                   }}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Not set" />
+                    <SelectValue placeholder={t.common.notSpecified} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={FORM_NONE}>{t?.common?.notSpecified || 'Not set'}</SelectItem>
-                    <SelectItem value="salaried">{t?.constants?.employment?.salaried || 'Salaried'}</SelectItem>
-                    <SelectItem value="commission">{t?.constants?.employment?.commission || 'Commission'}</SelectItem>
-                    <SelectItem value="mixed">{t?.constants?.employment?.mixed || 'Mixed'}</SelectItem>
+                    <SelectItem value={FORM_NONE}>{t.common.notSpecified}</SelectItem>
+                    <SelectItem value="salaried">{t.constants.employment.salaried}</SelectItem>
+                    <SelectItem value="commission">{t.constants.employment.commission}</SelectItem>
+                    <SelectItem value="mixed">{t.constants.employment.mixed}</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -445,13 +452,13 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
           </FormField>
 
           {needsCommission ? (
-            <FormField label="Commission %" required error={errors.commissionPercent?.message}>
+            <FormField label={t.practitioner.commissionPercent} required error={errors.commissionPercent?.message}>
               <Input
                 type="number"
                 min={0}
                 max={100}
                 step="0.01"
-                placeholder="e.g. 30"
+                placeholder={t.practitioner.commissionPercentPlaceholder}
                 {...register('commissionPercent')}
               />
             </FormField>
@@ -461,7 +468,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
             <Input type="number" min={0} max={240} {...register('bufferMins')} />
           </FormField>
 
-          <FormField label="Services" error={errors.serviceIds?.message} className="sm:col-span-2">
+          <FormField label={t.practitioner.services} error={errors.serviceIds?.message} className="sm:col-span-2">
             <Controller
               control={control}
               name="serviceIds"
@@ -470,8 +477,8 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
                   options={serviceOptions}
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder="Select services"
-                  emptyText="No active services"
+                  placeholder={t.practitioner.selectServices}
+                  emptyText={t.practitioner.noActiveServices}
                 />
               )}
             />
@@ -500,7 +507,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
 
       <FormActions
         onCancel={onCancel}
-        submitLabel={isEdit ? t?.common?.save : t?.practitioner?.addPractitioner}
+        submitLabel={isEdit ? t.common.saveChanges : t.practitioner.addPractitioner}
         pending={pending}
       />
     </form>

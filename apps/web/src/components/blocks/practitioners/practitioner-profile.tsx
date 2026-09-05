@@ -2,24 +2,22 @@
 
 import {
   useRouter } from 'next/navigation';
-import { format } from 'date-fns';
 import { Badge } from '@/components/ui';
 import {
   LANGUAGE_BADGE_VARIANT,
   getPractitionerEmploymentLabels,
   PRACTITIONER_EMPLOYMENT_VARIANT,
   WEEKDAY_OPTIONS,
-  } from '@/constants/practitioner';
+  languageLabelList,
+} from '@/constants/practitioner';
 import {
   countryLabel,
   ContactLine,
   PhoneLink,
   PreviewableAvatar,
   RowActionsMenu,
-  } from '@/components/primitives';
-import { TwoStepDeleteDialogs,
-  useTwoStepDelete } from '@/components/primitives';
-import {
+  TwoStepDeleteDialogs,
+  useTwoStepDelete,
   ProfileEmpty,
   ProfileHero,
   ProfileInfoField,
@@ -27,7 +25,7 @@ import {
   ProfileSection,
   ProfileShell,
   ProfileSoftRow,
-  ProfileStatusBadge
+  ProfileStatusBadge,
 } from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import {
@@ -40,11 +38,11 @@ import { formatDate, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
 import { IconActivate, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
 import { useLanguage } from '@/providers';
-import { getBilingualName, type Translations } from '@/i18n';
+import { getBilingualName, getStaffName, type Translations } from '@/i18n';
 
 function employmentLabel(type: string | null | undefined, t: Translations) {
   if (!type) return null;
-  return (t.constants.employment as Record<string, string>)?.[type] ?? getPractitionerEmploymentLabels(t)[type] ?? type;
+  return getPractitionerEmploymentLabels(t)[type] ?? type;
 }
 
 export function PractitionerProfile({
@@ -62,11 +60,7 @@ export function PractitionerProfile({
   const { t, lang } = useLanguage();
 
   const toggling = deactivate.isPending || reactivate.isPending;
-  const titleName = (() => {
-    const name = getBilingualName(practitioner.name, practitioner.nameAr, lang);
-    if (lang === 'ar') return name;
-    return practitioner.title ? `${practitioner.title} ${name}` : name;
-  })();
+  const titleName = getStaffName(practitioner, lang);
   const specialtyName = getBilingualName(
     practitioner.specialty,
     practitioner.specialtyAr,
@@ -82,14 +76,12 @@ export function PractitionerProfile({
     ? countryLabel(practitioner.nationality, lang) ?? practitioner.nationality
     : null;
   const employment = employmentLabel(practitioner.employmentType, t);
-  const languages = practitioner.languages
-    .map((code) => (t.constants.languages as Record<string, string>)[code] ?? code)
-    .filter(Boolean);
+  const languages = languageLabelList(practitioner.languages, t);
   const genderLbl = practitioner.gender
     ? (t.constants.gender as Record<string, string>)[practitioner.gender.toLowerCase()] ?? practitioner.gender
     : null;
   const dobText = practitioner.dob
-    ? `${format(new Date(practitioner.dob), 'MMM d, yyyy')}${calcAge(practitioner.dob) != null ? ` (${calcAge(practitioner.dob)} yrs)` : ''}`
+    ? `${formatDate(practitioner.dob, undefined, lang)}${calcAge(practitioner.dob) != null ? ` (${calcAge(practitioner.dob)} ${t.common.years})` : ''}`
     : null;
 
   return (
@@ -162,7 +154,9 @@ export function PractitionerProfile({
           {
             label: t.practitioner.experience,
             value:
-              practitioner.experienceYears != null ? `${practitioner.experienceYears} yrs` : '—',
+              practitioner.experienceYears != null
+                ? `${practitioner.experienceYears} ${t.common.years}`
+                : '—',
           },
         ]}
       />
@@ -171,7 +165,14 @@ export function PractitionerProfile({
         <ProfileInfoGrid className="lg:grid-cols-3">
           <ProfileInfoField label={t.practitioner.specialty} value={specialtyName} />
           <ProfileInfoField label={t.practitioner.department} value={departmentName} />
-          <ProfileInfoField label={t.practitioner.defaultRoom} value={practitioner.defaultRoomName} />
+          <ProfileInfoField
+            label={t.practitioner.defaultRoom}
+            value={getBilingualName(
+              practitioner.defaultRoomName,
+              practitioner.defaultRoomNameAr,
+              lang,
+            )}
+          />
           <ProfileInfoField label={t.practitioner.employment} value={employment}>
             {employment && practitioner.employmentType ? (
               <Badge
@@ -224,7 +225,7 @@ export function PractitionerProfile({
             </ProfileInfoField>
           ) : null}
           {practitioner.whatsapp ? (
-            <ProfileInfoField label="WhatsApp" value={practitioner.whatsapp}>
+            <ProfileInfoField label={t.practitioner.whatsapp} value={practitioner.whatsapp}>
               <PhoneLink value={practitioner.whatsapp} className="text-sm font-medium" />
             </ProfileInfoField>
           ) : null}
@@ -233,13 +234,13 @@ export function PractitionerProfile({
             label={t.practitioner.licenseExpiry}
             value={
               practitioner.licenseExpiry
-                ? format(new Date(practitioner.licenseExpiry), 'MMM d, yyyy')
+                ? formatDate(practitioner.licenseExpiry, undefined, lang)
                 : null
             }
           />
           <ProfileInfoField
             label={t.practitioner.joined}
-            value={format(new Date(practitioner.createdAt), 'MMM d, yyyy')}
+            value={formatDate(practitioner.createdAt, undefined, lang)}
           />
         </ProfileInfoGrid>
       </ProfileSection>
@@ -291,10 +292,10 @@ export function PractitionerProfile({
               {practitioner.availabilities.map((slot, index) => (
                 <ProfileSoftRow
                   key={slot.id ?? `${slot.dayOfWeek}-${index}`}
-                  title={t.constants.weekdays[WEEKDAY_OPTIONS[slot.dayOfWeek]] ?? WEEKDAY_OPTIONS[slot.dayOfWeek] ?? `Day ${slot.dayOfWeek}`}
+                  title={t.constants.weekdays[WEEKDAY_OPTIONS[slot.dayOfWeek]] ?? t.practitioner.day}
                 >
                   <span className="shrink-0 tabular-nums text-muted-foreground">
-                    {formatTimeRange(slot.startTime, slot.endTime)}
+                    {formatTimeRange(slot.startTime, slot.endTime, undefined, lang)}
                   </span>
                 </ProfileSoftRow>
               ))}

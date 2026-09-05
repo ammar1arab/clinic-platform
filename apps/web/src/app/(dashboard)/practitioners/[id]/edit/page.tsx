@@ -19,6 +19,7 @@ import {
   useReactivatePractitioner,
 } from '@/hooks/api/use-practitioners';
 import { ROUTES } from '@/constants/routes';
+import { getStaffName } from '@/i18n';
 import { IconActivate, IconDeactivate, IconDelete, IconPractitioner, IconView } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 
@@ -30,18 +31,14 @@ export default function EditPractitionerPage({
   const { id } = use(params);
   const clinicId = useClinicId();
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { data, isLoading, isError } = usePractitioner(id);
   const deactivate = useDeactivatePractitioner(clinicId);
   const reactivate = useReactivatePractitioner(clinicId);
   const remove = useDeletePractitioner(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
   const toggling = deactivate.isPending || reactivate.isPending;
-  const titleName = data
-    ? data.title
-      ? `${data.title} ${data.name}`
-      : data.name
-    : '';
+  const titleName = data ? getStaffName(data, lang) : '';
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">

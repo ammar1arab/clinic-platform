@@ -391,7 +391,7 @@ export function AppointmentPopover({
             {appointment.department ? (
               <DetailRow
                 icon={<IconDepartment />}
-                label={t.common.department}
+                label={t.practitioner.department}
                 value={getBilingualName(
                   appointment.department.name,
                   appointment.department.nameAr,

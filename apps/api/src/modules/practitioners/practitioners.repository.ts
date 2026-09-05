@@ -16,7 +16,7 @@ const NON_BILLABLE: AppointmentStatus[] = [
 const include = {
   user: { select: { email: true } },
   department: { select: { id: true, name: true, nameAr: true } },
-  defaultRoom: { select: { id: true, name: true } },
+  defaultRoom: { select: { id: true, name: true, nameAr: true } },
   services: {
     include: {
       service: {

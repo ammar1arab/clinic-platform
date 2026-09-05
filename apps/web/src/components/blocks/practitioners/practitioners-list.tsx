@@ -1,17 +1,17 @@
 'use client';
 
-import { languageLabelList } from '@/constants/practitioner';
-import { ROUTES } from '@/constants/routes';
-import { ageLabel } from '@/lib/age';
 import { useRouter } from 'next/navigation';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Switch, Badge, Popover, PopoverContent, PopoverTrigger, } from '@/components/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Switch, Badge, Popover, PopoverContent, PopoverTrigger } from '@/components/ui';
 import {
-  PreviewableAvatar, isRowControlClick, EmailLink, PhoneLink, TruncatedText, Pagination, EmptyState, MetaStat, TableSkeleton, RowActionsMenu, SoftTip, TableFrame } from '@/components/primitives';
-import { getPractitionerEmploymentLabels } from '@/constants/practitioner';
-
-import type { Translations } from '@/i18n';
-import { PRACTITIONER_EMPLOYMENT_VARIANT, LANGUAGE_BADGE_VARIANT } from '@/constants/practitioner';
+  PreviewableAvatar, isRowControlClick, EmailLink, PhoneLink, TruncatedText, Pagination, EmptyState, MetaStat, TableSkeleton, RowActionsMenu, SoftTip, TableFrame,
+} from '@/components/primitives';
+import {
+  languageLabelList,
+  getPractitionerEmploymentLabels,
+  PRACTITIONER_EMPLOYMENT_VARIANT,
+  LANGUAGE_BADGE_VARIANT,
+} from '@/constants/practitioner';
 import {
   useDeletePractitioner,
   useDeactivatePractitioner,
@@ -20,13 +20,9 @@ import {
 import type { Practitioner } from '@/services/practitioners.service';
 import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconPhone, IconPractitioner, IconView } from '@/constants/icons';
 import { useLanguage } from '@/providers';
-import { getBilingualName } from '@/i18n';
-
-function displayName(p: Practitioner, lang?: string) {
-  const name = getBilingualName(p.name, p.nameAr, lang);
-  if (lang === 'ar') return name;
-  return p.title ? `${p.title} ${name}` : name;
-}
+import { getBilingualName, getStaffName, type Translations } from '@/i18n';
+import { ROUTES } from '@/constants/routes';
+import { ageLabel } from '@/lib/age';
 
 function CellBadge({
   value,
@@ -163,7 +159,7 @@ export function PractitionersList({
           label: t.practitioner.delete,
           icon: IconDelete,
           variant: 'destructive',
-          onSelect: () => del.ask({ id: p.id, name: displayName(p, lang) }),
+          onSelect: () => del.ask({ id: p.id, name: getStaffName(p, lang) }),
         },
       ]}
     />
@@ -232,7 +228,7 @@ export function PractitionersList({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <TruncatedText className="font-medium">
-                          {displayName(p, lang)}
+                          {getStaffName(p, lang)}
                         </TruncatedText>
                         <EmailLink
                           value={p.email}
@@ -328,7 +324,7 @@ export function PractitionersList({
             <div className="flex items-start gap-3">
               <PreviewableAvatar src={p.imageUrl} seed={p.id} />
               <div className="min-w-0 flex-1">
-                <TruncatedText className="font-medium">{displayName(p, lang)}</TruncatedText>
+                <TruncatedText className="font-medium">{getStaffName(p, lang)}</TruncatedText>
                 <div className="mt-0.5 min-w-0" onClick={(e) => e.stopPropagation()}>
                   <EmailLink
                     value={p.email}

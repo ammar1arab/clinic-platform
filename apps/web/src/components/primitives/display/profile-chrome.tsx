@@ -170,7 +170,7 @@ export function ProfileInfoField({
         {label}
       </p>
       <div
-        className="min-w-0 flex-1 text-end text-sm font-medium leading-snug text-foreground sm:flex-none sm:text-start"
+        className="flex min-w-0 flex-1 justify-end text-end text-sm font-medium leading-snug text-foreground sm:flex-none sm:justify-start sm:text-start"
         dir={dir}
       >
         {children ??

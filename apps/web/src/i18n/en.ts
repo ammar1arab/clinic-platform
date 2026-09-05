@@ -28,6 +28,7 @@ export const en = {
     number: 'Enter a valid number',
     minNumber: 'Minimum {min}',
     maxNumber: 'Maximum {max}',
+    passwordMin: 'Password must be at least 6 characters',
   },
   uploads: {
     browser: 'Image compression only runs in the browser',
@@ -146,6 +147,7 @@ export const en = {
     now: 'Now',
     clearTime: 'Clear time',
     optional: 'Optional',
+    copied: 'Copied',
     clear: 'Clear',
     edit: 'Edit',
     view: 'View',
@@ -295,8 +297,6 @@ export const en = {
     signingIn: 'Signing in...',
     signIn: 'Sign in',
     welcomeBack: 'Welcome back!',
-    invalidEmail: 'Invalid email address',
-    passwordMin: 'Password must be at least 6 characters',
   },
 
   constants: {
@@ -477,6 +477,35 @@ export const en = {
     noLeaveBlocksDesc: 'Block dates when this practitioner is away.',
     removeLeave: 'Remove leave',
     leaveReason: 'Reason',
+    nameTitle: 'Title',
+    nameTitlePlaceholder: 'Dr, Consultant, Therapist…',
+    whatsapp: 'WhatsApp',
+    specialtyAr: 'Specialty (Arabic)',
+    specialtyPlaceholder: 'Dermatology, Orthodontics…',
+    specialtyArPlaceholder: 'التخصص',
+    email: 'Email',
+    yearsOfPractice: 'Years of practice',
+    bioAr: 'Bio (Arabic)',
+    selectDepartment: 'Select department',
+    noDefaultRoom: 'No default room',
+    selectServices: 'Select services',
+    noActiveServices: 'No active services',
+    commissionPercent: 'Commission %',
+    commissionPercentPlaceholder: 'e.g. 30',
+    emailRequired: 'Email is required',
+    removeAvailabilityTitle: 'Remove this availability?',
+    removeAvailabilityDesc:
+      'This weekly slot will be dropped from the form until you save.',
+    removeLeaveTitle: 'Remove this leave block?',
+    removeLeaveDesc:
+      'This blocked range will be dropped from the form until you save.',
+    welcomeEmailSentToast: 'Welcome email sent. Copy the password as backup.',
+    copyTempPasswordToast: 'Copy the temporary password - shown once only.',
+    welcomeEmailBackup:
+      'A welcome email was sent. Keep this password as a backup - they must change it on first login.',
+    shareCredentialsOnce:
+      'Share login credentials once. Password is not shown again. They must change it on first login.',
+    viewProfile: 'View profile',
   },
   appointments: {
     today: 'Today',
@@ -755,6 +784,10 @@ export const en = {
     referralsAndPayments: 'referrals & payments',
     payment: 'Payment',
     paid: 'Paid',
+    activity: 'Activity',
+    noActivity: 'No activity yet',
+    firstNameArPlaceholder: 'الاسم الأول',
+    lastNameArPlaceholder: 'اسم العائلة',
   },
     referral: {
     referral: 'Referral',
@@ -785,6 +818,9 @@ export const en = {
     reasonPlaceholder: 'Why are you referring or requesting a consult?',
     fromDr: 'From Dr.',
     toDr: 'to Dr.',
+    pending: 'Pending',
+    accepted: 'Accepted',
+    rejected: 'Rejected',
   },
   dashboard: {
     welcome: 'Welcome back',

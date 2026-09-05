@@ -341,9 +341,21 @@ export const practitionerSchema = z
     });
   });
 
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, { error: () => getTranslations().validation.required })
+    .email({ error: () => getTranslations().validation.email }),
+  password: z.string().min(6, {
+    error: () => getTranslations().validation.passwordMin,
+  }),
+});
+
 export type PatientFormData = z.infer<typeof patientSchema>;
 export type DepartmentFormData = z.infer<typeof departmentSchema>;
 export type RoomFormData = z.infer<typeof roomSchema>;
 export type ServiceFormData = z.infer<typeof serviceSchema>;
 export type AppointmentFormData = z.infer<typeof appointmentSchema>;
 export type PractitionerFormData = z.infer<typeof practitionerSchema>;
+export type LoginFormData = z.infer<typeof loginSchema>;

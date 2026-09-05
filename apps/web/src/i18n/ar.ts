@@ -30,6 +30,7 @@ export const ar: Translations = {
     number: 'أدخل رقمًا صحيحًا',
     minNumber: 'الحد الأدنى {min}',
     maxNumber: 'الحد الأقصى {max}',
+    passwordMin: 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل',
   },
   uploads: {
     browser: 'ضغط الصور متاح في المتصفح فقط',
@@ -148,6 +149,7 @@ export const ar: Translations = {
     now: 'الآن',
     clearTime: 'مسح الوقت',
     optional: 'اختياري',
+    copied: 'تم النسخ',
     clear: 'مسح',
     edit: 'تعديل',
     view: 'عرض',
@@ -297,8 +299,6 @@ export const ar: Translations = {
     signingIn: 'جاري تسجيل الدخول...',
     signIn: 'تسجيل الدخول',
     welcomeBack: 'مرحباً بعودتك!',
-    invalidEmail: 'عنوان بريد إلكتروني غير صالح',
-    passwordMin: 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل',
   },
 
   constants: {
@@ -478,6 +478,36 @@ export const ar: Translations = {
     noLeaveBlocksDesc: 'حظر التواريخ التي يكون فيها هذا الطبيب غائباً.',
     removeLeave: 'إزالة الإجازة',
     leaveReason: 'السبب',
+    nameTitle: 'اللقب',
+    nameTitlePlaceholder: 'د، استشاري، معالج…',
+    whatsapp: 'واتساب',
+    specialtyAr: 'التخصص (عربي)',
+    specialtyPlaceholder: 'جلدية، تقويم أسنان…',
+    specialtyArPlaceholder: 'التخصص',
+    email: 'البريد الإلكتروني',
+    yearsOfPractice: 'سنوات الممارسة',
+    bioAr: 'السيرة الذاتية (عربي)',
+    selectDepartment: 'اختر القسم',
+    noDefaultRoom: 'بدون غرفة افتراضية',
+    selectServices: 'اختر الخدمات',
+    noActiveServices: 'لا توجد خدمات نشطة',
+    commissionPercent: 'نسبة العمولة %',
+    commissionPercentPlaceholder: 'مثال: 30',
+    emailRequired: 'البريد الإلكتروني مطلوب',
+    removeAvailabilityTitle: 'إزالة هذا التوافر؟',
+    removeAvailabilityDesc:
+      'سيتم حذف هذا الموعد الأسبوعي من النموذج حتى تحفظ.',
+    removeLeaveTitle: 'إزالة فترة الإجازة؟',
+    removeLeaveDesc: 'سيتم حذف هذا النطاق المحظور من النموذج حتى تحفظ.',
+    welcomeEmailSentToast:
+      'تم إرسال بريد الترحيب. انسخ كلمة المرور كنسخة احتياطية.',
+    copyTempPasswordToast:
+      'انسخ كلمة المرور المؤقتة - تظهر مرة واحدة فقط.',
+    welcomeEmailBackup:
+      'تم إرسال بريد ترحيبي. احتفظ بكلمة المرور كنسخة احتياطية - يجب تغييرها عند أول تسجيل دخول.',
+    shareCredentialsOnce:
+      'شارك بيانات الدخول مرة واحدة. لن تظهر كلمة المرور مرة أخرى. يجب تغييرها عند أول تسجيل دخول.',
+    viewProfile: 'عرض الملف',
   },
   appointments: {
     today: 'اليوم',
@@ -749,6 +779,10 @@ export const ar: Translations = {
     referralsAndPayments: 'الإحالات والمدفوعات',
     payment: 'دفع',
     paid: 'مدفوع',
+    activity: 'النشاط',
+    noActivity: 'لا يوجد نشاط بعد',
+    firstNameArPlaceholder: 'الاسم الأول',
+    lastNameArPlaceholder: 'اسم العائلة',
   },
     referral: {
     referral: 'إحالة',
@@ -779,6 +813,9 @@ export const ar: Translations = {
     reasonPlaceholder: 'لماذا تقوم بالإحالة أو طلب استشارة؟',
     fromDr: 'من د.',
     toDr: 'إلى د.',
+    pending: 'قيد الانتظار',
+    accepted: 'مقبولة',
+    rejected: 'مرفوضة',
   },
   dashboard: {
     welcome: 'مرحباً بعودتك',

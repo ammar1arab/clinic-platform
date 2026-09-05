@@ -69,9 +69,9 @@ export interface PatientDetailAppointment {
   paidAt: string | null;
   paymentMethod: string | null;
   paymentMethodRef?: { id: string; name: string } | null;
-  doctor: { name: string };
-  service: { name: string } | null;
-  room: { name: string } | null;
+  doctor: { name: string; nameAr?: string | null };
+  service: { name: string; nameAr?: string | null } | null;
+  room: { name: string; nameAr?: string | null } | null;
 }
 
 export interface PatientDetailReferral {
@@ -81,8 +81,8 @@ export interface PatientDetailReferral {
   status: ReferralStatus | string;
   reason: string;
   createdAt: string;
-  fromDoctor?: { id: string; name: string };
-  toDoctor?: { id: string; name: string };
+  fromDoctor?: { id: string; name: string; nameAr?: string | null };
+  toDoctor?: { id: string; name: string; nameAr?: string | null };
   appointment?: { id: string; scheduledAt: string; status: string };
 }
 

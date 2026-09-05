@@ -91,14 +91,43 @@ export function formatTimeRange(
   return `${formatTime(start, empty, lang)}${RANGE_SEP}${formatTime(end, empty, lang)}`;
 }
 
-export function formatDate(
+function dateFnsLocale(lang?: string) {
+  return lang === 'ar' ? ar : enUS;
+}
+
+function formatDatePattern(
   value: Date | string | number | null | undefined,
+  pattern: string,
   empty = EMPTY,
   lang = 'en',
 ) {
   const date = toDate(value);
   if (!date) return empty;
-  return format(date, 'MMM d, yyyy', { locale: lang === 'ar' ? ar : enUS });
+  return format(date, pattern, { locale: dateFnsLocale(lang) });
+}
+
+export function formatDate(
+  value: Date | string | number | null | undefined,
+  empty = EMPTY,
+  lang = 'en',
+) {
+  return formatDatePattern(value, 'MMM d, yyyy', empty, lang);
+}
+
+export function formatMonthYear(
+  value: Date | string | number | null | undefined,
+  empty = EMPTY,
+  lang = 'en',
+) {
+  return formatDatePattern(value, 'MMM yyyy', empty, lang);
+}
+
+export function formatWeekdayDate(
+  value: Date | string | number | null | undefined,
+  empty = EMPTY,
+  lang = 'en',
+) {
+  return formatDatePattern(value, 'EEE, MMM d, yyyy', empty, lang);
 }
 
 export function formatDateTime(

@@ -192,8 +192,8 @@ export class PatientsRepository {
             room: true,
             referrals: {
               include: {
-                fromDoctor: { select: { id: true, name: true } },
-                toDoctor: { select: { id: true, name: true } },
+                fromDoctor: { select: { id: true, name: true, nameAr: true } },
+                toDoctor: { select: { id: true, name: true, nameAr: true } },
               },
               orderBy: { createdAt: "desc" },
             },
@@ -207,8 +207,8 @@ export class PatientsRepository {
     return this.prisma.referral.findMany({
       where: { appointment: { patientId } },
       include: {
-        fromDoctor: { select: { id: true, name: true } },
-        toDoctor: { select: { id: true, name: true } },
+        fromDoctor: { select: { id: true, name: true, nameAr: true } },
+        toDoctor: { select: { id: true, name: true, nameAr: true } },
         appointment: {
           select: {
             id: true,

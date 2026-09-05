@@ -13,8 +13,8 @@ export interface Referral {
   status: ReferralStatus;
   createdAt: string;
   updatedAt: string;
-  fromDoctor?: { id: string; name: string };
-  toDoctor?: { id: string; name: string };
+  fromDoctor?: { id: string; name: string; nameAr?: string | null };
+  toDoctor?: { id: string; name: string; nameAr?: string | null };
   appointment?: {
     id: string;
     scheduledAt: string;

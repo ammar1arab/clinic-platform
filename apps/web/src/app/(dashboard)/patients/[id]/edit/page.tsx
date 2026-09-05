@@ -12,6 +12,7 @@ import {
 
 import { usePatient, useDeletePatient, useTogglePatientStatus } from '@/hooks/api/use-patients';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { getPersonName } from '@/i18n';
 import { IconActivate, IconDeactivate, IconDelete, IconView } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 
@@ -19,15 +20,13 @@ export default function EditPatientPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const clinicId = useClinicId();
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const { data: patient, isLoading } = usePatient(id);
   const deleteMutation = useDeletePatient(clinicId);
   const toggleStatus = useTogglePatientStatus(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
-  const fullName = patient
-    ? `${patient.firstNameEn} ${patient.lastNameEn}`.trim()
-    : '';
+  const fullName = patient ? getPersonName(patient, lang) : '';
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">

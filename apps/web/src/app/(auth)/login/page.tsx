@@ -4,55 +4,36 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { toast } from 'sonner';
-import {
-  Button,
-  Input,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui';
-import { FormField } from '@/components/primitives';
-import { ButtonSpinner } from '@/components/primitives';;
-import { api } from '@/lib/api';
+import { Button, Input, Card, CardContent } from '@/components/ui';
+import { FormField, ButtonSpinner } from '@/components/primitives';
+import { loginSchema, type LoginFormData } from '@/lib/validations';
+import { authService } from '@/services/auth.service';
 import { useAuth, useLanguage } from '@/providers';
 import { ROUTES } from '@/constants/routes';
-
-const createLoginSchema = (t: any) => z.object({
-  email: z.string().trim().email(t.auth.invalidEmail),
-  password: z.string().min(6, t.auth.passwordMin),
-});
-
-type LoginForm = z.infer<ReturnType<typeof createLoginSchema>>;
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
-
   const { t } = useLanguage();
-  const loginSchema = createLoginSchema(t);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginForm>({
+  } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginForm) => {
+  const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
     try {
-      const response = await api.post('/auth/login', data);
-      await login(response.data.accessToken);
+      const { accessToken } = await authService.login(data.email, data.password);
+      await login(accessToken);
       toast.success(t.auth.welcomeBack);
       router.push(ROUTES.DASHBOARD);
     } catch {
-
     } finally {
       setLoading(false);
     }

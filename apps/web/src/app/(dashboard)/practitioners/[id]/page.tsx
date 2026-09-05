@@ -21,13 +21,13 @@ export default function PractitionerDetailPage({
   const { t } = useLanguage();
   const { data: practitioner, isLoading } = usePractitioner(id);
 
-  if (isLoading) return <SectionLoader label={t?.practitioner?.loadingPractitioner} />;
+  if (isLoading) return <SectionLoader label={t.practitioner.loadingPractitioner} />;
   if (!practitioner) {
     return (
       <EmptyState
         icon={IconPractitioner}
-        title={t?.practitioner?.practitionerNotFound}
-        description={t?.practitioner?.practitionerNotFoundDesc}
+        title={t.practitioner.practitionerNotFound}
+        description={t.practitioner.practitionerNotFoundDesc}
       />
     );
   }

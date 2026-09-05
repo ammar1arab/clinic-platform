@@ -7,8 +7,8 @@ export class ReferralsRepository {
   constructor(private prisma: PrismaService) {}
 
   private readonly include = {
-    fromDoctor: { select: { id: true, name: true } },
-    toDoctor: { select: { id: true, name: true } },
+    fromDoctor: { select: { id: true, name: true, nameAr: true } },
+    toDoctor: { select: { id: true, name: true, nameAr: true } },
     appointment: {
       select: {
         id: true,

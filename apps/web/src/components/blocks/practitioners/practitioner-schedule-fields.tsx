@@ -120,15 +120,15 @@ export function WeeklyAvailabilityFields({
   const { t } = useLanguage();
   return (
     <ScheduleCard
-      title={t?.practitioner?.weeklyAvailability}
-      addLabel={t?.common?.add}
+      title={t.practitioner.weeklyAvailability}
+      addLabel={t.practitioner.addDay}
       onAdd={onAdd}
     >
       {fields.length === 0 ? (
         <EmptyState
           icon={IconCalendar}
-          title={t?.practitioner?.noWeeklyPatterns}
-          description={t?.practitioner?.noWeeklyPatterns}
+          title={t.practitioner.noWeeklyPatterns}
+          description={t.practitioner.noWeeklyPatternsDesc}
           className="py-8"
         />
       ) : (
@@ -136,7 +136,7 @@ export function WeeklyAvailabilityFields({
           <SlotRow
             key={field.id}
             icon={IconCalendar}
-            removeLabel={t?.common?.remove}
+            removeLabel={t.common.remove}
             onRemove={() => onRemove(index)}
             heading={
               <Controller
@@ -144,13 +144,13 @@ export function WeeklyAvailabilityFields({
                 name={`availabilities.${index}.dayOfWeek`}
                 render={({ field: f }) => (
                   <Select value={String(f.value)} onValueChange={(v) => f.onChange(Number(v))}>
-                    <SelectTrigger className="w-full" aria-label={t?.practitioner?.weeklyAvailability}>
+                    <SelectTrigger className="w-full" aria-label={t.practitioner.weeklyAvailability}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {WEEKDAY_OPTIONS.map((label, day) => (
                         <SelectItem key={label} value={String(day)}>
-                          {t?.constants?.weekdays?.[label] ?? label}
+                          {t.constants.weekdays[label]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -160,14 +160,14 @@ export function WeeklyAvailabilityFields({
             }
           >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <FormField label={t?.common?.from} error={errors.availabilities?.[index]?.startTime?.message}>
+              <FormField label={t.common.from} error={errors.availabilities?.[index]?.startTime?.message}>
                 <Controller
                   control={control}
                   name={`availabilities.${index}.startTime`}
                   render={({ field: f }) => <TimePicker value={f.value} onChange={f.onChange} />}
                 />
               </FormField>
-              <FormField label={t?.common?.to} error={errors.availabilities?.[index]?.endTime?.message}>
+              <FormField label={t.common.to} error={errors.availabilities?.[index]?.endTime?.message}>
                 <Controller
                   control={control}
                   name={`availabilities.${index}.endTime`}
@@ -200,15 +200,15 @@ export function LeaveBlocksFields({
   const { t } = useLanguage();
   return (
     <ScheduleCard
-      title={t?.practitioner?.leave}
-      addLabel={t?.common?.add}
+      title={t.practitioner.leave}
+      addLabel={t.practitioner.addLeave}
       onAdd={onAdd}
     >
       {fields.length === 0 ? (
         <EmptyState
           icon={IconCalendarClock}
-          title={t?.practitioner?.noLeaveBlocks}
-          description={t?.practitioner?.noLeaveBlocks}
+          title={t.practitioner.noLeaveBlocks}
+          description={t.practitioner.noLeaveBlocksDesc}
           className="py-8"
         />
       ) : (
@@ -216,26 +216,26 @@ export function LeaveBlocksFields({
           <SlotRow
             key={field.id}
             icon={IconCalendarClock}
-            removeLabel={t?.common?.remove}
+            removeLabel={t.common.remove}
             onRemove={() => onRemove(index)}
           >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <FormField label={t?.common?.from} error={errors.timeOffs?.[index]?.startDate?.message}>
+              <FormField label={t.common.from} error={errors.timeOffs?.[index]?.startDate?.message}>
                 <Controller
                   control={control}
                   name={`timeOffs.${index}.startDate`}
                   render={({ field: f }) => <DatePicker value={f.value} onChange={f.onChange} />}
                 />
               </FormField>
-              <FormField label={t?.common?.to} error={errors.timeOffs?.[index]?.endDate?.message}>
+              <FormField label={t.common.to} error={errors.timeOffs?.[index]?.endDate?.message}>
                 <Controller
                   control={control}
                   name={`timeOffs.${index}.endDate`}
                   render={({ field: f }) => <DatePicker value={f.value} onChange={f.onChange} />}
                 />
               </FormField>
-              <FormField label="Reason" className="sm:col-span-2">
-                <Input placeholder={t?.common?.optional} {...register(`timeOffs.${index}.reason`)} />
+              <FormField label={t.practitioner.leaveReason} className="sm:col-span-2">
+                <Input placeholder={t.common.optional} {...register(`timeOffs.${index}.reason`)} />
               </FormField>
             </div>
           </SlotRow>

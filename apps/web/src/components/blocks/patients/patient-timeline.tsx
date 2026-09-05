@@ -2,10 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
 import { Badge, Button } from '@/components/ui';
 import { EmptyState, ProfileSection } from '@/components/primitives';
 import { StatusBadgeBlock } from '@/components/blocks/appointments';
+import {
+  doctorDisplayName,
+  formatDoctorLabel,
+} from '@/components/blocks/appointments/shared/appointment-display';
 import { ROUTES } from '@/constants/routes';
 import {
   computePayable,
@@ -14,11 +17,12 @@ import {
 } from '@/services/appointments.service';
 import type { PatientDetail } from '@/services/patients.service';
 import { cn } from '@/lib/utils';
-import { formatTime } from '@/lib/datetime';
+import { formatTime, formatWeekdayDate } from '@/lib/datetime';
 import {
   IconChevronRight, IconInPerson, IconOnline, IconPayment,
   IconPerson, IconReferral, IconRoom, IconService, IconTime, IconVisit,
 } from '@/constants/icons';
+import { getBilingualName, type Translations } from '@/i18n';
 import { useLanguage } from '@/providers';
 
 const TIMELINE_PREVIEW = 12;
@@ -36,35 +40,45 @@ interface TimelineItem {
   meta?: { label: string; icon: typeof IconTime }[];
 }
 
+function referralStatusLabel(status: string, t: Translations) {
+  if (status === 'pending') return t.referral.pending;
+  if (status === 'accepted') return t.referral.accepted;
+  if (status === 'rejected') return t.referral.rejected;
+  return status;
+}
+
 function buildTimeline(
   appointments: PatientDetail['appointments'],
   referrals: NonNullable<PatientDetail['referrals']>,
-  t: ReturnType<typeof useLanguage>['t'],
+  t: Translations,
+  lang: string,
 ): TimelineItem[] {
   const items: TimelineItem[] = [];
 
   for (const appt of appointments) {
+    const serviceName = getBilingualName(appt.service?.name, appt.service?.nameAr, lang);
+    const roomName = getBilingualName(appt.room?.name, appt.room?.nameAr, lang);
     const meta: TimelineItem['meta'] = [
-      { label: formatTime(appt.scheduledAt), icon: IconTime },
-      { label: `Dr. ${appt.doctor.name}`, icon: IconPerson },
+      { label: formatTime(appt.scheduledAt, undefined, lang), icon: IconTime },
+      { label: formatDoctorLabel(appt.doctor, { lang }), icon: IconPerson },
     ];
-    if (appt.service?.name) {
-      meta.push({ label: appt.service.name, icon: IconService });
+    if (serviceName) {
+      meta.push({ label: serviceName, icon: IconService });
     }
     if (appt.sessionType === 'online') {
-      meta.push({ label: t?.appointments?.online, icon: IconOnline });
-    } else if (appt.room?.name) {
-      meta.push({ label: appt.room.name, icon: IconRoom });
+      meta.push({ label: t.appointments.online, icon: IconOnline });
+    } else if (roomName) {
+      meta.push({ label: roomName, icon: IconRoom });
     } else {
-      meta.push({ label: t?.appointments?.inPerson, icon: IconInPerson });
+      meta.push({ label: t.appointments.inPerson, icon: IconInPerson });
     }
 
     items.push({
       id: `visit-${appt.id}`,
       kind: 'visit',
       at: new Date(appt.scheduledAt),
-      title: appt.service?.name ?? t?.appointments?.consultation,
-      subtitle: format(new Date(appt.scheduledAt), 'EEE, MMM d, yyyy'),
+      title: serviceName || t.appointments.consultation,
+      subtitle: formatWeekdayDate(appt.scheduledAt, undefined, lang),
       status: appt.status,
       href: ROUTES.SCHEDULE_EDIT(appt.id),
       meta,
@@ -81,10 +95,10 @@ function buildTimeline(
         id: `payment-${appt.id}`,
         kind: 'payment',
         at: new Date(appt.paidAt),
-        title: `${t?.patient?.paid} ${payable.toFixed(3)} JOD`,
+        title: `${t.patient.paid} ${payable.toFixed(3)} JOD`,
         subtitle: [
           appt.paymentMethodRef?.name ?? appt.paymentMethod ?? null,
-          appt.service?.name ?? t?.appointments?.consultation,
+          serviceName || t.appointments.consultation,
         ]
           .filter(Boolean)
           .join(' · '),
@@ -94,8 +108,8 @@ function buildTimeline(
         id: `unpaid-${appt.id}`,
         kind: 'payment',
         at: new Date(appt.scheduledAt),
-        title: `${t?.patient?.unpaid} ${payable.toFixed(3)} JOD`,
-        subtitle: appt.service?.name ?? t?.appointments?.consultation,
+        title: `${t.patient.unpaid} ${payable.toFixed(3)} JOD`,
+        subtitle: serviceName || t.appointments.consultation,
         status: 'unpaid',
       });
     }
@@ -103,16 +117,20 @@ function buildTimeline(
 
   for (const ref of referrals) {
     const typeLabel = ref.type === 'consultation'
-      ? t?.referral?.consultation
-      : t?.referral?.referral;
+      ? t.referral.consultation
+      : t.referral.referral;
     items.push({
       id: `referral-${ref.id}`,
       kind: 'referral',
       at: new Date(ref.createdAt),
-      title: `${typeLabel} · ${ref.status}`,
+      title: `${typeLabel} · ${referralStatusLabel(String(ref.status), t)}`,
       subtitle: [
-        ref.fromDoctor?.name ? `${t?.referral?.fromDr} ${ref.fromDoctor.name}` : null,
-        ref.toDoctor?.name ? `${t?.referral?.toDr} ${ref.toDoctor.name}` : null,
+        ref.fromDoctor?.name
+          ? `${t.referral.fromDr} ${doctorDisplayName(ref.fromDoctor, lang)}`
+          : null,
+        ref.toDoctor?.name
+          ? `${t.referral.toDr} ${doctorDisplayName(ref.toDoctor, lang)}`
+          : null,
         ref.reason,
       ]
         .filter(Boolean)
@@ -130,11 +148,11 @@ interface Props {
 }
 
 export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [expanded, setExpanded] = useState(false);
   const items = useMemo(
-    () => buildTimeline(appointments, referrals, t),
-    [appointments, referrals, t],
+    () => buildTimeline(appointments, referrals, t, lang),
+    [appointments, referrals, t, lang],
   );
   const hiddenCount = Math.max(0, items.length - TIMELINE_PREVIEW);
   const visibleItems =
@@ -147,17 +165,17 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
     { label: string; icon: typeof IconVisit; className: string }
   > = {
     visit: {
-      label: t?.patient?.visit,
+      label: t.patient.visit,
       icon: IconVisit,
       className: 'bg-muted text-foreground',
     },
     referral: {
-      label: t?.referral?.referral,
+      label: t.referral.referral,
       icon: IconReferral,
       className: 'bg-muted text-muted-foreground',
     },
     payment: {
-      label: t?.patient?.payment,
+      label: t.patient.payment,
       icon: IconPayment,
       className: 'bg-muted text-foreground',
     },
@@ -165,14 +183,14 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
 
   return (
     <ProfileSection
-      title="Activity"
-      description={`${visitCount} ${visitCount === 1 ? 'visit' : 'visits'} · referrals & payments`}
+      title={t.patient.activity}
+      description={`${visitCount} ${visitCount === 1 ? t.patient.visit : t.patient.visits} · ${t.patient.referralsAndPayments}`}
     >
       {items.length === 0 ? (
         <EmptyState
           icon={IconVisit}
-          title={'No activity yet'}
-          description={'Visits, referrals, and payments will show here.'}
+          title={t.patient.noActivity}
+          description={t.patient.noActivityDesc}
           className="py-8"
         />
       ) : (
@@ -207,7 +225,7 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
                           variant={isUnpaid ? 'warning' : 'outline'}
                           className="px-1.5 py-0 text-[10px]"
                         >
-                          {isUnpaid ? 'Unpaid' : meta.label}
+                          {isUnpaid ? t.patient.unpaid : meta.label}
                         </Badge>
                         <p className="truncate text-sm font-semibold tracking-tight">
                           {item.title}
@@ -224,12 +242,18 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
                         />
                       )}
                       {item.kind === 'referral' && item.status && (
-                        <Badge variant="secondary" className="capitalize">
-                          {item.status}
+                        <Badge variant="secondary">
+                          {item.status === 'normal'
+                            ? t.referral.normal
+                            : item.status === 'high'
+                              ? t.referral.high
+                              : item.status === 'urgent'
+                                ? t.referral.urgent
+                                : item.status}
                         </Badge>
                       )}
                       {item.href && (
-                        <IconChevronRight className="size-4 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+                        <IconChevronRight className="size-4 text-muted-foreground/70 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground rtl:rotate-180" />
                       )}
                     </div>
                   </div>
@@ -278,8 +302,8 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
               onClick={() => setExpanded((v) => !v)}
             >
               {expanded
-                ? 'Show less activity'
-                : `Show ${hiddenCount} more item${hiddenCount === 1 ? '' : 's'}`}
+                ? t.patient.showLessActivity
+                : `${t.patient.showMore} ${hiddenCount} ${t.patient.moreItems}`}
               </Button>
           ) : null}
         </>

@@ -1,9 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { TableFrame, useTwoStepDelete } from '@/components/primitives';
 import { useRouter } from 'next/navigation';
-import { TwoStepDeleteDialogs } from '@/components/primitives';
 import {
   Table,
   TableBody,
@@ -13,12 +11,14 @@ import {
   TableRow,
   Switch,
   Badge,
-  } from '@/components/ui';
+} from '@/components/ui';
 import {
+  TableFrame,
+  useTwoStepDelete,
+  TwoStepDeleteDialogs,
   PreviewableAvatar,
   isRowControlClick,
   PhoneLink,
-  EmailLink,
   TruncatedText,
   Pagination,
   EmptyState,
@@ -27,13 +27,13 @@ import {
   RowActionsMenu,
   SoftTip,
 } from '@/components/primitives';
-
-import { format } from 'date-fns';
 import { useTogglePatientStatus, useDeletePatient } from '@/hooks/api/use-patients';
 import type { Patient } from '@/services/patients.service';
 import { genderLabel, patientAgeLabel } from '@/constants/patient';
 import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconLoyal, IconPatients, IconPhone, IconView } from '@/constants/icons';
 import { useLanguage } from '@/providers';
+import { getPersonName } from '@/i18n';
+import { formatDate } from '@/lib/datetime';
 
 const PAGE_SIZE = 15;
 
@@ -43,18 +43,6 @@ interface Props {
   clinicId: string;
   hasActiveFilters?: boolean;
   emptyAction?: React.ReactNode;
-}
-
-function patientName(p: Patient, lang?: string) {
-  if (lang === 'ar') {
-    const ar = `${p.firstNameAr ?? ''} ${p.lastNameAr ?? ''}`.trim();
-    if (ar) return ar;
-  }
-  return `${p.firstNameEn ?? ''} ${p.lastNameEn ?? ''}`.trim();
-}
-
-function visit(date: string | null) {
-  return date ? format(new Date(date), 'MMM d, yyyy') : '—';
 }
 
 export function PatientsList({
@@ -153,7 +141,7 @@ export function PatientsList({
             </TableHeader>
             <TableBody>
               {pageItems.map((p) => {
-                const fullName = patientName(p, lang);
+                const fullName = getPersonName(p, lang);
                 const gLabel = genderLabel(p.gender, t);
                 const aLabel = patientAgeLabel(p.dob, t);
                 return (
@@ -217,7 +205,7 @@ export function PatientsList({
                     </TableCell>
                     <TableCell className="text-muted-foreground">{p.totalSessions}</TableCell>
                     <TableCell className="hidden xl:table-cell text-muted-foreground">
-                      {visit(p.lastVisit)}
+                      {formatDate(p.lastVisit, undefined, lang)}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Switch
@@ -241,7 +229,7 @@ export function PatientsList({
 
       <div className="grid grid-cols-1 gap-2.5 md:hidden">
         {pageItems.map((p) => {
-          const fullName = patientName(p, lang);
+          const fullName = getPersonName(p, lang);
           const gLabel = genderLabel(p.gender, t);
           const aLabel = patientAgeLabel(p.dob, t);
           return (
@@ -302,7 +290,7 @@ export function PatientsList({
                     onClick={(e) => e.stopPropagation()}
                   >
                     <IconPhone className="size-3 shrink-0" />
-                    <PhoneLink value={p.phone} empty="No phone" className="min-w-0" />
+                    <PhoneLink value={p.phone} className="min-w-0" />
                   </div>
                 </div>
                 <div
@@ -324,7 +312,7 @@ export function PatientsList({
                 <MetaStat label={t?.patient?.nationalId} value={p.nationalId ?? '—'} />
                 <MetaStat label={t?.patient?.practitioner} value={p.primaryDoctorName ?? '—'} />
                 <MetaStat label={t?.patient?.sessions} value={String(p.totalSessions)} />
-                <MetaStat label={t?.patient?.lastVisit} value={visit(p.lastVisit)} />
+                <MetaStat label={t?.patient?.lastVisit} value={formatDate(p.lastVisit, undefined, lang)} />
               </div>
             </div>
           );

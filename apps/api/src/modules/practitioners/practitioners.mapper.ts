@@ -20,7 +20,16 @@ function toNumber(
   return Number(value);
 }
 
+function bilingual(rel?: { name?: string | null; nameAr?: string | null } | null) {
+  return {
+    name: rel?.name ?? null,
+    nameAr: rel?.nameAr ?? null,
+  };
+}
+
 export function mapPractitioner(row: Row) {
+  const department = bilingual(row.department);
+  const room = bilingual(row.defaultRoom);
   return {
     id: row.id,
     clinicId: row.clinicId,
@@ -46,10 +55,11 @@ export function mapPractitioner(row: Row) {
     licenseNumber: row.licenseNumber,
     licenseExpiry: row.licenseExpiry?.toISOString() ?? null,
     departmentId: row.departmentId,
-    departmentName: row.department?.name ?? null,
-    departmentNameAr: row.department?.nameAr ?? null,
+    departmentName: department.name,
+    departmentNameAr: department.nameAr,
     defaultRoomId: row.defaultRoomId,
-    defaultRoomName: row.defaultRoom?.name ?? null,
+    defaultRoomName: room.name,
+    defaultRoomNameAr: room.nameAr,
     employmentType: row.employmentType,
     commissionPercent: toNumber(row.commissionPercent),
     bufferMins: row.bufferMins,

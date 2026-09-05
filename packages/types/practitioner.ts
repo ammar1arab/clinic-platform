@@ -52,6 +52,7 @@ export interface Practitioner {
   departmentNameAr: string | null;
   defaultRoomId: string | null;
   defaultRoomName: string | null;
+  defaultRoomNameAr: string | null;
   employmentType: EmploymentType | null;
   commissionPercent: number | null;
   bufferMins: number;

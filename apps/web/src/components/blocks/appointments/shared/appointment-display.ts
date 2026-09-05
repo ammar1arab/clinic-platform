@@ -4,7 +4,7 @@ import {
   formatTime,
   formatTimeRange,
 } from '@/lib/datetime';
-import { getBilingualName, getTranslations } from '@/i18n';
+import { getBilingualName, getPersonName, getTranslations } from '@/i18n';
 
 export type EventDensity = 'xs' | 'sm' | 'md' | 'lg';
 
@@ -37,11 +37,7 @@ export function formatApptStartAmPm(appt: Appointment, lang?: string) {
 }
 
 export function formatPersonName(person: NameParts, lang?: string) {
-  if (lang === 'ar') {
-    const ar = `${person.firstNameAr ?? ''} ${person.lastNameAr ?? ''}`.trim();
-    if (ar) return ar;
-  }
-  return `${person.firstNameEn ?? ''} ${person.lastNameEn ?? ''}`.trim();
+  return getPersonName(person, lang);
 }
 
 export function patientDisplayName(appt: Appointment, lang?: string) {

@@ -30,12 +30,14 @@ import type { ReferralType, ReferralUrgency } from '@/services/referrals.service
 import { REFERRAL_URGENCY_VARIANT } from '@/constants/referral';
 import { IconAdd, IconCheck, IconClose } from '@/constants/icons';
 import { formatDateTime } from '@/lib/datetime';
+import { formatDoctorLabel } from '@/components/blocks/appointments/shared/appointment-display';
+import { getBilingualName, getStaffName } from '@/i18n';
 
 interface AppointmentOption {
   id: string;
   scheduledAt: string;
-  doctor: { name: string };
-  service: { name: string } | null;
+  doctor: { name: string; nameAr?: string | null };
+  service: { name: string; nameAr?: string | null } | null;
 }
 
 interface Props {
@@ -46,7 +48,7 @@ interface Props {
 
 export function PatientReferralsBlock({ clinicId, patientId, appointments }: Props) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const clinicUserId = user?.clinicUserId ?? '';
   const { data: referrals } = useReferrals({ clinicId, patientId });
   const { data: staff } = useClinicStaff(clinicId);
@@ -88,8 +90,8 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
   return (
     <>
       <ProfileSection
-        title={t?.referral?.referralsAndConsults}
-        description={t?.referral?.crossDoctorRequests}
+        title={t.referral.referralsAndConsults}
+        description={t.referral.crossDoctorRequests}
         action={
           <Button
             type="button"
@@ -100,14 +102,14 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
             disabled={appointments.length === 0}
           >
             <IconAdd className="me-1.5 size-4" />
-            {t?.referral?.newRequest}
+            {t.referral.newRequest}
           </Button>
         }
       >
         {!referrals?.length ? (
           <EmptyState
-            title={t?.referral?.noReferrals}
-            description={t?.referral?.noReferralsDesc}
+            title={t.referral.noReferrals}
+            description={t.referral.noReferralsDesc}
             className="py-8"
           />
         ) : (
@@ -128,12 +130,17 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <p className="font-medium capitalize">{ref.type}</p>
-                        <Badge
-                          variant={REFERRAL_URGENCY_VARIANT[ref.urgency]}
-                          className="capitalize"
-                        >
-                          {ref.urgency}
+                        <p className="font-medium">
+                          {ref.type === 'consultation'
+                            ? t.referral.consultation
+                            : t.referral.referral}
+                        </p>
+                        <Badge variant={REFERRAL_URGENCY_VARIANT[ref.urgency]}>
+                          {ref.urgency === 'high'
+                            ? t.referral.high
+                            : ref.urgency === 'urgent'
+                              ? t.referral.urgent
+                              : t.referral.normal}
                         </Badge>
                         <Badge
                           variant={
@@ -143,20 +150,28 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                                 ? 'destructive'
                                 : 'secondary'
                           }
-                          className="capitalize"
                         >
-                          {ref.status}
+                          {ref.status === 'accepted'
+                            ? t.referral.accepted
+                            : ref.status === 'rejected'
+                              ? t.referral.rejected
+                              : t.referral.pending}
                         </Badge>
                       </div>
                       <p className="wrap-break-word text-xs text-muted-foreground">
-                        {formatDateTime(ref.createdAt)}
+                        {formatDateTime(ref.createdAt, undefined, lang)}
                         <br />
-                        {ref.fromDoctor?.name ?? t?.referral?.doctor} →{' '}
-                        {ref.toDoctor?.name ?? t?.referral?.doctor}
+                        {ref.fromDoctor
+                          ? getStaffName(ref.fromDoctor, lang)
+                          : t.referral.doctor}{' '}
+                        →{' '}
+                        {ref.toDoctor
+                          ? getStaffName(ref.toDoctor, lang)
+                          : t.referral.doctor}
                       </p>
                       {ref.appointment?.scheduledAt ? (
                         <p className="wrap-break-word text-xs text-muted-foreground">
-                          {t?.referral?.visit} {formatDateTime(ref.appointment.scheduledAt)}
+                          {t.referral.visit} {formatDateTime(ref.appointment.scheduledAt, undefined, lang)}
                         </p>
                       ) : null}
                     </div>
@@ -170,7 +185,7 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                           onClick={() => acceptMutation.mutate(ref.id)}
                         >
                           <IconCheck className="me-1 size-3.5" />
-                          {t?.referral?.accept}
+                          {t.referral.accept}
                         </Button>
                         <Button
                           type="button"
@@ -180,7 +195,7 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                           onClick={() => rejectMutation.mutate(ref.id)}
                         >
                           <IconClose className="me-1 size-3.5" />
-                          {t?.referral?.reject}
+                          {t.referral.reject}
                         </Button>
                       </div>
                     ) : null}
@@ -191,7 +206,7 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                   {ref.opinion ? (
                     <p className="wrap-break-word rounded-lg bg-background/70 px-2.5 py-2 text-xs whitespace-pre-wrap ring-1 ring-border/50">
                       <span className="font-medium text-foreground">
-                        {t?.referral?.opinion}:{' '}
+                        {t.referral.opinion}:{' '}
                       </span>
                       {ref.opinion}
                     </p>
@@ -200,7 +215,7 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                     <div className="space-y-2">
                       <Textarea
                         rows={2}
-                        placeholder={t?.referral?.addOpinionPlaceholder}
+                        placeholder={t.referral.addOpinionPlaceholder}
                         value={opinionDrafts[ref.id] ?? ''}
                         onChange={(e) =>
                           setOpinionDrafts((prev) => ({
@@ -224,7 +239,7 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                         }
                       >
                         {opinionMutation.isPending && <ButtonSpinner />}
-                        {t?.referral?.saveOpinion}
+                        {t.referral.saveOpinion}
                       </Button>
                     </div>
                   ) : null}
@@ -238,23 +253,27 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md" preventClose>
           <DialogHeader>
-            <DialogTitle>{t?.referral?.newReferralConsult}</DialogTitle>
+            <DialogTitle>{t.referral.newReferralConsult}</DialogTitle>
           </DialogHeader>
           <div className="min-w-0 space-y-3">
-            <FormField label={t?.referral?.appointment}>
+            <FormField label={t.referral.appointment}>
               <Select value={appointmentId} onValueChange={setAppointmentId}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t?.referral?.selectAppointment} />
+                  <SelectValue placeholder={t.referral.selectAppointment} />
                 </SelectTrigger>
                 <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
                   {appointments.map((a) => (
-                    <SelectItem key={a.id} value={a.id} textValue={`${formatDateTime(a.scheduledAt)} ${a.service?.name ?? t?.referral?.visit} ${a.doctor.name}`}>
+                    <SelectItem
+                      key={a.id}
+                      value={a.id}
+                      textValue={`${formatDateTime(a.scheduledAt, undefined, lang)} ${getBilingualName(a.service?.name, a.service?.nameAr, lang) || t.referral.visit} ${getStaffName(a.doctor, lang)}`}
+                    >
                       <span className="flex min-w-0 flex-col gap-0.5 text-start leading-snug">
                         <span className="font-medium">
-                          {formatDateTime(a.scheduledAt)}
+                          {formatDateTime(a.scheduledAt, undefined, lang)}
                         </span>
                         <span className="text-xs text-muted-foreground wrap-break-word whitespace-normal">
-                          {a.service?.name ?? t?.referral?.visit} · Dr. {a.doctor.name}
+                          {getBilingualName(a.service?.name, a.service?.nameAr, lang) || t.referral.visit} · {formatDoctorLabel(a.doctor, { lang })}
                         </span>
                       </span>
                     </SelectItem>
@@ -262,51 +281,53 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
                 </SelectContent>
               </Select>
             </FormField>
-            <FormField label={t?.referral?.toDoctor}>
+            <FormField label={t.referral.toDoctor}>
               <Select value={toDoctorId} onValueChange={setToDoctorId}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t?.referral?.selectDoctor} />
+                  <SelectValue placeholder={t.referral.selectDoctor} />
                 </SelectTrigger>
                 <SelectContent position="popper" className="w-(--radix-select-trigger-width)">
                   {otherDoctors.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
-                      <span className="wrap-break-word whitespace-normal">{d.name}</span>
+                      <span className="wrap-break-word whitespace-normal">
+                        {getStaffName(d, lang)}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </FormField>
             <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
-              <FormField label={t?.referral?.type}>
+              <FormField label={t.referral.type}>
                 <Select value={type} onValueChange={(v) => setType(v as ReferralType)}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="referral">{t?.referral?.referral}</SelectItem>
-                    <SelectItem value="consultation">{t?.referral?.consultation}</SelectItem>
+                    <SelectItem value="referral">{t.referral.referral}</SelectItem>
+                    <SelectItem value="consultation">{t.referral.consultation}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField label={t?.referral?.urgency}>
+              <FormField label={t.referral.urgency}>
                 <Select value={urgency} onValueChange={(v) => setUrgency(v as ReferralUrgency)}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="normal">{t?.referral?.normal}</SelectItem>
-                    <SelectItem value="high">{t?.referral?.high}</SelectItem>
-                    <SelectItem value="urgent">{t?.referral?.urgent}</SelectItem>
+                    <SelectItem value="normal">{t.referral.normal}</SelectItem>
+                    <SelectItem value="high">{t.referral.high}</SelectItem>
+                    <SelectItem value="urgent">{t.referral.urgent}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
             </div>
-            <FormField label={t?.referral?.reason} required>
+            <FormField label={t.referral.reason} required>
               <Textarea
                 rows={3}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder={t?.referral?.reasonPlaceholder}
+                placeholder={t.referral.reasonPlaceholder}
                 className="min-w-0 resize-y"
               />
             </FormField>
@@ -315,7 +336,7 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
             <FormActions
               variant="dialog"
               onCancel={() => setOpen(false)}
-              submitLabel={t?.common?.save}
+              submitLabel={t.common.save}
               pending={createMutation.isPending}
               disabled={!appointmentId || !toDoctorId || !reason.trim()}
               onSubmitClick={handleCreate}
