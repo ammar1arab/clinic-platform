@@ -1,0 +1,7 @@
+---
+description: "Authentication, verification, reset tokens, and shared rate limits"
+globs: "apps/api/src/{security,modules/auth}/**/*.ts"
+alwaysApply: false
+---
+
+Read [the canonical security rule](../../.agents/rules/security-auth.md).

@@ -5,7 +5,7 @@ description: "Maintain Cureva AGENTS.md, Cursor rules, and project skills withou
 
 # Agent Maintenance
 
-Start at AGENTS.md and .agents/README.md. Canonical project rules are in .cursor/rules; new portable skills are in .agents/skills, with the five legacy skills still in .cursor/skills. Change the source once and update links, not copied rule bodies.
+Start at AGENTS.md and .agents/README.md. Canonical project rules are in .agents/rules; all project skills are in .agents/skills. Change the source once and update links, not copied rule bodies.
 
 Keep always-loaded guidance short. A skill needs a precise trigger, concrete repository entry points, decisions that matter, and a meaningful completion check. Do not add a skill just to reach a number or copy a generic tutorial. Retain user intent, available-tool boundaries, and authorization scope. Never store passwords, API keys, patient records, or blanket destructive approval as memory.
 

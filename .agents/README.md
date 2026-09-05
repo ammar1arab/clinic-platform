@@ -1,44 +1,29 @@
-# Cureva agent guide
+# Agent skills and rules
 
-Reviewed 2026-09-04. These are repository instructions, not permanent account memory. Future tasks must open this repository to discover them. Installed framework versions remain authoritative.
+Start with [project context](project.md) and the [rule index](rules/project-rules.md).
+All skills now live in [.agents/skills](skills), each in a folder with a SKILL.md entry point.
+The existing 20 Cureva skills and five migrated feature/theme/workflow skills remain available.
 
-## Where to explore
+Auth-related skills:
+- [Auth sessions](skills/cureva-auth-sessions/SKILL.md)
+- [Auth challenges](skills/auth-challenges/SKILL.md)
+- [Security limits](skills/security-limits/SKILL.md)
+- [Accessible feedback](skills/accessible-feedback/SKILL.md)
+- [Portable agent guidance](skills/portable-agent-guidance/SKILL.md)
+- [Full-stack feature](skills/clinic-feature/SKILL.md)
+- [Translations](skills/sync-i18n/SKILL.md)
 
-- [Root instructions](../AGENTS.md): entry point and non-negotiable project conventions.
-- [Cursor rules](../.cursor/rules): canonical rules, with narrow file scopes for detailed guidance.
-- [Project memory](memory/project-context.md): durable decisions and known pitfalls, without credentials.
-- [Official sources](references/official-sources.md): sources consulted and scope of currency claims.
-- [Legacy skills](../.cursor/skills): theme-ui, clinic-feature, sync-i18n, agent-work-cycle, ship-check.
+Other domain skills remain discoverable by reading SKILL.md frontmatter under skills.
+Only load matching skills, never the complete catalog for a routine task.
 
-## 20 new project skills
+## Use with another agent or editor
 
-Use the matching skill when its description fits; do not load all 20 for every task. In Codex, reference the skill by name (for example `$cureva-hydration`); if the current session has not refreshed discovery, point it directly to the SKILL.md file. Cursor also discovers .agents/skills.
+The root AGENTS.md is the general entry point. CLAUDE.md, .cursor/rules, .github/copilot-instructions.md, and .agent/rules/project.md point at the same canonical source. Automatic discovery depends on the host; when it does not discover them, explicitly tell it to read AGENTS.md. No adapter can guarantee that every agent obeys instructions.
 
-| Skill | Use it for |
-|---|---|
-| [cureva-triage](skills/cureva-triage/SKILL.md) | Trace a Cureva bug from its visible symptom to the responsible web, API, or database layer before changing code. |
-| [cureva-hydration](skills/cureva-hydration/SKILL.md) | Diagnose SSR hydration mismatches involving language, theme, authentication, storage, dates, or generated markup in the Next.js app. |
-| [cureva-query-cache](skills/cureva-query-cache/SKILL.md) | Implement or debug TanStack Query reads, invalidation, and optimistic mutations in Cureva. |
-| [cureva-tenant-access](skills/cureva-tenant-access/SKILL.md) | Review or implement clinic isolation and role authorization for Cureva endpoints and related UI. |
-| [cureva-auth-sessions](skills/cureva-auth-sessions/SKILL.md) | Fix Cureva login, owner provisioning, session loading, and logout without changing authentication contracts unnecessarily. |
-| [cureva-prisma-migrations](skills/cureva-prisma-migrations/SKILL.md) | Design and verify a Prisma schema or migration change for the clinic database. |
-| [cureva-appointment-engine](skills/cureva-appointment-engine/SKILL.md) | Change appointment scheduling, availability, queue transitions, or rescheduling with domain invariants intact. |
-| [cureva-billing-packages](skills/cureva-billing-packages/SKILL.md) | Change fees, discounts, payment status, session packages, or credit redemption in Cureva. |
-| [cureva-form-validation](skills/cureva-form-validation/SKILL.md) | Build or fix React Hook Form and Zod validation, including language-dependent errors and numeric/date boundaries. |
-| [cureva-localized-exports](skills/cureva-localized-exports/SKILL.md) | Create or repair patient/practitioner exports and report formatting with translated labels, RTL, and correct data. |
-| [cureva-realtime-sync](skills/cureva-realtime-sync/SKILL.md) | Implement or debug clinic-scoped Socket.IO events and their effects on query caches and notifications. |
-| [cureva-api-contracts](skills/cureva-api-contracts/SKILL.md) | Add or change a Nest endpoint and keep Prisma, shared types, services, hooks, and callers consistent. |
-| [cureva-accessible-ui](skills/cureva-accessible-ui/SKILL.md) | Review or repair keyboard, focus, accessible names, and RTL interaction in Cureva UI components. |
-| [cureva-performance](skills/cureva-performance/SKILL.md) | Investigate a demonstrated slow page, expensive query, repeated render, or excess network request in Cureva. |
-| [cureva-regression-tests](skills/cureva-regression-tests/SKILL.md) | Design focused regression tests for a demonstrated Cureva bug or risky behavior change. |
-| [cureva-dependency-upgrades](skills/cureva-dependency-upgrades/SKILL.md) | Evaluate or apply an explicitly requested dependency upgrade for the web, API, or shared packages. |
-| [cureva-runtime-debugging](skills/cureva-runtime-debugging/SKILL.md) | Verify a running Cureva page or diagnose Next/Nest development runtime and generated-cache failures. |
-| [cureva-database-maintenance](skills/cureva-database-maintenance/SKILL.md) | Perform explicitly requested seed, reset, cleanup, or database repair with the exact target and scope established. |
-| [cureva-change-review](skills/cureva-change-review/SKILL.md) | Review a requested Cureva diff for actionable correctness, security, regression, and contract defects. |
-| [cureva-agent-maintenance](skills/cureva-agent-maintenance/SKILL.md) | Maintain Cureva AGENTS.md, Cursor rules, and project skills without creating conflicting or redundant instructions. |
+## Reuse in another project
 
-## Checks and editor tasks
+Copy .agents and the entry/adaptor files. Update [project.md](project.md), then review domain rules and Cureva-specific skills for applicability. Generic skills such as auth-challenges, security-limits, accessible-feedback, and portable-agent-guidance route through the project profile. Clinic scheduling and billing skills deliberately retain their domain rules and should only be copied when relevant.
 
-From the repository root, run `rtk proxy node scripts/check-agent-assets.cjs` and `rtk proxy node scripts/check-i18n.cjs`. The first checks structure and local links; it cannot prove agent quality. The second checks dictionary shape, interpolation placeholders, and representative locale behavior; it does not replace browser verification.
-
-The matching tasks are in [VS Code/Cursor tasks](../.vscode/tasks.json). They do not start servers, connect to a database, install packages, or change permissions. Existing settings are preserved.
+Keep secrets, real patient data, and temporary permissions out of these files.
+Run `rtk proxy node scripts/check-agent-assets.cjs` for structure and link validation.
+See [durable decisions](memory/project-context.md) for project-specific history.

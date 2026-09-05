@@ -1,0 +1,8 @@
+# Tenant and data integrity
+
+- Resolve permissions from authenticated context; verify the target clinic and related records belong to the authorized scope. A client-provided clinicId is not an access check.
+- Validate roles on the server for list, detail, write, report, bulk, and socket access as applicable. UI visibility is additional presentation logic.
+- Minimize sensitive fields returned and logged. Do not log tokens, password hashes, or patient payloads to debug routine failures.
+- Keep dependent state changes transactional. Read back after an uncertain write before retrying. Apply finite timeouts to maintenance scripts.
+- Do not perform destructive data maintenance as part of debugging unless requested. For authorized maintenance, identify the actual target; localhost UI can point to hosted data. Preserve the requested schemas and migration history.
+- Choose tests for the touched invariant: cross-clinic access, denied role, rollback, or idempotent retry.

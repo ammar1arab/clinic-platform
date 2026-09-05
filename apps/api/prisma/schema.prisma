@@ -103,9 +103,43 @@ model User {
   email              String   @unique
   passwordHash       String
   mustChangePassword Boolean  @default(false)
+  emailVerifiedAt    DateTime?
+  passwordChangedAt  DateTime?
   createdAt          DateTime @default(now())
 
   clinicUsers ClinicUser[]
+  otpChallenges AuthOtpChallenge[]
+}
+
+enum AuthOtpPurpose {
+  EMAIL_VERIFY
+  FORGOT_PASSWORD
+}
+
+model AuthOtpChallenge {
+  id          String @id @default(uuid())
+  userId      String?
+  email       String
+  purpose     AuthOtpPurpose
+  codeHash    String
+  expiresAt   DateTime
+  attempts    Int @default(0)
+  lastSentAt  DateTime @default(now())
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+  user        User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, purpose, createdAt])
+  @@index([userId, purpose, usedAt])
+  @@index([expiresAt])
+}
+
+model AuthRateLimit {
+  id        String @id
+  count     Int @default(1)
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
 
 model ClinicUser {

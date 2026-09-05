@@ -1,0 +1,90 @@
+# Architecture
+
+## Repo map
+
+```
+apps/web/          Cureva Next.js App Router UI
+apps/api/          NestJS + Prisma API
+packages/types/    Shared HTTP contracts (@clinic/types)
+.agents/rules/     Agent rules
+.agents/skills/    Agent skills
+AGENTS.md          Agent entry overview
+```
+
+## Web (`apps/web/src`)
+
+| Folder | Role |
+|--------|------|
+| `app/` | Routes only - thin pages |
+| `components/ui/` | shadcn - keep token-aligned |
+| `components/primitives/` | Shared clinic controls (`form-field`, `date-picker`, `bilingual-name-fields`, …) |
+| `components/blocks/` | Feature UI (`appointments/`, `patients/`, `dashboard/`, `layout/`, …) |
+| `hooks/query/` | TanStack Query helpers (`use-fetch-data`, `create-crud-hooks`, presets) - domain hooks import from here |
+| `hooks/shared/` | Reusable non-API hooks (`use-now`, `use-debounce`, `use-clinic-id`, …) |
+| `hooks/api/` | Domain hooks used by pages/blocks (`use-patients`, `use-appointments`, …) |
+| `services/` | Axios wrappers only |
+| `lib/` | `api`, `query-client`, `logger`, `env`, `auth-token`, `utils`, `datetime`, `validations`, `socket`, `upload-local`, … |
+| `providers/` | Auth, query, theme (`next-themes`) |
+| `constants/` | `routes`, `icons`, `query-keys`, `appointment`, `form`, `patient`, `practitioner`, … |
+
+### Route groups today
+
+- `(auth)/` - login (later OTP / set-password)
+- `(dashboard)/` - clinic shell for owner / admin / financial (and current staff flows): schedule, patients, settings, reports, dashboard
+
+When Phase 2 adds a practitioner-only shell, create a sibling route group the same way. Do not dump practitioner home/queue into owner settings.
+
+### Placement
+
+- New screen UI → `components/blocks/<feature>/` then wire from `app/.../page.tsx`
+- Control reused in 2+ features → `components/primitives/`
+- New shadcn piece → `npx shadcn add` into `components/ui/`
+- Do not invent top-level `src/` folders or empty placeholder dirs
+
+### Naming
+
+- kebab-case files (`appointment-form.tsx`, `use-appointments.ts`)
+- Services: `*.service.ts` exporting a named object
+- Named exports for components; Next `page.tsx` / `layout.tsx` stay default exports
+
+## API (`apps/api/src`)
+
+| Folder | Role |
+|--------|------|
+| `modules/<name>/` | Feature module |
+| `modules/auth/` | JWT, guards, strategies |
+| `security/` | Token purposes, password policy, OTP challenges and shared rate limits |
+| `prisma/` | Prisma service |
+| `infrastructure/` | Cross-cutting infra |
+
+Match siblings:
+
+```
+modules/patients/
+  patients.module.ts
+  patients.controller.ts
+  patients.service.ts
+  dto/
+```
+
+- Thin controllers; business rules in services
+- class-validator DTOs
+- `JwtAuthGuard` + role / `clinicId` scoping like existing modules
+- Always scope tenant data by `clinicId` unless the endpoint is explicitly global
+
+## Shared types
+
+- Request/response shapes both apps need → `packages/types`
+- Keep wire enums aligned with Prisma enums
+
+## Imports
+
+- Web `@/*` → `apps/web/src/*`
+- API `@/*` → `apps/api/src/*`
+- Cross-app: `@clinic/types` only
+
+## Before adding a file
+
+1. Search `components/`, `hooks/`, `lib/`, `services/`, and Nest modules
+2. Extend a sibling before creating a parallel abstraction
+3. Extend an existing utility when it fits; ask only when the required behavior remains unclear

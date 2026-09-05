@@ -7,3 +7,4 @@ export * from './catalog';
 export * from './referral';
 export * from './dashboard';
 export * from './practitioner';
+export * from './auth-security';

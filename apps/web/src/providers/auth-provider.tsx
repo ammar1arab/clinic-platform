@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const login = useCallback(async (newToken: string) => {
+    queryClient.clear();
     setToken(newToken);
     log.info('login');
     await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });

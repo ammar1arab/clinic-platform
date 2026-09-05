@@ -4,12 +4,4 @@ globs: "{apps,packages,scripts}/**/*.{ts,tsx,js,cjs,mjs}"
 alwaysApply: false
 ---
 
-# Verification
-
-- Run the package's existing commands from its directory. Read package.json before selecting a script; API lint currently includes --fix, so use a non-mutating lint command for review-only work.
-- Prefer the affected test/helper over unrelated suites. Use synthetic data and avoid external side effects. No tests that only mirror source wording.
-- Translation changes: run rtk proxy node scripts/check-i18n.cjs from the root and inspect changed callers. Validation must resolve the active locale after module import.
-- Instruction changes: run rtk proxy node scripts/check-agent-assets.cjs. This validates structure and references, not behavioral perfection.
-- Distinguish source typecheck, generated route validation, build, and browser checks. A malformed .next file is not permission to edit generated code or claim a full pass after excluding it.
-- Follow ironbee-devtools-use.mdc for browser work. If the configured tools are unavailable, report that limitation, complete other checks, and do not substitute an unauthorized browser tool.
-- Stop only processes you started unless the user explicitly asks otherwise.
+Read and follow [the canonical rule](../../.agents/rules/verification.md).

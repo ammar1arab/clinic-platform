@@ -7,9 +7,4 @@ export type AuthUser = {
   role: Role;
 };
 
-export type JwtPayload = {
-  sub: string;
-  clinicUserId: string;
-  clinicId: string;
-  role: Role;
-};
+export type { SecurityPayload as JwtPayload } from "@/security/services/token.service";

@@ -1,0 +1,79 @@
+# Theme (always on)
+
+Stand on `apps/web/src/app/globals.css` for every UI change.
+Do not invent a parallel palette, radius scale, or motion kit.
+
+## Source of truth
+
+| Layer | Where |
+|-------|--------|
+| CSS variables | `:root` / `.dark` in `globals.css` |
+| Tailwind bridge | `@theme inline` in `globals.css` |
+| Dark mode | `.dark` on `<html>` via `next-themes` (`dark:` variant) |
+| Radius | `--radius` → `rounded-sm` / `md` / `lg` / `xl` |
+| Font | `--font-clinic` / `font-sans` / `.font-heading` |
+
+## Allowed color classes
+
+Use semantic tokens from `@theme inline`:
+
+- Brand: `bg-brand`, `text-brand`, `border-brand`, `bg-brand-foreground`
+- Accent: `bg-accent-teal`, `text-accent-teal`
+- Status: `bg-success`, `text-warning`, `text-error`, `destructive`
+- Surfaces: `bg-background`, `bg-card`, `bg-muted`, `bg-accent`, `bg-popover`
+- Text: `text-foreground`, `text-muted-foreground`, `text-primary-foreground`
+- Chrome: `border-border`, `bg-input`, `ring-ring`, `bg-primary`, `bg-secondary`
+
+```tsx
+// GOOD
+className="bg-card text-foreground border-border"
+className="bg-primary text-primary-foreground"
+
+// BAD
+className="bg-[#1a73e8] text-[#222]"
+className="bg-blue-500 text-gray-700"
+style={{ color: '#333' }}
+```
+
+## Mixing and overlays
+
+Prefer `color-mix` against tokens (FullCalendar and `card-aura` already do):
+
+```css
+color-mix(in oklch, var(--color-primary) 12%, transparent)
+```
+
+## Spacing and sizing
+
+- Prefer the Tailwind scale (`p-4`, `gap-2`, `h-9`, `text-sm`).
+- Avoid arbitrary values like `[3px]` unless no scale step exists and `globals.css` has no token.
+- Prefer fewer classes.
+
+## Conditional classes
+
+```tsx
+import { cn } from '@/lib/utils';
+
+<div className={cn('rounded-lg border border-border bg-card', isActive && 'ring-2 ring-ring')} />
+```
+
+## Motion already in theme
+
+Reuse before inventing:
+
+- `fade-in`, `animate-shimmer`, `card-aura`
+- `animate-clinic-dot`, `animate-clinic-orbit`, `animate-clinic-breathe`, `animate-clinic-ripple`, `animate-clinic-spark`, `animate-clinic-progress-shimmer`
+- FullCalendar overrides already map to `--color-*` - extend those, do not restyle with raw hex
+
+Respect `prefers-reduced-motion` for new animation.
+
+## New tokens
+
+1. Add under `:root` and `.dark` in `globals.css`
+2. Expose in `@theme inline` as `--color-*`
+3. Use the Tailwind class in components
+
+## shadcn / ui
+
+Semantic shadcn colors live in the same `globals.css`.
+Do not duplicate variables. Prefer `npx shadcn add` over hand-forking `components/ui` off-theme.

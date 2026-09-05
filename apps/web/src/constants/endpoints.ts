@@ -10,6 +10,11 @@ export const ENDPOINTS = {
   AUTH: {
     ME: "/auth/me",
     LOGIN: "/auth/login",
+    SEND_OTP: "/auth/send-otp",
+    VERIFY_OTP: "/auth/verify-otp",
+    SET_PASSWORD: "/auth/set-password",
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    RESET_PASSWORD: "/auth/reset-password",
   },
   CLINICS: {
     BY_ID: (id: string) => `/clinics/${id}`,

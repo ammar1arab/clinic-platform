@@ -3,6 +3,8 @@ import axios, { type AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { env } from './env';
 import { ROUTES } from '@/constants/routes';
+import { ENDPOINTS } from '@/constants/endpoints';
+import type { AuthErrorCode } from '@clinic/types';
 import { getToken, clearToken } from './auth-token';
 import { createLogger } from './logger';
 
@@ -15,7 +17,7 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = getToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token && !isAuthFlowRequest(config.url)) config.headers.Authorization = `Bearer ${token}`;
 
   config.headers['Accept-Language'] = getLanguage();
 
@@ -27,6 +29,7 @@ type ApiErrorBody =
   | {
       message?: string | string[];
       error?: string;
+      code?: AuthErrorCode;
     };
 
 export type ApiErrorLike =
@@ -46,6 +49,7 @@ function readBodyMessage(
   data: Exclude<ApiErrorBody, string> | undefined,
 ): string | null {
   if (!data) return null;
+  if (data.code && Object.prototype.hasOwnProperty.call(getTranslations().auth.errors, data.code)) return getTranslations().auth.errors[data.code];
   if (Array.isArray(data.message)) return data.message.join(', ');
   if (typeof data.message === 'string') return data.message;
   if (typeof data.error === 'string') return data.error;
@@ -104,6 +108,8 @@ api.interceptors.response.use(
       code: error.code ?? null,
     };
 
+    if (isAuthFlowRequest(error.config?.url)) return Promise.reject(error);
+
     if (status === 401) {
       log.warn('unauthorized', meta);
       if (typeof window !== 'undefined') {
@@ -145,6 +151,10 @@ function shouldSkipErrorToast(error: AxiosError<ApiErrorBody>): boolean {
   }
 
   return false;
+}
+
+function isAuthFlowRequest(url?: string): boolean {
+  return !!url && Object.values(ENDPOINTS.AUTH).some(endpoint => endpoint !== ENDPOINTS.AUTH.ME && endpoint === url);
 }
 
 export { extractErrorMessage };

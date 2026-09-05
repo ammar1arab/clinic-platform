@@ -5,7 +5,7 @@ description: "Verify a running Cureva page or diagnose Next/Nest development run
 
 # Runtime Debugging
 
-Read .cursor/rules/ironbee-devtools-use.mdc before browser work. Use IronBee when its browser tools are available. If absent, do not substitute another browser tool in conflict with that rule; continue with allowed static or pure-runtime checks and disclose the missing browser verification.
+Read .agents/rules/ironbee-devtools-use.md before browser work. Use IronBee when its browser tools are available. If absent, do not substitute another browser tool in conflict with that rule; continue with allowed static or pure-runtime checks and disclose the missing browser verification.
 
 Identify listeners and their working directories before starting or stopping a server. Never kill every node process. Reuse user-owned dev servers and stop only processes started for the task unless the user directs otherwise. Track any temporary port.
 

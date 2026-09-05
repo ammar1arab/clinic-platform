@@ -11,7 +11,7 @@ description: >-
 
 ## Stand on
 
-`apps/web/src/app/globals.css` + `.cursor/rules/theme.mdc`
+`apps/web/src/app/globals.css` + `.agents/rules/theme.md`
 
 ## Quick map
 

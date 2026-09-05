@@ -1,3 +1,4 @@
+import { welcomeEmail } from "@/security/auth-email";
 import {
   BadRequestException,
   ConflictException,
@@ -202,14 +203,7 @@ export class PractitionersService {
     try {
       const result = await this.email.send({
         to: input.to,
-        subject: "Welcome to Cureva - your practitioner account",
-        html: `
-          <p>Hi ${input.name},</p>
-          <p>Your clinic has created a Cureva practitioner account for you.</p>
-          <p><strong>Email:</strong> ${input.to}<br/>
-          <strong>Temporary password:</strong> ${input.temporaryPassword}</p>
-          <p>Sign in and you will be asked to set a new password before continuing.</p>
-        `,
+        ...welcomeEmail(input),
       });
       return !result.skipped;
     } catch (err) {

@@ -7,7 +7,7 @@ export * from "./i18n.context";
 export * from "./i18n.middleware";
 export const corsOrigin =
   process.env.NODE_ENV === "production"
-    ? (["https://cureva.clinic", "https://www.cureva.clinic"] as const)
+    ? ["https://cureva.clinic", "https://www.cureva.clinic"]
     : true;
 
 const AVATAR_IDS = [
