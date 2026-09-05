@@ -35,7 +35,7 @@ export class PdfExporter implements ReportExporter {
         info: {
           Title: source.title,
           Author: source.letterhead.clinicName,
-          Creator: "Cureva Clinic Platform",
+          Creator: "Cureva Clinic",
         },
       });
 

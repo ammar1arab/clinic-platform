@@ -280,7 +280,7 @@ export const en = {
       packages: 'Packages',
       promocodes: 'Promocodes',
       clinicDefaults: 'Clinic defaults',
-      default: 'Clinic Platform',
+      default: 'Cureva Clinic',
     },
   },
   auth: {
@@ -324,7 +324,7 @@ export const en = {
     login: 'Log in',
     logout: 'Log out',
     logoutConfirmDescription: 'You’ll need to sign in again to access the clinic dashboard.',
-    title: 'Clinic Platform',
+    title: 'Cureva Clinic',
     description: 'Sign in to your account to continue',
     notFoundDescription: 'The page you are looking for does not exist.',
     email: 'Email',

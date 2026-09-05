@@ -11,6 +11,7 @@ import { schedulePath } from '@/components/blocks/appointments/schedule/schedule
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
 import { IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
+import { BrandMark } from '@/components/primitives/display/brand-mark';
 import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
 import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
 import { useAuth, useLanguage } from '@/providers';
@@ -195,10 +196,7 @@ export function SidebarBlock() {
           )}
         >
           <div className="flex min-w-0 items-center gap-2.5">
-            <span
-              className="h-4 w-1 shrink-0 rounded-full bg-linear-to-b from-brand to-accent-teal"
-              aria-hidden
-            />
+            <BrandMark size="sm" />
             <p className="truncate font-heading text-lg font-semibold tracking-tight text-foreground">
               {t.layout.titles.default}
             </p>
@@ -250,33 +248,40 @@ export function SidebarBlock() {
         <div
           className={cn(
             'flex h-14 shrink-0 items-center border-b border-border/70 transition-all duration-300',
-            isCollapsed ? 'justify-center px-0' : 'justify-between px-4',
+            isCollapsed ? 'justify-center px-2' : 'justify-between px-4',
           )}
         >
-          <div
-            className={cn(
-              'min-w-0 transition-all duration-200',
-              isCollapsed && 'w-0 overflow-hidden opacity-0',
-            )}
-          >
-            <p className="truncate font-heading text-sm font-semibold tracking-tight">
-              {t.layout.titles.default}
-            </p>
-          </div>
-
-          <SoftTip label={isCollapsed ? t.layout.sidebar.expand : t.layout.sidebar.collapse} side={isCollapsed ? 'right' : 'bottom'}>
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              aria-label={isCollapsed ? t.layout.sidebar.expand : t.layout.sidebar.collapse}
-              className={cn(
-                'hidden size-8 place-items-center rounded-lg text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground md:grid',
-                isCollapsed && 'rotate-180',
-              )}
-            >
-              <IconSidebarCollapse className="size-4" />
-            </button>
-          </SoftTip>
+          {isCollapsed ? (
+            <SoftTip label={t.layout.sidebar.expand} side="right">
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                aria-label={t.layout.sidebar.expand}
+                className="rounded-lg"
+              >
+                <BrandMark size="sm" />
+              </button>
+            </SoftTip>
+          ) : (
+            <>
+              <div className="flex min-w-0 items-center gap-2">
+                <BrandMark size="sm" />
+                <p className="truncate font-heading text-sm font-semibold tracking-tight">
+                  {t.layout.titles.default}
+                </p>
+              </div>
+              <SoftTip label={t.layout.sidebar.collapse} side="bottom">
+                <button
+                  type="button"
+                  onClick={toggleSidebar}
+                  aria-label={t.layout.sidebar.collapse}
+                  className="hidden size-8 place-items-center rounded-lg text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground md:grid"
+                >
+                  <IconSidebarCollapse className="size-4" />
+                </button>
+              </SoftTip>
+            </>
+          )}
         </div>
 
         <nav

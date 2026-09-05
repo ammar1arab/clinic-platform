@@ -31,8 +31,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle("Clinic Platform API")
-    .setDescription("Owner module API documentation")
+    .setTitle("Cureva Clinic API")
+    .setDescription("Cureva Clinic API documentation")
     .setVersion("1.0")
     .addBearerAuth()
     .build();

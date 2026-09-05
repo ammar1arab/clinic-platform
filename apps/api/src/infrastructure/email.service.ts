@@ -13,7 +13,7 @@ export interface SendEmailInput {
 export class EmailService implements OnModuleInit {
   private readonly log = createLogger(EmailService.name);
   private client: Resend | null = null;
-  private fromAddress = "Clinic Platform <onboarding@resend.dev>";
+  private fromAddress = "Cureva Clinic <onboarding@resend.dev>";
 
   onModuleInit() {
     const key = process.env.RESEND_API_KEY;

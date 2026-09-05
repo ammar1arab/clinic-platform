@@ -4,16 +4,23 @@ import { ROUTES } from './routes';
 const STAFF: Role[] = ['owner', 'admin'];
 const CLINIC: Role[] = ['owner', 'admin', 'practitioner'];
 const FINANCE: Role[] = ['owner', 'admin', 'financial'];
+const OPS: Role[] = ['owner', 'admin', 'financial'];
 
 /** Routes a role may open. `undefined` roles = all authenticated roles. */
 export const NAV_ACCESS: { prefix: string; roles?: Role[] }[] = [
-  { prefix: ROUTES.DASHBOARD },
+  { prefix: ROUTES.DASHBOARD, roles: OPS },
   { prefix: ROUTES.SCHEDULE },
   { prefix: ROUTES.PATIENTS, roles: CLINIC },
   { prefix: ROUTES.PRACTITIONERS, roles: STAFF },
   { prefix: ROUTES.REPORTS, roles: FINANCE },
   { prefix: ROUTES.SETTINGS, roles: STAFF },
 ];
+
+export function homePathForRole(role?: Role | null): string {
+  if (role === 'practitioner') return ROUTES.SCHEDULE;
+  if (role === 'financial') return ROUTES.REPORTS;
+  return ROUTES.DASHBOARD;
+}
 
 export function canAccessPath(pathname: string, role?: Role | null): boolean {
   if (!role) return false;

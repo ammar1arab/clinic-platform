@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
 import { SidebarBlock, TopbarBlock, PageTransition } from '@/components/layout';
 import { LoadingState } from '@/components/primitives';
-import { canAccessPath } from '@/constants/nav-access';
+import { canAccessPath, homePathForRole } from '@/constants/nav-access';
 import { ROUTES } from '@/constants/routes';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -23,7 +23,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   if (!canAccessPath(pathname, user?.role)) {
-    router.replace(ROUTES.DASHBOARD);
+    router.replace(homePathForRole(user?.role));
     return <LoadingState variant="page" text={t.common.checkingPermissions} />;
   }
 

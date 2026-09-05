@@ -10,7 +10,7 @@ import { extractErrorMessage } from '@/lib/api';
 import { FeedbackOverlay } from '@/components/primitives/states/feedback-overlay';
 import { BrandMark } from '@/components/primitives/display/brand-mark';
 import { playFeedbackSound } from '@/lib/feedback-sound';
-import { ROUTES } from '@/constants/routes';
+import { homePathForRole } from '@/constants/nav-access';
 import { cn } from '@/lib/utils';
 import { CredentialsForm } from './credentials-form';
 import { PasswordForm } from './password-form';
@@ -25,7 +25,7 @@ export function AuthFlow() {
   const [success, setSuccess] = useState(false);
   const completing = useRef(false);
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const { t } = useLanguage();
   const mutation = useAuthMutation();
   const pending = mutation.isPending || success;
@@ -42,8 +42,8 @@ export function AuthFlow() {
   const complete = useCallback(() => {
     if (completing.current) return;
     completing.current = true;
-    router.replace(ROUTES.DASHBOARD);
-  }, [router]);
+    router.replace(homePathForRole(user?.role));
+  }, [router, user?.role]);
 
   const submit = async (command: Parameters<typeof mutation.mutateAsync>[0]) => {
     setError('');

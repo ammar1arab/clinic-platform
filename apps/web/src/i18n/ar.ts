@@ -282,7 +282,7 @@ export const ar: Translations = {
       packages: 'الباقات',
       promocodes: 'أكواد الخصم',
       clinicDefaults: 'إعدادات العيادة',
-      default: 'منصة العيادة',
+      default: 'Cureva Clinic',
     },
   },
   auth: {
@@ -326,7 +326,7 @@ export const ar: Translations = {
     login: 'تسجيل الدخول',
     logout: 'تسجيل الخروج',
     logoutConfirmDescription: 'ستحتاج إلى تسجيل الدخول مرة أخرى للوصول إلى لوحة تحكم العيادة.',
-    title: 'منصة العيادة',
+    title: 'Cureva Clinic',
     description: 'قم بتسجيل الدخول إلى حسابك للمتابعة',
     notFoundDescription: 'الصفحة التي تبحث عنها غير موجودة.',
     email: 'البريد الإلكتروني',

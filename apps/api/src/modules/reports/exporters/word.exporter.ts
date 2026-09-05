@@ -53,7 +53,7 @@ export class WordExporter implements ReportExporter {
     });
 
     const document = new Document({
-      creator: "Cureva Clinic Platform",
+      creator: "Cureva Clinic",
       title: source.title,
       description: metaLine(source),
       sections: [

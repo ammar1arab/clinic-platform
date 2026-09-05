@@ -7,6 +7,7 @@ const PROTECTED_PREFIXES = [
   ROUTES.DASHBOARD,
   ROUTES.SCHEDULE,
   ROUTES.PATIENTS,
+  ROUTES.PRACTITIONERS,
   ROUTES.REPORTS,
   ROUTES.SETTINGS,
 ] as const;
@@ -34,6 +35,7 @@ export const config = {
     '/dashboard/:path*',
     '/schedule/:path*',
     '/patients/:path*',
+    '/practitioners/:path*',
     '/reports/:path*',
     '/settings/:path*',
   ],

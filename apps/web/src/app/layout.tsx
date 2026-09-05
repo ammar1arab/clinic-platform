@@ -16,8 +16,12 @@ const alexandria = Alexandria({
 });
 
 export const metadata: Metadata = {
-  title: "Clinic Platform",
-  description: "Clinic Management System",
+  title: "Cureva Clinic",
+  description: "Cureva Clinic",
+  icons: {
+    icon: "/brand/cureva-mark.png",
+    apple: "/brand/cureva-mark.png",
+  },
 };
 
 export const viewport: Viewport = {

@@ -1,16 +1,17 @@
 'use client';
 
-import { useLanguage } from '@/providers/language-provider';
-
+import Image from 'next/image';
 import { useId } from 'react';
+import { useLanguage } from '@/providers/language-provider';
+import { BRAND_MARK_SRC } from '@/constants/brand';
 import { cn } from '@/lib/utils';
 
 type Size = 'sm' | 'md' | 'lg';
 
-const dims: Record<Size, string> = {
-  sm: 'size-8',
-  md: 'size-12',
-  lg: 'size-16',
+const dims: Record<Size, { box: string; px: number }> = {
+  sm: { box: 'size-8', px: 32 },
+  md: { box: 'size-12', px: 48 },
+  lg: { box: 'size-16', px: 64 },
 };
 
 export function BrandMark({
@@ -20,27 +21,22 @@ export function BrandMark({
 }: {
   className?: string;
   size?: Size;
-
   spinning?: boolean;
 }) {
+  const { t } = useLanguage();
   const gradientId = useId();
+  const { box, px } = dims[size];
 
   return (
     <div
-      className={cn(
-        'relative inline-flex items-center justify-center',
-        dims[size],
-        className,
-      )}
+      className={cn('relative inline-flex items-center justify-center', box, className)}
+      aria-label={t.layout.titles.default}
+      role="img"
     >
       {spinning && (
         <>
-          <span className="absolute inset-0 rounded-full border border-primary/15 animate-clinic-ripple" />
-          <svg
-            viewBox="0 0 48 48"
-            className="absolute inset-0 size-full animate-clinic-orbit"
-            aria-hidden
-          >
+          <span className="absolute inset-0 rounded-full border border-primary/15 animate-clinic-ripple" aria-hidden />
+          <svg viewBox="0 0 48 48" className="absolute inset-0 size-full animate-clinic-orbit" aria-hidden>
             <defs>
               <linearGradient id={gradientId} x1="5" y1="5" x2="43" y2="43">
                 <stop stopColor="var(--primary)" />
@@ -59,21 +55,21 @@ export function BrandMark({
               strokeDasharray="48 84"
             />
           </svg>
-          <span className="absolute start-1/2 top-0 size-2 -translate-x-1/2 rtl:translate-x-1/2 rounded-full bg-accent-teal animate-clinic-spark" />
+          <span className="absolute start-1/2 top-0 size-2 -translate-x-1/2 rtl:translate-x-1/2 rounded-full bg-accent-teal animate-clinic-spark" aria-hidden />
         </>
       )}
 
-      <span
+      <Image
+        src={BRAND_MARK_SRC}
+        alt=""
+        width={px}
+        height={px}
+        priority
         className={cn(
-          'flex items-center justify-center rounded-xl bg-linear-to-br from-primary via-primary to-accent-teal text-primary-foreground',
-          spinning ? 'size-[58%]' : 'size-[62%]',
-          spinning && 'animate-clinic-breathe shadow-md shadow-primary/20',
+          'relative size-full object-contain',
+          spinning && 'animate-clinic-breathe',
         )}
-      >
-        <svg viewBox="0 0 24 24" fill="none" className="size-[55%]" aria-hidden>
-          <path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4Z" fill="currentColor" />
-        </svg>
-      </span>
+      />
     </div>
   );
 }
