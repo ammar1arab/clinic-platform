@@ -109,7 +109,7 @@ export function AvailabilityStudio({
   onAddAvailability: (slot: AvailabilitySlot) => void;
   onRemoveAvailability: (index: number) => void | Promise<boolean | void>;
   onAddOverride: () => void;
-  onRemoveOverride: (index: number) => void;
+  onRemoveOverride: (index: number) => void | Promise<boolean | void>;
   onAddLeave: () => void;
   onRemoveLeave: (index: number) => void | Promise<boolean | void>;
 }) {
@@ -215,7 +215,7 @@ export function AvailabilityStudio({
           <div
             data-hours-calendar=""
             data-schedule-host=""
-            className="[&_.fc]:text-xs"
+            className="min-h-112 [&_.fc]:text-xs"
           >
             <FullCalendar
               key={`${lang}-${dayWindow.min}-${dayWindow.max}`}
@@ -232,7 +232,7 @@ export function AvailabilityStudio({
               allDaySlot={false}
               slotMinTime={dayWindow.min}
               slotMaxTime={dayWindow.max}
-              slotDuration="01:00:00"
+              slotDuration="00:30:00"
               slotLabelInterval="01:00:00"
               snapDuration="00:15:00"
               displayEventTime={false}

@@ -1095,7 +1095,7 @@ html[data-view-focus='true'] [data-view-focus='true'] {
 }
 
 [data-hours-calendar] .fc-timegrid-slot {
-  height: 1.25rem;
+  height: 2.25rem;
 }
 
 [data-hours-calendar] .fc-col-header-cell-cushion {

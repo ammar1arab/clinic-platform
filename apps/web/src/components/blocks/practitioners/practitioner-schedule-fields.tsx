@@ -148,7 +148,7 @@ export function AvailabilityOverridesFields({
   errors: FieldErrors<PractitionerHoursData>;
   fields: OverrideField[];
   onAdd: () => void;
-  onRemove: (index: number) => void;
+  onRemove: (index: number) => void | Promise<boolean | void>;
 }) {
   const { t } = useLanguage();
   return (
@@ -156,7 +156,7 @@ export function AvailabilityOverridesFields({
       {fields.length === 0 ? (
         <p className="py-2 text-sm text-muted-foreground">{t.practitioner.noExtraAvailabilityDesc}</p>
       ) : fields.map((field, index) => (
-        <SlotRow key={field.id} icon={IconCalendarClock} removeLabel={t.common.remove} onRemove={() => onRemove(index)}>
+        <SlotRow key={field.id} icon={IconCalendarClock} removeLabel={t.common.remove} onRemove={() => void onRemove(index)}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Controller
               control={control}
@@ -207,7 +207,7 @@ export function LeaveBlocksFields({
   errors: FieldErrors<PractitionerHoursData>;
   fields: LeaveField[];
   onAdd: () => void;
-  onRemove: (index: number) => void;
+  onRemove: (index: number) => void | Promise<boolean | void>;
 }) {
   const { t } = useLanguage();
   return (
@@ -224,7 +224,7 @@ export function LeaveBlocksFields({
             key={field.id}
             icon={IconCalendarClock}
             removeLabel={t.common.remove}
-            onRemove={() => onRemove(index)}
+            onRemove={() => void onRemove(index)}
           >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormField label={t.common.from} error={errors.timeOffs?.[index]?.startDate?.message}>

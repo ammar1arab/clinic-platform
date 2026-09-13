@@ -561,6 +561,9 @@ export const en = {
     removeLeaveTitle: 'Remove this leave block?',
     removeLeaveDesc:
       'This blocked range will be dropped from the form until you save.',
+    removeExtraTitle: 'Remove this extra availability?',
+    removeExtraDesc:
+      'This one-time block will be dropped from the form until you save.',
     welcomeEmailSentToast: 'Welcome email sent with sign-in details.',
     credentialsAreEmail:
       'Sign-in uses their email for both email and temporary password. They must change the password on first login.',
