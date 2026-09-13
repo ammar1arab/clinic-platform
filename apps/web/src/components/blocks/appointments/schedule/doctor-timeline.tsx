@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { Button } from '@/components/ui';
 import { Appointment } from '@/services/appointments.service';
 import { ClinicStaffMember } from '@/services/clinics.service';
@@ -231,7 +231,6 @@ export function DoctorTimeline({
   const [activeDoctorId, setActiveDoctorId] = useState<string>('all');
   const [appointmentPopover, setAppointmentPopover] =
     useState<AppointmentPopoverState | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const now = useNow(30_000);
   const isToday = isSameDay(selectedDate, now);
 
@@ -301,15 +300,21 @@ export function DoctorTimeline({
     return Math.max(0, currentMin - TIMELINE_START_HOUR * 60) * TIMELINE_PX_PER_MIN;
   }, [isToday, now]);
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    if (nowTop !== null) {
-      el.scrollTop = Math.max(0, nowTop - 120);
-    } else {
+  const attachTimelineScroll = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (!el) return;
+      if (isToday) {
+        const current = new Date();
+        const marker =
+          (current.getHours() * 60 + current.getMinutes() - TIMELINE_START_HOUR * 60) *
+          TIMELINE_PX_PER_MIN;
+        el.scrollTop = Math.max(0, marker - 120);
+        return;
+      }
       el.scrollTop = (9 - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT;
-    }
-  }, [selectedDate, isToday, nowTop]);
+    },
+    [isToday, selectedDate],
+  );
 
   const shiftDate = useCallback((delta: number) => {
     setSelectedDate((prev) => {
@@ -435,7 +440,7 @@ export function DoctorTimeline({
       </div>
 
       <div
-        ref={scrollRef}
+        ref={attachTimelineScroll}
         onClick={handleGridClick}
         className="relative page-fill cursor-pointer overflow-auto overscroll-contain"
       >

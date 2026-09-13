@@ -1,16 +1,35 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useRef, useSyncExternalStore } from 'react';
 import { Dialog, DialogContent } from '@/components/ui';
 import { IconCheck, IconError, IconInfo, IconWarning } from '@/constants/icons';
 import { cn } from '@/lib/utils';
 
 const variants = {
-  success: { icon: IconCheck, color: 'bg-success text-white' },
-  error: { icon: IconError, color: 'bg-destructive text-white' },
-  warning: { icon: IconWarning, color: 'bg-warning text-white' },
-  info: { icon: IconInfo, color: 'bg-primary text-white' },
+  success: { icon: IconCheck, color: 'bg-success text-primary-foreground' },
+  error: { icon: IconError, color: 'bg-destructive text-primary-foreground' },
+  warning: { icon: IconWarning, color: 'bg-warning text-primary-foreground' },
+  info: { icon: IconInfo, color: 'bg-primary text-primary-foreground' },
 };
+
+function useAutoDismiss(enabled: boolean, onClose: () => void, ms = 1400) {
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (!enabled) return () => {};
+      const id = window.setTimeout(() => {
+        onCloseRef.current();
+        onStoreChange();
+      }, ms);
+      return () => window.clearTimeout(id);
+    },
+    [enabled, ms],
+  );
+
+  useSyncExternalStore(subscribe, () => enabled, () => false);
+}
 
 export function FeedbackOverlay({
   open,
@@ -23,11 +42,7 @@ export function FeedbackOverlay({
   title: string;
   variant?: keyof typeof variants;
 }) {
-  useEffect(() => {
-    if (!open || variant !== 'success') return;
-    const timer = window.setTimeout(onClose, 1400);
-    return () => window.clearTimeout(timer);
-  }, [open, variant, onClose]);
+  useAutoDismiss(open && variant === 'success', onClose);
 
   const { icon: Icon, color } = variants[variant];
 

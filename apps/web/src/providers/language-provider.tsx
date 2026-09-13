@@ -5,7 +5,6 @@ import {
   useContext,
   useMemo,
   useSyncExternalStore,
-  useEffect,
   ReactNode,
   useCallback,
 } from 'react';
@@ -26,16 +25,32 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
   undefined,
 );
 
+function languageDir(language: Language): 'ltr' | 'rtl' {
+  return language === 'ar' ? 'rtl' : 'ltr';
+}
+
+function applyLanguageToDocument(language: Language) {
+  const root = document.documentElement;
+  const dir = languageDir(language);
+  if (root.lang !== language) root.lang = language;
+  if (root.dir !== dir) root.dir = dir;
+}
+
 function getServerLanguageSnapshot(): Language {
   return 'en';
 }
 
 function subscribeToLanguage(onChange: () => void) {
-  window.addEventListener('languagechange', onChange);
-  window.addEventListener('storage', onChange);
+  const sync = () => {
+    applyLanguageToDocument(getLanguage());
+    onChange();
+  };
+  applyLanguageToDocument(getLanguage());
+  window.addEventListener('languagechange', sync);
+  window.addEventListener('storage', sync);
   return () => {
-    window.removeEventListener('languagechange', onChange);
-    window.removeEventListener('storage', onChange);
+    window.removeEventListener('languagechange', sync);
+    window.removeEventListener('storage', sync);
   };
 }
 
@@ -46,13 +61,9 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     getServerLanguageSnapshot,
   );
 
-  useEffect(() => {
-    document.documentElement.lang = language;
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
-  }, [language]);
-
   const setLanguage = useCallback((lang: Language) => {
     localStorage.setItem('language', lang);
+    applyLanguageToDocument(lang);
     window.dispatchEvent(new Event('languagechange'));
   }, []);
 
@@ -62,7 +73,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
       lang: language,
       setLanguage,
       t: translations[language],
-      dir: language === 'ar' ? 'rtl' : 'ltr',
+      dir: languageDir(language),
     }),
     [language, setLanguage],
   );
