@@ -1,7 +1,15 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import {
+  Controller,
+  useFieldArray,
+  useForm,
+  type Control,
+  type FieldErrors,
+  type UseFormRegister,
+  type UseFormSetValue,
+} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import {
@@ -30,8 +38,12 @@ import {
 import { FORM_NONE } from '@/constants/form';
 import { getPractitionerLanguages } from '@/constants/practitioner';
 import { getGenders } from '@/constants/patient';
-import { practitionerSchema, type PractitionerFormData } from '@/lib/validations';
 import { toDateParam } from '@/lib/datetime';
+import {
+  practitionerSchema,
+  type PractitionerFormData,
+  type PractitionerHoursData,
+} from '@/lib/validations';
 import { useCreatePractitioner, useUpdatePractitioner } from '@/hooks/api/use-practitioners';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useRooms } from '@/hooks/api/use-rooms';
@@ -39,12 +51,15 @@ import { useServices } from '@/hooks/api/use-services';
 import { useConfirm, useLanguage } from '@/providers';
 import { getBilingualName } from '@/i18n';
 import type { PractitionerDetail } from '@/services/practitioners.service';
+import { ROUTES } from '@/constants/routes';
 import {
   emptyPractitionerValues,
+  toHoursFormValues,
   toPractitionerFormValues,
   toPractitionerPayload,
 } from './practitioner-form.mapper';
 import { AvailabilityStudio } from './availability-studio';
+import { PractitionerHoursSummary } from './practitioner-hours-summary';
 
 type Props = {
   clinicId: string;
@@ -82,12 +97,12 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
   const availabilities = useFieldArray({ control, name: 'availabilities' });
   const timeOffs = useFieldArray({ control, name: 'timeOffs' });
   const availabilityOverrides = useFieldArray({ control, name: 'availabilityOverrides' });
+  const scheduleValues = watch();
 
   const departmentId = watch('departmentId');
   const imageUrl = watch('imageUrl');
   const name = watch('name');
   const employmentType = watch('employmentType');
-  const scheduleValues = watch();
   const needsCommission = employmentType === 'commission' || employmentType === 'mixed';
 
   const roomOptions = useMemo(() => {
@@ -442,27 +457,42 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
         </CardContent>
       </Card>
 
-      <AvailabilityStudio
-        control={control}
-        register={register}
-        setValue={setValue}
-        values={scheduleValues}
-        errors={errors}
-        overrideFields={availabilityOverrides.fields}
-        leaveFields={timeOffs.fields}
-        onAddAvailability={(slot) => availabilities.append(slot)}
-        onRemoveAvailability={removeAvailability}
-        onAddOverride={() => {
-          const day = toDateParam(new Date());
-          availabilityOverrides.append({ startAt: `${day}T09:00`, endAt: `${day}T17:00`, reason: '' });
-        }}
-        onRemoveOverride={(index) => availabilityOverrides.remove(index)}
-        onAddLeave={() => {
-          const day = toDateParam(new Date());
-          timeOffs.append({ startDate: day, endDate: day, reason: '' });
-        }}
-        onRemoveLeave={removeTimeOff}
-      />
+      {isEdit && practitioner ? (
+        <PractitionerHoursSummary
+          hours={toHoursFormValues(practitioner)}
+          href={ROUTES.PRACTITIONER_HOURS(practitioner.id)}
+        />
+      ) : (
+        <AvailabilityStudio
+          control={control as Control<PractitionerHoursData>}
+          register={register as UseFormRegister<PractitionerHoursData>}
+          setValue={setValue as UseFormSetValue<PractitionerHoursData>}
+          values={{
+            availabilities: scheduleValues.availabilities,
+            timeOffs: scheduleValues.timeOffs,
+            availabilityOverrides: scheduleValues.availabilityOverrides,
+          }}
+          errors={errors as FieldErrors<PractitionerHoursData>}
+          overrideFields={availabilityOverrides.fields}
+          leaveFields={timeOffs.fields}
+          onAddAvailability={(slot) => availabilities.append(slot)}
+          onRemoveAvailability={removeAvailability}
+          onAddOverride={() => {
+            const day = toDateParam(new Date());
+            availabilityOverrides.append({
+              startAt: `${day}T09:00`,
+              endAt: `${day}T17:00`,
+              reason: '',
+            });
+          }}
+          onRemoveOverride={(index) => availabilityOverrides.remove(index)}
+          onAddLeave={() => {
+            const day = toDateParam(new Date());
+            timeOffs.append({ startDate: day, endDate: day, reason: '' });
+          }}
+          onRemoveLeave={removeTimeOff}
+        />
+      )}
 
       <FormActions
         onCancel={onCancel}

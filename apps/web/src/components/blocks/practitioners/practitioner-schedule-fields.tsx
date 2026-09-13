@@ -17,8 +17,8 @@ import {
   CardTitle,
   Input,
 } from '@/components/ui';
-import { DatePicker, EmptyState, FormField, IconWell, TimePicker } from '@/components/primitives';
-import type { PractitionerFormData } from '@/lib/validations';
+import { DatePicker, FormField, IconWell, TimePicker } from '@/components/primitives';
+import type { PractitionerHoursData } from '@/lib/validations';
 import {
   IconAdd,
   IconCalendarClock,
@@ -27,8 +27,8 @@ import {
 } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 
-type LeaveField = FieldArrayWithId<PractitionerFormData, 'timeOffs'>;
-type OverrideField = FieldArrayWithId<PractitionerFormData, 'availabilityOverrides'>;
+type LeaveField = FieldArrayWithId<PractitionerHoursData, 'timeOffs'>;
+type OverrideField = FieldArrayWithId<PractitionerHoursData, 'availabilityOverrides'>;
 
 function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
@@ -58,7 +58,9 @@ function ScheduleCard({
           <AddButton label={addLabel} onClick={onAdd} />
         </CardAction>
       </CardHeader>
-      <CardContent className="space-y-2.5">{children}</CardContent>
+      <CardContent className="max-h-64 space-y-2.5 overflow-y-auto overscroll-y-contain">
+        {children}
+      </CardContent>
     </Card>
   );
 }
@@ -141,9 +143,9 @@ export function AvailabilityOverridesFields({
   onAdd,
   onRemove,
 }: {
-  control: Control<PractitionerFormData>;
-  register: UseFormRegister<PractitionerFormData>;
-  errors: FieldErrors<PractitionerFormData>;
+  control: Control<PractitionerHoursData>;
+  register: UseFormRegister<PractitionerHoursData>;
+  errors: FieldErrors<PractitionerHoursData>;
   fields: OverrideField[];
   onAdd: () => void;
   onRemove: (index: number) => void;
@@ -152,7 +154,7 @@ export function AvailabilityOverridesFields({
   return (
     <ScheduleCard title={t.practitioner.extraAvailability} addLabel={t.practitioner.addExtraAvailability} onAdd={onAdd}>
       {fields.length === 0 ? (
-        <EmptyState icon={IconCalendarClock} title={t.practitioner.noExtraAvailability} description={t.practitioner.noExtraAvailabilityDesc} className="py-8" />
+        <p className="py-2 text-sm text-muted-foreground">{t.practitioner.noExtraAvailabilityDesc}</p>
       ) : fields.map((field, index) => (
         <SlotRow key={field.id} icon={IconCalendarClock} removeLabel={t.common.remove} onRemove={() => onRemove(index)}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -200,9 +202,9 @@ export function LeaveBlocksFields({
   onAdd,
   onRemove,
 }: {
-  control: Control<PractitionerFormData>;
-  register: UseFormRegister<PractitionerFormData>;
-  errors: FieldErrors<PractitionerFormData>;
+  control: Control<PractitionerHoursData>;
+  register: UseFormRegister<PractitionerHoursData>;
+  errors: FieldErrors<PractitionerHoursData>;
   fields: LeaveField[];
   onAdd: () => void;
   onRemove: (index: number) => void;
@@ -215,12 +217,7 @@ export function LeaveBlocksFields({
       onAdd={onAdd}
     >
       {fields.length === 0 ? (
-        <EmptyState
-          icon={IconCalendarClock}
-          title={t.practitioner.noLeaveBlocks}
-          description={t.practitioner.noLeaveBlocksDesc}
-          className="py-8"
-        />
+        <p className="py-2 text-sm text-muted-foreground">{t.practitioner.noLeaveBlocksDesc}</p>
       ) : (
         fields.map((field, index) => (
           <SlotRow

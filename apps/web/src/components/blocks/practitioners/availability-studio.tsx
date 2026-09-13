@@ -17,15 +17,14 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from '@/components/ui';
-import { DatePicker, FormField, MetaStat, TimePicker } from '@/components/primitives';
+import { DatePicker, FormField, TimePicker } from '@/components/primitives';
 import { popoverAnchorFromElement } from '@/components/blocks/appointments/schedule/appointment-popovers';
-import { IconCalendar, IconDelete } from '@/constants/icons';
+import { IconDelete } from '@/constants/icons';
 import { WEEKDAY_OPTIONS } from '@/constants/practitioner';
-import { useIsMobile } from '@/hooks/shared/use-media-query';
 import { keepNestedPortals } from '@/lib/overlay';
-import { toDateParam } from '@/lib/datetime';
+import { formatTimeRange, parseClock, toClockValue, toDateParam } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
-import type { PractitionerFormData } from '@/lib/validations';
+import type { PractitionerHoursData } from '@/lib/validations';
 import { useLanguage } from '@/providers';
 import {
   Controller,
@@ -37,17 +36,39 @@ import {
 } from 'react-hook-form';
 import { AvailabilityOverridesFields, LeaveBlocksFields } from './practitioner-schedule-fields';
 
-type AvailabilitySlot = PractitionerFormData['availabilities'][number];
+type AvailabilitySlot = PractitionerHoursData['availabilities'][number];
 const CALENDAR_PLUGINS = [timeGridPlugin, interactionPlugin];
 
 function timeValue(date: Date) {
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  return toClockValue(date.getHours(), date.getMinutes());
 }
 
 function minutesBetween(startTime: string, endTime: string) {
-  const [startHour = 0, startMinute = 0] = startTime.split(':').map(Number);
-  const [endHour = 0, endMinute = 0] = endTime.split(':').map(Number);
-  return Math.max(0, endHour * 60 + endMinute - startHour * 60 - startMinute);
+  const start = parseClock(startTime);
+  const end = parseClock(endTime);
+  if (!start || !end) return 0;
+  return Math.max(0, end.hours * 60 + end.minutes - (start.hours * 60 + start.minutes));
+}
+
+function clockToFc(minutes: number) {
+  const clamped = Math.min(23 * 60, Math.max(0, minutes));
+  return `${toClockValue(Math.floor(clamped / 60), clamped % 60)}:00`;
+}
+
+function visibleDayWindow(slots: AvailabilitySlot[]) {
+  if (!slots.length) return { min: '08:00:00', max: '18:00:00' };
+  let minM = 8 * 60;
+  let maxM = 18 * 60;
+  for (const slot of slots) {
+    const start = parseClock(slot.startTime);
+    const end = parseClock(slot.endTime);
+    if (start) minM = Math.min(minM, start.hours * 60 + start.minutes - 30);
+    if (end) maxM = Math.max(maxM, end.hours * 60 + end.minutes + 30);
+  }
+  return {
+    min: clockToFc(Math.max(6 * 60, minM)),
+    max: clockToFc(Math.min(23 * 60, Math.max(maxM, minM + 60))),
+  };
 }
 
 function LiveAnchor({ element }: { element: Element }) {
@@ -78,13 +99,13 @@ export function AvailabilityStudio({
   onAddLeave,
   onRemoveLeave,
 }: {
-  control: Control<PractitionerFormData>;
-  register: UseFormRegister<PractitionerFormData>;
-  setValue: UseFormSetValue<PractitionerFormData>;
-  values: PractitionerFormData;
-  errors: FieldErrors<PractitionerFormData>;
-  overrideFields: FieldArrayWithId<PractitionerFormData, 'availabilityOverrides'>[];
-  leaveFields: FieldArrayWithId<PractitionerFormData, 'timeOffs'>[];
+  control: Control<PractitionerHoursData>;
+  register: UseFormRegister<PractitionerHoursData>;
+  setValue: UseFormSetValue<PractitionerHoursData>;
+  values: PractitionerHoursData;
+  errors: FieldErrors<PractitionerHoursData>;
+  overrideFields: FieldArrayWithId<PractitionerHoursData, 'availabilityOverrides'>[];
+  leaveFields: FieldArrayWithId<PractitionerHoursData, 'timeOffs'>[];
   onAddAvailability: (slot: AvailabilitySlot) => void;
   onRemoveAvailability: (index: number) => void | Promise<boolean | void>;
   onAddOverride: () => void;
@@ -93,22 +114,25 @@ export function AvailabilityStudio({
   onRemoveLeave: (index: number) => void | Promise<boolean | void>;
 }) {
   const { t, lang } = useLanguage();
-  const isMobile = useIsMobile();
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [anchor, setAnchor] = useState<Element | null>(null);
   const weekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 0 }), []);
+  const dayWindow = useMemo(
+    () => visibleDayWindow(values.availabilities),
+    [values.availabilities],
+  );
   const events = useMemo(
     () =>
       values.availabilities.map((slot, index) => ({
         id: String(index),
-        title: t.practitioner.weeklyAvailability,
+        title: formatTimeRange(slot.startTime, slot.endTime, undefined, lang),
         start: `${toDateParam(addDays(weekStart, slot.dayOfWeek))}T${slot.startTime}`,
         end: `${toDateParam(addDays(weekStart, slot.dayOfWeek))}T${slot.endTime}`,
         backgroundColor: 'var(--color-primary)',
         borderColor: 'var(--color-primary)',
         textColor: 'var(--color-primary-foreground)',
       })),
-    [t.practitioner.weeklyAvailability, values.availabilities, weekStart],
+    [lang, values.availabilities, weekStart],
   );
 
   const workingDays = new Set(values.availabilities.map((slot) => slot.dayOfWeek));
@@ -159,52 +183,62 @@ export function AvailabilityStudio({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <IconCalendar className="size-4 text-primary" />
-            {t.practitioner.weeklyAvailability}
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">{t.practitioner.dragToAddAvailability}</p>
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            <MetaStat label={t.practitioner.workingDays} value={String(workingDays.size)} />
-            <MetaStat label={t.practitioner.weeklyHours} value={String(weeklyHours)} />
+        <CardHeader className="gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-sm">{t.practitioner.weeklyAvailability}</CardTitle>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+                {workingDays.size} {t.practitioner.workingDays}
+              </span>
+              <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+                {weeklyHours} {t.practitioner.weeklyHours}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1 pt-1">
+          <div className="grid grid-cols-7 gap-1">
             {WEEKDAY_OPTIONS.map((label, day) => (
               <span
                 key={label}
                 className={cn(
-                  'rounded-md px-2 py-1 text-xs font-medium',
+                  'flex h-7 items-center justify-center rounded-md text-[11px] font-medium',
                   workingDays.has(day)
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground',
                 )}
               >
-                {t.constants.weekdays[label]}
+                {t.constants.weekdaysShort[label]}
               </span>
             ))}
           </div>
         </CardHeader>
         <CardContent>
           <div
+            data-hours-calendar=""
             data-schedule-host=""
-            className="h-128 min-h-112 overflow-hidden [&_.fc]:h-full [&_.fc]:text-sm [&_.fc-view-harness]:min-h-0"
+            className="[&_.fc]:text-xs"
           >
             <FullCalendar
-              key={`${lang}-${isMobile ? 'day' : 'week'}`}
+              key={`${lang}-${dayWindow.min}-${dayWindow.max}`}
               plugins={CALENDAR_PLUGINS}
-              initialView={isMobile ? 'timeGridDay' : 'timeGridWeek'}
+              initialView="timeGridWeek"
               initialDate={weekStart}
               locales={[arLocale]}
               locale={lang === 'ar' ? 'ar' : 'en'}
               direction={lang === 'ar' ? 'rtl' : 'ltr'}
-              headerToolbar={{ left: 'prev,next', center: 'title', right: '' }}
-              height="100%"
+              headerToolbar={false}
+              dayHeaderFormat={{ weekday: 'short' }}
+              height="auto"
+              contentHeight="auto"
               allDaySlot={false}
-              slotMinTime="06:00:00"
-              slotMaxTime="23:00:00"
-              slotDuration="00:15:00"
+              slotMinTime={dayWindow.min}
+              slotMaxTime={dayWindow.max}
+              slotDuration="01:00:00"
+              slotLabelInterval="01:00:00"
               snapDuration="00:15:00"
+              displayEventTime={false}
+              eventContent={(arg) => ({
+                html: `<div class="hours-event-label">${arg.event.title}</div>`,
+              })}
               selectable
               selectMirror
               editable
@@ -220,7 +254,6 @@ export function AvailabilityStudio({
               eventResize={handleEventMove}
               nowIndicator
               expandRows
-              stickyHeaderDates
             />
           </div>
         </CardContent>
@@ -329,7 +362,7 @@ function DateController({
   name,
   label,
 }: {
-  control: Control<PractitionerFormData>;
+  control: Control<PractitionerHoursData>;
   name: `availabilities.${number}.effectiveFrom` | `availabilities.${number}.effectiveUntil`;
   label: string;
 }) {

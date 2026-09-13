@@ -14,6 +14,7 @@ export const ROUTES = {
   PRACTITIONERS_NEW: '/practitioners/new',
   PRACTITIONER_DETAIL: (id: string) => `/practitioners/${id}`,
   PRACTITIONERS_EDIT: (id: string) => `/practitioners/${id}/edit`,
+  PRACTITIONER_HOURS: (id: string) => `/practitioners/${id}/hours`,
   REPORTS: '/reports',
   SETTINGS: '/settings',
   SETTINGS_DEPARTMENTS: '/settings/departments',

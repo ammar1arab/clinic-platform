@@ -12,7 +12,7 @@ import {
   useReactivatePractitioner,
 } from '@/hooks/api/use-practitioners';
 import type { Practitioner } from '@/services/practitioners.service';
-import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconPhone, IconPractitioner, IconView } from '@/constants/icons';
+import { IconActivate, IconCalendar, IconDeactivate, IconDelete, IconEdit, IconPhone, IconPractitioner, IconView } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 import { getBilingualName, getStaffName } from '@/i18n';
 import { ROUTES } from '@/constants/routes';
@@ -85,6 +85,11 @@ export function PractitionersList({
           label: t.practitioner.edit,
           icon: IconEdit,
           href: ROUTES.PRACTITIONERS_EDIT(p.id),
+        },
+        {
+          label: t.practitioner.workingHours,
+          icon: IconCalendar,
+          href: ROUTES.PRACTITIONER_HOURS(p.id),
         },
         {
           label: p.isActive ? t.practitioner.deactivate : t.practitioner.reactivate,

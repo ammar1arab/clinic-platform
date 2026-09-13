@@ -3,7 +3,7 @@ import type {
   PractitionerDetail,
   UpdatePractitionerInput,
 } from '@/services/practitioners.service';
-import type { PractitionerFormData } from '@/lib/validations';
+import type { PractitionerFormData, PractitionerHoursData } from '@/lib/validations';
 import { pickRandomAvatarUrl, persistableImageUrl, resolveAvatarUrl } from '@/lib/avatars';
 
 export function emptyPractitionerValues(): PractitionerFormData {
@@ -156,4 +156,35 @@ export function toPractitionerPayload(data: PractitionerFormData) {
     })),
   } satisfies Omit<CreatePractitionerInput, 'clinicId' | 'email'> &
     UpdatePractitionerInput;
+}
+
+export function toHoursFormValues(p: PractitionerDetail): PractitionerHoursData {
+  const values = toPractitionerFormValues(p);
+  return {
+    availabilities: values.availabilities,
+    timeOffs: values.timeOffs,
+    availabilityOverrides: values.availabilityOverrides,
+  };
+}
+
+export function toHoursPayload(data: PractitionerHoursData) {
+  return {
+    availabilities: data.availabilities.map((a) => ({
+      dayOfWeek: Number(a.dayOfWeek),
+      startTime: a.startTime,
+      endTime: a.endTime,
+      effectiveFrom: clean(a.effectiveFrom),
+      effectiveUntil: clean(a.effectiveUntil),
+    })),
+    timeOffs: data.timeOffs.map((t) => ({
+      startDate: t.startDate,
+      endDate: t.endDate,
+      reason: clean(t.reason),
+    })),
+    availabilityOverrides: data.availabilityOverrides.map((entry) => ({
+      startAt: entry.startAt,
+      endAt: entry.endAt,
+      reason: clean(entry.reason),
+    })),
+  };
 }

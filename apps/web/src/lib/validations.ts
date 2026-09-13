@@ -258,6 +258,52 @@ const availabilityOverrideSchema = z.object({
   reason: z.string().optional().or(z.literal('')),
 });
 
+function refinePractitionerHours(
+  v: {
+    availabilities: z.infer<typeof availabilitySlotSchema>[];
+    timeOffs: z.infer<typeof timeOffSchema>[];
+    availabilityOverrides: z.infer<typeof availabilityOverrideSchema>[];
+  },
+  ctx: z.RefinementCtx,
+) {
+  v.availabilities.forEach((slot, index) => {
+    if (slot.startTime && slot.endTime && slot.startTime >= slot.endTime) {
+      ctx.addIssue({
+        path: ['availabilities', index, 'endTime'],
+        code: 'custom',
+        message: getTranslations().validation.endAfter,
+      });
+    }
+    if (slot.effectiveFrom && slot.effectiveUntil && slot.effectiveFrom > slot.effectiveUntil) {
+      ctx.addIssue({
+        path: ['availabilities', index, 'effectiveUntil'],
+        code: 'custom',
+        message: getTranslations().validation.endOnAfter,
+      });
+    }
+  });
+
+  v.timeOffs.forEach((entry, index) => {
+    if (entry.startDate && entry.endDate && entry.startDate > entry.endDate) {
+      ctx.addIssue({
+        path: ['timeOffs', index, 'endDate'],
+        code: 'custom',
+        message: getTranslations().validation.endOnAfter,
+      });
+    }
+  });
+
+  v.availabilityOverrides.forEach((entry, index) => {
+    if (entry.startAt && entry.endAt && new Date(entry.startAt) >= new Date(entry.endAt)) {
+      ctx.addIssue({
+        path: ['availabilityOverrides', index, 'endAt'],
+        code: 'custom',
+        message: getTranslations().validation.endAfter,
+      });
+    }
+  });
+}
+
 export const practitionerSchema = z
   .object({
     name: requiredText(80),
@@ -329,35 +375,16 @@ export const practitionerSchema = z
       }
     }
 
-    v.availabilities.forEach((slot, index) => {
-      if (slot.startTime && slot.endTime && slot.startTime >= slot.endTime) {
-        ctx.addIssue({
-          path: ['availabilities', index, 'endTime'],
-          code: 'custom',
-          message: getTranslations().validation.endAfter,
-        });
-      }
-      if (slot.effectiveFrom && slot.effectiveUntil && slot.effectiveFrom > slot.effectiveUntil) {
-        ctx.addIssue({ path: ['availabilities', index, 'effectiveUntil'], code: 'custom', message: getTranslations().validation.endOnAfter });
-      }
-    });
-
-    v.timeOffs.forEach((entry, index) => {
-      if (entry.startDate && entry.endDate && entry.startDate > entry.endDate) {
-        ctx.addIssue({
-          path: ['timeOffs', index, 'endDate'],
-          code: 'custom',
-          message: getTranslations().validation.endOnAfter,
-        });
-      }
-    });
-
-    v.availabilityOverrides.forEach((entry, index) => {
-      if (entry.startAt && entry.endAt && new Date(entry.startAt) >= new Date(entry.endAt)) {
-        ctx.addIssue({ path: ['availabilityOverrides', index, 'endAt'], code: 'custom', message: getTranslations().validation.endAfter });
-      }
-    });
+    refinePractitionerHours(v, ctx);
   });
+
+export const practitionerHoursSchema = z
+  .object({
+    availabilities: z.array(availabilitySlotSchema),
+    timeOffs: z.array(timeOffSchema),
+    availabilityOverrides: z.array(availabilityOverrideSchema),
+  })
+  .superRefine(refinePractitionerHours);
 
 export const loginSchema = z.object({
   email: z
@@ -376,4 +403,5 @@ export type RoomFormData = z.infer<typeof roomSchema>;
 export type ServiceFormData = z.infer<typeof serviceSchema>;
 export type AppointmentFormData = z.infer<typeof appointmentSchema>;
 export type PractitionerFormData = z.infer<typeof practitionerSchema>;
+export type PractitionerHoursData = z.infer<typeof practitionerHoursSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;

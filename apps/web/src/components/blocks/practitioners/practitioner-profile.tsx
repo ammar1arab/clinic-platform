@@ -36,7 +36,7 @@ import {
 import { calcAge } from '@/lib/age';
 import { formatDate, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
-import { IconActivate, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
+import { IconActivate, IconCalendar, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 import { getBilingualName, getStaffName, type Translations } from '@/i18n';
 
@@ -95,6 +95,11 @@ export function PractitionerProfile({
               label: t.practitioner.edit,
               icon: IconEdit,
               href: ROUTES.PRACTITIONERS_EDIT(practitioner.id),
+            },
+            {
+              label: t.practitioner.workingHours,
+              icon: IconCalendar,
+              href: ROUTES.PRACTITIONER_HOURS(practitioner.id),
             },
             {
               label: practitioner.isActive
@@ -253,7 +258,7 @@ export function PractitionerProfile({
         </ProfileSection>
       ) : null}
 
-      <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         <ProfileSection
           title={t.practitioner.services}
           description={
@@ -262,6 +267,7 @@ export function PractitionerProfile({
               : undefined
           }
           className="h-full"
+          contentClassName="max-h-56 overflow-y-auto overscroll-y-contain"
         >
           {practitioner.services.length === 0 ? (
             <ProfileEmpty>{t.practitioner.noServicesAssigned}</ProfileEmpty>
@@ -284,7 +290,11 @@ export function PractitionerProfile({
           )}
         </ProfileSection>
 
-        <ProfileSection title={t.practitioner.weeklyAvailability} className="h-full">
+        <ProfileSection
+          title={t.practitioner.weeklyAvailability}
+          className="h-full"
+          contentClassName="max-h-56 overflow-y-auto overscroll-y-contain"
+        >
           {practitioner.availabilities.length === 0 ? (
             <ProfileEmpty>{t.practitioner.noWeeklyPatterns}</ProfileEmpty>
           ) : (
@@ -303,7 +313,35 @@ export function PractitionerProfile({
           )}
         </ProfileSection>
 
-        <ProfileSection title={t.practitioner.leave} className="h-full">
+        <ProfileSection
+          title={t.practitioner.extraAvailability}
+          className="h-full"
+          contentClassName="max-h-56 overflow-y-auto overscroll-y-contain"
+        >
+          {practitioner.availabilityOverrides.length === 0 ? (
+            <ProfileEmpty>{t.practitioner.noExtraAvailability}</ProfileEmpty>
+          ) : (
+            <div className="space-y-1.5">
+              {practitioner.availabilityOverrides.map((entry, index) => (
+                <ProfileSoftRow
+                  key={entry.id ?? `${entry.startAt}-${index}`}
+                  title={formatDate(entry.startAt, undefined, lang)}
+                  detail={entry.reason}
+                >
+                  <span className="shrink-0 tabular-nums text-muted-foreground">
+                    {formatTimeRange(entry.startAt, entry.endAt, undefined, lang)}
+                  </span>
+                </ProfileSoftRow>
+              ))}
+            </div>
+          )}
+        </ProfileSection>
+
+        <ProfileSection
+          title={t.practitioner.leave}
+          className="h-full"
+          contentClassName="max-h-56 overflow-y-auto overscroll-y-contain"
+        >
           {practitioner.timeOffs.length === 0 ? (
             <ProfileEmpty>{t.practitioner.noLeaveBlocks}</ProfileEmpty>
           ) : (

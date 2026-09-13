@@ -1,13 +1,10 @@
-'use client';
-
-import { use } from 'react';
 import { PatientProfile } from '@/components/blocks/patients';
 
-export default function PatientDetailPage({
+export default async function PatientDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
+  const { id } = await params;
   return <PatientProfile patientId={id} />;
 }

@@ -29,7 +29,7 @@ export function PageBack({ backHref, backLabel, actions, className }: Props) {
         <IconArrowLeft className="size-3.5 me-1 rtl:rotate-180" />
         {backLabel ?? t.ui.back}
       </Button>
-      {actions}
+      {actions ? <div className="ms-auto shrink-0">{actions}</div> : null}
     </div>
   );
 }
