@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, type Control, type FieldErrors, type UseFormRegister, type UseFormSetValue } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import {
@@ -30,7 +30,11 @@ import {
 import { FORM_NONE } from '@/constants/form';
 import { getPractitionerLanguages } from '@/constants/practitioner';
 import { getGenders } from '@/constants/patient';
-import { practitionerSchema, type PractitionerFormData } from '@/lib/validations';
+import {
+  practitionerSchema,
+  type PractitionerFormData,
+  type PractitionerHoursData,
+} from '@/lib/validations';
 import { useCreatePractitioner, useUpdatePractitioner } from '@/hooks/api/use-practitioners';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useRooms } from '@/hooks/api/use-rooms';
@@ -424,10 +428,10 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
         />
       ) : (
         <AvailabilityStudio
-          control={control}
-          register={register}
-          setValue={setValue}
-          errors={errors}
+          control={control as Control<PractitionerHoursData>}
+          register={register as UseFormRegister<PractitionerHoursData>}
+          setValue={setValue as UseFormSetValue<PractitionerHoursData>}
+          errors={errors as FieldErrors<PractitionerHoursData>}
         />
       )}
 

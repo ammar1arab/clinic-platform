@@ -5,7 +5,7 @@ import { toDateParam } from '@/lib/datetime';
 import type { PractitionerHoursData } from '@/lib/validations';
 import { useConfirm, useLanguage } from '@/providers';
 
-export function useHoursFields<T extends PractitionerHoursData>(control: Control<T>) {
+export function useHoursFields(control: Control<PractitionerHoursData>) {
   const confirm = useConfirm();
   const { t } = useLanguage();
   const availabilities = useFieldArray({ control, name: 'availabilities' });

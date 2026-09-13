@@ -84,22 +84,18 @@ function LiveAnchor({ element }: { element: Element }) {
   return <PopoverAnchor virtualRef={virtualRef} />;
 }
 
-export function AvailabilityStudio<T extends PractitionerHoursData>({
+export function AvailabilityStudio({
   control,
   register,
   setValue,
   errors,
 }: {
-  control: Control<T>;
-  register: UseFormRegister<T>;
-  setValue: UseFormSetValue<T>;
-  errors: FieldErrors<T>;
+  control: Control<PractitionerHoursData>;
+  register: UseFormRegister<PractitionerHoursData>;
+  setValue: UseFormSetValue<PractitionerHoursData>;
+  errors: FieldErrors<PractitionerHoursData>;
 }) {
   const { t, lang } = useLanguage();
-  const hoursControl = control as Control<PractitionerHoursData>;
-  const hoursRegister = register as UseFormRegister<PractitionerHoursData>;
-  const hoursSetValue = setValue as UseFormSetValue<PractitionerHoursData>;
-  const hoursErrors = errors as FieldErrors<PractitionerHoursData>;
   const {
     values,
     overrideFields,
@@ -145,9 +141,9 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
 
   const updateSlotFromEvent = (index: number, start: Date | null, end: Date | null) => {
     if (!start || !end) return;
-    hoursSetValue(`availabilities.${index}.dayOfWeek`, start.getDay(), { shouldDirty: true });
-    hoursSetValue(`availabilities.${index}.startTime`, timeValue(start), { shouldDirty: true });
-    hoursSetValue(`availabilities.${index}.endTime`, timeValue(end), {
+    setValue(`availabilities.${index}.dayOfWeek`, start.getDay(), { shouldDirty: true });
+    setValue(`availabilities.${index}.startTime`, timeValue(start), { shouldDirty: true });
+    setValue(`availabilities.${index}.endTime`, timeValue(end), {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -271,7 +267,7 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
             </div>
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
               <Controller
-                control={hoursControl}
+                control={control}
                 name={`availabilities.${selectedSlot}.startTime`}
                 render={({ field }) => <TimePicker value={field.value} onChange={field.onChange} />}
               />
@@ -279,7 +275,7 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
                 -
               </span>
               <Controller
-                control={hoursControl}
+                control={control}
                 name={`availabilities.${selectedSlot}.endTime`}
                 render={({ field }) => <TimePicker value={field.value} onChange={field.onChange} />}
               />
@@ -289,12 +285,12 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
               <p className="text-xs text-muted-foreground">{t.practitioner.repeatScheduleDesc}</p>
               <div className="grid grid-cols-1 gap-2">
                 <DateController
-                  control={hoursControl}
+                  control={control}
                   name={`availabilities.${selectedSlot}.effectiveFrom`}
                   label={t.common.from}
                 />
                 <DateController
-                  control={hoursControl}
+                  control={control}
                   name={`availabilities.${selectedSlot}.effectiveUntil`}
                   label={t.common.to}
                 />
@@ -305,10 +301,10 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
                 size="sm"
                 className="w-full"
                 onClick={() => {
-                  hoursSetValue(`availabilities.${selectedSlot}.effectiveFrom`, toDateParam(weekStart), {
+                  setValue(`availabilities.${selectedSlot}.effectiveFrom`, toDateParam(weekStart), {
                     shouldDirty: true,
                   });
-                  hoursSetValue(
+                  setValue(
                     `availabilities.${selectedSlot}.effectiveUntil`,
                     toDateParam(addDays(weekStart, 6)),
                     { shouldDirty: true },
@@ -335,17 +331,17 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
       ) : null}
 
       <AvailabilityOverridesFields
-        control={hoursControl}
-        register={hoursRegister}
-        errors={hoursErrors}
+        control={control}
+        register={register}
+        errors={errors}
         fields={overrideFields}
         onAdd={onAddOverride}
         onRemove={onRemoveOverride}
       />
       <LeaveBlocksFields
-        control={hoursControl}
-        register={hoursRegister}
-        errors={hoursErrors}
+        control={control}
+        register={register}
+        errors={errors}
         fields={leaveFields}
         onAdd={onAddLeave}
         onRemove={onRemoveLeave}
