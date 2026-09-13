@@ -248,7 +248,7 @@ export function PatientsList({
                   openPatient(p.id);
                 }
               }}
-              className={`cursor-pointer rounded-xl bg-card p-3 ring-1 ring-foreground/10 ${
+              className={`cursor-pointer rounded-xl bg-card p-3 ${
                 !p.isActive ? 'opacity-60' : ''
               }`}
             >

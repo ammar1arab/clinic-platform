@@ -30,6 +30,7 @@ import {
   matchesAppointmentSearch,
 } from "@/components/blocks/appointments";
 import { toDateParam, toTimeParam } from "@/lib/datetime";
+import { useLanguage } from "@/providers";
 
 const AppointmentCalendar = dynamic(
   () =>
@@ -41,6 +42,7 @@ const AppointmentCalendar = dynamic(
 
 function SchedulePageInner() {
   const clinicId = useClinicId();
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -179,7 +181,7 @@ function SchedulePageInner() {
       </div>
 
       {view === "doctors" ? (
-        <ViewFocus label="Doctor timeline">
+        <ViewFocus label={t.appointments.doctorTimeline}>
           {(focused) => (
             <DoctorTimeline
               appointments={filteredAppointments}
@@ -192,7 +194,7 @@ function SchedulePageInner() {
           )}
         </ViewFocus>
       ) : view === "queue" ? (
-        <ViewFocus label="Waiting board">
+        <ViewFocus label={t.queue.waitingQueue}>
           {(focused) => (
             <WaitingQueueBoard
               appointments={filteredAppointments}
@@ -203,7 +205,7 @@ function SchedulePageInner() {
           )}
         </ViewFocus>
       ) : (
-        <ViewFocus label="Calendar">
+        <ViewFocus label={t.appointments.calendar}>
           {(focused) => (
             <AppointmentCalendar
               appointments={filteredAppointments}

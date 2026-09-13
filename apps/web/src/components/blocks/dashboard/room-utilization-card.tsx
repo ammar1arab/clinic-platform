@@ -3,12 +3,14 @@
 import { useMemo, useState } from 'react';
 import {
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
   Skeleton,
 } from '@/components/ui';
 import { EmptyState } from '@/components/primitives';
+import { ViewFocusToggle } from '@/components/blocks/appointments';
 import { RoomUtilization } from '@/services/dashboard.service';
 import { cn } from '@/lib/utils';
 import { IconChevronDown, IconRoom } from '@/constants/icons';
@@ -21,6 +23,7 @@ import { useRooms } from '@/hooks/api/use-rooms';
 interface Props {
   rooms: RoomUtilization[] | undefined;
   isLoading: boolean;
+  focused?: boolean;
 }
 
 type RoomGroup = {
@@ -38,7 +41,7 @@ function barColor(percent: number) {
 const fold =
   'duration-[var(--overlay-duration)] ease-[var(--overlay-ease)] motion-reduce:transition-none';
 
-export function RoomUtilizationCardBlock({ rooms, isLoading }: Props) {
+export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: Props) {
   const { t, lang } = useLanguage();
   const clinicId = useClinicId();
   const { data: catalogRooms } = useRooms(clinicId);
@@ -91,9 +94,12 @@ export function RoomUtilizationCardBlock({ rooms, isLoading }: Props) {
   };
 
   return (
-    <Card className="page-fill">
+    <Card className={cn('page-fill', focused && 'rounded-none')}>
       <CardHeader className="shrink-0">
         <CardTitle className="text-sm">{t.dashboard.roomUtilizationToday}</CardTitle>
+        <CardAction>
+          <ViewFocusToggle />
+        </CardAction>
       </CardHeader>
       <CardContent className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-y-contain">
         {isLoading &&

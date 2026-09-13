@@ -9,6 +9,7 @@ import {
   KpiCardBlock,
   RoomUtilizationCardBlock,
 } from '@/components/blocks/dashboard';
+import { ViewFocus } from '@/components/blocks/appointments';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { formatWaitingMins } from '@/lib/waiting-time';
 import { IconCheckCircle, IconHourglass, IconRoom, IconTime, IconTimer, IconTodaysAppointments } from '@/constants/icons';
@@ -27,7 +28,10 @@ export default function DashboardPage() {
 
   return (
     <div className="page-fill gap-5">
-      <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4 xl:grid-cols-6">
+      <div
+        data-focus-hide=""
+        className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4 xl:grid-cols-6"
+      >
         <KpiCardBlock
           label={t?.dashboard?.todaysAppointments}
           value={kpis?.total ?? 0}
@@ -72,7 +76,15 @@ export default function DashboardPage() {
         />
       </div>
 
-      <RoomUtilizationCardBlock rooms={rooms} isLoading={roomsLoading} />
+      <ViewFocus label={t.dashboard.roomUtilizationToday}>
+        {(focused) => (
+          <RoomUtilizationCardBlock
+            rooms={rooms}
+            isLoading={roomsLoading}
+            focused={focused}
+          />
+        )}
+      </ViewFocus>
     </div>
   );
 }

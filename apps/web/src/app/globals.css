@@ -897,13 +897,11 @@ th, td {
 }
 
 html[data-view-focus='true'] {
-  --app-sidebar-current-width: 0px;
   --app-queue-col-max: none;
 }
 
-html[data-view-focus='true'] [data-app-sidebar],
-html[data-view-focus='true'] [data-app-topbar],
-html[data-view-focus='true'] [data-schedule-toolbar] {
+html[data-view-focus='true'] [data-schedule-toolbar],
+html[data-view-focus='true'] [data-focus-hide] {
   display: none;
 }
 
