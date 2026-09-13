@@ -13,14 +13,17 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui';
 import { DatePicker, FormField, TimePicker } from '@/components/primitives';
-import { popoverAnchorFromElement } from '@/components/blocks/appointments/schedule/appointment-popovers';
 import { IconDelete } from '@/constants/icons';
 import { WEEKDAY_OPTIONS } from '@/constants/practitioner';
+import { useIsMobile } from '@/hooks/shared/use-media-query';
 import { keepNestedPortals } from '@/lib/overlay';
 import { formatTimeRange, parseClock, toClockValue, toDateParam } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
@@ -37,7 +40,13 @@ import { AvailabilityOverridesFields, LeaveBlocksFields } from './practitioner-s
 import { useHoursFields } from './use-hours-fields';
 
 type AvailabilitySlot = PractitionerHoursData['availabilities'][number];
+type SlotEditor =
+  | { mode: 'create'; dayOfWeek: number; startTime: string; endTime: string }
+  | { mode: 'edit'; index: number };
+
 const CALENDAR_PLUGINS = [timeGridPlugin, interactionPlugin];
+const DEFAULT_START = '09:00';
+const DEFAULT_END = '17:00';
 
 function timeValue(date: Date) {
   return toClockValue(date.getHours(), date.getMinutes());
@@ -71,19 +80,6 @@ function visibleDayWindow(slots: AvailabilitySlot[]) {
   };
 }
 
-function LiveAnchor({ element }: { element: Element }) {
-  const virtualRef = useMemo(
-    () => ({
-      current: {
-        getBoundingClientRect: () =>
-          element.isConnected ? element.getBoundingClientRect() : new DOMRect(),
-      },
-    }),
-    [element],
-  );
-  return <PopoverAnchor virtualRef={virtualRef} />;
-}
-
 export function AvailabilityStudio<T extends PractitionerHoursData>({
   control,
   register,
@@ -111,8 +107,8 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
     onAddLeave,
     onRemoveLeave,
   } = useHoursFields(hoursControl);
-  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
-  const [anchor, setAnchor] = useState<Element | null>(null);
+  const isMobile = useIsMobile();
+  const [editor, setEditor] = useState<SlotEditor | null>(null);
   const weekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 0 }), []);
   const dayWindow = useMemo(
     () => visibleDayWindow(values.availabilities),
@@ -153,9 +149,19 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
     });
   };
 
-  const closeSlot = () => {
-    setSelectedSlot(null);
-    setAnchor(null);
+  const closeSlot = () => setEditor(null);
+
+  const openDay = (dayOfWeek: number) => {
+    const index = values.availabilities.findIndex((slot) => slot.dayOfWeek === dayOfWeek);
+    if (index >= 0) setEditor({ mode: 'edit', index });
+    else {
+      setEditor({
+        mode: 'create',
+        dayOfWeek,
+        startTime: DEFAULT_START,
+        endTime: DEFAULT_END,
+      });
+    }
   };
 
   const handleSelect = (selection: DateSelectArg) => {
@@ -170,12 +176,25 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
     closeSlot();
   };
 
+  const handleDateClick = (click: { date: Date }) => {
+    openDay(click.date.getDay());
+  };
+
   const handleEventMove = (event: EventDropArg | EventResizeDoneArg) => {
     updateSlotFromEvent(Number(event.event.id), event.event.start, event.event.end);
   };
 
-  const activeSlot = selectedSlot === null ? undefined : values.availabilities[selectedSlot];
-  const slotOpen = selectedSlot !== null && Boolean(activeSlot) && Boolean(anchor?.isConnected);
+  const selectedIndex = editor?.mode === 'edit' ? editor.index : null;
+  const activeSlot = selectedIndex === null ? undefined : values.availabilities[selectedIndex];
+  const editorDay =
+    editor?.mode === 'create'
+      ? editor.dayOfWeek
+      : activeSlot?.dayOfWeek;
+  const editorOpen =
+    editor?.mode === 'create' ||
+    (editor?.mode === 'edit' && Boolean(activeSlot));
+  const createValid =
+    editor?.mode === 'create' && minutesBetween(editor.startTime, editor.endTime) > 0;
 
   return (
     <div className="space-y-4">
@@ -194,19 +213,27 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
           </div>
           <div className="grid grid-cols-7 gap-1">
             {WEEKDAY_OPTIONS.map((label, day) => (
-              <span
+              <button
                 key={label}
+                type="button"
+                onClick={() => openDay(day)}
+                aria-label={`${t.practitioner.setWorkingHours} ${t.constants.weekdays[label]}`}
+                aria-pressed={workingDays.has(day)}
                 className={cn(
-                  'flex h-7 items-center justify-center rounded-md text-[11px] font-medium',
+                  'flex h-9 items-center justify-center rounded-md text-[11px] font-medium',
+                  'cursor-pointer transition-colors active:scale-95',
                   workingDays.has(day)
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground',
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
                 )}
               >
                 {t.constants.weekdaysShort[label]}
-              </span>
+              </button>
             ))}
           </div>
+          <p className="text-xs text-muted-foreground">
+            {isMobile ? t.practitioner.tapDayToSetHours : t.practitioner.dragToAddAvailability}
+          </p>
         </CardHeader>
         <CardContent>
           <div
@@ -236,16 +263,16 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
               eventContent={(arg) => ({
                 html: `<div class="hours-event-label">${arg.event.title}</div>`,
               })}
-              selectable
-              selectMirror
-              editable
-              eventDurationEditable
-              eventResizableFromStart
+              selectable={!isMobile}
+              selectMirror={!isMobile}
+              editable={!isMobile}
+              eventDurationEditable={!isMobile}
+              eventResizableFromStart={!isMobile}
               events={events}
               select={handleSelect}
+              dateClick={isMobile ? handleDateClick : undefined}
               eventClick={(event: EventClickArg) => {
-                setSelectedSlot(Number(event.event.id));
-                setAnchor(popoverAnchorFromElement(event.el));
+                setEditor({ mode: 'edit', index: Number(event.event.id) });
               }}
               eventDrop={handleEventMove}
               eventResize={handleEventMove}
@@ -256,83 +283,152 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
         </CardContent>
       </Card>
 
-      {slotOpen && anchor && selectedSlot !== null && activeSlot ? (
-        <Popover open onOpenChange={(open) => !open && closeSlot()}>
-          <LiveAnchor element={anchor} />
-          <PopoverContent
-            onInteractOutside={keepNestedPortals}
-            className="w-[min(calc(100vw-2rem),20rem)] space-y-4 p-3"
-          >
-            <div>
-              <p className="font-heading text-sm font-semibold">{t.practitioner.selectedAvailability}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {t.constants.weekdays[WEEKDAY_OPTIONS[activeSlot.dayOfWeek]]}
-              </p>
-            </div>
+      <Dialog open={editorOpen} onOpenChange={(open) => !open && closeSlot()}>
+        <DialogContent
+          preventClose={false}
+          onInteractOutside={keepNestedPortals}
+          className="gap-4"
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {editor?.mode === 'create'
+                ? t.practitioner.addWorkingHours
+                : t.practitioner.setWorkingHours}
+            </DialogTitle>
+            <DialogDescription>
+              {editorDay !== undefined
+                ? t.constants.weekdays[WEEKDAY_OPTIONS[editorDay]]
+                : t.practitioner.selectedAvailability}
+            </DialogDescription>
+          </DialogHeader>
+
+          {editor?.mode === 'create' ? (
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-              <Controller
-                control={hoursControl}
-                name={`availabilities.${selectedSlot}.startTime`}
-                render={({ field }) => <TimePicker value={field.value} onChange={field.onChange} />}
+              <TimePicker
+                value={editor.startTime}
+                onChange={(startTime) => setEditor({ ...editor, startTime })}
+                className="h-11"
               />
               <span aria-hidden className="text-muted-foreground">
                 -
               </span>
-              <Controller
-                control={hoursControl}
-                name={`availabilities.${selectedSlot}.endTime`}
-                render={({ field }) => <TimePicker value={field.value} onChange={field.onChange} />}
+              <TimePicker
+                value={editor.endTime}
+                onChange={(endTime) => setEditor({ ...editor, endTime })}
+                className="h-11"
               />
             </div>
-            <div className="space-y-2 rounded-xl bg-muted/40 p-3">
-              <p className="text-sm font-medium">{t.practitioner.repeatSchedule}</p>
-              <p className="text-xs text-muted-foreground">{t.practitioner.repeatScheduleDesc}</p>
-              <div className="grid grid-cols-1 gap-2">
-                <DateController
+          ) : selectedIndex !== null && activeSlot ? (
+            <>
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                <Controller
                   control={hoursControl}
-                  name={`availabilities.${selectedSlot}.effectiveFrom`}
-                  label={t.common.from}
+                  name={`availabilities.${selectedIndex}.startTime`}
+                  render={({ field }) => (
+                    <TimePicker value={field.value} onChange={field.onChange} className="h-11" />
+                  )}
                 />
-                <DateController
+                <span aria-hidden className="text-muted-foreground">
+                  -
+                </span>
+                <Controller
                   control={hoursControl}
-                  name={`availabilities.${selectedSlot}.effectiveUntil`}
-                  label={t.common.to}
+                  name={`availabilities.${selectedIndex}.endTime`}
+                  render={({ field }) => (
+                    <TimePicker value={field.value} onChange={field.onChange} className="h-11" />
+                  )}
                 />
+              </div>
+              <div className="space-y-2 rounded-xl bg-muted/40 p-3">
+                <p className="text-sm font-medium">{t.practitioner.repeatSchedule}</p>
+                <p className="text-xs text-muted-foreground">{t.practitioner.repeatScheduleDesc}</p>
+                <div className="grid grid-cols-1 gap-2">
+                  <DateController
+                    control={hoursControl}
+                    name={`availabilities.${selectedIndex}.effectiveFrom`}
+                    label={t.common.from}
+                  />
+                  <DateController
+                    control={hoursControl}
+                    name={`availabilities.${selectedIndex}.effectiveUntil`}
+                    label={t.common.to}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    hoursSetValue(
+                      `availabilities.${selectedIndex}.effectiveFrom`,
+                      toDateParam(weekStart),
+                      { shouldDirty: true },
+                    );
+                    hoursSetValue(
+                      `availabilities.${selectedIndex}.effectiveUntil`,
+                      toDateParam(addDays(weekStart, 6)),
+                      { shouldDirty: true },
+                    );
+                  }}
+                >
+                  {t.practitioner.thisWeekOnly}
+                </Button>
               </div>
               <Button
                 type="button"
-                variant="ghost"
-                size="sm"
+                variant="outline"
                 className="w-full"
-                onClick={() => {
-                  hoursSetValue(`availabilities.${selectedSlot}.effectiveFrom`, toDateParam(weekStart), {
-                    shouldDirty: true,
-                  });
-                  hoursSetValue(
-                    `availabilities.${selectedSlot}.effectiveUntil`,
-                    toDateParam(addDays(weekStart, 6)),
-                    { shouldDirty: true },
-                  );
+                onClick={() =>
+                  setEditor({
+                    mode: 'create',
+                    dayOfWeek: activeSlot.dayOfWeek,
+                    startTime: DEFAULT_START,
+                    endTime: DEFAULT_END,
+                  })
+                }
+              >
+                {t.practitioner.addAnotherHours}
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                className="w-full"
+                onClick={async () => {
+                  const removed = await onRemoveAvailability(selectedIndex);
+                  if (removed !== false) closeSlot();
                 }}
               >
-                {t.practitioner.thisWeekOnly}
+                <IconDelete />
+                {t.common.remove}
               </Button>
-            </div>
-            <Button
-              type="button"
-              variant="destructive"
-              className="w-full"
-              onClick={async () => {
-                const removed = await onRemoveAvailability(selectedSlot);
-                if (removed !== false) closeSlot();
-              }}
-            >
-              <IconDelete />
-              {t.common.remove}
-            </Button>
-          </PopoverContent>
-        </Popover>
-      ) : null}
+            </>
+          ) : null}
+
+          {editor?.mode === 'create' ? (
+            <DialogFooter>
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                disabled={!createValid}
+                onClick={() => {
+                  if (editor.mode !== 'create' || !createValid) return;
+                  onAddAvailability({
+                    dayOfWeek: editor.dayOfWeek,
+                    startTime: editor.startTime,
+                    endTime: editor.endTime,
+                    effectiveFrom: '',
+                    effectiveUntil: '',
+                  });
+                  closeSlot();
+                }}
+              >
+                {t.common.add}
+              </Button>
+            </DialogFooter>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <AvailabilityOverridesFields
         control={hoursControl}

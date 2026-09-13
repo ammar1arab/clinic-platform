@@ -1114,6 +1114,17 @@ html[data-view-focus='true'] [data-view-focus='true'] {
   line-height: 1.2;
 }
 
+@media (max-width: 767px) {
+  [data-hours-calendar] .fc-timegrid-col.fc-day {
+    cursor: pointer;
+  }
+
+  [data-hours-calendar] .fc-timegrid-col.fc-day:hover,
+  [data-hours-calendar] .fc-timegrid-col.fc-day:active {
+    background: color-mix(in oklch, var(--color-primary) 6%, transparent);
+  }
+}
+
 .fc-event-chip {
   box-sizing: border-box;
   display: flex;
