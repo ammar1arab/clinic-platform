@@ -1094,10 +1094,6 @@ html[data-view-focus='true'] [data-view-focus='true'] {
   overflow: hidden;
 }
 
-[data-hours-calendar] .fc-timegrid-slot {
-  height: 2.25rem;
-}
-
 [data-hours-calendar] .fc-col-header-cell-cushion {
   padding-block: 0.25rem;
   font-size: 0.7rem;
@@ -1113,11 +1109,11 @@ html[data-view-focus='true'] [data-view-focus='true'] {
   width: 100%;
   align-items: center;
   justify-content: center;
-  padding-inline: 0.2rem;
+  padding-inline: 0.35rem;
   text-align: center;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 
 .fc-event-chip {

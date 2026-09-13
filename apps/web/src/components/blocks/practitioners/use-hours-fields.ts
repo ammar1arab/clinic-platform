@@ -11,13 +11,11 @@ export function useHoursFields<T extends PractitionerHoursData>(control: Control
   const availabilities = useFieldArray({ control, name: 'availabilities' });
   const timeOffs = useFieldArray({ control, name: 'timeOffs' });
   const availabilityOverrides = useFieldArray({ control, name: 'availabilityOverrides' });
-  const watched = useWatch({ control });
+  const watchedAvailabilities = useWatch({ control, name: 'availabilities' });
+  const watchedTimeOffs = useWatch({ control, name: 'timeOffs' });
+  const watchedOverrides = useWatch({ control, name: 'availabilityOverrides' });
 
-  const askRemove = async (
-    title: string,
-    description: string,
-    run: () => void,
-  ) => {
+  const askRemove = async (title: string, description: string, run: () => void) => {
     const ok = await confirm({
       title,
       description,
@@ -32,9 +30,9 @@ export function useHoursFields<T extends PractitionerHoursData>(control: Control
 
   return {
     values: {
-      availabilities: watched.availabilities ?? [],
-      timeOffs: watched.timeOffs ?? [],
-      availabilityOverrides: watched.availabilityOverrides ?? [],
+      availabilities: watchedAvailabilities ?? [],
+      timeOffs: watchedTimeOffs ?? [],
+      availabilityOverrides: watchedOverrides ?? [],
     } satisfies PractitionerHoursData,
     overrideFields: availabilityOverrides.fields,
     leaveFields: timeOffs.fields,

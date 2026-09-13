@@ -29,12 +29,13 @@ import { useLanguage } from '@/providers';
 import {
   Controller,
   type Control,
-  type FieldArrayWithId,
   type FieldErrors,
   type UseFormRegister,
   type UseFormSetValue,
 } from 'react-hook-form';
 import { AvailabilityOverridesFields, LeaveBlocksFields } from './practitioner-schedule-fields';
+import type { useHoursFields } from './use-hours-fields';
+import { useHoursFields } from './use-hours-fields';
 
 type AvailabilitySlot = PractitionerHoursData['availabilities'][number];
 const CALENDAR_PLUGINS = [timeGridPlugin, interactionPlugin];
@@ -84,36 +85,33 @@ function LiveAnchor({ element }: { element: Element }) {
   return <PopoverAnchor virtualRef={virtualRef} />;
 }
 
-export function AvailabilityStudio({
+export function AvailabilityStudio<T extends PractitionerHoursData>({
   control,
   register,
   setValue,
-  values,
   errors,
-  overrideFields,
-  leaveFields,
-  onAddAvailability,
-  onRemoveAvailability,
-  onAddOverride,
-  onRemoveOverride,
-  onAddLeave,
-  onRemoveLeave,
 }: {
-  control: Control<PractitionerHoursData>;
-  register: UseFormRegister<PractitionerHoursData>;
-  setValue: UseFormSetValue<PractitionerHoursData>;
-  values: PractitionerHoursData;
-  errors: FieldErrors<PractitionerHoursData>;
-  overrideFields: FieldArrayWithId<PractitionerHoursData, 'availabilityOverrides'>[];
-  leaveFields: FieldArrayWithId<PractitionerHoursData, 'timeOffs'>[];
-  onAddAvailability: (slot: AvailabilitySlot) => void;
-  onRemoveAvailability: (index: number) => void | Promise<boolean | void>;
-  onAddOverride: () => void;
-  onRemoveOverride: (index: number) => void | Promise<boolean | void>;
-  onAddLeave: () => void;
-  onRemoveLeave: (index: number) => void | Promise<boolean | void>;
+  control: Control<T>;
+  register: UseFormRegister<T>;
+  setValue: UseFormSetValue<T>;
+  errors: FieldErrors<T>;
 }) {
   const { t, lang } = useLanguage();
+  const hoursControl = control as Control<PractitionerHoursData>;
+  const hoursRegister = register as UseFormRegister<PractitionerHoursData>;
+  const hoursSetValue = setValue as UseFormSetValue<PractitionerHoursData>;
+  const hoursErrors = errors as FieldErrors<PractitionerHoursData>;
+  const {
+    values,
+    overrideFields,
+    leaveFields,
+    onAddAvailability,
+    onRemoveAvailability,
+    onAddOverride,
+    onRemoveOverride,
+    onAddLeave,
+    onRemoveLeave,
+  } = useHoursFields(control);
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [anchor, setAnchor] = useState<Element | null>(null);
   const weekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 0 }), []);
@@ -148,9 +146,9 @@ export function AvailabilityStudio({
 
   const updateSlotFromEvent = (index: number, start: Date | null, end: Date | null) => {
     if (!start || !end) return;
-    setValue(`availabilities.${index}.dayOfWeek`, start.getDay(), { shouldDirty: true });
-    setValue(`availabilities.${index}.startTime`, timeValue(start), { shouldDirty: true });
-    setValue(`availabilities.${index}.endTime`, timeValue(end), {
+    hoursSetValue(`availabilities.${index}.dayOfWeek`, start.getDay(), { shouldDirty: true });
+    hoursSetValue(`availabilities.${index}.startTime`, timeValue(start), { shouldDirty: true });
+    hoursSetValue(`availabilities.${index}.endTime`, timeValue(end), {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -215,7 +213,7 @@ export function AvailabilityStudio({
           <div
             data-hours-calendar=""
             data-schedule-host=""
-            className="min-h-112 [&_.fc]:text-xs"
+            className="min-h-96 [&_.fc]:text-xs"
           >
             <FullCalendar
               key={`${lang}-${dayWindow.min}-${dayWindow.max}`}
@@ -274,7 +272,7 @@ export function AvailabilityStudio({
             </div>
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
               <Controller
-                control={control}
+                control={hoursControl}
                 name={`availabilities.${selectedSlot}.startTime`}
                 render={({ field }) => <TimePicker value={field.value} onChange={field.onChange} />}
               />
@@ -282,7 +280,7 @@ export function AvailabilityStudio({
                 -
               </span>
               <Controller
-                control={control}
+                control={hoursControl}
                 name={`availabilities.${selectedSlot}.endTime`}
                 render={({ field }) => <TimePicker value={field.value} onChange={field.onChange} />}
               />
@@ -292,12 +290,12 @@ export function AvailabilityStudio({
               <p className="text-xs text-muted-foreground">{t.practitioner.repeatScheduleDesc}</p>
               <div className="grid grid-cols-1 gap-2">
                 <DateController
-                  control={control}
+                  control={hoursControl}
                   name={`availabilities.${selectedSlot}.effectiveFrom`}
                   label={t.common.from}
                 />
                 <DateController
-                  control={control}
+                  control={hoursControl}
                   name={`availabilities.${selectedSlot}.effectiveUntil`}
                   label={t.common.to}
                 />
@@ -308,10 +306,10 @@ export function AvailabilityStudio({
                 size="sm"
                 className="w-full"
                 onClick={() => {
-                  setValue(`availabilities.${selectedSlot}.effectiveFrom`, toDateParam(weekStart), {
+                  hoursSetValue(`availabilities.${selectedSlot}.effectiveFrom`, toDateParam(weekStart), {
                     shouldDirty: true,
                   });
-                  setValue(
+                  hoursSetValue(
                     `availabilities.${selectedSlot}.effectiveUntil`,
                     toDateParam(addDays(weekStart, 6)),
                     { shouldDirty: true },
@@ -338,17 +336,17 @@ export function AvailabilityStudio({
       ) : null}
 
       <AvailabilityOverridesFields
-        control={control}
-        register={register}
-        errors={errors}
+        control={hoursControl}
+        register={hoursRegister}
+        errors={hoursErrors}
         fields={overrideFields}
         onAdd={onAddOverride}
         onRemove={onRemoveOverride}
       />
       <LeaveBlocksFields
-        control={control}
-        register={register}
-        errors={errors}
+        control={hoursControl}
+        register={hoursRegister}
+        errors={hoursErrors}
         fields={leaveFields}
         onAdd={onAddLeave}
         onRemove={onRemoveLeave}

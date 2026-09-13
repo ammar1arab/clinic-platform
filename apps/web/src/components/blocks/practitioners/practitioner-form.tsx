@@ -1,15 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import {
-  Controller,
-  useFieldArray,
-  useForm,
-  type Control,
-  type FieldErrors,
-  type UseFormRegister,
-  type UseFormSetValue,
-} from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import {
@@ -38,12 +30,7 @@ import {
 import { FORM_NONE } from '@/constants/form';
 import { getPractitionerLanguages } from '@/constants/practitioner';
 import { getGenders } from '@/constants/patient';
-import { toDateParam } from '@/lib/datetime';
-import {
-  practitionerSchema,
-  type PractitionerFormData,
-  type PractitionerHoursData,
-} from '@/lib/validations';
+import { practitionerSchema, type PractitionerFormData } from '@/lib/validations';
 import { useCreatePractitioner, useUpdatePractitioner } from '@/hooks/api/use-practitioners';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useRooms } from '@/hooks/api/use-rooms';
@@ -94,11 +81,6 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
       : emptyPractitionerValues(),
   });
 
-  const availabilities = useFieldArray({ control, name: 'availabilities' });
-  const timeOffs = useFieldArray({ control, name: 'timeOffs' });
-  const availabilityOverrides = useFieldArray({ control, name: 'availabilityOverrides' });
-  const scheduleValues = watch();
-
   const departmentId = watch('departmentId');
   const imageUrl = watch('imageUrl');
   const name = watch('name');
@@ -123,28 +105,6 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
   );
 
   const pending = createMutation.isPending || updateMutation.isPending;
-
-  const removeAvailability = async (index: number) => {
-    const ok = await confirm({
-      title: t.practitioner.removeAvailabilityTitle,
-      description: t.practitioner.removeAvailabilityDesc,
-      confirmLabel: t.common.remove,
-      variant: 'destructive',
-    });
-    if (ok) availabilities.remove(index);
-    return ok;
-  };
-
-  const removeTimeOff = async (index: number) => {
-    const ok = await confirm({
-      title: t.practitioner.removeLeaveTitle,
-      description: t.practitioner.removeLeaveDesc,
-      confirmLabel: t.common.remove,
-      variant: 'destructive',
-    });
-    if (ok) timeOffs.remove(index);
-    return ok;
-  };
 
   const onSubmit = (data: PractitionerFormData) => {
     if (!isEdit && !data.email?.trim()) {
@@ -464,33 +424,10 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
         />
       ) : (
         <AvailabilityStudio
-          control={control as Control<PractitionerHoursData>}
-          register={register as UseFormRegister<PractitionerHoursData>}
-          setValue={setValue as UseFormSetValue<PractitionerHoursData>}
-          values={{
-            availabilities: scheduleValues.availabilities,
-            timeOffs: scheduleValues.timeOffs,
-            availabilityOverrides: scheduleValues.availabilityOverrides,
-          }}
-          errors={errors as FieldErrors<PractitionerHoursData>}
-          overrideFields={availabilityOverrides.fields}
-          leaveFields={timeOffs.fields}
-          onAddAvailability={(slot) => availabilities.append(slot)}
-          onRemoveAvailability={removeAvailability}
-          onAddOverride={() => {
-            const day = toDateParam(new Date());
-            availabilityOverrides.append({
-              startAt: `${day}T09:00`,
-              endAt: `${day}T17:00`,
-              reason: '',
-            });
-          }}
-          onRemoveOverride={(index) => availabilityOverrides.remove(index)}
-          onAddLeave={() => {
-            const day = toDateParam(new Date());
-            timeOffs.append({ startDate: day, endDate: day, reason: '' });
-          }}
-          onRemoveLeave={removeTimeOff}
+          control={control}
+          register={register}
+          setValue={setValue}
+          errors={errors}
         />
       )}
 
