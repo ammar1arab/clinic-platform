@@ -5,6 +5,8 @@ export interface DoctorAvailabilitySlot {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
+  effectiveFrom?: string | null;
+  effectiveUntil?: string | null;
   isActive?: boolean;
 }
 
@@ -12,6 +14,13 @@ export interface DoctorTimeOffEntry {
   id?: string;
   startDate: string;
   endDate: string;
+  reason?: string | null;
+}
+
+export interface DoctorAvailabilityOverrideEntry {
+  id?: string;
+  startAt: string;
+  endAt: string;
   reason?: string | null;
 }
 
@@ -66,6 +75,7 @@ export interface PractitionerDetail extends Practitioner {
   services: PractitionerServiceRef[];
   availabilities: DoctorAvailabilitySlot[];
   timeOffs: DoctorTimeOffEntry[];
+  availabilityOverrides: DoctorAvailabilityOverrideEntry[];
 }
 
 export interface CreatePractitionerInput {
@@ -96,6 +106,7 @@ export interface CreatePractitionerInput {
   serviceIds?: string[];
   availabilities?: DoctorAvailabilitySlot[];
   timeOffs?: DoctorTimeOffEntry[];
+  availabilityOverrides?: DoctorAvailabilityOverrideEntry[];
 }
 
 export interface UpdatePractitionerInput {
@@ -125,6 +136,7 @@ export interface UpdatePractitionerInput {
   serviceIds?: string[];
   availabilities?: DoctorAvailabilitySlot[];
   timeOffs?: DoctorTimeOffEntry[];
+  availabilityOverrides?: DoctorAvailabilityOverrideEntry[];
 }
 
 export interface CreatePractitionerResult {
@@ -142,4 +154,8 @@ export interface ReplaceAvailabilityInput {
 
 export interface ReplaceTimeOffInput {
   timeOffs: DoctorTimeOffEntry[];
+}
+
+export interface ReplaceAvailabilityOverridesInput {
+  availabilityOverrides: DoctorAvailabilityOverrideEntry[];
 }

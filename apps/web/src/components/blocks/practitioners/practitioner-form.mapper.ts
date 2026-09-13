@@ -40,6 +40,7 @@ export function emptyPractitionerValues(): PractitionerFormData {
       { dayOfWeek: 5, startTime: '09:00', endTime: '17:00' },
     ],
     timeOffs: [],
+    availabilityOverrides: [],
   };
 }
 
@@ -82,11 +83,18 @@ export function toPractitionerFormValues(
       dayOfWeek: a.dayOfWeek,
       startTime: a.startTime,
       endTime: a.endTime,
+      effectiveFrom: a.effectiveFrom?.slice(0, 10) ?? '',
+      effectiveUntil: a.effectiveUntil?.slice(0, 10) ?? '',
     })),
     timeOffs: p.timeOffs.map((t) => ({
       startDate: t.startDate.slice(0, 10),
       endDate: t.endDate.slice(0, 10),
       reason: t.reason ?? '',
+    })),
+    availabilityOverrides: p.availabilityOverrides.map((entry) => ({
+      startAt: entry.startAt.slice(0, 16),
+      endAt: entry.endAt.slice(0, 16),
+      reason: entry.reason ?? '',
     })),
   };
 }
@@ -133,11 +141,18 @@ export function toPractitionerPayload(data: PractitionerFormData) {
       dayOfWeek: Number(a.dayOfWeek),
       startTime: a.startTime,
       endTime: a.endTime,
+      effectiveFrom: clean(a.effectiveFrom),
+      effectiveUntil: clean(a.effectiveUntil),
     })),
     timeOffs: data.timeOffs.map((t) => ({
       startDate: t.startDate,
       endDate: t.endDate,
       reason: clean(t.reason),
+    })),
+    availabilityOverrides: data.availabilityOverrides.map((entry) => ({
+      startAt: entry.startAt,
+      endAt: entry.endAt,
+      reason: clean(entry.reason),
     })),
   } satisfies Omit<CreatePractitionerInput, 'clinicId' | 'email'> &
     UpdatePractitionerInput;

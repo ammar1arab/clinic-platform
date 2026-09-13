@@ -1,7 +1,0 @@
----
-description: Cureva UI layers - shadcn ui, primitives, blocks, theme, forms, client boundaries
-globs: apps/web/**/*.{tsx,css}
-alwaysApply: false
----
-
-Read and follow [the canonical rule](../../.agents/rules/components.md).

@@ -3,6 +3,7 @@ import { AppointmentStatus, Prisma, Role } from "@prisma/client";
 import { PrismaService } from "@/prisma/prisma.service";
 import {
   AvailabilitySlotDto,
+  AvailabilityOverrideEntryDto,
   CreatePractitionerDto,
   TimeOffEntryDto,
   UpdatePractitionerDto,
@@ -32,6 +33,7 @@ const include = {
   },
   availabilities: { orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] },
   timeOffs: { orderBy: { startDate: "asc" } },
+  availabilityOverrides: { orderBy: { startAt: "asc" } },
 } satisfies Prisma.ClinicUserInclude;
 
 @Injectable()
@@ -225,6 +227,9 @@ export class PractitionersRepository {
       await tx.appointment.deleteMany({ where: { doctorId: id } });
       await tx.doctorAvailability.deleteMany({ where: { doctorId: id } });
       await tx.doctorTimeOff.deleteMany({ where: { doctorId: id } });
+      await tx.doctorAvailabilityOverride.deleteMany({
+        where: { doctorId: id },
+      });
       await tx.clinicUserService.deleteMany({ where: { clinicUserId: id } });
       await tx.notification.deleteMany({ where: { userId: id } });
 
@@ -307,12 +312,20 @@ export class PractitionersRepository {
       serviceIds?: string[];
       availabilities?: AvailabilitySlotDto[];
       timeOffs?: TimeOffEntryDto[];
+      availabilityOverrides?: AvailabilityOverrideEntryDto[];
     },
   ) {
     if (dto.serviceIds) await this.setServices(tx, doctorId, dto.serviceIds);
     if (dto.availabilities)
       await this.setAvailability(tx, doctorId, dto.availabilities);
     if (dto.timeOffs) await this.setTimeOff(tx, doctorId, dto.timeOffs);
+    if (dto.availabilityOverrides) {
+      await this.setAvailabilityOverrides(
+        tx,
+        doctorId,
+        dto.availabilityOverrides,
+      );
+    }
   }
 
   private async setServices(
@@ -340,6 +353,10 @@ export class PractitionersRepository {
         dayOfWeek: slot.dayOfWeek,
         startTime: slot.startTime,
         endTime: slot.endTime,
+        effectiveFrom: slot.effectiveFrom ? new Date(slot.effectiveFrom) : null,
+        effectiveUntil: slot.effectiveUntil
+          ? new Date(slot.effectiveUntil)
+          : null,
         isActive: slot.isActive !== false,
       })),
     });
@@ -357,6 +374,23 @@ export class PractitionersRepository {
         doctorId,
         startDate: new Date(entry.startDate),
         endDate: new Date(entry.endDate),
+        reason: entry.reason?.trim() || null,
+      })),
+    });
+  }
+
+  private async setAvailabilityOverrides(
+    tx: Prisma.TransactionClient,
+    doctorId: string,
+    entries: AvailabilityOverrideEntryDto[],
+  ) {
+    await tx.doctorAvailabilityOverride.deleteMany({ where: { doctorId } });
+    if (!entries.length) return;
+    await tx.doctorAvailabilityOverride.createMany({
+      data: entries.map((entry) => ({
+        doctorId,
+        startAt: new Date(entry.startAt),
+        endAt: new Date(entry.endAt),
         reason: entry.reason?.trim() || null,
       })),
     });

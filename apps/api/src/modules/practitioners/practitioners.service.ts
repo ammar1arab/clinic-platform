@@ -37,6 +37,7 @@ export class PractitionersService {
   ) {}
 
   async create(dto: CreatePractitionerDto) {
+    this.assertAvailabilityRules(dto);
     await this.assertRefs(dto.clinicId, dto);
     this.assertCommission(dto.employmentType, dto.commissionPercent);
 
@@ -78,6 +79,7 @@ export class PractitionersService {
   }
 
   async update(id: string, dto: UpdatePractitionerDto) {
+    this.assertAvailabilityRules(dto);
     const existing = await this.findOne(id);
     await this.assertRefs(existing.clinicId, {
       departmentId: dto.departmentId ?? existing.departmentId ?? undefined,
@@ -150,6 +152,7 @@ export class PractitionersService {
   }
 
   async replaceAvailability(id: string, dto: ReplaceAvailabilityDto) {
+    this.assertAvailabilityRules(dto);
     await this.findOne(id);
     return mapPractitioner(
       await this.repo.replaceAvailability(id, dto.availabilities),
@@ -191,6 +194,48 @@ export class PractitionersService {
           "Commission percent (0-100) is required for commission or mixed employment",
         );
       }
+    }
+  }
+
+  private assertAvailabilityRules(input: {
+    availabilities?: Array<{
+      startTime: string;
+      endTime: string;
+      effectiveFrom?: string;
+      effectiveUntil?: string;
+    }>;
+    timeOffs?: Array<{ startDate: string; endDate: string }>;
+    availabilityOverrides?: Array<{ startAt: string; endAt: string }>;
+  }) {
+    const invalidTimeSlot = input.availabilities?.find(
+      ({ startTime, endTime }) => startTime >= endTime,
+    );
+    if (invalidTimeSlot) {
+      throw new BadRequestException(
+        "Availability end time must be after start time",
+      );
+    }
+
+    const invalidEffectiveRange = input.availabilities?.find(
+      ({ effectiveFrom, effectiveUntil }) =>
+        effectiveFrom && effectiveUntil && effectiveFrom > effectiveUntil,
+    );
+    if (invalidEffectiveRange) {
+      throw new BadRequestException(
+        "Availability end date must be on or after start date",
+      );
+    }
+
+    const invalidTimeOff = input.timeOffs?.find(
+      ({ startDate, endDate }) => new Date(startDate) > new Date(endDate),
+    );
+    const invalidOverride = input.availabilityOverrides?.find(
+      ({ startAt, endAt }) => new Date(startAt) >= new Date(endAt),
+    );
+    if (invalidTimeOff || invalidOverride) {
+      throw new BadRequestException(
+        "Availability exception end must be after start",
+      );
     }
   }
 

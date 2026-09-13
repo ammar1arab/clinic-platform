@@ -1,5 +1,6 @@
 import type { Translations } from '@/i18n';
 import type { AppointmentStatus } from '@/services/appointments.service';
+import { APPOINTMENT_STATUS } from '@clinic/types';
 
 export const CLINIC_CURRENCY = 'JOD';
 export const DEFAULT_DURATION_MINS = '45';
@@ -8,25 +9,25 @@ export const STATUS_BADGE_VARIANT: Record<
   AppointmentStatus,
   'warning' | 'success' | 'info' | 'destructive' | 'muted'
 > = {
-  unconfirmed: 'warning',
-  confirmed: 'success',
-  checked_in: 'success',
-  waiting: 'warning',
-  in_progress: 'info',
-  completed: 'info',
-  no_show: 'destructive',
-  cancelled: 'muted',
+  [APPOINTMENT_STATUS.UNCONFIRMED]: 'warning',
+  [APPOINTMENT_STATUS.CONFIRMED]: 'success',
+  [APPOINTMENT_STATUS.CHECKED_IN]: 'success',
+  [APPOINTMENT_STATUS.WAITING]: 'warning',
+  [APPOINTMENT_STATUS.IN_PROGRESS]: 'info',
+  [APPOINTMENT_STATUS.COMPLETED]: 'info',
+  [APPOINTMENT_STATUS.NO_SHOW]: 'destructive',
+  [APPOINTMENT_STATUS.CANCELLED]: 'muted',
 };
 
 export const STATUS_COLORS: Record<AppointmentStatus, string> = {
-  unconfirmed: 'var(--color-warning)',
-  confirmed: 'var(--color-success)',
-  checked_in: 'var(--color-accent-teal)',
-  waiting: 'var(--color-warning)',
-  in_progress: 'var(--color-primary)',
-  completed: 'var(--color-primary)',
-  no_show: 'var(--color-error)',
-  cancelled: 'var(--color-muted-foreground)',
+  [APPOINTMENT_STATUS.UNCONFIRMED]: 'var(--color-warning)',
+  [APPOINTMENT_STATUS.CONFIRMED]: 'var(--color-success)',
+  [APPOINTMENT_STATUS.CHECKED_IN]: 'var(--color-accent-teal)',
+  [APPOINTMENT_STATUS.WAITING]: 'var(--color-warning)',
+  [APPOINTMENT_STATUS.IN_PROGRESS]: 'var(--color-primary)',
+  [APPOINTMENT_STATUS.COMPLETED]: 'var(--color-primary)',
+  [APPOINTMENT_STATUS.NO_SHOW]: 'var(--color-error)',
+  [APPOINTMENT_STATUS.CANCELLED]: 'var(--color-muted-foreground)',
 };
 
 export const getStatusConfig = (
@@ -70,23 +71,23 @@ export const getStatusConfig = (
 });
 
 export const STATUS_OPTIONS: AppointmentStatus[] = [
-  'unconfirmed',
-  'confirmed',
-  'checked_in',
-  'waiting',
-  'in_progress',
-  'completed',
-  'no_show',
-  'cancelled',
+  APPOINTMENT_STATUS.UNCONFIRMED,
+  APPOINTMENT_STATUS.CONFIRMED,
+  APPOINTMENT_STATUS.CHECKED_IN,
+  APPOINTMENT_STATUS.WAITING,
+  APPOINTMENT_STATUS.IN_PROGRESS,
+  APPOINTMENT_STATUS.COMPLETED,
+  APPOINTMENT_STATUS.NO_SHOW,
+  APPOINTMENT_STATUS.CANCELLED,
 ];
 
 export const SCHEDULE_FILTER_STATUSES: AppointmentStatus[] = [
-  'unconfirmed',
-  'confirmed',
-  'in_progress',
-  'completed',
-  'no_show',
-  'cancelled',
+  APPOINTMENT_STATUS.UNCONFIRMED,
+  APPOINTMENT_STATUS.CONFIRMED,
+  APPOINTMENT_STATUS.IN_PROGRESS,
+  APPOINTMENT_STATUS.COMPLETED,
+  APPOINTMENT_STATUS.NO_SHOW,
+  APPOINTMENT_STATUS.CANCELLED,
 ];
 
 export const TIMELINE_START_HOUR = 7;

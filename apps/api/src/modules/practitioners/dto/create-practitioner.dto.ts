@@ -29,6 +29,14 @@ export class AvailabilitySlotDto {
   endTime: string;
 
   @IsOptional()
+  @IsString()
+  effectiveFrom?: string;
+
+  @IsOptional()
+  @IsString()
+  effectiveUntil?: string;
+
+  @IsOptional()
   isActive?: boolean;
 }
 
@@ -38,6 +46,18 @@ export class TimeOffEntryDto {
 
   @IsString()
   endDate: string;
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
+export class AvailabilityOverrideEntryDto {
+  @IsString()
+  startAt: string;
+
+  @IsString()
+  endAt: string;
 
   @IsOptional()
   @IsString()
@@ -160,4 +180,10 @@ export class CreatePractitionerDto implements CreatePractitionerInput {
   @ValidateNested({ each: true })
   @Type(() => TimeOffEntryDto)
   timeOffs?: TimeOffEntryDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AvailabilityOverrideEntryDto)
+  availabilityOverrides?: AvailabilityOverrideEntryDto[];
 }

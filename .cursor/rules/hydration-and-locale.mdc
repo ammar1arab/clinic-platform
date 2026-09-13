@@ -1,7 +1,0 @@
----
-description: "SSR-safe locale and provider state in the React app"
-globs: "apps/web/src/{providers,lib,hooks,app}/**/*.{ts,tsx}"
-alwaysApply: false
----
-
-Read and follow [the canonical rule](../../.agents/rules/hydration-and-locale.md).

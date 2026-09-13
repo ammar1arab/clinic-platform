@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { redirect, usePathname } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
 import { SidebarBlock, TopbarBlock, PageTransition } from '@/components/layout';
 import { LoadingState } from '@/components/primitives';
@@ -10,7 +10,6 @@ import { ROUTES } from '@/constants/routes';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading, isHydrated } = useAuth();
   const { t } = useLanguage();
-  const router = useRouter();
   const pathname = usePathname();
 
   if (!isHydrated || isLoading) {
@@ -18,13 +17,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   if (!isAuthenticated) {
-    router.replace(ROUTES.LOGIN);
-    return <LoadingState variant="page" text={t.common.loadingSession} />;
+    redirect(ROUTES.LOGIN);
   }
 
   if (!canAccessPath(pathname, user?.role)) {
-    router.replace(homePathForRole(user?.role));
-    return <LoadingState variant="page" text={t.common.checkingPermissions} />;
+    redirect(homePathForRole(user?.role));
   }
 
   const showNav = hasClinicNav(user?.role);
@@ -34,10 +31,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {showNav ? <SidebarBlock /> : null}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background transition-all duration-300 ease-in-out">
         <TopbarBlock showNav={showNav} />
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-y-contain p-app-main-pad pb-app-main-pad-bottom">
-          <PageTransition className="flex min-h-0 min-w-0 flex-1 flex-col">
-            {children}
-          </PageTransition>
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-app-main-pad py-app-main-pad-y">
+          <PageTransition>{children}</PageTransition>
         </main>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
+import type { Translations } from '@/i18n';
 import { ROUTES } from '@/constants/routes';
 import { useSidebar } from '@/providers/sidebar-provider';
 import {
@@ -22,7 +23,9 @@ import { LanguageSwitcher } from '@/components/primitives/display/language-switc
 import { SoftTip } from '@/components/primitives';
 import { IconLogout, IconMenu } from '@/constants/icons';
 
-function resolveTitle(pathname: string, t: any): string {
+function resolveTitle(pathname: string, t: Translations): string {
+  if (pathname === '/home/queue') return t.queue.waitingQueue;
+  if (pathname === '/home/profile') return t.practitioner.profile;
   if (pathname === '/home') return t.layout.titles.home;
   if (pathname === '/dashboard') return t.layout.titles.dashboard;
   if (pathname === '/schedule') return t.layout.titles.schedule;

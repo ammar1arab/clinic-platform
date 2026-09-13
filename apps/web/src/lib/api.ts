@@ -111,7 +111,7 @@ api.interceptors.response.use(
     if (isAuthFlowRequest(error.config?.url)) return Promise.reject(error);
 
     if (status === 401) {
-      log.warn('unauthorized', meta);
+      log.debug('unauthorized', meta);
       if (typeof window !== 'undefined') {
         clearToken();
         if (!window.location.pathname.startsWith(ROUTES.LOGIN)) {

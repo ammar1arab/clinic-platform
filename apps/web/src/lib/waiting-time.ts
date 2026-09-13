@@ -1,3 +1,4 @@
+import { APPOINTMENT_STATUS } from '@clinic/types';
 import { translations, type Translations } from '@/i18n';
 export function elapsedMinutesSince(
   dateString: string | Date | null | undefined,
@@ -34,7 +35,7 @@ export function resolveWaitingMins(appt: {
   now?: Date;
 }): number | null {
   if (appt.waitingMins != null) return Math.max(0, appt.waitingMins);
-  if (appt.status !== 'waiting' && appt.status !== 'checked_in') return null;
+  if (appt.status !== APPOINTMENT_STATUS.WAITING && appt.status !== APPOINTMENT_STATUS.CHECKED_IN) return null;
   return elapsedMinutesSince(
     appt.waitingStartedAt ?? appt.scheduledAt,
     appt.now ?? new Date(),

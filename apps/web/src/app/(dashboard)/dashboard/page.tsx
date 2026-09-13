@@ -26,8 +26,8 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6 lg:gap-4">
+    <div className="page-fill gap-5">
+      <div className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4 xl:grid-cols-6">
         <KpiCardBlock
           label={t?.dashboard?.todaysAppointments}
           value={kpis?.total ?? 0}

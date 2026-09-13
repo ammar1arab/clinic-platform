@@ -25,6 +25,7 @@ import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
 import { IconActivate, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
+import { APPOINTMENT_STATUS } from '@clinic/types';
 
 type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
 type Tone = 'default' | 'warning' | 'info' | 'muted' | 'success';
@@ -65,7 +66,7 @@ export function WaitingQueueBoard({
   const waitingList = useMemo(
     () =>
       dayAppointments
-        .filter((a) => a.status === 'waiting' || a.status === 'checked_in')
+        .filter((a) => a.status === APPOINTMENT_STATUS.WAITING || a.status === APPOINTMENT_STATUS.CHECKED_IN)
         .sort((a, b) => {
           const aTime = new Date(a.waitingStartedAt || a.statusUpdatedAt || a.scheduledAt).getTime();
           const bTime = new Date(b.waitingStartedAt || b.statusUpdatedAt || b.scheduledAt).getTime();
@@ -77,7 +78,7 @@ export function WaitingQueueBoard({
   const inProgressList = useMemo(
     () =>
       dayAppointments
-        .filter((a) => a.status === 'in_progress')
+        .filter((a) => a.status === APPOINTMENT_STATUS.IN_PROGRESS)
         .sort((a, b) => {
           const aTime = new Date(a.inProgressAt || a.statusUpdatedAt || a.scheduledAt).getTime();
           const bTime = new Date(b.inProgressAt || b.statusUpdatedAt || b.scheduledAt).getTime();
@@ -89,7 +90,7 @@ export function WaitingQueueBoard({
   const upcomingList = useMemo(
     () =>
       dayAppointments
-        .filter((a) => a.status === 'confirmed' || a.status === 'unconfirmed')
+        .filter((a) => a.status === APPOINTMENT_STATUS.CONFIRMED || a.status === APPOINTMENT_STATUS.UNCONFIRMED)
         .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()),
     [dayAppointments],
   );
@@ -97,7 +98,7 @@ export function WaitingQueueBoard({
   const completedList = useMemo(
     () =>
       dayAppointments
-        .filter((a) => a.status === 'completed' || a.status === 'no_show' || a.status === 'cancelled')
+        .filter((a) => a.status === APPOINTMENT_STATUS.COMPLETED || a.status === APPOINTMENT_STATUS.NO_SHOW || a.status === APPOINTMENT_STATUS.CANCELLED)
         .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
     [dayAppointments],
   );
@@ -110,11 +111,11 @@ export function WaitingQueueBoard({
           onSuccess: () => {
             const name = patientDisplayName(appt, lang);
             const msgs: Partial<Record<AppointmentStatus, string>> = {
-              in_progress: t.appointments.statusStarted.replace('{name}', name),
-              completed: t.appointments.statusCompleted.replace('{name}', name),
-              waiting: t.appointments.statusReturnedWaiting.replace('{name}', name),
-              checked_in: t.appointments.statusCheckedIn.replace('{name}', name),
-              no_show: t.appointments.statusNoShow.replace('{name}', name),
+              [APPOINTMENT_STATUS.IN_PROGRESS]: t.appointments.statusStarted.replace('{name}', name),
+              [APPOINTMENT_STATUS.COMPLETED]: t.appointments.statusCompleted.replace('{name}', name),
+              [APPOINTMENT_STATUS.WAITING]: t.appointments.statusReturnedWaiting.replace('{name}', name),
+              [APPOINTMENT_STATUS.CHECKED_IN]: t.appointments.statusCheckedIn.replace('{name}', name),
+              [APPOINTMENT_STATUS.NO_SHOW]: t.appointments.statusNoShow.replace('{name}', name),
             };
             toast.success(msgs[targetStatus] || t.appointments.statusUpdated);
           },
@@ -178,13 +179,11 @@ export function WaitingQueueBoard({
     <div
       data-schedule-host=""
       className={cn(
-        'relative flex flex-col overflow-hidden border bg-card shadow-xs',
-        focused
-          ? 'h-0 min-h-0 flex-1 rounded-none border-0'
-          : 'card-aura min-h-0 flex-1 rounded-xl sm:rounded-2xl',
+        'relative page-fill overflow-hidden border bg-card shadow-xs',
+        focused ? 'rounded-none border-0' : 'card-aura rounded-xl sm:rounded-2xl',
       )}
     >
-      <div className="flex items-center justify-between gap-1.5 border-b bg-muted/20 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
+      <div className="flex shrink-0 items-center justify-between gap-1.5 border-b bg-muted/20 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
         <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none sm:gap-1.5">
           {stageTabs.map(({ key, label, short, icon, variant }) => (
             <SoftTip key={key} label={label}>
@@ -253,7 +252,7 @@ export function WaitingQueueBoard({
                         size="sm"
                         className="w-full text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
                         disabled={updateMutation.isPending}
-                        onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, 'in_progress'); }}
+                        onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, APPOINTMENT_STATUS.IN_PROGRESS); }}
                       >
                         <IconPlay className="me-1.5 size-3.5 fill-current" />
                         {t.queue.startConsultation}
@@ -303,7 +302,7 @@ export function WaitingQueueBoard({
                         size="sm"
                         className="w-full text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
                         disabled={updateMutation.isPending}
-                        onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, 'completed'); }}
+                        onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, APPOINTMENT_STATUS.COMPLETED); }}
                       >
                         <IconCheckCircle className="me-1.5 size-3.5" />
                         {t.queue.finishConsultation}
@@ -344,7 +343,7 @@ export function WaitingQueueBoard({
                       variant="outline"
                       className="w-full text-xs font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
                       disabled={updateMutation.isPending}
-                      onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, 'waiting'); }}
+                      onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, APPOINTMENT_STATUS.WAITING); }}
                     >
                       <IconActivate className="me-1.5 size-3.5 text-primary" />
                       {t.queue.patientArrived}

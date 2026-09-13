@@ -94,17 +94,19 @@ export default function PractitionersPage() {
     filters.experience !== 'all';
 
   return (
-    <div className="space-y-4">
-      <PractitionerFiltersBlock
-        values={filters}
-        onChange={patchFilters}
-        onReset={resetFilters}
-        practitioners={practitioners}
-        departments={departments}
-        rooms={rooms}
-        exportDisabled={isLoading || !filtered.length}
-        onExport={handleExport}
-      />
+    <div className="page-fill gap-4">
+      <div className="shrink-0">
+        <PractitionerFiltersBlock
+          values={filters}
+          onChange={patchFilters}
+          onReset={resetFilters}
+          practitioners={practitioners}
+          departments={departments}
+          rooms={rooms}
+          exportDisabled={isLoading || !filtered.length}
+          onExport={handleExport}
+        />
+      </div>
 
       <PractitionersList
         pageItems={pageItems}

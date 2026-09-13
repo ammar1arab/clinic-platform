@@ -96,16 +96,18 @@ export default function PatientsPage() {
     Boolean(filters.dobTo);
 
   return (
-    <div className="space-y-4">
-      <PatientFiltersBlock
-        values={filters}
-        onChange={patchFilters}
-        onReset={resetFilters}
-        staff={staff}
-        departments={departments}
-        exportDisabled={isLoading || !patients?.length}
-        onExport={handleExport}
-      />
+    <div className="page-fill gap-4">
+      <div className="shrink-0">
+        <PatientFiltersBlock
+          values={filters}
+          onChange={patchFilters}
+          onReset={resetFilters}
+          staff={staff}
+          departments={departments}
+          exportDisabled={isLoading || !patients?.length}
+          onExport={handleExport}
+        />
+      </div>
 
       <PatientsList
         patients={patients}

@@ -238,6 +238,8 @@ const availabilitySlotSchema = z.object({
   endTime: z
     .string()
     .min(1, { error: () => getTranslations().validation.required }),
+  effectiveFrom: z.string().optional().or(z.literal('')),
+  effectiveUntil: z.string().optional().or(z.literal('')),
 });
 
 const timeOffSchema = z.object({
@@ -247,6 +249,12 @@ const timeOffSchema = z.object({
   endDate: z
     .string()
     .min(1, { error: () => getTranslations().validation.required }),
+  reason: z.string().optional().or(z.literal('')),
+});
+
+const availabilityOverrideSchema = z.object({
+  startAt: z.string().min(1, { error: () => getTranslations().validation.required }),
+  endAt: z.string().min(1, { error: () => getTranslations().validation.required }),
   reason: z.string().optional().or(z.literal('')),
 });
 
@@ -287,6 +295,7 @@ export const practitionerSchema = z
     serviceIds: z.array(z.string()),
     availabilities: z.array(availabilitySlotSchema),
     timeOffs: z.array(timeOffSchema),
+    availabilityOverrides: z.array(availabilityOverrideSchema),
   })
   .superRefine((v, ctx) => {
     if (v.experienceYears?.trim()) {
@@ -328,6 +337,9 @@ export const practitionerSchema = z
           message: getTranslations().validation.endAfter,
         });
       }
+      if (slot.effectiveFrom && slot.effectiveUntil && slot.effectiveFrom > slot.effectiveUntil) {
+        ctx.addIssue({ path: ['availabilities', index, 'effectiveUntil'], code: 'custom', message: getTranslations().validation.endOnAfter });
+      }
     });
 
     v.timeOffs.forEach((entry, index) => {
@@ -337,6 +349,12 @@ export const practitionerSchema = z
           code: 'custom',
           message: getTranslations().validation.endOnAfter,
         });
+      }
+    });
+
+    v.availabilityOverrides.forEach((entry, index) => {
+      if (entry.startAt && entry.endAt && new Date(entry.startAt) >= new Date(entry.endAt)) {
+        ctx.addIssue({ path: ['availabilityOverrides', index, 'endAt'], code: 'custom', message: getTranslations().validation.endAfter });
       }
     });
   });

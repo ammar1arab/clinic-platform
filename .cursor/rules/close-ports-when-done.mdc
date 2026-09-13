@@ -1,6 +1,0 @@
----
-description: Always stop Nest/Next servers and free ports when finishing Cureva work
-alwaysApply: true
----
-
-Read and follow [the canonical rule](../../.agents/rules/close-ports-when-done.md).

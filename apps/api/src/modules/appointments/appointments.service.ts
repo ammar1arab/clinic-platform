@@ -4,7 +4,7 @@ import {
   BadRequestException,
   ConflictException,
 } from "@nestjs/common";
-import { AppointmentStatus, type Room, type Service } from "@prisma/client";
+import { AppointmentStatus, Role, type Room, type Service } from "@prisma/client";
 import { AppointmentsRepository } from "./appointments.repository";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { PrismaService } from "@/prisma/prisma.service";
@@ -361,8 +361,16 @@ export class AppointmentsService {
     return appointment;
   }
 
-  findAll(clinicId: string, filters: AppointmentFiltersDto) {
-    return this.appointmentsRepository.findAllByClinic(clinicId, filters);
+  findAll(
+    clinicId: string,
+    filters: AppointmentFiltersDto,
+    role?: Role,
+    clinicUserId?: string,
+  ) {
+    return this.appointmentsRepository.findAllByClinic(clinicId, {
+      ...filters,
+      doctorId: role === Role.practitioner ? clinicUserId : filters.doctorId,
+    });
   }
 
   async findOne(clinicId: string, id: string) {

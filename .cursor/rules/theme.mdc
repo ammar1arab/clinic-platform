@@ -1,6 +1,0 @@
----
-description: Always use Cureva theme tokens from apps/web globals.css - never hardcode colors
-alwaysApply: true
----
-
-Read and follow [the canonical rule](../../.agents/rules/theme.md).

@@ -14,9 +14,9 @@ interface Props {
 
 function goToPage(page: number, onPageChange: (page: number) => void) {
   onPageChange(page);
-  const main = document.querySelector('main');
-  if (main instanceof HTMLElement) {
-    main.scrollTo({ top: 0, behavior: 'auto' });
+  const scroller = document.querySelector('[data-page-scroll]');
+  if (scroller instanceof HTMLElement) {
+    scroller.scrollTo({ top: 0, behavior: 'auto' });
   }
 }
 
@@ -39,7 +39,7 @@ export function Pagination({
   return (
     <nav
       aria-label={`${t.common.showing} (${page}/${pageCount})`}
-      className="flex w-full items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/90 px-3.5 py-2 shadow-xs backdrop-blur-xs"
+      className="flex w-full shrink-0 items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/90 px-3.5 py-2 shadow-xs backdrop-blur-xs"
     >
       <p className="min-w-0 truncate text-xs text-muted-foreground">
         <span className="hidden sm:inline">{t.common.showing} </span>

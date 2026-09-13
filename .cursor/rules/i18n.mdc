@@ -1,7 +1,0 @@
----
-description: Cureva bilingual EN/AR and RTL - entity fields now, UI i18n for Phase 2
-globs: apps/web/**/*.{ts,tsx},apps/web/src/i18n/**/*
-alwaysApply: false
----
-
-Read and follow [the canonical rule](../../.agents/rules/i18n.md).

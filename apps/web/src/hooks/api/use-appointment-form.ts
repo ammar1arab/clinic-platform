@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { ROLE } from '@clinic/types';
 import { useClinicStaff } from './use-clinic-staff';
 import {
   useCreateAppointment,
@@ -53,7 +54,7 @@ export function useAppointmentFormResources(
     [paymentMethods],
   );
   const practitioners = useMemo(
-    () => staff?.filter((member) => member.role === 'practitioner'),
+    () => staff?.filter((member) => member.role === ROLE.PRACTITIONER),
     [staff],
   );
 

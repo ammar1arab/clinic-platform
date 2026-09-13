@@ -100,12 +100,12 @@ export function PatientsList({
   );
 
   if (isLoading) {
-    return <TableSkeleton rows={8} cols={6} hasHeader={false} />;
+    return <TableSkeleton className="page-fill" rows={8} cols={6} hasHeader={false} />;
   }
 
   if (!patients || patients.length === 0) {
     return (
-      <TableFrame>
+      <TableFrame className="page-fill">
         <EmptyState
           icon={IconPatients}
           title={hasActiveFilters ? t?.patient?.noMatches : t?.patient?.noPatients}
@@ -121,9 +121,9 @@ export function PatientsList({
   }
 
   return (
-    <>
-      <div className="hidden md:block">
-        <TableFrame>
+    <div className="page-fill min-h-0 gap-2">
+      <TableFrame className="page-fill hidden min-h-0 md:flex">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
@@ -224,10 +224,11 @@ export function PatientsList({
               })}
             </TableBody>
           </Table>
-        </TableFrame>
-      </div>
+        </div>
+      </TableFrame>
 
-      <div className="grid grid-cols-1 gap-2.5 md:hidden">
+      <div className="page-fill overflow-y-auto overscroll-y-contain md:hidden">
+        <div className="grid grid-cols-1 gap-2.5">
         {pageItems.map((p) => {
           const fullName = getPersonName(p, lang);
           const gLabel = genderLabel(p.gender, t);
@@ -317,6 +318,7 @@ export function PatientsList({
             </div>
           );
         })}
+        </div>
       </div>
 
       <Pagination
@@ -342,6 +344,6 @@ export function PatientsList({
         finalWarning={t?.patient?.deleteWarning2}
         confirmLabel={t?.patient?.deleteConfirm}
       />
-    </>
+    </div>
   );
 }

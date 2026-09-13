@@ -55,8 +55,13 @@ export function useFetchData<T>({
           status: status ?? null,
           query: String(queryKey[0]),
         };
-        if (axios.isAxiosError(error)) log.warn("fetch_failed", meta);
-        else log.error("fetch_failed", meta);
+        if (axios.isAxiosError(error)) {
+          if (status === 401 || status === 404) {
+            log.debug("fetch_failed", meta);
+          } else {
+            log.warn("fetch_failed", meta);
+          }
+        } else log.error("fetch_failed", meta);
         throw toMessageError(error);
       }
     },

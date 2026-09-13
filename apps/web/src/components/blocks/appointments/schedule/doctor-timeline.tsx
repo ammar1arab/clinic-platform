@@ -378,14 +378,12 @@ export function DoctorTimeline({
     <div
       data-schedule-host=""
       className={cn(
-        'relative flex flex-col overflow-hidden border bg-card shadow-xs',
-        focused
-          ? 'h-0 min-h-0 flex-1 rounded-none border-0'
-          : 'card-aura min-h-0 flex-1 rounded-2xl',
+        'relative page-fill overflow-hidden border bg-card shadow-xs',
+        focused ? 'rounded-none border-0' : 'card-aura rounded-2xl',
       )}
     >
 
-      <div className="flex flex-col gap-2 border-b bg-muted/20 px-2.5 py-2 sm:px-3">
+      <div className="flex shrink-0 flex-col gap-2 border-b bg-muted/20 px-2.5 py-2 sm:px-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
 
           <div className="flex min-w-0 items-center gap-1.5">
@@ -439,15 +437,7 @@ export function DoctorTimeline({
       <div
         ref={scrollRef}
         onClick={handleGridClick}
-        className={cn(
-          'relative overflow-auto overscroll-contain cursor-pointer',
-          focused && 'h-0 min-h-0 flex-1',
-        )}
-        style={
-          focused
-            ? undefined
-            : { maxHeight: 'min(70dvh, calc(100dvh - 14rem))', minHeight: 'min(360px, 55dvh)' }
-        }
+        className="relative page-fill cursor-pointer overflow-auto overscroll-contain"
       >
         <div className="relative flex min-w-[20rem]" style={{ height: `${TIMELINE_TOTAL_HEIGHT}px` }}>
 

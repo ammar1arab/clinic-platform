@@ -41,7 +41,12 @@ export class AppointmentsController {
     @CurrentUser() user: AuthUser,
     @Query() filters: AppointmentFiltersDto,
   ) {
-    return this.appointmentsService.findAll(user.clinicId, filters);
+    return this.appointmentsService.findAll(
+      user.clinicId,
+      filters,
+      user.role,
+      user.clinicUserId,
+    );
   }
 
   @Get(":id")

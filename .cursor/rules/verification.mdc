@@ -1,7 +1,0 @@
----
-description: "Choose meaningful checks and distinguish source checks from runtime verification"
-globs: "{apps,packages,scripts}/**/*.{ts,tsx,js,cjs,mjs}"
-alwaysApply: false
----
-
-Read and follow [the canonical rule](../../.agents/rules/verification.md).

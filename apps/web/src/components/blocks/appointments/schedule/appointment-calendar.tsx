@@ -343,7 +343,7 @@ export function AppointmentCalendar({
     <div
       data-schedule-host=""
       className={cn(
-        'relative flex h-0 min-h-0 flex-1 flex-col overflow-hidden bg-card [&_.fc]:text-sm',
+        'relative page-fill bg-card [&_.fc]:text-sm',
         focused
           ? 'rounded-none border-0 p-1.5 sm:p-2'
           : 'card-aura rounded-xl border p-2 sm:p-2.5',

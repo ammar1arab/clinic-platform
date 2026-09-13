@@ -16,26 +16,19 @@ import {
   CardHeader,
   CardTitle,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@/components/ui';
 import { DatePicker, EmptyState, FormField, IconWell, TimePicker } from '@/components/primitives';
-import { WEEKDAY_OPTIONS } from '@/constants/practitioner';
 import type { PractitionerFormData } from '@/lib/validations';
 import {
   IconAdd,
-  IconCalendar,
   IconCalendarClock,
   IconDelete,
   type LucideIcon,
 } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 
-type WeeklyField = FieldArrayWithId<PractitionerFormData, 'availabilities'>;
 type LeaveField = FieldArrayWithId<PractitionerFormData, 'timeOffs'>;
+type OverrideField = FieldArrayWithId<PractitionerFormData, 'availabilityOverrides'>;
 
 function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
@@ -104,80 +97,97 @@ function SlotRow({
   );
 }
 
-export function WeeklyAvailabilityFields({
+function splitDateTime(value: string) {
+  const [date = '', timePart = ''] = value.split('T');
+  return { date, time: timePart.slice(0, 5) };
+}
+
+function joinDateTime(date: string, time: string) {
+  if (!date) return '';
+  return `${date}T${time || '09:00'}`;
+}
+
+function DateTimeFields({
+  value,
+  onChange,
+  dateError,
+  dateLabel,
+  timeLabel,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  dateError?: string;
+  dateLabel: string;
+  timeLabel: string;
+}) {
+  const { date, time } = splitDateTime(value);
+  return (
+    <>
+      <FormField label={dateLabel} error={dateError}>
+        <DatePicker value={date} onChange={(next) => onChange(joinDateTime(next, time))} />
+      </FormField>
+      <FormField label={timeLabel}>
+        <TimePicker value={time} onChange={(next) => onChange(joinDateTime(date, next))} />
+      </FormField>
+    </>
+  );
+}
+
+export function AvailabilityOverridesFields({
   control,
+  register,
   errors,
   fields,
   onAdd,
   onRemove,
 }: {
   control: Control<PractitionerFormData>;
+  register: UseFormRegister<PractitionerFormData>;
   errors: FieldErrors<PractitionerFormData>;
-  fields: WeeklyField[];
+  fields: OverrideField[];
   onAdd: () => void;
   onRemove: (index: number) => void;
 }) {
   const { t } = useLanguage();
   return (
-    <ScheduleCard
-      title={t.practitioner.weeklyAvailability}
-      addLabel={t.practitioner.addDay}
-      onAdd={onAdd}
-    >
+    <ScheduleCard title={t.practitioner.extraAvailability} addLabel={t.practitioner.addExtraAvailability} onAdd={onAdd}>
       {fields.length === 0 ? (
-        <EmptyState
-          icon={IconCalendar}
-          title={t.practitioner.noWeeklyPatterns}
-          description={t.practitioner.noWeeklyPatternsDesc}
-          className="py-8"
-        />
-      ) : (
-        fields.map((field, index) => (
-          <SlotRow
-            key={field.id}
-            icon={IconCalendar}
-            removeLabel={t.common.remove}
-            onRemove={() => onRemove(index)}
-            heading={
-              <Controller
-                control={control}
-                name={`availabilities.${index}.dayOfWeek`}
-                render={({ field: f }) => (
-                  <Select value={String(f.value)} onValueChange={(v) => f.onChange(Number(v))}>
-                    <SelectTrigger className="w-full" aria-label={t.practitioner.weeklyAvailability}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {WEEKDAY_OPTIONS.map((label, day) => (
-                        <SelectItem key={label} value={String(day)}>
-                          {t.constants.weekdays[label]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            }
-          >
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <FormField label={t.common.from} error={errors.availabilities?.[index]?.startTime?.message}>
-                <Controller
-                  control={control}
-                  name={`availabilities.${index}.startTime`}
-                  render={({ field: f }) => <TimePicker value={f.value} onChange={f.onChange} />}
+        <EmptyState icon={IconCalendarClock} title={t.practitioner.noExtraAvailability} description={t.practitioner.noExtraAvailabilityDesc} className="py-8" />
+      ) : fields.map((field, index) => (
+        <SlotRow key={field.id} icon={IconCalendarClock} removeLabel={t.common.remove} onRemove={() => onRemove(index)}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Controller
+              control={control}
+              name={`availabilityOverrides.${index}.startAt`}
+              render={({ field: f }) => (
+                <DateTimeFields
+                  value={f.value}
+                  onChange={f.onChange}
+                  dateError={errors.availabilityOverrides?.[index]?.startAt?.message}
+                  dateLabel={t.common.from}
+                  timeLabel={t.common.selectTime}
                 />
-              </FormField>
-              <FormField label={t.common.to} error={errors.availabilities?.[index]?.endTime?.message}>
-                <Controller
-                  control={control}
-                  name={`availabilities.${index}.endTime`}
-                  render={({ field: f }) => <TimePicker value={f.value} onChange={f.onChange} />}
+              )}
+            />
+            <Controller
+              control={control}
+              name={`availabilityOverrides.${index}.endAt`}
+              render={({ field: f }) => (
+                <DateTimeFields
+                  value={f.value}
+                  onChange={f.onChange}
+                  dateError={errors.availabilityOverrides?.[index]?.endAt?.message}
+                  dateLabel={t.common.to}
+                  timeLabel={t.common.selectTime}
                 />
-              </FormField>
-            </div>
-          </SlotRow>
-        ))
-      )}
+              )}
+            />
+          </div>
+          <FormField label={t.practitioner.leaveReason}>
+            <Input placeholder={t.common.optional} {...register(`availabilityOverrides.${index}.reason`)} />
+          </FormField>
+        </SlotRow>
+      ))}
     </ScheduleCard>
   );
 }

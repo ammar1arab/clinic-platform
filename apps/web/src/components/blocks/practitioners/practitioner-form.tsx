@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import {
   Input,
   Textarea,
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -32,6 +31,7 @@ import { FORM_NONE } from '@/constants/form';
 import { getPractitionerLanguages } from '@/constants/practitioner';
 import { getGenders } from '@/constants/patient';
 import { practitionerSchema, type PractitionerFormData } from '@/lib/validations';
+import { toDateParam } from '@/lib/datetime';
 import { useCreatePractitioner, useUpdatePractitioner } from '@/hooks/api/use-practitioners';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useRooms } from '@/hooks/api/use-rooms';
@@ -44,7 +44,7 @@ import {
   toPractitionerFormValues,
   toPractitionerPayload,
 } from './practitioner-form.mapper';
-import { LeaveBlocksFields, WeeklyAvailabilityFields } from './practitioner-schedule-fields';
+import { AvailabilityStudio } from './availability-studio';
 
 type Props = {
   clinicId: string;
@@ -81,11 +81,13 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
 
   const availabilities = useFieldArray({ control, name: 'availabilities' });
   const timeOffs = useFieldArray({ control, name: 'timeOffs' });
+  const availabilityOverrides = useFieldArray({ control, name: 'availabilityOverrides' });
 
   const departmentId = watch('departmentId');
   const imageUrl = watch('imageUrl');
   const name = watch('name');
   const employmentType = watch('employmentType');
+  const scheduleValues = watch();
   const needsCommission = employmentType === 'commission' || employmentType === 'mixed';
 
   const roomOptions = useMemo(() => {
@@ -115,6 +117,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
       variant: 'destructive',
     });
     if (ok) availabilities.remove(index);
+    return ok;
   };
 
   const removeTimeOff = async (index: number) => {
@@ -125,6 +128,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
       variant: 'destructive',
     });
     if (ok) timeOffs.remove(index);
+    return ok;
   };
 
   const onSubmit = (data: PractitionerFormData) => {
@@ -438,23 +442,26 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
         </CardContent>
       </Card>
 
-      <WeeklyAvailabilityFields
-        control={control}
-        errors={errors}
-        fields={availabilities.fields}
-        onAdd={() =>
-          availabilities.append({ dayOfWeek: 1, startTime: '09:00', endTime: '17:00' })
-        }
-        onRemove={(index) => void removeAvailability(index)}
-      />
-
-      <LeaveBlocksFields
+      <AvailabilityStudio
         control={control}
         register={register}
+        setValue={setValue}
+        values={scheduleValues}
         errors={errors}
-        fields={timeOffs.fields}
-        onAdd={() => timeOffs.append({ startDate: '', endDate: '', reason: '' })}
-        onRemove={(index) => void removeTimeOff(index)}
+        overrideFields={availabilityOverrides.fields}
+        leaveFields={timeOffs.fields}
+        onAddAvailability={(slot) => availabilities.append(slot)}
+        onRemoveAvailability={removeAvailability}
+        onAddOverride={() => {
+          const day = toDateParam(new Date());
+          availabilityOverrides.append({ startAt: `${day}T09:00`, endAt: `${day}T17:00`, reason: '' });
+        }}
+        onRemoveOverride={(index) => availabilityOverrides.remove(index)}
+        onAddLeave={() => {
+          const day = toDateParam(new Date());
+          timeOffs.append({ startDate: day, endDate: day, reason: '' });
+        }}
+        onRemoveLeave={removeTimeOff}
       />
 
       <FormActions

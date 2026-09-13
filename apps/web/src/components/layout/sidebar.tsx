@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import type { Role } from '@clinic/types';
+import { ROLE, type Role } from '@clinic/types';
+import type { Translations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { canSeeNavHref } from '@/constants/nav-access';
 import { ROUTES } from '@/constants/routes';
@@ -35,7 +36,14 @@ type NavItem = {
   accent: IconWellAccent;
 };
 
-function getNavItems(t: { layout: { sidebar: Record<string, string> } }, role?: Role | null): NavItem[] {
+function getNavItems(t: Translations, role?: Role | null): NavItem[] {
+  if (role === ROLE.PRACTITIONER) {
+    return [
+      { label: t.layout.titles.home, href: ROUTES.HOME, icon: IconDashboard, accent: 'default' },
+      { label: t.queue.waitingQueue, href: ROUTES.HOME_QUEUE, icon: IconPatients, accent: 'teal' },
+      { label: t.practitioner.profile, href: ROUTES.HOME_PROFILE, icon: IconPractitioner, accent: 'success' },
+    ];
+  }
   const items: NavItem[] = [
     { label: t.layout.sidebar.dashboard, href: ROUTES.DASHBOARD, icon: IconDashboard, accent: 'default' },
     { label: t.layout.sidebar.schedule, href: schedulePath('month'), icon: IconSchedule, accent: 'teal' },

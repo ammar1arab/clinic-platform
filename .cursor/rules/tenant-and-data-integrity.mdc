@@ -1,7 +1,0 @@
----
-description: "Clinic isolation, auth boundaries, and protected data handling"
-globs: "apps/api/src/**/*.ts"
-alwaysApply: false
----
-
-Read and follow [the canonical rule](../../.agents/rules/tenant-and-data-integrity.md).

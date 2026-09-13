@@ -56,7 +56,7 @@ export default function ReportsPage() {
   const downloadFinance = useDownloadFinanceReport(clinicId);
 
   return (
-    <div className="space-y-4">
+    <div className="w-full min-w-0 space-y-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <ReportCard
           icon={IconPerson}

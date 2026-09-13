@@ -103,12 +103,12 @@ export function PractitionersList({
   );
 
   if (isLoading) {
-    return <TableSkeleton rows={8} cols={7} hasHeader={false} />;
+    return <TableSkeleton className="page-fill" rows={8} cols={7} hasHeader={false} />;
   }
 
   if (totalItems === 0) {
     return (
-      <TableFrame>
+      <TableFrame className="page-fill">
         <EmptyState
           icon={IconPractitioner}
           title={hasActiveFilters ? t.practitioner.noMatches : t.practitioner.noPractitioners}
@@ -124,9 +124,9 @@ export function PractitionersList({
   }
 
   return (
-    <>
-      <div className="hidden md:block">
-        <TableFrame>
+    <div className="page-fill min-h-0 gap-2">
+      <TableFrame className="page-fill hidden min-h-0 md:flex">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
@@ -156,10 +156,7 @@ export function PractitionersList({
                         seed={p.id}
                         size="sm"
                       />
-                      <div
-                        className="flex min-w-0 flex-1 flex-col"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <div className="flex min-w-0 flex-1 flex-col">
                         <TruncatedText className="font-medium">
                           {getStaffName(p, lang)}
                         </TruncatedText>
@@ -202,10 +199,11 @@ export function PractitionersList({
               ))}
             </TableBody>
           </Table>
-        </TableFrame>
-      </div>
+        </div>
+      </TableFrame>
 
-      <div className="grid grid-cols-1 gap-2.5 md:hidden">
+      <div className="page-fill overflow-y-auto overscroll-y-contain md:hidden">
+        <div className="grid grid-cols-1 gap-2.5">
         {pageItems.map((p) => (
           <div
             key={p.id}
@@ -272,6 +270,7 @@ export function PractitionersList({
             </div>
           </div>
         ))}
+        </div>
       </div>
 
       <Pagination
@@ -297,6 +296,6 @@ export function PractitionersList({
         finalWarning={t.practitioner.deleteWarning2}
         confirmLabel={t.practitioner.deleteConfirm}
       />
-    </>
+    </div>
   );
 }

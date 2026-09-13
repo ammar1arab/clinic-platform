@@ -2,6 +2,13 @@
 
 export type Role = 'owner' | 'admin' | 'practitioner' | 'financial';
 
+export const ROLE = {
+  OWNER: 'owner',
+  ADMIN: 'admin',
+  PRACTITIONER: 'practitioner',
+  FINANCIAL: 'financial',
+} as const satisfies Record<string, Role>;
+
 export type SessionType = 'in_person' | 'online';
 
 export type DiscountType = 'fixed' | 'percentage';
@@ -17,6 +24,17 @@ export type AppointmentStatus =
   | 'completed'
   | 'no_show'
   | 'cancelled';
+
+export const APPOINTMENT_STATUS = {
+  UNCONFIRMED: 'unconfirmed',
+  CONFIRMED: 'confirmed',
+  CHECKED_IN: 'checked_in',
+  WAITING: 'waiting',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  NO_SHOW: 'no_show',
+  CANCELLED: 'cancelled',
+} as const satisfies Record<string, AppointmentStatus>;
 
 export type CalendarView = 'day' | 'week' | 'month';
 

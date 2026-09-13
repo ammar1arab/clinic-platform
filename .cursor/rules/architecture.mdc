@@ -1,6 +1,0 @@
----
-description: Cureva monorepo architecture - apps/web, apps/api, packages/types placement
-alwaysApply: true
----
-
-Read and follow [the canonical rule](../../.agents/rules/architecture.md).

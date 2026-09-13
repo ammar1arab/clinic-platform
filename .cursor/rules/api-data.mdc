@@ -1,7 +1,0 @@
----
-description: Cureva data layer - web services/hooks, Nest modules, Prisma, shared types, env
-globs: apps/web/src/{services,hooks,lib}/**/*.{ts,tsx},apps/api/src/**/*.ts,packages/types/**/*.ts
-alwaysApply: false
----
-
-Read and follow [the canonical rule](../../.agents/rules/api-data.md).

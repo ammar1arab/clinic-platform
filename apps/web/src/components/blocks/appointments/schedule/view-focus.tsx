@@ -128,12 +128,12 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
         data-view-focus={focused ? 'true' : undefined}
         aria-label={focused ? `${label} focus view` : undefined}
         className={cn(
-          'relative isolate flex min-h-0 flex-1 flex-col',
-          focused && 'h-full overflow-hidden bg-background',
+          'relative isolate page-fill',
+          focused && 'overflow-hidden bg-background',
           className,
         )}
       >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="page-fill">
           {content}
         </div>
       </div>

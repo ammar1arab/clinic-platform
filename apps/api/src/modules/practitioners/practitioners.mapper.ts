@@ -77,6 +77,8 @@ export function mapPractitioner(row: Row) {
       dayOfWeek: a.dayOfWeek,
       startTime: a.startTime,
       endTime: a.endTime,
+      effectiveFrom: a.effectiveFrom?.toISOString() ?? null,
+      effectiveUntil: a.effectiveUntil?.toISOString() ?? null,
       isActive: a.isActive,
     })),
     timeOffs: row.timeOffs.map((t) => ({
@@ -84,6 +86,12 @@ export function mapPractitioner(row: Row) {
       startDate: t.startDate.toISOString(),
       endDate: t.endDate.toISOString(),
       reason: t.reason,
+    })),
+    availabilityOverrides: row.availabilityOverrides.map((entry) => ({
+      id: entry.id,
+      startAt: entry.startAt.toISOString(),
+      endAt: entry.endAt.toISOString(),
+      reason: entry.reason,
     })),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

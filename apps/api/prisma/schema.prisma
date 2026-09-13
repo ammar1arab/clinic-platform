@@ -185,6 +185,7 @@ model ClinicUser {
   primaryPatients   Patient[]            @relation("PrimaryDoctorPatients")
   availabilities    DoctorAvailability[]
   timeOffs          DoctorTimeOff[]
+  availabilityOverrides DoctorAvailabilityOverride[]
   notifications     Notification[]
   appointmentsPaid  Appointment[]        @relation("PaidByStaff")
   services          ClinicUserService[]
@@ -370,14 +371,18 @@ model Referral {
 }
 
 model DoctorAvailability {
-  id        String  @id @default(uuid())
-  doctorId  String
-  dayOfWeek Int
-  startTime String
-  endTime   String
-  isActive  Boolean @default(true)
+  id             String  @id @default(uuid())
+  doctorId       String
+  dayOfWeek      Int
+  startTime      String
+  endTime        String
+  effectiveFrom  DateTime? @db.Date
+  effectiveUntil DateTime? @db.Date
+  isActive       Boolean @default(true)
 
   doctor ClinicUser @relation(fields: [doctorId], references: [id])
+
+  @@index([doctorId, dayOfWeek, isActive])
 }
 
 model DoctorTimeOff {
@@ -388,6 +393,22 @@ model DoctorTimeOff {
   reason    String?
 
   doctor ClinicUser @relation(fields: [doctorId], references: [id])
+
+  @@index([doctorId, startDate, endDate])
+}
+
+model DoctorAvailabilityOverride {
+  id        String   @id @default(uuid())
+  doctorId  String
+  startAt   DateTime
+  endAt     DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  doctor ClinicUser @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, startAt, endAt])
 }
 
 model PaymentMethod {

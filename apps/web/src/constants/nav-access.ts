@@ -1,12 +1,13 @@
-import type { Role } from '@clinic/types';
+import { ROLE, type Role } from '@clinic/types';
 import { ROUTES } from './routes';
 
-const STAFF: Role[] = ['owner', 'admin'];
-const FINANCE: Role[] = ['owner', 'admin', 'financial'];
-const OPS: Role[] = ['owner', 'admin', 'financial'];
-const PRACTITIONER: Role[] = ['practitioner'];
+const STAFF: Role[] = [ROLE.OWNER, ROLE.ADMIN];
+const FINANCE: Role[] = [ROLE.OWNER, ROLE.ADMIN, ROLE.FINANCIAL];
+const OPS: Role[] = [ROLE.OWNER, ROLE.ADMIN, ROLE.FINANCIAL];
+const PRACTITIONER: Role[] = [ROLE.PRACTITIONER];
 
 const SIDEBAR_PREFIXES = [
+  ROUTES.HOME,
   ROUTES.DASHBOARD,
   ROUTES.SCHEDULE,
   ROUTES.PATIENTS,
@@ -15,7 +16,6 @@ const SIDEBAR_PREFIXES = [
   ROUTES.SETTINGS,
 ] as const;
 
-/** Routes a role may open. `undefined` roles = all authenticated roles. */
 export const NAV_ACCESS: { prefix: string; roles?: Role[] }[] = [
   { prefix: ROUTES.HOME, roles: PRACTITIONER },
   { prefix: ROUTES.DASHBOARD, roles: OPS },
@@ -27,8 +27,8 @@ export const NAV_ACCESS: { prefix: string; roles?: Role[] }[] = [
 ];
 
 export function homePathForRole(role?: Role | null): string {
-  if (role === 'practitioner') return ROUTES.HOME;
-  if (role === 'financial') return ROUTES.REPORTS;
+  if (role === ROLE.PRACTITIONER) return ROUTES.HOME;
+  if (role === ROLE.FINANCIAL) return ROUTES.REPORTS;
   return ROUTES.DASHBOARD;
 }
 

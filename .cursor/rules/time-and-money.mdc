@@ -1,7 +1,0 @@
----
-description: "Time, scheduling boundaries, and monetary precision in domain work"
-globs: "{apps/api/src/modules,apps/web/src/lib}/**/*.ts"
-alwaysApply: false
----
-
-Read and follow [the canonical rule](../../.agents/rules/time-and-money.md).

@@ -9,6 +9,7 @@ import { QUERY_KEYS } from '@/constants/query-keys';
 import { useFetchData, type TResponseError, useApiMutation, INVALIDATE, LIVE_LIST_OPTIONS } from '../query';
 import { useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useLanguage } from '@/providers';
+import { APPOINTMENT_STATUS } from '@clinic/types';
 
 export function useAppointments(filters: AppointmentFilters, enabled = true) {
   return useFetchData<Appointment[]>({
@@ -59,10 +60,10 @@ function applyOptimisticUpdate(
     updatedAt: nowIso,
   };
 
-  if (patch.status === 'in_progress' && !current.inProgressAt) {
+  if (patch.status === APPOINTMENT_STATUS.IN_PROGRESS && !current.inProgressAt) {
     next.inProgressAt = nowIso;
   }
-  if ((patch.status === 'waiting' || patch.status === 'checked_in') && !current.waitingStartedAt) {
+  if ((patch.status === APPOINTMENT_STATUS.WAITING || patch.status === APPOINTMENT_STATUS.CHECKED_IN) && !current.waitingStartedAt) {
     next.waitingStartedAt = nowIso;
   }
   return next;

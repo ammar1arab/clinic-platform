@@ -16,6 +16,7 @@ import { EmploymentType } from "@prisma/client";
 import type { UpdatePractitionerInput } from "@clinic/types";
 import {
   AvailabilitySlotDto,
+  AvailabilityOverrideEntryDto,
   TimeOffEntryDto,
 } from "./create-practitioner.dto";
 
@@ -131,6 +132,12 @@ export class UpdatePractitionerDto implements UpdatePractitionerInput {
   @ValidateNested({ each: true })
   @Type(() => TimeOffEntryDto)
   timeOffs?: TimeOffEntryDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AvailabilityOverrideEntryDto)
+  availabilityOverrides?: AvailabilityOverrideEntryDto[];
 }
 
 export class AssignServicesDto {
@@ -151,4 +158,11 @@ export class ReplaceTimeOffDto {
   @ValidateNested({ each: true })
   @Type(() => TimeOffEntryDto)
   timeOffs: TimeOffEntryDto[];
+}
+
+export class ReplaceAvailabilityOverridesDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AvailabilityOverrideEntryDto)
+  availabilityOverrides: AvailabilityOverrideEntryDto[];
 }

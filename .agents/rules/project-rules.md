@@ -1,13 +1,11 @@
 # Canonical rule index
 
-Always read [project context](../project.md), [core](00-project-core.md), [architecture](architecture.md), [theme](theme.md), and [efficiency](agent-efficiency.md).
+Always read [project context](../project.md) and [core rules](00-project-core.md).
 
 For touched areas, load only the relevant rules:
 
-- [API contracts](api-data.md), [tenant integrity](tenant-and-data-integrity.md), [authentication security](security-auth.md).
-- [Components](components.md), [i18n](i18n.md), [hydration](hydration-and-locale.md).
-- [Time and money](time-and-money.md), [verification](verification.md).
-- [Runtime tooling](ironbee-devtools-use.md), [process ownership](close-ports-when-done.md).
-- [Portable instructions](portable-guidance.md) when maintaining agent assets.
+- [Architecture and Data](01-architecture-and-data.md)
+- [Quality and Verification](02-quality-and-verification.md)
+- [Security and Tenant Integrity](03-security-and-tenant.md)
 
 Cursor files under .cursor/rules are discovery adapters to these documents.

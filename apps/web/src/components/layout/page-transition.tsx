@@ -1,25 +1,11 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 
-export function PageTransition({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
   return (
-    <div
-      key={pathname}
-      className={cn(
-        'flex min-h-0 flex-1 flex-col',
-        className,
-      )}
-    >
+    <div key={pathname} className="page-scroll">
       {children}
     </div>
   );
