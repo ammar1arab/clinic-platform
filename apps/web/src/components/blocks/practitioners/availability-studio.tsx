@@ -84,18 +84,22 @@ function LiveAnchor({ element }: { element: Element }) {
   return <PopoverAnchor virtualRef={virtualRef} />;
 }
 
-export function AvailabilityStudio({
+export function AvailabilityStudio<T extends PractitionerHoursData>({
   control,
   register,
   setValue,
   errors,
 }: {
-  control: Control<PractitionerHoursData>;
-  register: UseFormRegister<PractitionerHoursData>;
-  setValue: UseFormSetValue<PractitionerHoursData>;
-  errors: FieldErrors<PractitionerHoursData>;
+  control: Control<T>;
+  register: UseFormRegister<T>;
+  setValue: UseFormSetValue<T>;
+  errors: FieldErrors<T>;
 }) {
   const { t, lang } = useLanguage();
+  const hoursControl = control as unknown as Control<PractitionerHoursData>;
+  const hoursRegister = register as unknown as UseFormRegister<PractitionerHoursData>;
+  const hoursSetValue = setValue as unknown as UseFormSetValue<PractitionerHoursData>;
+  const hoursErrors = errors as FieldErrors<PractitionerHoursData>;
   const {
     values,
     overrideFields,
@@ -106,7 +110,7 @@ export function AvailabilityStudio({
     onRemoveOverride,
     onAddLeave,
     onRemoveLeave,
-  } = useHoursFields(control);
+  } = useHoursFields(hoursControl);
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [anchor, setAnchor] = useState<Element | null>(null);
   const weekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 0 }), []);
@@ -141,9 +145,9 @@ export function AvailabilityStudio({
 
   const updateSlotFromEvent = (index: number, start: Date | null, end: Date | null) => {
     if (!start || !end) return;
-    setValue(`availabilities.${index}.dayOfWeek`, start.getDay(), { shouldDirty: true });
-    setValue(`availabilities.${index}.startTime`, timeValue(start), { shouldDirty: true });
-    setValue(`availabilities.${index}.endTime`, timeValue(end), {
+    hoursSetValue(`availabilities.${index}.dayOfWeek`, start.getDay(), { shouldDirty: true });
+    hoursSetValue(`availabilities.${index}.startTime`, timeValue(start), { shouldDirty: true });
+    hoursSetValue(`availabilities.${index}.endTime`, timeValue(end), {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -267,7 +271,7 @@ export function AvailabilityStudio({
             </div>
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
               <Controller
-                control={control}
+                control={hoursControl}
                 name={`availabilities.${selectedSlot}.startTime`}
                 render={({ field }) => <TimePicker value={field.value} onChange={field.onChange} />}
               />
@@ -275,7 +279,7 @@ export function AvailabilityStudio({
                 -
               </span>
               <Controller
-                control={control}
+                control={hoursControl}
                 name={`availabilities.${selectedSlot}.endTime`}
                 render={({ field }) => <TimePicker value={field.value} onChange={field.onChange} />}
               />
@@ -285,12 +289,12 @@ export function AvailabilityStudio({
               <p className="text-xs text-muted-foreground">{t.practitioner.repeatScheduleDesc}</p>
               <div className="grid grid-cols-1 gap-2">
                 <DateController
-                  control={control}
+                  control={hoursControl}
                   name={`availabilities.${selectedSlot}.effectiveFrom`}
                   label={t.common.from}
                 />
                 <DateController
-                  control={control}
+                  control={hoursControl}
                   name={`availabilities.${selectedSlot}.effectiveUntil`}
                   label={t.common.to}
                 />
@@ -301,10 +305,10 @@ export function AvailabilityStudio({
                 size="sm"
                 className="w-full"
                 onClick={() => {
-                  setValue(`availabilities.${selectedSlot}.effectiveFrom`, toDateParam(weekStart), {
+                  hoursSetValue(`availabilities.${selectedSlot}.effectiveFrom`, toDateParam(weekStart), {
                     shouldDirty: true,
                   });
-                  setValue(
+                  hoursSetValue(
                     `availabilities.${selectedSlot}.effectiveUntil`,
                     toDateParam(addDays(weekStart, 6)),
                     { shouldDirty: true },
@@ -331,17 +335,17 @@ export function AvailabilityStudio({
       ) : null}
 
       <AvailabilityOverridesFields
-        control={control}
-        register={register}
-        errors={errors}
+        control={hoursControl}
+        register={hoursRegister}
+        errors={hoursErrors}
         fields={overrideFields}
         onAdd={onAddOverride}
         onRemove={onRemoveOverride}
       />
       <LeaveBlocksFields
-        control={control}
-        register={register}
-        errors={errors}
+        control={hoursControl}
+        register={hoursRegister}
+        errors={hoursErrors}
         fields={leaveFields}
         onAdd={onAddLeave}
         onRemove={onRemoveLeave}
