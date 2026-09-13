@@ -34,7 +34,6 @@ import {
   type UseFormSetValue,
 } from 'react-hook-form';
 import { AvailabilityOverridesFields, LeaveBlocksFields } from './practitioner-schedule-fields';
-import type { useHoursFields } from './use-hours-fields';
 import { useHoursFields } from './use-hours-fields';
 
 type AvailabilitySlot = PractitionerHoursData['availabilities'][number];
