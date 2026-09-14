@@ -80,7 +80,7 @@ function SelectContent({
         data-align-trigger={position === "item-aligned"}
         className={cn(
           OVERLAY_POP_CLASS,
-          "relative z-100 max-h-(--radix-select-content-available-height) w-[min(100vw-1.5rem,var(--radix-select-trigger-width))] min-w-[min(100vw-1.5rem,var(--radix-select-trigger-width))] overflow-y-auto overscroll-contain",
+          "picker-scroll relative z-100 max-h-(--radix-select-content-available-height) w-[min(100vw-1.5rem,var(--radix-select-trigger-width))] min-w-[min(100vw-1.5rem,var(--radix-select-trigger-width))]",
           className,
         )}
         position={position}

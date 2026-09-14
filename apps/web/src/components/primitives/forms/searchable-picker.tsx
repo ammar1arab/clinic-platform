@@ -90,7 +90,7 @@ export function SearchablePicker({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover modal open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -119,16 +119,20 @@ export function SearchablePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[min(100vw-1.5rem,var(--radix-popover-trigger-width))] max-w-[calc(100vw-1.5rem)] overflow-hidden p-0"
+        className="picker-scroll w-[min(100vw-1.5rem,var(--radix-popover-trigger-width))] max-h-[min(20rem,var(--radix-popover-content-available-height))] max-w-[calc(100vw-1.5rem)] p-0"
         align="start"
+        onOpenAutoFocus={(event) => event.preventDefault()}
         onWheel={(event) => event.stopPropagation()}
+        onTouchMove={(event) => event.stopPropagation()}
       >
-        <PickerSearch
-          value={query}
-          onChange={setQuery}
-          placeholder={searchPlaceholder}
-        />
-        <div className="max-h-60 overflow-y-auto overscroll-contain p-1">
+        <div className="sticky top-0 z-10 bg-popover">
+          <PickerSearch
+            value={query}
+            onChange={setQuery}
+            placeholder={searchPlaceholder}
+          />
+        </div>
+        <div className="p-1">
           {filtered.length === 0 ? (
             <p className="px-2.5 py-4 text-center text-sm text-muted-foreground">
               {emptyText ?? t.common.noMatches}
@@ -140,7 +144,7 @@ export function SearchablePicker({
                 type="button"
                 onClick={() => pick(option.value)}
                 className={cn(
-                  'flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-start text-sm hover:bg-muted',
+                  'flex w-full touch-pan-y items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-start text-sm hover:bg-muted',
                   option.value === value && 'bg-muted',
                 )}
               >

@@ -200,6 +200,13 @@ th, td {
   max-width: 64rem;
 }
 
+@utility picker-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
 @layer base {
   * {
     box-sizing: border-box;

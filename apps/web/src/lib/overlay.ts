@@ -38,6 +38,15 @@ export function keepNestedPortals(event: DismissEvent) {
   }
 }
 
+export function isNestedOverlayOpen() {
+  if (typeof document === 'undefined') return false;
+  return Boolean(
+    document.querySelector(
+      '[data-slot="popover-content"][data-state="open"], [data-slot="select-content"][data-state="open"], [data-slot="dropdown-menu-content"][data-state="open"]',
+    ),
+  );
+}
+
 export function overlayDismissProps<TPointer>(handlers?: {
   onPointerDownOutside?: (event: TPointer) => void;
 }) {

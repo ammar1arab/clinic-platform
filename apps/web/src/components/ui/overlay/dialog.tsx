@@ -4,14 +4,29 @@ import * as React from 'react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
+import {
+  isNestedOverlayOpen,
+  isProtectedOverlayTarget,
+  overlayEventTarget,
+} from '@/lib/overlay';
 import { IconClose } from '@/constants/icons';
 import { useLanguage } from '@/providers/language-provider';
 import { Button } from '../forms/button';
 
 function Dialog({
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+  return (
+    <DialogPrimitive.Root
+      data-slot="dialog"
+      onOpenChange={(open) => {
+        if (!open && isNestedOverlayOpen()) return;
+        onOpenChange?.(open);
+      }}
+      {...props}
+    />
+  );
 }
 
 function DialogTrigger({
@@ -68,10 +83,17 @@ function DialogContent({
           'fixed top-1/2 inset-s-1/2 z-50 flex w-[min(100%-1.5rem,28rem)] max-h-[min(90dvh,calc(100dvh-1.5rem))] -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-x-hidden overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:w-full sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           className,
         )}
-        {...(preventClose && {
-          onInteractOutside: (e: Event) => e.preventDefault(),
-          onEscapeKeyDown: (e: Event) => e.preventDefault(),
-        })}
+        onPointerDownOutside={(event) => {
+          if (isProtectedOverlayTarget(overlayEventTarget(event))) return;
+          if (preventClose) event.preventDefault();
+        }}
+        onInteractOutside={(event) => {
+          if (isProtectedOverlayTarget(overlayEventTarget(event))) return;
+          if (preventClose) event.preventDefault();
+        }}
+        onEscapeKeyDown={(event) => {
+          if (isNestedOverlayOpen() || preventClose) event.preventDefault();
+        }}
         {...props}
       >
         {children}
