@@ -17,6 +17,12 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasToken = request.cookies.has(AUTH_COOKIE_NAME);
 
+  if (pathname === '/') {
+    const url = request.nextUrl.clone();
+    url.pathname = hasToken ? ROUTES.DASHBOARD : ROUTES.LOGIN;
+    return NextResponse.redirect(url);
+  }
+
   const isProtected = PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
@@ -33,6 +39,7 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/home',
     '/home/:path*',
     '/dashboard/:path*',

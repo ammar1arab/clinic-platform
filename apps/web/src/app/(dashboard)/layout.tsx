@@ -8,15 +8,15 @@ import { canAccessPath, hasClinicNav, homePathForRole } from '@/constants/nav-ac
 import { ROUTES } from '@/constants/routes';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, isLoading, isHydrated } = useAuth();
+  const { user, token, isLoading, isHydrated } = useAuth();
   const { t } = useLanguage();
   const pathname = usePathname();
 
-  if (!isHydrated || isLoading) {
+  if (!isHydrated || (token && isLoading)) {
     return <LoadingState variant="page" text={t.common.checkingPermissions} />;
   }
 
-  if (!isAuthenticated) {
+  if (!token || !user) {
     redirect(ROUTES.LOGIN);
   }
 

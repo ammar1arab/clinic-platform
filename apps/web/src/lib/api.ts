@@ -5,7 +5,7 @@ import { env } from './env';
 import { ROUTES } from '@/constants/routes';
 import { ENDPOINTS } from '@/constants/endpoints';
 import type { AuthErrorCode } from '@clinic/types';
-import { getToken, clearToken } from './auth-token';
+import { bearerFromConfig, clearToken, getToken } from './auth-token';
 import { createLogger } from './logger';
 
 const log = createLogger('api');
@@ -112,10 +112,15 @@ api.interceptors.response.use(
 
     if (status === 401) {
       log.debug('unauthorized', meta);
+      const sent = bearerFromConfig(error.config?.headers);
+      const current = getToken();
+      if (current && sent && sent !== current) {
+        return Promise.reject(error);
+      }
       if (typeof window !== 'undefined') {
         clearToken();
         if (!window.location.pathname.startsWith(ROUTES.LOGIN)) {
-          window.location.href = ROUTES.LOGIN;
+          window.location.replace(ROUTES.LOGIN);
         }
       }
       return Promise.reject(error);

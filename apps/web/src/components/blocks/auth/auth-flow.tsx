@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
 import type { AuthLoginResponse, AuthRecovery, AuthReset } from '@clinic/types';
 import { Card, CardContent, Button } from '@/components/ui';
 import { useAuth, useLanguage } from '@/providers';
@@ -9,8 +9,10 @@ import { useAuthMutation } from '@/hooks/api/use-auth-mutations';
 import { extractErrorMessage } from '@/lib/api';
 import { FeedbackOverlay } from '@/components/primitives/states/feedback-overlay';
 import { BrandMark } from '@/components/primitives/display/brand-mark';
+import { LoadingState } from '@/components/primitives';
 import { prepareFeedbackSound } from '@/lib/feedback-sound';
-import { homePathForRole } from '@/constants/nav-access';
+import { postLoginPath } from '@/constants/nav-access';
+import { ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 import { CredentialsForm } from './credentials-form';
 import { PasswordForm } from './password-form';
@@ -18,20 +20,26 @@ import { OtpVerificationForm } from './otp-verification-form';
 
 type Step = { next: 'login' | 'forgot' } | Exclude<AuthLoginResponse, { next: 'ready' }> | AuthRecovery | AuthReset;
 
+function readReturnPath() {
+  if (typeof window === 'undefined') return null;
+  return new URLSearchParams(window.location.search).get('from');
+}
+
 export function AuthFlow() {
   const [step, setStep] = useState<Step>({ next: 'login' });
   const [resendAt, setResendAt] = useState(0);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const completing = useRef(false);
+  const destRef = useRef(ROUTES.DASHBOARD);
   const router = useRouter();
-  const { login, user } = useAuth();
+  const { login, user, token: sessionToken, isLoading } = useAuth();
   const { t } = useLanguage();
   const mutation = useAuthMutation();
   const pending = mutation.isPending || success;
   const flipped = step.next !== 'login';
   const recovery = step.next === 'forgot' || step.next === 'reset_password' || 'recoveryToken' in step;
-  const token = 'recoveryToken' in step ? step.recoveryToken : 'setupToken' in step ? step.setupToken : '';
+  const challengeToken = 'recoveryToken' in step ? step.recoveryToken : 'setupToken' in step ? step.setupToken : '';
 
   const resetTo = (next: 'login' | 'forgot') => {
     setError('');
@@ -42,15 +50,24 @@ export function AuthFlow() {
   const complete = useCallback(() => {
     if (completing.current) return;
     completing.current = true;
-    router.replace(homePathForRole(user?.role));
-  }, [router, user?.role]);
+    router.replace(destRef.current);
+  }, [router]);
+
+  if (sessionToken && isLoading && !success) {
+    return <LoadingState variant="page" text={t.auth.signingIn} />;
+  }
+
+  if (sessionToken && user && !success) {
+    redirect(postLoginPath(user.role, readReturnPath()));
+  }
 
   const submit = async (command: Parameters<typeof mutation.mutateAsync>[0]) => {
     setError('');
     try {
       const response = await mutation.mutateAsync(command);
       if (response.next === 'ready') {
-        await login(response.accessToken);
+        const me = await login(response.accessToken);
+        destRef.current = postLoginPath(me.role, readReturnPath());
         setSuccess(true);
         return;
       }
@@ -114,8 +131,8 @@ export function AuthFlow() {
                 )}
                 {step.next === 'otp' && (
                   <OtpVerificationForm pending={pending} resendAt={resendAt}
-                    onVerify={(code) => submit({ action: 'verifyOtp', data: { code, token } })}
-                    onResend={() => submit({ action: 'sendOtp', data: { token } })} />
+                    onVerify={(code) => submit({ action: 'verifyOtp', data: { code, token: challengeToken } })}
+                    onResend={() => submit({ action: 'sendOtp', data: { token: challengeToken } })} />
                 )}
                 {(step.next === 'set_password' || step.next === 'reset_password') && (
                   <PasswordForm pending={pending}

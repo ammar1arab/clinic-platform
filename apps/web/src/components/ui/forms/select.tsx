@@ -71,7 +71,6 @@ function SelectContent({
   avoidCollisions = true,
   collisionPadding = OVERLAY_COLLISION_PADDING,
   onPointerDownOutside,
-  onInteractOutside: _onInteractOutside,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   return (

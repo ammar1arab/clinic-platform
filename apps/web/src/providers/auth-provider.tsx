@@ -13,7 +13,7 @@ const log = createLogger('auth');
 interface AuthContextType {
   user: MeResponse | null;
   token: string | null;
-  login: (token: string) => Promise<void>;
+  login: (token: string) => Promise<MeResponse>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -37,17 +37,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const login = useCallback(async (newToken: string) => {
-    queryClient.clear();
     setToken(newToken);
+    const me = await authService.getMe();
+    queryClient.setQueryData(['auth', 'me', newToken], me);
+    queryClient.removeQueries({
+      predicate: (query) => query.queryKey[0] !== 'auth',
+    });
     log.info('login');
-    await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    return me;
   }, [queryClient]);
 
   const logout = useCallback(() => {
     clearToken();
-    queryClient.setQueryData(['auth', 'me', token], null);
+    queryClient.clear();
     log.info('logout');
-  }, [queryClient, token]);
+  }, [queryClient]);
 
   const value = useMemo<AuthContextType>(() => ({
     user: user ?? null,

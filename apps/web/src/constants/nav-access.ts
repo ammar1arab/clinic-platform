@@ -32,6 +32,15 @@ export function homePathForRole(role?: Role | null): string {
   return ROUTES.DASHBOARD;
 }
 
+export function postLoginPath(role?: Role | null, from?: string | null): string {
+  const home = homePathForRole(role);
+  if (!from || !from.startsWith('/') || from.startsWith('//') || from === ROUTES.LOGIN) {
+    return home;
+  }
+  const path = from.split('?')[0] ?? from;
+  return canAccessPath(path, role) ? from : home;
+}
+
 export function canAccessPath(pathname: string, role?: Role | null): boolean {
   if (!role) return false;
   const rule = NAV_ACCESS.find(

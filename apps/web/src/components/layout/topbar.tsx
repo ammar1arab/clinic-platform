@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
 import type { Translations } from '@/i18n';
-import { ROUTES } from '@/constants/routes';
 import { useSidebar } from '@/providers/sidebar-provider';
 import {
   Button,
@@ -56,7 +55,6 @@ function resolveTitle(pathname: string, t: Translations): string {
 export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   const pathname = usePathname();
   const { logout } = useAuth();
-  const router = useRouter();
   const { setMobileOpen } = useSidebar();
   const [signOutOpen, setSignOutOpen] = useState(false);
   const { t } = useLanguage();
@@ -64,7 +62,6 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
 
   const handleSignOut = () => {
     logout();
-    router.push(ROUTES.LOGIN);
   };
 
   return (
