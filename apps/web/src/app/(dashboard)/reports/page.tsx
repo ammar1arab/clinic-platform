@@ -292,7 +292,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="page-stack space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       {catalog.map((group) => {
         const items = group.items.filter((item) => !item.finance || canFinance);
         if (!items.length) return null;

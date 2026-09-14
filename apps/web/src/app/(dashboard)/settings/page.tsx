@@ -83,7 +83,7 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="page-stack space-y-4">
+    <div className="w-full min-w-0 space-y-4">
       <div className="flex flex-col gap-2.5">
         {settingsLinks.map(({ href, title, description, icon: Icon, accent }) => (
           <IconCard

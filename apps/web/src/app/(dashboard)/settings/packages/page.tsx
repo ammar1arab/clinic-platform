@@ -168,7 +168,7 @@ export default function PackagesPage() {
   );
 
   return (
-    <div className="page-stack space-y-4">
+    <div className="w-full min-w-0 space-y-4">
       <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
 
       <div className="flex items-center gap-2">
