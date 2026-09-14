@@ -1,18 +1,21 @@
-import { ReportDocument } from "./types/report-document";
 import { formatPhoneDisplay } from "@/infrastructure";
+import { ReportDocument } from "./types/report-document";
 import {
+  appointmentPerformance,
+  ClinicLetterheadRow,
+  moneyLine,
+  reportDocument,
+  tally,
+} from "./report-document.helpers";
+import {
+  blank,
+  cell,
   formatDisplayDate,
   formatDisplayDateTime,
-  slugFilename,
+  patientName,
+  sortHourSlots,
+  weekdayName,
 } from "./utils/report-format";
-
-type ClinicLetterheadRow = {
-  name: string;
-  address: string | null;
-  phone: string | null;
-  logoUrl: string | null;
-  letterheadFooter: string | null;
-};
 
 type PatientMedicalInput = {
   clinic: ClinicLetterheadRow;
@@ -81,80 +84,113 @@ type FinanceAppointmentRow = {
   paymentMethodRef: { name: string } | null;
 };
 
-function toNumber(
-  value: { toString(): string } | number | null | undefined,
-): number {
-  if (value === null || value === undefined) return 0;
-  return Number(value) || 0;
-}
+type DirectoryPatientRow = {
+  firstNameEn: string;
+  lastNameEn: string;
+  phone?: string | null;
+  email?: string | null;
+  nationalId?: string | null;
+  gender?: string | null;
+  bloodType?: string | null;
+  dob?: Date | string | null;
+  primaryDoctorName?: string | null;
+  totalSessions?: number;
+  firstVisit?: Date | string | null;
+  lastVisit?: Date | string | null;
+  isActive: boolean;
+};
 
-function computePayable(
-  fee: { toString(): string } | number | null | undefined,
-  discount: { toString(): string } | number | null | undefined,
-  discountType: string | null | undefined,
-): { fee: number; discountAmount: number; payable: number } {
-  const baseFee = toNumber(fee);
-  const rawDiscount = toNumber(discount);
-  let discountAmount = 0;
-  if (rawDiscount > 0 && discountType) {
-    discountAmount =
-      discountType === "percentage"
-        ? (baseFee * Math.min(rawDiscount, 100)) / 100
-        : Math.min(rawDiscount, baseFee);
-  }
-  return {
-    fee: baseFee,
-    discountAmount,
-    payable: Math.max(baseFee - discountAmount, 0),
+type DirectoryPractitionerRow = {
+  name: string;
+  nameAr?: string | null;
+  title?: string | null;
+  email: string;
+  phone?: string | null;
+  departmentName?: string | null;
+  specialty?: string | null;
+  employmentType?: string | null;
+  languages: string[];
+  licenseNumber?: string | null;
+  licenseExpiry?: string | null;
+  experienceYears?: number | null;
+  defaultRoomName?: string | null;
+  gender?: string | null;
+  nationality?: string | null;
+  isActive: boolean;
+};
+
+type AppointmentReportRow = {
+  scheduledAt: Date;
+  status: string;
+  sessionType: string;
+  durationMins: number;
+  patient: {
+    firstNameEn: string;
+    lastNameEn: string;
+    nationalId?: string | null;
   };
+  doctor: { name: string };
+  service?: { name: string } | null;
+  room?: { name: string } | null;
+};
+
+type HourSlot = { dayOfWeek: number; startTime: string; endTime: string };
+
+type PractitionerProfileInput = {
+  name: string;
+  nameAr?: string | null;
+  title?: string | null;
+  email: string;
+  phone?: string | null;
+  specialty?: string | null;
+  departmentName?: string | null;
+  defaultRoomName?: string | null;
+  employmentType?: string | null;
+  languages: string[];
+  licenseNumber?: string | null;
+  licenseExpiry?: string | null;
+  experienceYears?: number | null;
+  services?: Array<{ name: string; durationMins: number; fee: string }>;
+  availabilities?: HourSlot[];
+};
+
+function phone(value?: string | null) {
+  return formatPhoneDisplay(value) || value || "-";
 }
 
-function formatMoney(n: number): string {
-  return n.toFixed(3);
+function activeLabel(isActive: boolean) {
+  return isActive ? "Active" : "Inactive";
 }
 
 export class ReportDocumentFactory {
   buildPatientMedical(input: PatientMedicalInput): ReportDocument {
     const { clinic, patient, appointments } = input;
-    const nameEn = `${patient.firstNameEn} ${patient.lastNameEn}`.trim();
-    const nameAr =
-      patient.firstNameAr || patient.lastNameAr
-        ? `${patient.firstNameAr ?? ""} ${patient.lastNameAr ?? ""}`.trim()
-        : null;
+    const nameEn = patientName(patient);
+    const nameAr = patientName({
+      firstNameEn: patient.firstNameAr,
+      lastNameEn: patient.lastNameAr,
+    });
 
-    return {
+    return reportDocument({
       type: "patient_medical",
-      title: `Patient Medical Report — ${nameEn}`,
-      filenameBase: slugFilename(["patient", nameEn, patient.id.slice(0, 8)]),
-      generatedAt: new Date(),
-      letterhead: {
-        clinicName: clinic.name,
-        address: clinic.address,
-        phone: formatPhoneDisplay(clinic.phone) || clinic.phone,
-        logoUrl: clinic.logoUrl,
-        footer: clinic.letterheadFooter,
-      },
+      title: `Patient Medical Report - ${nameEn}`,
+      filename: ["patient", nameEn, patient.id.slice(0, 8)],
+      clinic,
       summary: [
         { label: "Name (EN)", value: nameEn },
-        { label: "Name (AR)", value: nameAr ?? "—" },
-        { label: "National ID", value: patient.nationalId ?? "—" },
-        {
-          label: "Phone",
-          value: formatPhoneDisplay(patient.phone) || patient.phone || "—",
-        },
-        { label: "Email", value: patient.email ?? "—" },
+        { label: "Name (AR)", value: blank(nameAr) },
+        { label: "National ID", value: blank(patient.nationalId) },
+        { label: "Phone", value: phone(patient.phone) },
+        { label: "Email", value: blank(patient.email) },
         {
           label: "Date of Birth",
-          value: patient.dob ? formatDisplayDate(patient.dob) : "—",
+          value: patient.dob ? formatDisplayDate(patient.dob) : "-",
         },
-        { label: "Gender", value: patient.gender ?? "—" },
-        { label: "Blood Type", value: patient.bloodType ?? "—" },
-        {
-          label: "Primary Doctor",
-          value: patient.primaryDoctor?.name ?? "—",
-        },
+        { label: "Gender", value: blank(patient.gender) },
+        { label: "Blood Type", value: blank(patient.bloodType) },
+        { label: "Primary Doctor", value: blank(patient.primaryDoctor?.name) },
         { label: "Allergies", value: patient.allergies ?? "None recorded" },
-        { label: "Address", value: patient.address ?? "—" },
+        { label: "Address", value: blank(patient.address) },
         { label: "Total Visits", value: String(appointments.length) },
       ],
       columns: [
@@ -166,16 +202,16 @@ export class ReportDocumentFactory {
         { key: "type", header: "Type" },
         { key: "duration", header: "Duration" },
       ],
-      rows: appointments.map((a) => ({
-        date: formatDisplayDateTime(a.scheduledAt),
-        status: a.status,
-        doctor: a.doctor.name,
-        service: a.service?.name ?? null,
-        department: a.department?.name ?? null,
-        type: a.sessionType,
-        duration: `${a.durationMins} min`,
+      rows: appointments.map((row) => ({
+        date: formatDisplayDateTime(row.scheduledAt),
+        status: row.status,
+        doctor: row.doctor.name,
+        service: row.service?.name ?? null,
+        department: row.department?.name ?? null,
+        type: row.sessionType,
+        duration: `${row.durationMins} min`,
       })),
-    };
+    });
   }
 
   buildReferrals(input: {
@@ -184,19 +220,11 @@ export class ReportDocumentFactory {
     filtersLabel: string;
   }): ReportDocument {
     const { clinic, referrals, filtersLabel } = input;
-
-    return {
+    return reportDocument({
       type: "referrals",
       title: "Referrals & Consultations Report",
-      filenameBase: slugFilename(["referrals", filtersLabel || "all"]),
-      generatedAt: new Date(),
-      letterhead: {
-        clinicName: clinic.name,
-        address: clinic.address,
-        phone: formatPhoneDisplay(clinic.phone) || clinic.phone,
-        logoUrl: clinic.logoUrl,
-        footer: clinic.letterheadFooter,
-      },
+      filename: ["referrals", filtersLabel || "all"],
+      clinic,
       summary: [
         { label: "Filters", value: filtersLabel || "All referrals" },
         { label: "Total records", value: String(referrals.length) },
@@ -214,23 +242,20 @@ export class ReportDocumentFactory {
         { key: "opinion", header: "Opinion" },
         { key: "appointmentAt", header: "Appointment" },
       ],
-      rows: referrals.map((r) => {
-        const p = r.appointment.patient;
-        return {
-          createdAt: formatDisplayDateTime(r.createdAt),
-          patient: `${p.firstNameEn} ${p.lastNameEn}`.trim(),
-          nationalId: p.nationalId,
-          type: r.type,
-          urgency: r.urgency,
-          status: r.status,
-          fromDoctor: r.fromDoctor.name,
-          toDoctor: r.toDoctor.name,
-          reason: r.reason,
-          opinion: r.opinion,
-          appointmentAt: formatDisplayDateTime(r.appointment.scheduledAt),
-        };
-      }),
-    };
+      rows: referrals.map((row) => ({
+        createdAt: formatDisplayDateTime(row.createdAt),
+        patient: patientName(row.appointment.patient),
+        nationalId: row.appointment.patient.nationalId,
+        type: row.type,
+        urgency: row.urgency,
+        status: row.status,
+        fromDoctor: row.fromDoctor.name,
+        toDoctor: row.toDoctor.name,
+        reason: row.reason,
+        opinion: row.opinion,
+        appointmentAt: formatDisplayDateTime(row.appointment.scheduledAt),
+      })),
+    });
   }
 
   buildFinanceMonthly(input: {
@@ -239,93 +264,69 @@ export class ReportDocumentFactory {
     periodLabel: string;
   }): ReportDocument {
     const { clinic, appointments, periodLabel } = input;
-
     let paidRevenue = 0;
     let unpaidOutstanding = 0;
     let paidCount = 0;
     let unpaidCount = 0;
-    const byMethod = new Map<string, number>();
-    const byDoctor = new Map<string, number>();
 
-    const rows = appointments.map((a) => {
-      const pricing = computePayable(a.fee, a.discount, a.discountType);
+    const rows = appointments.map((row) => {
+      const pricing = moneyLine(row.fee, row.discount, row.discountType);
       const methodName =
-        a.paymentMethodRef?.name ??
-        a.paymentMethod ??
-        (a.isPaid ? "Unknown" : "—");
+        row.paymentMethodRef?.name ??
+        row.paymentMethod ??
+        (row.isPaid ? "Unknown" : "-");
 
-      if (a.isPaid) {
+      if (row.isPaid) {
         paidCount += 1;
         paidRevenue += pricing.payable;
-        byMethod.set(
-          methodName,
-          (byMethod.get(methodName) ?? 0) + pricing.payable,
-        );
-        byDoctor.set(
-          a.doctor.name,
-          (byDoctor.get(a.doctor.name) ?? 0) + pricing.payable,
-        );
       } else {
         unpaidCount += 1;
         unpaidOutstanding += pricing.payable;
       }
 
       return {
-        date: formatDisplayDateTime(a.scheduledAt),
-        patient: `${a.patient.firstNameEn} ${a.patient.lastNameEn}`.trim(),
-        nationalId: a.patient.nationalId,
-        doctor: a.doctor.name,
-        service: a.service?.name ?? null,
-        status: a.status,
-        fee: Number(pricing.fee.toFixed(3)),
-        discount: Number(pricing.discountAmount.toFixed(3)),
-        payable: Number(pricing.payable.toFixed(3)),
-        paid: a.isPaid ? "Paid" : "Unpaid",
+        date: formatDisplayDateTime(row.scheduledAt),
+        patient: patientName(row.patient),
+        nationalId: row.patient.nationalId,
+        doctor: row.doctor.name,
+        service: row.service?.name ?? null,
+        status: row.status,
+        fee: pricing.fee,
+        discount: pricing.discount,
+        payable: pricing.payable,
+        paid: row.isPaid ? "Paid" : "Unpaid",
         paymentMethod: methodName,
-        paidAt: a.paidAt ? formatDisplayDateTime(a.paidAt) : null,
+        paidAt: row.paidAt ? formatDisplayDateTime(row.paidAt) : null,
+        isPaid: row.isPaid,
+        methodName,
+        doctorName: row.doctor.name,
       };
     });
 
-    const methodSummary =
-      byMethod.size > 0
-        ? [...byMethod.entries()]
-            .sort((a, b) => b[1] - a[1])
-            .map(([name, total]) => `${name}: ${formatMoney(total)}`)
-            .join(" · ")
-        : "—";
-
-    const doctorSummary =
-      byDoctor.size > 0
-        ? [...byDoctor.entries()]
-            .sort((a, b) => b[1] - a[1])
-            .map(([name, total]) => `${name}: ${formatMoney(total)}`)
-            .join(" · ")
-        : "—";
-
-    return {
+    return reportDocument({
       type: "finance_monthly",
       title: "Finance Report",
-      filenameBase: slugFilename(["finance", periodLabel || "all"]),
-      generatedAt: new Date(),
-      letterhead: {
-        clinicName: clinic.name,
-        address: clinic.address,
-        phone: formatPhoneDisplay(clinic.phone) || clinic.phone,
-        logoUrl: clinic.logoUrl,
-        footer: clinic.letterheadFooter,
-      },
+      filename: ["finance", periodLabel || "all"],
+      clinic,
       summary: [
         { label: "Period", value: periodLabel || "All dates" },
         { label: "Appointments", value: String(appointments.length) },
         { label: "Paid", value: String(paidCount) },
         { label: "Unpaid", value: String(unpaidCount) },
-        { label: "Revenue (paid)", value: formatMoney(paidRevenue) },
+        { label: "Revenue (paid)", value: paidRevenue.toFixed(3) },
+        { label: "Outstanding (unpaid)", value: unpaidOutstanding.toFixed(3) },
         {
-          label: "Outstanding (unpaid)",
-          value: formatMoney(unpaidOutstanding),
+          label: "By payment method",
+          value: tally(rows, (row) =>
+            row.isPaid ? [row.methodName, row.payable] : null,
+          ),
         },
-        { label: "By payment method", value: methodSummary },
-        { label: "By doctor", value: doctorSummary },
+        {
+          label: "By doctor",
+          value: tally(rows, (row) =>
+            row.isPaid ? [row.doctorName, row.payable] : null,
+          ),
+        },
       ],
       columns: [
         { key: "date", header: "Date" },
@@ -341,7 +342,301 @@ export class ReportDocumentFactory {
         { key: "paymentMethod", header: "Method" },
         { key: "paidAt", header: "Paid at" },
       ],
+      rows: rows.map(
+        ({ isPaid: _paid, methodName: _method, doctorName: _doctor, ...row }) =>
+          row,
+      ),
+    });
+  }
+
+  buildPatientsDirectory(input: {
+    clinic: ClinicLetterheadRow;
+    patients: DirectoryPatientRow[];
+    filtersLabel: string;
+  }): ReportDocument {
+    const { clinic, patients, filtersLabel } = input;
+    return reportDocument({
+      type: "patients_directory",
+      title: "Patients Directory",
+      filename: ["patients-directory", filtersLabel || "all"],
+      clinic,
+      summary: [
+        { label: "Filters", value: filtersLabel || "All patients" },
+        { label: "Total records", value: String(patients.length) },
+      ],
+      columns: [
+        { key: "name", header: "Name" },
+        { key: "phone", header: "Phone" },
+        { key: "email", header: "Email" },
+        { key: "nationalId", header: "National ID" },
+        { key: "gender", header: "Gender" },
+        { key: "bloodType", header: "Blood type" },
+        { key: "dob", header: "Date of birth" },
+        { key: "primaryDoctor", header: "Primary doctor" },
+        { key: "sessions", header: "Sessions" },
+        { key: "firstVisit", header: "First visit" },
+        { key: "lastVisit", header: "Last visit" },
+        { key: "status", header: "Status" },
+      ],
+      rows: patients.map((patient) => ({
+        name: patientName(patient),
+        phone: cell(formatPhoneDisplay(patient.phone) || patient.phone),
+        email: cell(patient.email),
+        nationalId: cell(patient.nationalId),
+        gender: cell(patient.gender),
+        bloodType: cell(patient.bloodType),
+        dob: patient.dob ? formatDisplayDate(patient.dob) : null,
+        primaryDoctor: cell(patient.primaryDoctorName),
+        sessions: patient.totalSessions ?? 0,
+        firstVisit: patient.firstVisit
+          ? formatDisplayDate(patient.firstVisit)
+          : null,
+        lastVisit: patient.lastVisit
+          ? formatDisplayDate(patient.lastVisit)
+          : null,
+        status: activeLabel(patient.isActive),
+      })),
+    });
+  }
+
+  buildPractitionersDirectory(input: {
+    clinic: ClinicLetterheadRow;
+    practitioners: DirectoryPractitionerRow[];
+    filtersLabel: string;
+  }): ReportDocument {
+    const { clinic, practitioners, filtersLabel } = input;
+    return reportDocument({
+      type: "practitioners_directory",
+      title: "Practitioners Directory",
+      filename: ["practitioners-directory", filtersLabel || "all"],
+      clinic,
+      summary: [
+        { label: "Filters", value: filtersLabel || "All practitioners" },
+        { label: "Total records", value: String(practitioners.length) },
+      ],
+      columns: [
+        { key: "name", header: "Name" },
+        { key: "nameAr", header: "Name (AR)" },
+        { key: "email", header: "Email" },
+        { key: "phone", header: "Phone" },
+        { key: "department", header: "Department" },
+        { key: "specialty", header: "Specialty" },
+        { key: "employment", header: "Employment" },
+        { key: "languages", header: "Languages" },
+        { key: "license", header: "License" },
+        { key: "licenseExpiry", header: "License expiry" },
+        { key: "experience", header: "Experience" },
+        { key: "room", header: "Room" },
+        { key: "gender", header: "Gender" },
+        { key: "nationality", header: "Nationality" },
+        { key: "status", header: "Status" },
+      ],
+      rows: practitioners.map((row) => ({
+        name: row.title ? `${row.title} ${row.name}` : row.name,
+        nameAr: cell(row.nameAr),
+        email: row.email,
+        phone: cell(formatPhoneDisplay(row.phone) || row.phone),
+        department: cell(row.departmentName),
+        specialty: cell(row.specialty),
+        employment: cell(row.employmentType),
+        languages: row.languages.join(", "),
+        license: cell(row.licenseNumber),
+        licenseExpiry: row.licenseExpiry
+          ? formatDisplayDate(row.licenseExpiry)
+          : null,
+        experience: cell(row.experienceYears),
+        room: cell(row.defaultRoomName),
+        gender: cell(row.gender),
+        nationality: cell(row.nationality),
+        status: activeLabel(row.isActive),
+      })),
+    });
+  }
+
+  buildPractitionerProfile(input: {
+    clinic: ClinicLetterheadRow;
+    practitioner: PractitionerProfileInput;
+    appointments: Array<{ status: string }>;
+  }): ReportDocument {
+    const { clinic, practitioner, appointments } = input;
+    const stats = appointmentPerformance(appointments);
+    const hours = sortHourSlots(practitioner.availabilities ?? [])
+      .map(
+        (slot) =>
+          `${weekdayName(slot.dayOfWeek)} ${slot.startTime}-${slot.endTime}`,
+      )
+      .join(" · ");
+
+    return reportDocument({
+      type: "practitioner_profile",
+      title: `Practitioner Profile - ${practitioner.name}`,
+      filename: ["practitioner", practitioner.name],
+      clinic,
+      summary: [
+        { label: "Name", value: practitioner.name },
+        { label: "Name (AR)", value: blank(practitioner.nameAr) },
+        { label: "Title", value: blank(practitioner.title) },
+        { label: "Email", value: practitioner.email },
+        { label: "Phone", value: phone(practitioner.phone) },
+        { label: "Specialty", value: blank(practitioner.specialty) },
+        { label: "Department", value: blank(practitioner.departmentName) },
+        { label: "Room", value: blank(practitioner.defaultRoomName) },
+        { label: "Employment", value: blank(practitioner.employmentType) },
+        {
+          label: "Languages",
+          value: practitioner.languages.join(", ") || "-",
+        },
+        { label: "License", value: blank(practitioner.licenseNumber) },
+        {
+          label: "License expiry",
+          value: practitioner.licenseExpiry
+            ? formatDisplayDate(practitioner.licenseExpiry)
+            : "-",
+        },
+        {
+          label: "Experience",
+          value:
+            practitioner.experienceYears != null
+              ? `${practitioner.experienceYears} years`
+              : "-",
+        },
+        { label: "Visits", value: String(stats.total) },
+        { label: "Completed", value: String(stats.completed) },
+        { label: "No-shows", value: String(stats.noShows) },
+        { label: "Cancelled", value: String(stats.cancelled) },
+        { label: "Weekly hours", value: hours || "-" },
+      ],
+      columns: [
+        { key: "service", header: "Service" },
+        { key: "duration", header: "Duration" },
+        { key: "fee", header: "Fee" },
+      ],
+      rows: (practitioner.services ?? []).map((service) => ({
+        service: service.name,
+        duration: `${service.durationMins} min`,
+        fee: service.fee,
+      })),
+    });
+  }
+
+  buildPractitionerHours(input: {
+    clinic: ClinicLetterheadRow;
+    practitionerName: string;
+    availabilities: HourSlot[];
+  }): ReportDocument {
+    const rows = sortHourSlots(input.availabilities).map((slot) => ({
+      day: weekdayName(slot.dayOfWeek),
+      start: slot.startTime,
+      end: slot.endTime,
+    }));
+
+    return reportDocument({
+      type: "practitioner_hours",
+      title: `Weekly Hours - ${input.practitionerName}`,
+      filename: ["practitioner-hours", input.practitionerName],
+      clinic: input.clinic,
+      summary: [
+        { label: "Practitioner", value: input.practitionerName },
+        { label: "Blocks", value: String(rows.length) },
+      ],
+      columns: [
+        { key: "day", header: "Day" },
+        { key: "start", header: "Start" },
+        { key: "end", header: "End" },
+      ],
       rows,
-    };
+    });
+  }
+
+  buildPractitionerExceptions(input: {
+    clinic: ClinicLetterheadRow;
+    practitionerName: string;
+    timeOffs: Array<{
+      startDate: string;
+      endDate: string;
+      reason?: string | null;
+    }>;
+    overrides: Array<{
+      startAt: string;
+      endAt: string;
+      reason?: string | null;
+    }>;
+  }): ReportDocument {
+    const { clinic, practitionerName, timeOffs, overrides } = input;
+    return reportDocument({
+      type: "practitioner_exceptions",
+      title: `Leave & Extra Hours - ${practitionerName}`,
+      filename: ["practitioner-exceptions", practitionerName],
+      clinic,
+      summary: [
+        { label: "Practitioner", value: practitionerName },
+        { label: "Leave blocks", value: String(timeOffs.length) },
+        { label: "Extra hours", value: String(overrides.length) },
+      ],
+      columns: [
+        { key: "kind", header: "Type" },
+        { key: "start", header: "Start" },
+        { key: "end", header: "End" },
+        { key: "reason", header: "Reason" },
+      ],
+      rows: [
+        ...timeOffs.map((entry) => ({
+          kind: "Leave",
+          start: formatDisplayDate(entry.startDate),
+          end: formatDisplayDate(entry.endDate),
+          reason: cell(entry.reason),
+        })),
+        ...overrides.map((entry) => ({
+          kind: "Extra hours",
+          start: formatDisplayDateTime(entry.startAt),
+          end: formatDisplayDateTime(entry.endAt),
+          reason: cell(entry.reason),
+        })),
+      ],
+    });
+  }
+
+  buildAppointments(input: {
+    clinic: ClinicLetterheadRow;
+    appointments: AppointmentReportRow[];
+    title: string;
+    filenameBase: string;
+    filtersLabel: string;
+    type: "practitioner_appointments" | "clinic_appointments";
+  }): ReportDocument {
+    const stats = appointmentPerformance(input.appointments);
+    return reportDocument({
+      type: input.type,
+      title: input.title,
+      filename: [input.filenameBase, input.filtersLabel || "all"],
+      clinic: input.clinic,
+      summary: [
+        { label: "Filters", value: input.filtersLabel || "All dates" },
+        { label: "Appointments", value: String(stats.total) },
+        { label: "Completed", value: String(stats.completed) },
+        { label: "No-shows", value: String(stats.noShows) },
+        { label: "Cancelled", value: String(stats.cancelled) },
+      ],
+      columns: [
+        { key: "date", header: "Date" },
+        { key: "patient", header: "Patient" },
+        { key: "doctor", header: "Doctor" },
+        { key: "service", header: "Service" },
+        { key: "room", header: "Room" },
+        { key: "status", header: "Status" },
+        { key: "type", header: "Type" },
+        { key: "duration", header: "Duration" },
+      ],
+      rows: input.appointments.map((row) => ({
+        date: formatDisplayDateTime(row.scheduledAt),
+        patient: patientName(row.patient),
+        doctor: row.doctor.name,
+        service: row.service?.name ?? null,
+        room: row.room?.name ?? null,
+        status: row.status,
+        type: row.sessionType,
+        duration: `${row.durationMins} min`,
+      })),
+    });
   }
 }

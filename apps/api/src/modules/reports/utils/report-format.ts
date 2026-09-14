@@ -32,6 +32,48 @@ export function formatDisplayDateTime(date: Date | string): string {
   })}`;
 }
 
+export const WEEKDAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
+
+export function weekdayName(dayOfWeek: number) {
+  return WEEKDAY_NAMES[dayOfWeek] ?? String(dayOfWeek);
+}
+
+export function blank(value: string | number | null | undefined) {
+  if (value == null || value === "") return "-";
+  return String(value);
+}
+
+export function cell(
+  value: string | number | null | undefined,
+): string | number | null {
+  return value ?? null;
+}
+
+export function patientName(row: {
+  firstNameEn?: string | null;
+  lastNameEn?: string | null;
+}) {
+  return `${row.firstNameEn ?? ""} ${row.lastNameEn ?? ""}`.trim();
+}
+
+export function sortHourSlots<
+  T extends { dayOfWeek: number; startTime: string },
+>(slots: T[]) {
+  return [...slots].sort((left, right) =>
+    left.dayOfWeek === right.dayOfWeek
+      ? left.startTime.localeCompare(right.startTime)
+      : left.dayOfWeek - right.dayOfWeek,
+  );
+}
+
 export function slugFilename(parts: string[]): string {
   return parts
     .filter(Boolean)

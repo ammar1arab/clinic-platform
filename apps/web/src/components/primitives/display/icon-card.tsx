@@ -79,7 +79,8 @@ export const IconCard = forwardRef<HTMLButtonElement, IconCardProps>(
 
     const baseClasses = cn(
       "card-aura group flex w-full text-start whitespace-normal transition-colors duration-200 rounded-xl bg-card font-normal",
-      isInteractive && "hover:border-primary/40",
+      "border-0 md:border",
+      isInteractive && "md:hover:border-primary/40",
       isHorizontal
         ? "items-center justify-start gap-4 px-4 py-3.5 h-auto"
         : "h-auto flex-col items-start gap-4 p-4 sm:p-5",
@@ -111,7 +112,7 @@ export const IconCard = forwardRef<HTMLButtonElement, IconCardProps>(
       
       return (
         <div
-          className={cn(baseClasses, 'border border-border')}
+          className={cn(baseClasses, 'md:border-border')}
           {...(divProps as unknown as React.HTMLAttributes<HTMLDivElement>)}
         >
           {isHorizontal ? content : <div className={wrapperClasses}>{content}</div>}

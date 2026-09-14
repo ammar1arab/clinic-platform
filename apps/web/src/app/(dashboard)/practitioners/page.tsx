@@ -1,25 +1,72 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui';
 import { PractitionerFiltersBlock, PractitionersList } from '@/components/blocks/practitioners';
 import { ROUTES } from '@/constants/routes';
 import {
-  applyPractitionerDirectory,
   INITIAL_PRACTITIONER_FILTERS,
   type PractitionerFilterState,
 } from '@/constants/practitioner';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useDebounce } from '@/hooks/shared/use-debounce';
 import { useDepartments } from '@/hooks/api/use-departments';
-import { usePractitioners } from '@/hooks/api/use-practitioners';
+import {
+  usePractitionerDirectory,
+  usePractitioners,
+} from '@/hooks/api/use-practitioners';
 import { useRooms } from '@/hooks/api/use-rooms';
+import { useDownloadPractitionersDirectory } from '@/hooks/api/use-reports';
 import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
-import { exportPractitioners } from '@/lib/export-practitioners';
 import { toast } from 'sonner';
+import type {
+  Practitioner,
+  PractitionerFilters,
+} from '@/services/practitioners.service';
+import type { ReportFormat } from '@/services/reports.service';
 
 const PAGE_SIZE = 15;
+const EMPTY_DIRECTORY: Practitioner[] = [];
+
+function toDirectoryQuery(
+  clinicId: string,
+  search: string,
+  filters: PractitionerFilterState,
+): PractitionerFilters {
+  return {
+    clinicId,
+    search: search || undefined,
+    status: filters.status === 'all' ? undefined : filters.status,
+    departmentId: filters.departmentId || undefined,
+    employmentType: filters.employmentType || undefined,
+    gender: filters.gender || undefined,
+    language: filters.language || undefined,
+    specialty: filters.specialty || undefined,
+    roomId: filters.roomId || undefined,
+    nationality: filters.nationality || undefined,
+    license: filters.license === 'all' ? undefined : filters.license,
+    experience: filters.experience === 'all' ? undefined : filters.experience,
+    sort: filters.sort,
+  };
+}
+
+function filterResetKey(search: string, filters: PractitionerFilterState) {
+  return [
+    search,
+    filters.status,
+    filters.departmentId,
+    filters.employmentType,
+    filters.gender,
+    filters.language,
+    filters.specialty,
+    filters.roomId,
+    filters.nationality,
+    filters.license,
+    filters.experience,
+    filters.sort,
+  ].join('|');
+}
 
 export default function PractitionersPage() {
   const clinicId = useClinicId();
@@ -30,55 +77,63 @@ export default function PractitionersPage() {
   const [page, setPage] = useState(1);
 
   const debouncedSearch = useDebounce(filters.search);
-  const { data: practitioners, isLoading } = usePractitioners(clinicId);
-  const { data: departments } = useDepartments(clinicId);
-  const { data: rooms } = useRooms(clinicId);
-
-  const filtered = useMemo(
-    () =>
-      applyPractitionerDirectory(practitioners, {
-        ...filters,
-        search: debouncedSearch,
-      }),
-    [practitioners, filters, debouncedSearch],
+  const query = useMemo(
+    () => toDirectoryQuery(clinicId, debouncedSearch, filters),
+    [clinicId, debouncedSearch, filters],
   );
 
-  const [prevFiltered, setPrevFiltered] = useState(filtered);
-  if (filtered !== prevFiltered) {
-    setPrevFiltered(filtered);
+  const resetKey = filterResetKey(debouncedSearch, filters);
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey);
     setPage(1);
   }
 
-  const totalItems = filtered.length;
+  const { data: catalog } = usePractitioners(clinicId);
+  const { data: filtered, isLoading } = usePractitionerDirectory(query);
+  const { data: departments } = useDepartments(clinicId);
+  const { data: rooms } = useRooms(clinicId);
+  const directory = filtered ?? EMPTY_DIRECTORY;
+  const downloadDirectory = useDownloadPractitionersDirectory(clinicId);
+
+  const totalItems = directory.length;
   const pageCount = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
-  const pageItems = filtered.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+  const pageItems = useMemo(
+    () =>
+      directory.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE,
+      ),
+    [directory, currentPage],
   );
 
-  const patchFilters = (patch: Partial<PractitionerFilterState>) =>
-    setFilters((prev) => ({ ...prev, ...patch }));
+  const patchFilters = useCallback(
+    (patch: Partial<PractitionerFilterState>) =>
+      setFilters((prev) => ({ ...prev, ...patch })),
+    [setFilters],
+  );
 
-  const resetFilters = () =>
-    setFilters((prev) => ({
-      ...INITIAL_PRACTITIONER_FILTERS,
-      search: prev.search,
-      sort: prev.sort,
-    }));
+  const resetFilters = useCallback(
+    () =>
+      setFilters((prev) => ({
+        ...INITIAL_PRACTITIONER_FILTERS,
+        search: prev.search,
+        sort: prev.sort,
+      })),
+    [setFilters],
+  );
 
-  const handleExport = (format: Parameters<typeof exportPractitioners>[1]) => {
-    if (!filtered.length) {
-      toast.error('No practitioners to export for the current filters');
-      return;
-    }
-    exportPractitioners(filtered, format);
-    toast.success(
-      format === 'pdf'
-        ? 'Print dialog opened - choose Save as PDF'
-        : `Downloaded ${filtered.length} practitioner${filtered.length === 1 ? '' : 's'}`,
-    );
-  };
+  const handleExport = useCallback(
+    (format: ReportFormat) => {
+      if (!directory.length) {
+        toast.error('No practitioners to export for the current filters');
+        return;
+      }
+      downloadDirectory.mutate({ format, ...query });
+    },
+    [directory.length, downloadDirectory, query],
+  );
 
   const hasActiveFilters =
     Boolean(debouncedSearch) ||
@@ -100,10 +155,10 @@ export default function PractitionersPage() {
           values={filters}
           onChange={patchFilters}
           onReset={resetFilters}
-          practitioners={practitioners}
+          practitioners={catalog}
           departments={departments}
           rooms={rooms}
-          exportDisabled={isLoading || !filtered.length}
+          exportDisabled={isLoading || downloadDirectory.isPending || !directory.length}
           onExport={handleExport}
         />
       </div>

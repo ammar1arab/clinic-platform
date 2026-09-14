@@ -208,7 +208,7 @@ export function PractitionersList({
       </TableFrame>
 
       <div className="page-fill overflow-y-auto overscroll-y-contain md:hidden">
-        <div className="grid grid-cols-1 gap-2.5">
+        <div className="grid grid-cols-1 gap-4">
         {pageItems.map((p) => (
           <div
             key={p.id}

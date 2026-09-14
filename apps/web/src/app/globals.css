@@ -193,6 +193,13 @@ th, td {
   overscroll-behavior-y: contain;
 }
 
+@utility page-stack {
+  margin-inline: auto;
+  width: 100%;
+  min-width: 0;
+  max-width: 64rem;
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -666,6 +673,28 @@ th, td {
     animation: clinicRipple 1.8s ease-out infinite;
   }
 
+  .animate-clinic-success-pop {
+    animation: clinicSuccessPop 0.45s var(--overlay-ease) both;
+  }
+
+  .clinic-check-mark {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 4.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: clinicCheckDraw 0.38s var(--overlay-ease) 0.2s forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .clinic-check-mark {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+  }
+
   .animate-clinic-spark {
     transform-origin: 50% 2rem;
     animation: clinicSpark 1.15s linear infinite;
@@ -736,6 +765,23 @@ th, td {
     }
     50% {
       transform: scale(0.94);
+    }
+  }
+
+  @keyframes clinicSuccessPop {
+    from {
+      opacity: 0;
+      transform: scale(0.72);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes clinicCheckDraw {
+    to {
+      stroke-dashoffset: 0;
     }
   }
 

@@ -6,6 +6,7 @@ import type {
   CreatePractitionerResult,
   Practitioner,
   PractitionerDetail,
+  PractitionerFilters,
   ReplaceAvailabilityInput,
   ReplaceTimeOffInput,
   UpdatePractitionerInput,
@@ -17,6 +18,7 @@ export type {
   CreatePractitionerResult,
   Practitioner,
   PractitionerDetail,
+  PractitionerFilters,
   ReplaceAvailabilityInput,
   ReplaceTimeOffInput,
   UpdatePractitionerInput,
@@ -28,6 +30,11 @@ export const practitionersService = {
       .get<
         Practitioner[]
       >(ENDPOINTS.PRACTITIONERS.BASE, { params: { clinicId } })
+      .then((r) => r.data),
+
+  getDirectory: (filters: PractitionerFilters) =>
+    api
+      .get<Practitioner[]>(ENDPOINTS.PRACTITIONERS.BASE, { params: filters })
       .then((r) => r.data),
 
   getOne: (id: string) =>

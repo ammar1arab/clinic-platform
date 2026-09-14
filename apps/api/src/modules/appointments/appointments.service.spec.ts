@@ -4,6 +4,7 @@ import { AppointmentsRepository } from "./appointments.repository";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { PrismaService } from "@/prisma/prisma.service";
 import { DiscountCodesService } from "@/modules/discount-codes/discount-codes.service";
+import { PatientPackagesService } from "@/modules/patient-packages/patient-packages.service";
 import { BadRequestException } from "@nestjs/common";
 import { AppointmentStatusDto } from "./dto";
 import type { SessionType } from "@prisma/client";
@@ -17,6 +18,7 @@ type PrismaServiceMock = {
   department: { findFirst: MockFn };
   room: { findFirst: MockFn };
   doctorAvailability: { findFirst: MockFn; count: MockFn };
+  doctorAvailabilityOverride: { findFirst: MockFn };
   doctorTimeOff: { findFirst: MockFn };
   clinic: { findUnique: MockFn };
   discountCode: { findFirst: MockFn };
@@ -54,6 +56,7 @@ describe("AppointmentsService", () => {
       department: { findFirst: jest.fn() },
       room: { findFirst: jest.fn() },
       doctorAvailability: { findFirst: jest.fn(), count: jest.fn() },
+      doctorAvailabilityOverride: { findFirst: jest.fn() },
       doctorTimeOff: { findFirst: jest.fn() },
       clinic: { findUnique: jest.fn() },
       discountCode: { findFirst: jest.fn() },
@@ -84,6 +87,10 @@ describe("AppointmentsService", () => {
         { provide: DashboardGateway, useValue: gateway },
         { provide: PrismaService, useValue: prismaService },
         { provide: DiscountCodesService, useValue: discountCodesService },
+        {
+          provide: PatientPackagesService,
+          useValue: { ensureEnrollment: jest.fn(), summary: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -219,6 +226,37 @@ describe("AppointmentsService", () => {
           "https://example.com",
         ),
       ).not.toThrow();
+    });
+  });
+
+  describe("extra availability", () => {
+    it("allows a booking outside weekly hours when an override covers it", async () => {
+      prismaService.clinic.findUnique.mockResolvedValue({ timezone: "UTC" });
+      prismaService.doctorAvailability.count.mockResolvedValue(1);
+      prismaService.doctorAvailability.findFirst.mockResolvedValue(null);
+      prismaService.doctorAvailabilityOverride.findFirst.mockResolvedValue({
+        id: "ov1",
+      });
+      prismaService.doctorTimeOff.findFirst.mockResolvedValue(null);
+
+      const helpers = () =>
+        service as unknown as {
+          validateAvailability: (
+            clinicId: string,
+            doctorId: string,
+            scheduledAt: Date,
+            durationMins: number,
+          ) => Promise<void>;
+        };
+
+      await expect(
+        helpers().validateAvailability(
+          "c1",
+          "d1",
+          new Date("2026-01-05T18:00:00.000Z"),
+          30,
+        ),
+      ).resolves.toBeUndefined();
     });
   });
 

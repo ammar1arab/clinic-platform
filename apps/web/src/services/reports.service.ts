@@ -52,6 +52,53 @@ function extFor(format: ReportFormat) {
   return format;
 }
 
+function withQuery(
+  path: string,
+  params: Record<string, string | undefined>,
+) {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) q.set(key, value);
+  });
+  return `${path}?${q.toString()}`;
+}
+
+export type DirectoryDownloadParams = {
+  clinicId: string;
+  format?: ReportFormat;
+  search?: string;
+  status?: string;
+  departmentId?: string;
+  employmentType?: string;
+  gender?: string;
+  language?: string;
+  specialty?: string;
+  roomId?: string;
+  nationality?: string;
+  license?: string;
+  experience?: string;
+  sort?: string;
+  bloodType?: string;
+  primaryDoctorId?: string;
+  visitFrom?: string;
+  visitTo?: string;
+  dobFrom?: string;
+  dobTo?: string;
+  sortBy?: string;
+  sortOrder?: string;
+};
+
+function directoryQuery(params: DirectoryDownloadParams) {
+  const { clinicId, format = "pdf", ...rest } = params;
+  return {
+    clinicId,
+    format,
+    ...Object.fromEntries(
+      Object.entries(rest).filter(([, value]) => Boolean(value)),
+    ),
+  };
+}
+
 export const reportsService = {
   downloadPatientMedical: (
     patientId: string,
@@ -59,9 +106,112 @@ export const reportsService = {
     format: ReportFormat = "pdf",
   ) =>
     downloadReport(
-      `${ENDPOINTS.REPORTS.PATIENT_MEDICAL(patientId)}?clinicId=${encodeURIComponent(clinicId)}&format=${format}`,
+      withQuery(ENDPOINTS.REPORTS.PATIENT_MEDICAL(patientId), {
+        clinicId,
+        format,
+      }),
       `patient-report.${extFor(format)}`,
     ),
+
+  downloadPatientsDirectory: (params: DirectoryDownloadParams) => {
+    const format = params.format ?? "pdf";
+    return downloadReport(
+      withQuery(ENDPOINTS.REPORTS.PATIENTS_DIRECTORY, directoryQuery(params)),
+      `patients-directory.${extFor(format)}`,
+    );
+  },
+
+  downloadPractitionersDirectory: (params: DirectoryDownloadParams) => {
+    const format = params.format ?? "pdf";
+    return downloadReport(
+      withQuery(
+        ENDPOINTS.REPORTS.PRACTITIONERS_DIRECTORY,
+        directoryQuery(params),
+      ),
+      `practitioners-directory.${extFor(format)}`,
+    );
+  },
+
+  downloadPractitionerProfile: (
+    practitionerId: string,
+    clinicId: string,
+    format: ReportFormat = "pdf",
+  ) =>
+    downloadReport(
+      withQuery(ENDPOINTS.REPORTS.PRACTITIONER_PROFILE(practitionerId), {
+        clinicId,
+        format,
+      }),
+      `practitioner-profile.${extFor(format)}`,
+    ),
+
+  downloadPractitionerHours: (
+    practitionerId: string,
+    clinicId: string,
+    format: ReportFormat = "pdf",
+  ) =>
+    downloadReport(
+      withQuery(ENDPOINTS.REPORTS.PRACTITIONER_HOURS(practitionerId), {
+        clinicId,
+        format,
+      }),
+      `practitioner-hours.${extFor(format)}`,
+    ),
+
+  downloadPractitionerExceptions: (
+    practitionerId: string,
+    clinicId: string,
+    format: ReportFormat = "pdf",
+  ) =>
+    downloadReport(
+      withQuery(ENDPOINTS.REPORTS.PRACTITIONER_EXCEPTIONS(practitionerId), {
+        clinicId,
+        format,
+      }),
+      `practitioner-exceptions.${extFor(format)}`,
+    ),
+
+  downloadPractitionerAppointments: (params: {
+    practitionerId: string;
+    clinicId: string;
+    format?: ReportFormat;
+    from?: string;
+    to?: string;
+  }) => {
+    const format = params.format ?? "pdf";
+    return downloadReport(
+      withQuery(
+        ENDPOINTS.REPORTS.PRACTITIONER_APPOINTMENTS(params.practitionerId),
+        {
+          clinicId: params.clinicId,
+          format,
+          from: params.from,
+          to: params.to,
+        },
+      ),
+      `practitioner-appointments.${extFor(format)}`,
+    );
+  },
+
+  downloadClinicAppointments: (params: {
+    clinicId: string;
+    format?: ReportFormat;
+    from?: string;
+    to?: string;
+    status?: string;
+  }) => {
+    const format = params.format ?? "pdf";
+    return downloadReport(
+      withQuery(ENDPOINTS.REPORTS.APPOINTMENTS, {
+        clinicId: params.clinicId,
+        format,
+        from: params.from,
+        to: params.to,
+        status: params.status,
+      }),
+      `clinic-appointments.${extFor(format)}`,
+    );
+  },
 
   downloadReferrals: (params: {
     clinicId: string;
@@ -72,15 +222,15 @@ export const reportsService = {
     to?: string;
   }) => {
     const format = params.format ?? "pdf";
-    const q = new URLSearchParams();
-    q.set("clinicId", params.clinicId);
-    q.set("format", format);
-    if (params.patientId) q.set("patientId", params.patientId);
-    if (params.toDoctorId) q.set("toDoctorId", params.toDoctorId);
-    if (params.from) q.set("from", params.from);
-    if (params.to) q.set("to", params.to);
     return downloadReport(
-      `${ENDPOINTS.REPORTS.REFERRALS}?${q.toString()}`,
+      withQuery(ENDPOINTS.REPORTS.REFERRALS, {
+        clinicId: params.clinicId,
+        format,
+        patientId: params.patientId,
+        toDoctorId: params.toDoctorId,
+        from: params.from,
+        to: params.to,
+      }),
       `referrals.${extFor(format)}`,
     );
   },
@@ -92,13 +242,13 @@ export const reportsService = {
     to?: string;
   }) => {
     const format = params.format ?? "pdf";
-    const q = new URLSearchParams();
-    q.set("clinicId", params.clinicId);
-    q.set("format", format);
-    if (params.from) q.set("from", params.from);
-    if (params.to) q.set("to", params.to);
     return downloadReport(
-      `${ENDPOINTS.REPORTS.FINANCE}?${q.toString()}`,
+      withQuery(ENDPOINTS.REPORTS.FINANCE, {
+        clinicId: params.clinicId,
+        format,
+        from: params.from,
+        to: params.to,
+      }),
       `finance.${extFor(format)}`,
     );
   },

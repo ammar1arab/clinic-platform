@@ -161,9 +161,9 @@ export class PatientsRepository {
     });
   }
 
-  findById(id: string) {
-    return this.prisma.patient.findUnique({
-      where: { id },
+  findById(id: string, clinicId?: string) {
+    return this.prisma.patient.findFirst({
+      where: clinicId ? { id, clinicId } : { id },
       include: {
         package: {
           select: {

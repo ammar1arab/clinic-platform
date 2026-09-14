@@ -22,7 +22,7 @@ function NewAppointmentInner() {
   const backHref = schedulePath(parseScheduleView(params.get('view')));
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">
+    <div className="page-stack space-y-4">
       <PageBack backHref={backHref} backLabel={t.appointments.backToSchedule} />
 
       <AppointmentForm

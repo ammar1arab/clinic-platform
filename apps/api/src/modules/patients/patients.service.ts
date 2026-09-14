@@ -75,19 +75,34 @@ export class PatientsService {
     });
   }
 
-  async findOne(id: string) {
-    const patient = await this.patientsRepository.findById(id);
+  async findOne(id: string, clinicId?: string) {
+    const patient = await this.patientsRepository.findById(id, clinicId);
     if (!patient) {
       throw new NotFoundException("Patient not found");
     }
 
     const referrals =
       await this.patientsRepository.findReferralsByPatientId(id);
-    return { ...patient, referrals };
+    const completed = patient.appointments.filter(
+      (appointment) => appointment.status === "completed",
+    );
+    const byTime = [...patient.appointments].sort(
+      (a, b) =>
+        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+    );
+    const totalSessions = completed.length;
+    return {
+      ...patient,
+      referrals,
+      totalSessions,
+      firstVisit: byTime[0]?.scheduledAt ?? null,
+      lastVisit: byTime[byTime.length - 1]?.scheduledAt ?? null,
+      isLoyal: totalSessions >= 10,
+    };
   }
 
-  async update(id: string, dto: UpdatePatientDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdatePatientDto, clinicId?: string) {
+    await this.findOne(id, clinicId);
     const imageUrl =
       dto.imageUrl === undefined
         ? undefined
@@ -107,18 +122,18 @@ export class PatientsService {
     return patient;
   }
 
-  async deactivate(id: string) {
-    await this.findOne(id);
+  async deactivate(id: string, clinicId?: string) {
+    await this.findOne(id, clinicId);
     return this.patientsRepository.setActive(id, false);
   }
 
-  async reactivate(id: string) {
-    await this.findOne(id);
+  async reactivate(id: string, clinicId?: string) {
+    await this.findOne(id, clinicId);
     return this.patientsRepository.setActive(id, true);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, clinicId?: string) {
+    await this.findOne(id, clinicId);
     return this.patientsRepository.hardDelete(id);
   }
 }

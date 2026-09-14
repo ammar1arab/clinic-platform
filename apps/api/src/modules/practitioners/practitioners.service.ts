@@ -16,10 +16,13 @@ import { PractitionersRepository } from "./practitioners.repository";
 import {
   AssignServicesDto,
   CreatePractitionerDto,
+  PractitionerFiltersDto,
   ReplaceAvailabilityDto,
   ReplaceTimeOffDto,
   UpdatePractitionerDto,
 } from "./dto";
+import { hasSameDayOverlap } from "./availability-rules";
+import { filterPractitioners } from "./practitioner-directory";
 import {
   initialsFromName,
   mapPractitioner,
@@ -67,20 +70,21 @@ export class PractitionersService {
     return { practitioner, welcomeEmailSent };
   }
 
-  async findAll(clinicId: string) {
+  async findAll(clinicId: string, filters?: PractitionerFiltersDto) {
     if (!clinicId) throw new BadRequestException("clinicId is required");
-    return (await this.repo.findAllByClinic(clinicId)).map(mapPractitioner);
+    const rows = (await this.repo.findAllByClinic(clinicId)).map(mapPractitioner);
+    return filterPractitioners(rows, filters);
   }
 
-  async findOne(id: string) {
-    const row = await this.repo.findById(id);
+  async findOne(id: string, clinicId?: string) {
+    const row = await this.repo.findById(id, clinicId);
     if (!row) throw new NotFoundException("Practitioner not found");
     return mapPractitioner(row);
   }
 
-  async update(id: string, dto: UpdatePractitionerDto) {
+  async update(id: string, dto: UpdatePractitionerDto, clinicId?: string) {
     this.assertAvailabilityRules(dto);
-    const existing = await this.findOne(id);
+    const existing = await this.findOne(id, clinicId);
     await this.assertRefs(existing.clinicId, {
       departmentId: dto.departmentId ?? existing.departmentId ?? undefined,
       defaultRoomId:
@@ -145,37 +149,41 @@ export class PractitionersService {
     return mapPractitioner(row);
   }
 
-  async replaceServices(id: string, dto: AssignServicesDto) {
-    const existing = await this.findOne(id);
+  async replaceServices(id: string, dto: AssignServicesDto, clinicId?: string) {
+    const existing = await this.findOne(id, clinicId);
     await this.assertRefs(existing.clinicId, { serviceIds: dto.serviceIds });
     return mapPractitioner(await this.repo.replaceServices(id, dto.serviceIds));
   }
 
-  async replaceAvailability(id: string, dto: ReplaceAvailabilityDto) {
+  async replaceAvailability(
+    id: string,
+    dto: ReplaceAvailabilityDto,
+    clinicId?: string,
+  ) {
     this.assertAvailabilityRules(dto);
-    await this.findOne(id);
+    await this.findOne(id, clinicId);
     return mapPractitioner(
       await this.repo.replaceAvailability(id, dto.availabilities),
     );
   }
 
-  async replaceTimeOff(id: string, dto: ReplaceTimeOffDto) {
-    await this.findOne(id);
+  async replaceTimeOff(id: string, dto: ReplaceTimeOffDto, clinicId?: string) {
+    await this.findOne(id, clinicId);
     return mapPractitioner(await this.repo.replaceTimeOff(id, dto.timeOffs));
   }
 
-  async deactivate(id: string) {
-    await this.findOne(id);
+  async deactivate(id: string, clinicId?: string) {
+    await this.findOne(id, clinicId);
     return mapPractitioner(await this.repo.deactivate(id));
   }
 
-  async reactivate(id: string) {
-    await this.findOne(id);
+  async reactivate(id: string, clinicId?: string) {
+    await this.findOne(id, clinicId);
     return mapPractitioner(await this.repo.reactivate(id));
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, clinicId?: string) {
+    await this.findOne(id, clinicId);
     await this.repo.hardDelete(id);
   }
 
@@ -199,6 +207,7 @@ export class PractitionersService {
 
   private assertAvailabilityRules(input: {
     availabilities?: Array<{
+      dayOfWeek?: number;
       startTime: string;
       endTime: string;
       effectiveFrom?: string;
@@ -213,6 +222,12 @@ export class PractitionersService {
     if (invalidTimeSlot) {
       throw new BadRequestException(
         "Availability end time must be after start time",
+      );
+    }
+
+    if (hasSameDayOverlap(input.availabilities ?? [])) {
+      throw new BadRequestException(
+        "Working hours on the same day cannot overlap",
       );
     }
 

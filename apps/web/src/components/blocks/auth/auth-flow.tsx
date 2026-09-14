@@ -9,7 +9,7 @@ import { useAuthMutation } from '@/hooks/api/use-auth-mutations';
 import { extractErrorMessage } from '@/lib/api';
 import { FeedbackOverlay } from '@/components/primitives/states/feedback-overlay';
 import { BrandMark } from '@/components/primitives/display/brand-mark';
-import { playFeedbackSound } from '@/lib/feedback-sound';
+import { prepareFeedbackSound } from '@/lib/feedback-sound';
 import { homePathForRole } from '@/constants/nav-access';
 import { cn } from '@/lib/utils';
 import { CredentialsForm } from './credentials-form';
@@ -52,7 +52,6 @@ export function AuthFlow() {
       if (response.next === 'ready') {
         await login(response.accessToken);
         setSuccess(true);
-        playFeedbackSound();
         return;
       }
       if (response.next === 'otp') setResendAt(Date.now() + response.cooldownSeconds * 1000);
@@ -77,7 +76,10 @@ export function AuthFlow() {
   ) : null;
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-background px-4 py-8">
+    <main
+      className="grid min-h-dvh place-items-center bg-background px-4 py-8"
+      onPointerDown={prepareFeedbackSound}
+    >
       <div className="auth-flip w-full max-w-sm">
         <div className={cn('auth-flip-inner', flipped && 'auth-flip-flipped')}>
           <Card className="auth-flip-face" aura aria-hidden={flipped} inert={flipped || undefined}>

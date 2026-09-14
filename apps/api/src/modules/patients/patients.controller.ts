@@ -11,6 +11,7 @@ import {
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 import { JwtAuthGuard } from "@/modules/auth/guards";
+import { CurrentUser, type AuthUser } from "@/modules/auth/decorators";
 import { PatientsService } from "./patients.service";
 import { CreatePatientDto, UpdatePatientDto, PatientFiltersDto } from "./dto";
 
@@ -82,27 +83,31 @@ export class PatientsController {
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.patientsService.findOne(id);
+  findOne(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.patientsService.findOne(id, user.clinicId);
   }
 
   @Patch(":id")
-  update(@Param("id") id: string, @Body() dto: UpdatePatientDto) {
-    return this.patientsService.update(id, dto);
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: UpdatePatientDto,
+  ) {
+    return this.patientsService.update(id, dto, user.clinicId);
   }
 
   @Patch(":id/deactivate")
-  deactivate(@Param("id") id: string) {
-    return this.patientsService.deactivate(id);
+  deactivate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.patientsService.deactivate(id, user.clinicId);
   }
 
   @Patch(":id/reactivate")
-  reactivate(@Param("id") id: string) {
-    return this.patientsService.reactivate(id);
+  reactivate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.patientsService.reactivate(id, user.clinicId);
   }
 
   @Delete(":id")
-  remove(@Param("id") id: string) {
-    return this.patientsService.remove(id);
+  remove(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.patientsService.remove(id, user.clinicId);
   }
 }

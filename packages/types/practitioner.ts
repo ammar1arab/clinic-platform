@@ -159,3 +159,19 @@ export interface ReplaceTimeOffInput {
 export interface ReplaceAvailabilityOverridesInput {
   availabilityOverrides: DoctorAvailabilityOverrideEntry[];
 }
+
+export interface PractitionerFilters {
+  clinicId: string;
+  search?: string;
+  status?: string;
+  departmentId?: string;
+  employmentType?: string;
+  gender?: string;
+  language?: string;
+  specialty?: string;
+  roomId?: string;
+  nationality?: string;
+  license?: string;
+  experience?: string;
+  sort?: string;
+}

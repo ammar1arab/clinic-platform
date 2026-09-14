@@ -14,6 +14,7 @@ export const QUERY_KEYS = {
   practitioners: {
     all: ['practitioners'] as const,
     list: (clinicId: string) => ['practitioners', clinicId] as const,
+    directory: (filters: object) => ['practitioners', 'directory', filters] as const,
     detail: (id: string) => ['practitioners', 'detail', id] as const,
   },
   paymentMethods: {

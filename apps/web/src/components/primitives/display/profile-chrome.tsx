@@ -24,7 +24,7 @@ export function ProfileShell({
   children: ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
+    <div className="page-stack space-y-4">
       <PageBack backHref={backHref} backLabel={backLabel} actions={actions} />
       {children}
     </div>

@@ -1,6 +1,16 @@
 export type ReportFormat = "pdf" | "xlsx" | "csv" | "docx";
 
-export type ReportType = "patient_medical" | "referrals" | "finance_monthly";
+export type ReportType =
+  | "patient_medical"
+  | "patients_directory"
+  | "practitioners_directory"
+  | "practitioner_profile"
+  | "practitioner_appointments"
+  | "practitioner_hours"
+  | "practitioner_exceptions"
+  | "clinic_appointments"
+  | "referrals"
+  | "finance_monthly";
 
 export interface ReportColumn {
   key: string;

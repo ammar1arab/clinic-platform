@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import {
   OVERLAY_COLLISION_PADDING,
   OVERLAY_POP_CLASS,
-  overlayPointerProps,
+  overlayDismissProps,
 } from "@/lib/overlay"
 import { IconCheck, IconChevronDown, IconChevronUp } from '@/constants/icons'
 
@@ -71,6 +71,7 @@ function SelectContent({
   avoidCollisions = true,
   collisionPadding = OVERLAY_COLLISION_PADDING,
   onPointerDownOutside,
+  onInteractOutside: _onInteractOutside,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   return (
@@ -89,15 +90,14 @@ function SelectContent({
         avoidCollisions={avoidCollisions}
         collisionPadding={collisionPadding}
         {...props}
-        {...overlayPointerProps({ onPointerDownOutside })}
+        {...overlayDismissProps({ onPointerDownOutside })}
       >
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport
           data-position={position}
           className={cn(
-            "p-1",
-            position === "popper" &&
-              "h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width)",
+            "w-full p-1",
+            position === "popper" && "min-w-(--radix-select-trigger-width)",
           )}
         >
           {children}

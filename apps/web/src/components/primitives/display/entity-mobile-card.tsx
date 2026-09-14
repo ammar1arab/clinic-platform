@@ -41,7 +41,7 @@ export function EntityMobileCard({
           : undefined
       }
       className={cn(
-        'rounded-xl bg-card p-3 ring-1 ring-foreground/10',
+        'rounded-xl bg-card p-3',
         onClick && 'cursor-pointer',
         active === false && 'opacity-60',
         className,

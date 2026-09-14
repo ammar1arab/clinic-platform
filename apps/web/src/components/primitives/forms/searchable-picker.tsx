@@ -119,15 +119,16 @@ export function SearchablePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[min(100vw-1.5rem,var(--radix-popover-trigger-width))] max-w-[calc(100vw-1.5rem)] p-0"
+        className="w-[min(100vw-1.5rem,var(--radix-popover-trigger-width))] max-w-[calc(100vw-1.5rem)] overflow-hidden p-0"
         align="start"
+        onWheel={(event) => event.stopPropagation()}
       >
         <PickerSearch
           value={query}
           onChange={setQuery}
           placeholder={searchPlaceholder}
         />
-        <div className="max-h-60 overflow-y-auto p-1">
+        <div className="max-h-60 overflow-y-auto overscroll-contain p-1">
           {filtered.length === 0 ? (
             <p className="px-2.5 py-4 text-center text-sm text-muted-foreground">
               {emptyText ?? t.common.noMatches}

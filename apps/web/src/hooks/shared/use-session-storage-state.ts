@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('hooks/session-storage');
@@ -39,13 +39,13 @@ export function useSessionStorageState<T>(key: string, initial: T) {
     setStateInternal(readSession(key, initial));
   }
 
-  const setState = (value: T | ((prev: T) => T)) => {
+  const setState = useCallback((value: T | ((prev: T) => T)) => {
     setStateInternal((prev) => {
       const next = typeof value === 'function' ? (value as (p: T) => T)(prev) : value;
       writeSession(key, next);
       return next;
     });
-  };
+  }, [key]);
 
   return [state, setState] as const;
 }

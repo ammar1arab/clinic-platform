@@ -283,6 +283,29 @@ function refinePractitionerHours(
     }
   });
 
+  const byDay = new Map<number, typeof v.availabilities>();
+  v.availabilities.forEach((slot) => {
+    const group = byDay.get(slot.dayOfWeek) ?? [];
+    group.push(slot);
+    byDay.set(slot.dayOfWeek, group);
+  });
+  byDay.forEach((daySlots) => {
+    const ordered = [...daySlots].sort((left, right) =>
+      left.startTime.localeCompare(right.startTime),
+    );
+    ordered.forEach((slot, index) => {
+      if (index === 0) return;
+      const previous = ordered[index - 1];
+      if (previous.startTime < slot.endTime && previous.endTime > slot.startTime) {
+        ctx.addIssue({
+          path: ['availabilities', v.availabilities.indexOf(slot), 'endTime'],
+          code: 'custom',
+          message: getTranslations().validation.hoursOverlap,
+        });
+      }
+    });
+  });
+
   v.timeOffs.forEach((entry, index) => {
     if (entry.startDate && entry.endDate && entry.startDate > entry.endDate) {
       ctx.addIssue({

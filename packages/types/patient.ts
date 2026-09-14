@@ -97,6 +97,10 @@ export interface PatientDetail extends PatientProfileFields {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  totalSessions: number;
+  firstVisit: string | null;
+  lastVisit: string | null;
+  isLoyal: boolean;
   appointments: PatientDetailAppointment[];
   referrals?: PatientDetailReferral[];
 }

@@ -13,11 +13,12 @@ import {
 import { ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 import { Role } from "@prisma/client";
 import { JwtAuthGuard, RolesGuard } from "@/modules/auth/guards";
-import { Roles } from "@/modules/auth/decorators";
+import { CurrentUser, Roles, type AuthUser } from "@/modules/auth/decorators";
 import { PractitionersService } from "./practitioners.service";
 import {
   AssignServicesDto,
   CreatePractitionerDto,
+  PractitionerFiltersDto,
   ReplaceAvailabilityDto,
   ReplaceTimeOffDto,
   UpdatePractitionerDto,
@@ -38,64 +39,77 @@ export class PractitionersController {
 
   @Get()
   @ApiQuery({ name: "clinicId", required: true, type: String })
-  findAll(@Query("clinicId") clinicId: string) {
-    return this.practitionersService.findAll(clinicId);
+  findAll(@Query() filters: PractitionerFiltersDto) {
+    return this.practitionersService.findAll(filters.clinicId, filters);
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.practitionersService.findOne(id);
+  findOne(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.practitionersService.findOne(id, user.clinicId);
   }
 
   @Patch(":id/deactivate")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin)
-  deactivate(@Param("id") id: string) {
-    return this.practitionersService.deactivate(id);
+  deactivate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.practitionersService.deactivate(id, user.clinicId);
   }
 
   @Patch(":id/reactivate")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin)
-  reactivate(@Param("id") id: string) {
-    return this.practitionersService.reactivate(id);
+  reactivate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.practitionersService.reactivate(id, user.clinicId);
   }
 
   @Delete(":id")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin)
-  remove(@Param("id") id: string) {
-    return this.practitionersService.remove(id);
+  remove(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.practitionersService.remove(id, user.clinicId);
   }
 
   @Patch(":id")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin)
-  update(@Param("id") id: string, @Body() dto: UpdatePractitionerDto) {
-    return this.practitionersService.update(id, dto);
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: UpdatePractitionerDto,
+  ) {
+    return this.practitionersService.update(id, dto, user.clinicId);
   }
 
   @Put(":id/services")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin)
-  replaceServices(@Param("id") id: string, @Body() dto: AssignServicesDto) {
-    return this.practitionersService.replaceServices(id, dto);
+  replaceServices(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: AssignServicesDto,
+  ) {
+    return this.practitionersService.replaceServices(id, dto, user.clinicId);
   }
 
   @Put(":id/availability")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin)
   replaceAvailability(
+    @CurrentUser() user: AuthUser,
     @Param("id") id: string,
     @Body() dto: ReplaceAvailabilityDto,
   ) {
-    return this.practitionersService.replaceAvailability(id, dto);
+    return this.practitionersService.replaceAvailability(id, dto, user.clinicId);
   }
 
   @Put(":id/time-off")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin)
-  replaceTimeOff(@Param("id") id: string, @Body() dto: ReplaceTimeOffDto) {
-    return this.practitionersService.replaceTimeOff(id, dto);
+  replaceTimeOff(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: ReplaceTimeOffDto,
+  ) {
+    return this.practitionersService.replaceTimeOff(id, dto, user.clinicId);
   }
 }

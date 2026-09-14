@@ -75,6 +75,15 @@ export const ENDPOINTS = {
   },
   REPORTS: {
     PATIENT_MEDICAL: (patientId: string) => `/reports/patients/${patientId}`,
+    PATIENTS_DIRECTORY: "/reports/patients-directory",
+    PRACTITIONERS_DIRECTORY: "/reports/practitioners-directory",
+    PRACTITIONER_PROFILE: (id: string) => `/reports/practitioners/${id}`,
+    PRACTITIONER_APPOINTMENTS: (id: string) =>
+      `/reports/practitioners/${id}/appointments`,
+    PRACTITIONER_HOURS: (id: string) => `/reports/practitioners/${id}/hours`,
+    PRACTITIONER_EXCEPTIONS: (id: string) =>
+      `/reports/practitioners/${id}/exceptions`,
+    APPOINTMENTS: "/reports/appointments",
     REFERRALS: "/reports/referrals",
     FINANCE: "/reports/finance",
   },

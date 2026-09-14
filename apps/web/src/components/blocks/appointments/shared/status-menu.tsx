@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -9,45 +8,14 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { PickerSearch } from '@/components/primitives';
-import { SCHEDULE_FILTER_STATUSES, getStatusConfig, STATUS_OPTIONS } from '@/constants/appointment';
+import { SCHEDULE_FILTER_STATUSES, STATUS_OPTIONS } from '@/constants/appointment';
 import { cn } from '@/lib/utils';
 import type { AppointmentStatus } from '@/services/appointments.service';
 import { StatusBadgeBlock } from './status-badge';
 import { IconChevronDown, IconSpinner } from '@/constants/icons';
 import { useLanguage } from '@/providers';
-import type { Translations } from '@/i18n';
 
-export const STATUS_MENU_CONTENT_CLASS = 'min-w-56 w-56 p-0';
-
-function filterStatuses(query: string, options: AppointmentStatus[], t: Translations) {
-  const term = query.trim().toLowerCase();
-  if (!term) return options;
-  return options.filter((status) => {
-    const label = getStatusConfig(t)[status].label;
-    return label.toLowerCase().includes(term);
-  });
-}
-
-function StatusSearch({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-}) {
-  return (
-    <div
-      className="sticky top-0 z-10 bg-popover"
-      onPointerDown={(event) => event.stopPropagation()}
-      onKeyDown={(event) => event.stopPropagation()}
-    >
-      <PickerSearch value={value} onChange={onChange} placeholder={placeholder} />
-    </div>
-  );
-}
+export const STATUS_MENU_CONTENT_CLASS = 'min-w-56 w-56';
 
 export function StatusMenuItems({
   options = STATUS_OPTIONS,
@@ -61,39 +29,23 @@ export function StatusMenuItems({
   title?: string;
 }) {
   const { t } = useLanguage();
-  const [query, setQuery] = useState('');
-  const filtered = useMemo(() => filterStatuses(query, options, t), [query, options, t]);
 
   return (
-    <>
-      <StatusSearch
-        value={query}
-        onChange={setQuery}
-        placeholder={t.practitioner.searchStatus}
-      />
-      <div className="max-h-60 overflow-y-auto p-1">
-        <DropdownMenuRadioGroup
-          aria-label={title ?? t.appointments.updateStatus}
-          value={value}
-          onValueChange={(next) => onChange(next as AppointmentStatus)}
+    <DropdownMenuRadioGroup
+      aria-label={title ?? t.appointments.updateStatus}
+      value={value}
+      onValueChange={(next) => onChange(next as AppointmentStatus)}
+    >
+      {options.map((status) => (
+        <DropdownMenuRadioItem
+          key={status}
+          value={status}
+          className="cursor-pointer rounded-md px-2 py-1.5"
         >
-          {filtered.map((status) => (
-            <DropdownMenuRadioItem
-              key={status}
-              value={status}
-              className="cursor-pointer rounded-md px-2 py-1.5"
-            >
-              <StatusBadgeBlock status={status} tip={false} />
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-        {filtered.length === 0 ? (
-          <p className="px-2.5 py-3 text-center text-sm text-muted-foreground">
-            {t.common.noMatches}
-          </p>
-        ) : null}
-      </div>
-    </>
+          <StatusBadgeBlock status={status} tip={false} />
+        </DropdownMenuRadioItem>
+      ))}
+    </DropdownMenuRadioGroup>
   );
 }
 
@@ -106,35 +58,19 @@ export function StatusFilterItems({
   active: Set<AppointmentStatus>;
   onToggle: (status: AppointmentStatus) => void;
 }) {
-  const { t } = useLanguage();
-  const [query, setQuery] = useState('');
-  const filtered = useMemo(() => filterStatuses(query, options, t), [query, options, t]);
-
   return (
     <>
-      <StatusSearch
-        value={query}
-        onChange={setQuery}
-        placeholder={t.practitioner.searchStatus}
-      />
-      <div className="max-h-60 overflow-y-auto p-1">
-        {filtered.map((status) => (
-          <DropdownMenuCheckboxItem
-            key={status}
-            checked={active.has(status)}
-            onCheckedChange={() => onToggle(status)}
-            onSelect={(event) => event.preventDefault()}
-            className="gap-2 rounded-md px-2 py-1.5"
-          >
-            <StatusBadgeBlock status={status} tip={false} />
-          </DropdownMenuCheckboxItem>
-        ))}
-        {filtered.length === 0 ? (
-          <p className="px-2.5 py-3 text-center text-sm text-muted-foreground">
-            {t.common.noMatches}
-          </p>
-        ) : null}
-      </div>
+      {options.map((status) => (
+        <DropdownMenuCheckboxItem
+          key={status}
+          checked={active.has(status)}
+          onCheckedChange={() => onToggle(status)}
+          onSelect={(event) => event.preventDefault()}
+          className="gap-2 rounded-md px-2 py-1.5"
+        >
+          <StatusBadgeBlock status={status} tip={false} />
+        </DropdownMenuCheckboxItem>
+      ))}
     </>
   );
 }

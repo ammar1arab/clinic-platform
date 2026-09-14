@@ -4,7 +4,12 @@ import {
   BadRequestException,
   ConflictException,
 } from "@nestjs/common";
-import { AppointmentStatus, Role, type Room, type Service } from "@prisma/client";
+import {
+  AppointmentStatus,
+  Role,
+  type Room,
+  type Service,
+} from "@prisma/client";
 import { AppointmentsRepository } from "./appointments.repository";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { PrismaService } from "@/prisma/prisma.service";
@@ -21,6 +26,41 @@ import {
   SessionTypeDto,
   DiscountTypeDto,
 } from "./dto";
+
+function asDate(value: Date | string | null | undefined) {
+  if (value == null || value === "") return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function queueClock(
+  status: string,
+  existing: { waitingStartedAt?: Date | string | null },
+) {
+  const now = new Date();
+  const alreadyStarted = asDate(existing.waitingStartedAt);
+
+  if (
+    status === AppointmentStatusDto.waiting ||
+    status === AppointmentStatusDto.checked_in
+  ) {
+    return { waitingStartedAt: alreadyStarted ?? now };
+  }
+
+  if (status === AppointmentStatusDto.in_progress) {
+    const waitingStartedAt = alreadyStarted ?? now;
+    return {
+      waitingStartedAt,
+      inProgressAt: now,
+      waitingMins: Math.max(
+        0,
+        Math.floor((now.getTime() - waitingStartedAt.getTime()) / 60_000),
+      ),
+    };
+  }
+
+  return {};
+}
 
 type ValidateEntitiesInput = {
   patientId: string;
@@ -240,7 +280,18 @@ export class AppointmentsService {
       });
 
       if (!avail) {
-        throw new BadRequestException("Doctor is not available at this time");
+        const override = await this.prisma.doctorAvailabilityOverride.findFirst(
+          {
+            where: {
+              doctorId,
+              startAt: { lte: scheduledAt },
+              endAt: { gte: endAt },
+            },
+          },
+        );
+        if (!override) {
+          throw new BadRequestException("Doctor is not available at this time");
+        }
       }
     }
 
@@ -571,37 +622,7 @@ export class AppointmentsService {
     if (dto.status && String(dto.status) !== String(existing.status)) {
       updateData.statusUpdatedBy = userId;
       updateData.statusUpdatedAt = new Date();
-
-      const nextStatus = String(dto.status);
-      const scheduledAt =
-        existing.scheduledAt instanceof Date
-          ? existing.scheduledAt
-          : new Date(existing.scheduledAt);
-
-      if (
-        nextStatus === AppointmentStatusDto.waiting ||
-        nextStatus === AppointmentStatusDto.checked_in
-      ) {
-        if (!existing.waitingStartedAt) {
-          updateData.waitingStartedAt = scheduledAt;
-        }
-      }
-
-      if (nextStatus === AppointmentStatusDto.in_progress) {
-        const waitingStartedAt =
-          existing.waitingStartedAt ??
-          updateData.waitingStartedAt ??
-          scheduledAt;
-        const inProgressAt = new Date();
-        updateData.waitingStartedAt = waitingStartedAt;
-        updateData.inProgressAt = inProgressAt;
-        updateData.waitingMins = Math.max(
-          0,
-          Math.floor(
-            (inProgressAt.getTime() - waitingStartedAt.getTime()) / 60_000,
-          ),
-        );
-      }
+      Object.assign(updateData, queueClock(String(dto.status), existing));
     }
 
     const appointment = await this.appointmentsRepository.update(

@@ -38,21 +38,29 @@ export function keepNestedPortals(event: DismissEvent) {
   }
 }
 
-export function overlayPointerProps<TPointer, TInteract>(handlers?: {
+export function overlayDismissProps<TPointer>(handlers?: {
   onPointerDownOutside?: (event: TPointer) => void;
-  onInteractOutside?: (event: TInteract) => void;
 }) {
   return {
     onPointerDownOutside: (event: TPointer) => {
       preventDismissOnOwnTrigger(event as DismissEvent);
       handlers?.onPointerDownOutside?.(event);
     },
+    onCloseAutoFocus: (event: Event) => {
+      event.preventDefault();
+    },
+  };
+}
+
+export function overlayPointerProps<TPointer, TInteract>(handlers?: {
+  onPointerDownOutside?: (event: TPointer) => void;
+  onInteractOutside?: (event: TInteract) => void;
+}) {
+  return {
+    ...overlayDismissProps(handlers),
     onInteractOutside: (event: TInteract) => {
       preventDismissOnOwnTrigger(event as DismissEvent);
       handlers?.onInteractOutside?.(event);
-    },
-    onCloseAutoFocus: (event: Event) => {
-      event.preventDefault();
     },
   };
 }

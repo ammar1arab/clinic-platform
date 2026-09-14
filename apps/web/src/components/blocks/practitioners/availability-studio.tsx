@@ -28,6 +28,7 @@ import { keepNestedPortals } from '@/lib/overlay';
 import { formatTimeRange, parseClock, toClockValue, toDateParam } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 import type { PractitionerHoursData } from '@/lib/validations';
+import { toast } from 'sonner';
 import { useLanguage } from '@/providers';
 import {
   Controller,
@@ -50,6 +51,10 @@ const DEFAULT_END = '17:00';
 
 function timeValue(date: Date) {
   return toClockValue(date.getHours(), date.getMinutes());
+}
+
+function clocksOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string) {
+  return aStart < bEnd && aEnd > bStart;
 }
 
 function minutesBetween(startTime: string, endTime: string) {
@@ -139,14 +144,39 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
         10,
     ) / 10;
 
+  const overlapsDay = (
+    dayOfWeek: number,
+    startTime: string,
+    endTime: string,
+    ignoreIndex?: number,
+  ) =>
+    values.availabilities.some(
+      (slot, index) =>
+        index !== ignoreIndex &&
+        slot.dayOfWeek === dayOfWeek &&
+        clocksOverlap(startTime, endTime, slot.startTime, slot.endTime),
+    );
+
+  const rejectOverlap = () => {
+    toast.error(t.validation.hoursOverlap);
+  };
+
   const updateSlotFromEvent = (index: number, start: Date | null, end: Date | null) => {
-    if (!start || !end) return;
-    hoursSetValue(`availabilities.${index}.dayOfWeek`, start.getDay(), { shouldDirty: true });
-    hoursSetValue(`availabilities.${index}.startTime`, timeValue(start), { shouldDirty: true });
-    hoursSetValue(`availabilities.${index}.endTime`, timeValue(end), {
+    if (!start || !end) return false;
+    const dayOfWeek = start.getDay();
+    const startTime = timeValue(start);
+    const endTime = timeValue(end);
+    if (overlapsDay(dayOfWeek, startTime, endTime, index)) {
+      rejectOverlap();
+      return false;
+    }
+    hoursSetValue(`availabilities.${index}.dayOfWeek`, dayOfWeek, { shouldDirty: true });
+    hoursSetValue(`availabilities.${index}.startTime`, startTime, { shouldDirty: true });
+    hoursSetValue(`availabilities.${index}.endTime`, endTime, {
       shouldDirty: true,
       shouldValidate: true,
     });
+    return true;
   };
 
   const closeSlot = () => setEditor(null);
@@ -165,14 +195,21 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
   };
 
   const handleSelect = (selection: DateSelectArg) => {
+    const dayOfWeek = selection.start.getDay();
+    const startTime = timeValue(selection.start);
+    const endTime = timeValue(selection.end);
+    selection.view.calendar.unselect();
+    if (overlapsDay(dayOfWeek, startTime, endTime)) {
+      rejectOverlap();
+      return;
+    }
     onAddAvailability({
-      dayOfWeek: selection.start.getDay(),
-      startTime: timeValue(selection.start),
-      endTime: timeValue(selection.end),
+      dayOfWeek,
+      startTime,
+      endTime,
       effectiveFrom: '',
       effectiveUntil: '',
     });
-    selection.view.calendar.unselect();
     closeSlot();
   };
 
@@ -181,7 +218,8 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
   };
 
   const handleEventMove = (event: EventDropArg | EventResizeDoneArg) => {
-    updateSlotFromEvent(Number(event.event.id), event.event.start, event.event.end);
+    const applied = updateSlotFromEvent(Number(event.event.id), event.event.start, event.event.end);
+    if (!applied) event.revert();
   };
 
   const selectedIndex = editor?.mode === 'edit' ? editor.index : null;
@@ -194,7 +232,9 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
     editor?.mode === 'create' ||
     (editor?.mode === 'edit' && Boolean(activeSlot));
   const createValid =
-    editor?.mode === 'create' && minutesBetween(editor.startTime, editor.endTime) > 0;
+    editor?.mode === 'create' &&
+    minutesBetween(editor.startTime, editor.endTime) > 0 &&
+    !overlapsDay(editor.dayOfWeek, editor.startTime, editor.endTime);
 
   return (
     <div className="space-y-4">
@@ -413,6 +453,10 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
                 disabled={!createValid}
                 onClick={() => {
                   if (editor.mode !== 'create' || !createValid) return;
+                  if (overlapsDay(editor.dayOfWeek, editor.startTime, editor.endTime)) {
+                    rejectOverlap();
+                    return;
+                  }
                   onAddAvailability({
                     dayOfWeek: editor.dayOfWeek,
                     startTime: editor.startTime,

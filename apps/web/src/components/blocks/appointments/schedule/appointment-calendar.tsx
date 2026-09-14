@@ -206,7 +206,9 @@ export function AppointmentCalendar({
       if (
         hasScheduleConflict(appointments, appt, info.event.start.getTime(), durationMins)
       ) {
-        toast.warning(t.appointments.scheduleConflictWarning);
+        toast.error(t.appointments.scheduleConflictWarning);
+        info.revert();
+        return;
       }
 
       updateMutation.mutate(

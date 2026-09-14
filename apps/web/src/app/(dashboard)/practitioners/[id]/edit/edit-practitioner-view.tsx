@@ -34,7 +34,7 @@ export function EditPractitionerView({ id }: { id: string }) {
   const titleName = data ? getStaffName(data, lang) : '';
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-3xl space-y-4">
+    <div className="page-stack space-y-4">
       <PageBack
         backHref={ROUTES.PRACTITIONER_DETAIL(id)}
         backLabel={t.practitioner.backToProfile}

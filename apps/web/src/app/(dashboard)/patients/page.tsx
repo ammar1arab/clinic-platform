@@ -14,9 +14,10 @@ import {
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { DEFAULT_PATIENT_SORT, parsePatientSort } from '@/constants/patient';
 import { ROUTES } from '@/constants/routes';
+import { useDownloadPatientsDirectory } from '@/hooks/api/use-reports';
 import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
-import { exportPatients } from '@/lib/export-patients';
 import { toast } from 'sonner';
+import type { ReportFormat } from '@/services/reports.service';
 
 const INITIAL_FILTERS: PatientFilterState = {
   search: '',
@@ -59,6 +60,7 @@ export default function PatientsPage() {
     sortBy,
     sortOrder,
   });
+  const downloadDirectory = useDownloadPatientsDirectory(clinicId);
 
   const patchFilters = (patch: Partial<PatientFilterState>) =>
     setFilters((prev) => ({ ...prev, ...patch }));
@@ -70,17 +72,26 @@ export default function PatientsPage() {
       sort: prev.sort,
     }));
 
-  const handleExport = (format: Parameters<typeof exportPatients>[1]) => {
+  const handleExport = (format: ReportFormat) => {
     if (!patients?.length) {
       toast.error('No patients to export for the current filters');
       return;
     }
-    exportPatients(patients, format);
-    toast.success(
-      format === 'pdf'
-        ? 'Print dialog opened - choose Save as PDF'
-        : `Downloaded ${patients.length} patient${patients.length === 1 ? '' : 's'}`,
-    );
+    downloadDirectory.mutate({
+      format,
+      search: debouncedSearch || undefined,
+      status: filters.status,
+      gender: filters.gender || undefined,
+      bloodType: filters.bloodType || undefined,
+      primaryDoctorId: filters.primaryDoctorId || undefined,
+      departmentId: filters.departmentId || undefined,
+      visitFrom: filters.visitFrom || undefined,
+      visitTo: filters.visitTo || undefined,
+      dobFrom: filters.dobFrom || undefined,
+      dobTo: filters.dobTo || undefined,
+      sortBy,
+      sortOrder,
+    });
   };
 
   const hasActiveFilters =
@@ -104,7 +115,7 @@ export default function PatientsPage() {
           onReset={resetFilters}
           staff={staff}
           departments={departments}
-          exportDisabled={isLoading || !patients?.length}
+          exportDisabled={isLoading || downloadDirectory.isPending || !patients?.length}
           onExport={handleExport}
         />
       </div>

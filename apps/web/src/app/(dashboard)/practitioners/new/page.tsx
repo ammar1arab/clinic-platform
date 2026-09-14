@@ -13,7 +13,7 @@ export default function NewPractitionerPage() {
   const { t } = useLanguage();
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
+    <div className="page-stack space-y-4">
       <PageBack backHref={ROUTES.PRACTITIONERS} backLabel={t.practitioner.backToPractitioners} />
       <PractitionerForm
         clinicId={clinicId}

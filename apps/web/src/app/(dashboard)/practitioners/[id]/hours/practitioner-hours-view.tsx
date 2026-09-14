@@ -16,7 +16,7 @@ export function PractitionerHoursView({ id }: { id: string }) {
   const { data, isLoading, isError } = usePractitioner(id);
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-5xl space-y-4">
+    <div className="page-stack space-y-4">
       <PageBack
         backHref={ROUTES.PRACTITIONER_DETAIL(id)}
         backLabel={t.practitioner.backToProfile}

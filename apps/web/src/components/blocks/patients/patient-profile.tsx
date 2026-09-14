@@ -64,10 +64,9 @@ export function PatientProfile({ patientId }: { patientId: string }) {
         age != null ? ` (${age} ${t.patient.yrs})` : ''
       }`
     : null;
-  const isLoyal =
-    patient.appointments.filter((a) => a.status === 'completed').length >= 10;
-  const firstVisit = patient.appointments.at(-1)?.scheduledAt;
-  const lastVisit = patient.appointments.at(0)?.scheduledAt;
+  const isLoyal = patient.isLoyal;
+  const firstVisit = patient.firstVisit;
+  const lastVisit = patient.lastVisit;
 
   return (
     <ProfileShell

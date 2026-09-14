@@ -5,12 +5,19 @@ import type {
   CreatePractitionerResult,
   Practitioner,
   PractitionerDetail,
+  PractitionerFilters,
   UpdatePractitionerInput,
 } from '@/services/practitioners.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { createCrudHooks, useFetchData, useApiMutation } from '../query';
+import {
+  createCrudHooks,
+  LIVE_LIST_OPTIONS,
+  useFetchData,
+  useApiMutation,
+} from '../query';
 
 const writeKeys = (clinicId: string, id?: string) => [
+  QUERY_KEYS.practitioners.all,
   QUERY_KEYS.practitioners.list(clinicId),
   QUERY_KEYS.clinics.staff(clinicId),
   QUERY_KEYS.appointments.all,
@@ -39,6 +46,14 @@ const {
   },
   invalidateOnWrite: (clinicId) => writeKeys(clinicId),
 });
+
+export function usePractitionerDirectory(filters: PractitionerFilters) {
+  return useFetchData<Practitioner[]>({
+    queryKey: QUERY_KEYS.practitioners.directory(filters),
+    request: () => practitionersService.getDirectory(filters),
+    options: { ...LIVE_LIST_OPTIONS, enabled: !!filters.clinicId },
+  });
+}
 
 export function usePractitioner(id: string) {
   return useFetchData<PractitionerDetail>({
