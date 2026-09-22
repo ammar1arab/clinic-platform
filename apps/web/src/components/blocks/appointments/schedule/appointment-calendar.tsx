@@ -1,10 +1,13 @@
-'use client';
+"use client";
 
-import { useCallback, useMemo, useRef, useState, type MouseEvent } from 'react';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin, { type DateClickArg, type EventResizeDoneArg } from '@fullcalendar/interaction';
+import { useCallback, useMemo, useRef, useState, type MouseEvent } from "react";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin, {
+  type DateClickArg,
+  type EventResizeDoneArg,
+} from "@fullcalendar/interaction";
 import {
   DatesSetArg,
   EventClickArg,
@@ -12,31 +15,34 @@ import {
   EventDropArg,
   EventMountArg,
   MoreLinkContentArg,
-} from '@fullcalendar/core';
-import { Badge } from '@/components/ui';
-import { cn } from '@/lib/utils';
-import { Appointment } from '@/services/appointments.service';
-import { STATUS_COLORS } from '../shared/status-badge';
-import { patientDisplayName } from '../shared/appointment-display';
-import { CalendarEventChip, readCalendarAppointment } from './calendar-event-chip';
+} from "@fullcalendar/core";
+import { Badge } from "@/components/ui";
+import { cn } from "@/lib/utils";
+import { Appointment } from "@/services/appointments.service";
+import { STATUS_COLORS } from "../shared/status-badge";
+import { patientDisplayName } from "../shared/appointment-display";
+import {
+  CalendarEventChip,
+  readCalendarAppointment,
+} from "./calendar-event-chip";
 import {
   AppointmentPopover,
   DayAppointmentsPopover,
   popoverAnchorFromElement,
   type AppointmentPopoverState,
   type DayAppointmentsPopoverState,
-} from './appointment-popovers';
-import { FC_TO_VIEW, ScheduleView, VIEW_TO_FC } from './schedule-nav';
-import { CalendarSkeleton } from './calendar-skeleton';
-import { ViewFocusToggle } from './view-focus';
-import { useUpdateAppointment } from '@/hooks/api/use-appointments';
-import { useResizeObserver } from '@/hooks/shared/use-resize-observer';
-import { useIsMobile } from '@/hooks/shared/use-media-query';
-import { toast } from 'sonner';
-import { extractErrorMessage } from '@/lib/api';
-import { formatTime, toDateParam } from '@/lib/datetime';
-import { useLanguage } from '@/providers';
-import arLocale from '@fullcalendar/core/locales/ar';
+} from "./appointment-popovers";
+import { FC_TO_VIEW, ScheduleView, VIEW_TO_FC } from "./schedule-nav";
+import { CalendarSkeleton } from "./calendar-skeleton";
+import { ViewFocusToggle } from "./view-focus";
+import { useUpdateAppointment } from "@/hooks/api/use-appointments";
+import { useResizeObserver } from "@/hooks/shared/use-resize-observer";
+import { useIsMobile } from "@/hooks/shared/use-media-query";
+import { toast } from "sonner";
+import { extractErrorMessage } from "@/lib/api";
+import { formatTime, toDateParam } from "@/lib/datetime";
+import { useLanguage } from "@/providers";
+import arLocale from "@fullcalendar/core/locales/ar";
 
 const PLUGINS = [dayGridPlugin, timeGridPlugin, interactionPlugin];
 
@@ -51,20 +57,22 @@ function hasScheduleConflict(
     appointments?.some((other) => {
       if (
         other.id === appointment.id ||
-        other.status === 'cancelled' ||
-        other.status === 'no_show'
+        other.status === "cancelled" ||
+        other.status === "no_show"
       ) {
         return false;
       }
       const otherStart = new Date(other.scheduledAt).getTime();
-      const overlaps = startTime < otherStart + other.durationMins * 60000 && endTime > otherStart;
+      const overlaps =
+        startTime < otherStart + other.durationMins * 60000 &&
+        endTime > otherStart;
       return (
         overlaps &&
         (other.doctorId === appointment.doctorId ||
           Boolean(
             appointment.roomId &&
-              other.roomId &&
-              other.roomId === appointment.roomId,
+            other.roomId &&
+            other.roomId === appointment.roomId,
           ))
       );
     }),
@@ -100,7 +108,8 @@ export function AppointmentCalendar({
   const { t, lang } = useLanguage();
   const [appointmentPopover, setAppointmentPopover] =
     useState<AppointmentPopoverState | null>(null);
-  const [dayPopover, setDayPopover] = useState<DayAppointmentsPopoverState | null>(null);
+  const [dayPopover, setDayPopover] =
+    useState<DayAppointmentsPopoverState | null>(null);
 
   const { events, appointmentsByDay } = useMemo(() => {
     const byDay = new Map<string, Appointment[]>();
@@ -115,15 +124,18 @@ export function AppointmentCalendar({
         title: patientDisplayName(appointment, lang),
         start: appointment.scheduledAt,
         end: new Date(
-          new Date(appointment.scheduledAt).getTime() + appointment.durationMins * 60000,
+          new Date(appointment.scheduledAt).getTime() +
+            appointment.durationMins * 60000,
         ).toISOString(),
         backgroundColor: STATUS_COLORS[appointment.status],
         borderColor: STATUS_COLORS[appointment.status],
-        textColor: 'var(--color-primary-foreground)',
-        display: 'block' as const,
+        textColor: "var(--color-primary-foreground)",
+        display: "block" as const,
         editable:
-          appointment.status !== 'cancelled' && appointment.status !== 'completed',
-        classNames: appointment.status === 'cancelled' ? ['fc-event-cancelled'] : [],
+          appointment.status !== "cancelled" &&
+          appointment.status !== "completed",
+        classNames:
+          appointment.status === "cancelled" ? ["fc-event-cancelled"] : [],
         extendedProps: { appointment },
       };
     });
@@ -150,9 +162,13 @@ export function AppointmentCalendar({
 
   const handleDateClick = useCallback(
     (arg: DateClickArg) => {
-      if (arg.view.type !== 'dayGridMonth') return;
+      if (arg.view.type !== "dayGridMonth") return;
       const target = arg.jsEvent.target;
-      if (target instanceof Element && target.closest('.fc-event, .fc-more-link')) return;
+      if (
+        target instanceof Element &&
+        target.closest(".fc-event, .fc-more-link")
+      )
+        return;
       setDayPopover(null);
       setAppointmentPopover(null);
       const slot = new Date(arg.date);
@@ -189,7 +205,7 @@ export function AppointmentCalendar({
         info.revert();
         return;
       }
-      if (appt.status === 'cancelled') {
+      if (appt.status === "cancelled") {
         toast.error(t.appointments.cancelledCannotReschedule);
         info.revert();
         return;
@@ -199,12 +215,19 @@ export function AppointmentCalendar({
       const durationMins = info.event.end
         ? Math.max(
             15,
-            Math.round((info.event.end.getTime() - info.event.start.getTime()) / 60000),
+            Math.round(
+              (info.event.end.getTime() - info.event.start.getTime()) / 60000,
+            ),
           )
         : appt.durationMins;
 
       if (
-        hasScheduleConflict(appointments, appt, info.event.start.getTime(), durationMins)
+        hasScheduleConflict(
+          appointments,
+          appt,
+          info.event.start.getTime(),
+          durationMins,
+        )
       ) {
         toast.error(t.appointments.scheduleConflictWarning);
         info.revert();
@@ -216,7 +239,9 @@ export function AppointmentCalendar({
         {
           onError: (err) => {
             info.revert();
-            toast.error(extractErrorMessage(err) || t.appointments.rescheduleFailed);
+            toast.error(
+              extractErrorMessage(err) || t.appointments.rescheduleFailed,
+            );
           },
         },
       );
@@ -231,14 +256,16 @@ export function AppointmentCalendar({
         info.revert();
         return;
       }
-      if (appt.status === 'cancelled') {
+      if (appt.status === "cancelled") {
         info.revert();
         return;
       }
 
       const durationMins = Math.max(
         15,
-        Math.round((info.event.end.getTime() - info.event.start.getTime()) / 60000),
+        Math.round(
+          (info.event.end.getTime() - info.event.start.getTime()) / 60000,
+        ),
       );
 
       updateMutation.mutate(
@@ -246,7 +273,9 @@ export function AppointmentCalendar({
         {
           onError: (err) => {
             info.revert();
-            toast.error(extractErrorMessage(err) || t.appointments.durationUpdateFailed);
+            toast.error(
+              extractErrorMessage(err) || t.appointments.durationUpdateFailed,
+            );
           },
         },
       );
@@ -256,11 +285,14 @@ export function AppointmentCalendar({
 
   const renderMoreLinkContent = useCallback(
     (arg: MoreLinkContentArg) => (
-      <Badge variant="info" className="fc-more-badge pointer-events-none flex w-full justify-center text-[10px] font-semibold">
+      <Badge
+        variant="info"
+        className="fc-more-badge pointer-events-none flex w-full justify-center text-[10px] font-semibold"
+      >
         +{arg.num}
       </Badge>
     ),
-    [t],
+    [],
   );
 
   const openDayPopover = useCallback(
@@ -283,15 +315,15 @@ export function AppointmentCalendar({
     (event: MouseEvent<HTMLDivElement>) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const link = target.closest('.fc-more-link');
+      const link = target.closest(".fc-more-link");
       if (!link || !event.currentTarget.contains(link)) return;
 
       event.preventDefault();
       event.stopPropagation();
       event.nativeEvent.stopImmediatePropagation();
 
-      const dayElement = link.closest<HTMLElement>('[data-date]');
-      const rawDate = dayElement?.getAttribute('data-date');
+      const dayElement = link.closest<HTMLElement>("[data-date]");
+      const rawDate = dayElement?.getAttribute("data-date");
       const date = rawDate ? new Date(`${rawDate}T00:00:00`) : new Date();
       openDayPopover(link, date);
     },
@@ -302,23 +334,23 @@ export function AppointmentCalendar({
     const appt = readCalendarAppointment(info.event.extendedProps);
     const color = appt
       ? STATUS_COLORS[appt.status]
-      : info.event.backgroundColor || 'var(--color-muted-foreground)';
-    info.el.style.setProperty('background-color', color, 'important');
-    info.el.style.setProperty('border-color', color, 'important');
+      : info.event.backgroundColor || "var(--color-muted-foreground)";
+    info.el.style.setProperty("background-color", color, "important");
+    info.el.style.setProperty("border-color", color, "important");
   }, []);
 
   const handleDayCellDidMount = useCallback(
     (arg: { view: { type: string }; el: HTMLElement; date: Date }) => {
-      if (arg.view.type !== 'dayGridMonth') return;
-      const frame = arg.el.querySelector('.fc-daygrid-day-frame');
-      if (!frame || frame.querySelector('.fc-day-add')) return;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'fc-day-add';
-    btn.setAttribute('aria-label', t.appointments.addAppointment);
+      if (arg.view.type !== "dayGridMonth") return;
+      const frame = arg.el.querySelector(".fc-daygrid-day-frame");
+      if (!frame || frame.querySelector(".fc-day-add")) return;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "fc-day-add";
+      btn.setAttribute("aria-label", t.appointments.addAppointment);
       btn.innerHTML =
         '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
-      btn.setAttribute('aria-hidden', 'true');
+      btn.setAttribute("aria-hidden", "true");
       btn.tabIndex = -1;
       frame.appendChild(btn);
     },
@@ -345,10 +377,10 @@ export function AppointmentCalendar({
     <div
       data-schedule-host=""
       className={cn(
-        'relative page-fill bg-card [&_.fc]:text-sm',
+        "relative page-fill bg-card [&_.fc]:text-sm",
         focused
-          ? 'rounded-none border-0 p-1.5 sm:p-2'
-          : 'card-aura rounded-xl border p-2 sm:p-2.5',
+          ? "rounded-none border-0 p-1.5 sm:p-2"
+          : "card-aura rounded-xl border p-2 sm:p-2.5",
       )}
       aria-busy={isFetching || undefined}
     >
@@ -357,8 +389,8 @@ export function AppointmentCalendar({
         onClickCapture={handleCalendarClickCapture}
         onPointerDown={(event) => {
           if (!(event.target instanceof Element)) return;
-          if (event.target.closest('[data-calendar-popover]')) return;
-          if (event.target.closest('.fc-event, .fc-more-link')) return;
+          if (event.target.closest("[data-calendar-popover]")) return;
+          if (event.target.closest(".fc-event, .fc-more-link")) return;
           setAppointmentPopover(null);
           setDayPopover(null);
         }}
@@ -373,12 +405,12 @@ export function AppointmentCalendar({
           plugins={PLUGINS}
           initialView={VIEW_TO_FC[view]}
           locales={[arLocale]}
-          locale={lang === 'ar' ? 'ar' : 'en'}
-          direction={lang === 'ar' ? 'rtl' : 'ltr'}
+          locale={lang === "ar" ? "ar" : "en"}
+          direction={lang === "ar" ? "rtl" : "ltr"}
           headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'timeGridDay,timeGridWeek,dayGridMonth',
+            left: "prev,next today",
+            center: "title",
+            right: "timeGridDay,timeGridWeek,dayGridMonth",
           }}
           buttonText={{
             today: t.appointments.today,
@@ -392,17 +424,17 @@ export function AppointmentCalendar({
           allDaySlot={false}
           selectable
           selectMirror
-          selectAllow={() => view !== 'month'}
+          selectAllow={() => view !== "month"}
           editable
           eventDurationEditable
           eventResizableFromStart
           nowIndicator
           slotLabelContent={(arg) => formatTime(arg.date, undefined, lang)}
           eventTimeFormat={{
-            hour: 'numeric',
-            minute: '2-digit',
+            hour: "numeric",
+            minute: "2-digit",
             omitZeroMinute: true,
-            meridiem: 'short',
+            meridiem: "short",
             hour12: true,
           }}
           events={events}
@@ -421,21 +453,23 @@ export function AppointmentCalendar({
           slotEventOverlap={false}
           eventMinHeight={isMobile ? 28 : 32}
           moreLinkContent={renderMoreLinkContent}
-          moreLinkClassNames={['block', 'w-full']}
+          moreLinkClassNames={["block", "w-full"]}
           moreLinkClick={(info) => {
             info.jsEvent.preventDefault();
             info.jsEvent.stopPropagation();
             const target = info.jsEvent.target;
             const link =
-              target instanceof Element ? target.closest('.fc-more-link') : null;
+              target instanceof Element
+                ? target.closest(".fc-more-link")
+                : null;
             if (link) openDayPopover(link, info.date);
           }}
           expandRows
           stickyHeaderDates
           views={{
             timeGridDay: {
-              slotMinTime: '07:00:00',
-              slotMaxTime: '21:00:00',
+              slotMinTime: "07:00:00",
+              slotMaxTime: "21:00:00",
               eventMaxStack: isMobile ? 2 : 4,
             },
             timeGridWeek: {
@@ -443,13 +477,13 @@ export function AppointmentCalendar({
             },
             dayGridMonth: {
               dayMaxEvents: isMobile ? 2 : 4,
-              eventDisplay: 'block',
+              eventDisplay: "block",
             },
           }}
           businessHours={{
             daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-            startTime: '08:00',
-            endTime: '20:00',
+            startTime: "08:00",
+            endTime: "20:00",
           }}
         />
       </div>
@@ -457,7 +491,7 @@ export function AppointmentCalendar({
       {dayPopover ? (
         <DayAppointmentsPopover
           state={dayPopover}
-          placement={view === 'month' ? 'month' : 'vertical'}
+          placement={view === "month" ? "month" : "vertical"}
           onClose={() => {
             setDayPopover(null);
             setAppointmentPopover(null);
@@ -472,7 +506,7 @@ export function AppointmentCalendar({
         <AppointmentPopover
           key={appointmentPopover.appointment.id}
           state={appointmentPopover}
-          placement={view === 'month' ? 'month' : 'vertical'}
+          placement={view === "month" ? "month" : "vertical"}
           onClose={() => setAppointmentPopover(null)}
           onExpand={(appt) => {
             setAppointmentPopover(null);
