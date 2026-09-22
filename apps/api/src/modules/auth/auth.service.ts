@@ -4,11 +4,12 @@ import { randomUUID } from "node:crypto";
 import { AuthOtpPurpose } from "@prisma/client";
 import type {
   AuthLoginResponse,
+  AuthMe,
   AuthRecovery,
   AuthVerifyResponse,
   AuthReady,
 } from "@clinic/types";
-import { AuthRepository } from "./auth.repository";
+import { AuthRepository, type AuthAccount } from "./auth.repository";
 import { LoginDto, RegisterDto } from "./dto";
 import type { AuthUser } from "./types";
 import { AuthPasswordDto, VerifyOtpDto } from "./dto/auth-flow.dto";
@@ -22,8 +23,15 @@ import { RateLimitService } from "@/security/services/rate-limit.service";
 import { AUTH_POLICY } from "@/security/security.constants";
 import { securityError } from "@/security/security-error";
 
-type Account = NonNullable<Awaited<ReturnType<AuthRepository["byId"]>>>;
-const DUMMY_HASH = bcrypt.hashSync(randomUUID(), 12);
+type Account = AuthAccount;
+
+let dummyHash: string | undefined;
+function compareDummy(password: string) {
+  return bcrypt.compare(
+    password,
+    (dummyHash ??= bcrypt.hashSync(randomUUID(), 12)),
+  );
+}
 
 @Injectable()
 export class AuthService {
@@ -58,6 +66,26 @@ export class AuthService {
     };
   }
 
+  toMe(user: Account, clinicUserId?: string): AuthMe {
+    const member = this.membership(user);
+    if (clinicUserId && member.id !== clinicUserId)
+      securityError("invalidToken", 401);
+    return {
+      userId: user.id,
+      clinicUserId: member.id,
+      role: member.role,
+      name: member.name,
+      email: user.email,
+      clinic: {
+        id: member.clinic.id,
+        name: member.clinic.name,
+        workingHoursStart: member.clinic.workingHoursStart,
+        workingHoursEnd: member.clinic.workingHoursEnd,
+        timezone: member.clinic.timezone,
+      },
+    };
+  }
+
   private ready(user: Account): AuthReady {
     if (!user.emailVerifiedAt || user.mustChangePassword)
       securityError("invalidToken", 401);
@@ -70,6 +98,7 @@ export class AuthService {
         clinicId: member.clinicId,
         clinicUserId: member.id,
       }),
+      user: this.toMe(user, member.id),
     };
   }
 
@@ -85,10 +114,9 @@ export class AuthService {
     const email = dto.email.trim().toLowerCase();
     await this.limits.consume("login-email", email, 10, 900);
     const user = await this.repo.byEmail(email);
-    const matches = await bcrypt.compare(
-      dto.password,
-      user?.passwordHash ?? DUMMY_HASH,
-    );
+    const matches = user
+      ? await bcrypt.compare(dto.password, user.passwordHash)
+      : await compareDummy(dto.password);
     if (!user || !matches) securityError("invalidCredentials", 401);
     this.membership(user);
     if (!user.emailVerifiedAt) {
@@ -223,24 +251,9 @@ export class AuthService {
     return this.ready(changed);
   }
 
-  async getMe(userId: string, clinicUserId: string) {
-    const user = await this.repo.byId(userId);
-    if (!user) securityError("invalidToken", 401);
-    const member = this.membership(user);
-    if (member.id !== clinicUserId) securityError("invalidToken", 401);
-    return {
-      userId,
-      clinicUserId: member.id,
-      role: member.role,
-      name: member.name,
-      email: user.email,
-      clinic: {
-        id: member.clinic.id,
-        name: member.clinic.name,
-        workingHoursStart: member.clinic.workingHoursStart,
-        workingHoursEnd: member.clinic.workingHoursEnd,
-        timezone: member.clinic.timezone,
-      },
-    };
+  async getMe(userId: string, clinicUserId: string, account?: Account) {
+    const user = account ?? (await this.repo.byId(userId));
+    if (!user || user.id !== userId) securityError("invalidToken", 401);
+    return this.toMe(user, clinicUserId);
   }
 }

@@ -1,11 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
+import type { Request } from "express";
 import { AUTH_AUDIENCE, AUTH_ISSUER } from "@/security/security.constants";
 import type { SecurityPayload } from "@/security/services/token.service";
 import { securityError } from "@/security/security-error";
-import { AuthRepository } from "../auth.repository";
+import { AuthRepository, type AuthAccount } from "../auth.repository";
 import type { AuthUser } from "../types";
+
+export type AuthRequest = Request & { authAccount?: AuthAccount };
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -17,10 +20,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       issuer: AUTH_ISSUER,
       audience: AUTH_AUDIENCE,
       algorithms: ["HS256"],
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: SecurityPayload): Promise<AuthUser> {
+  async validate(
+    req: AuthRequest,
+    payload: SecurityPayload,
+  ): Promise<AuthUser> {
     if (
       payload.purpose !== "access" ||
       !payload.sub ||
@@ -44,6 +51,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     );
     if (!member || user.clinicUsers.length !== 1)
       securityError("invalidToken", 401);
+    req.authAccount = user;
     return {
       userId: user.id,
       clinicUserId: member.id,

@@ -11,7 +11,7 @@ const variants = {
   info: { icon: IconInfo, color: 'bg-primary text-primary-foreground' },
 };
 
-function useSuccessSession(enabled: boolean, onClose: () => void, ms = 2000) {
+function useSuccessSession(enabled: boolean, onClose: () => void, ms = 600) {
   const played = useRef(false);
   const subscribe = useCallback(
     (onStoreChange: () => void) => {

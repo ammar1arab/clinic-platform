@@ -2,7 +2,7 @@ import { getTranslations } from '@/i18n';
 import { useMemo, useSyncExternalStore, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { getSocket } from '@/lib/socket';
+import { connectSocketAfterPaint, getSocket } from '@/lib/socket';
 import { createLogger } from '@/lib/logger';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { INVALIDATE } from '../query';
@@ -25,7 +25,6 @@ export function useClinicRealtime(
       if (!clinicId) return () => {};
 
       const socket = getSocket();
-      if (!socket.connected) socket.connect();
 
       const join = () => {
         socket.emit('join-clinic', clinicId);
@@ -71,7 +70,10 @@ export function useClinicRealtime(
       socket.on('appointment-changed', refreshAppointments);
       socket.on('referral-changed', refreshReferrals);
 
+      const cancelConnect = connectSocketAfterPaint(socket);
+
       return () => {
+        cancelConnect();
         socket.emit('leave-clinic', clinicId);
         socket.off('connect', join);
         socket.off('disconnect', onDisconnect);

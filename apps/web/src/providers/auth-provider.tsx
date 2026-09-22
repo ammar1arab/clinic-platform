@@ -13,7 +13,7 @@ const log = createLogger('auth');
 interface AuthContextType {
   user: MeResponse | null;
   token: string | null;
-  login: (token: string) => Promise<MeResponse>;
+  login: (token: string, me?: MeResponse) => Promise<MeResponse>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -36,15 +36,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const login = useCallback(async (newToken: string) => {
+  const login = useCallback(async (newToken: string, me?: MeResponse) => {
     setToken(newToken);
-    const me = await authService.getMe();
-    queryClient.setQueryData(['auth', 'me', newToken], me);
+    const profile = me ?? (await authService.getMe());
+    queryClient.setQueryData(['auth', 'me', newToken], profile);
     queryClient.removeQueries({
       predicate: (query) => query.queryKey[0] !== 'auth',
     });
     log.info('login');
-    return me;
+    return profile;
   }, [queryClient]);
 
   const logout = useCallback(() => {
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     logout,
     isAuthenticated: !!token && !!user,
-    isLoading: !!token && isLoading,
+    isLoading: !!token && isLoading && !user,
     isHydrated,
   }), [user, token, login, logout, isLoading, isHydrated]);
 

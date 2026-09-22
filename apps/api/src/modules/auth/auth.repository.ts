@@ -10,6 +10,8 @@ const include = {
   },
 } as const;
 
+export type AuthAccount = Prisma.UserGetPayload<{ include: typeof include }>;
+
 @Injectable()
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}

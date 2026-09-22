@@ -1,3 +1,5 @@
+import type { AuthMe } from './auth';
+
 export const AUTH_POLICY = {
   otpDigits: 6,
   otpExpiresSeconds: 15 * 60,
@@ -16,7 +18,7 @@ export function passwordRequirements(password: string) {
   };
 }
 
-export type AuthReady = { next: 'ready'; accessToken: string };
+export type AuthReady = { next: 'ready'; accessToken: string; user: AuthMe };
 export type AuthSetup = { next: 'set_password'; setupToken: string; email: string };
 export type AuthOtp = { next: 'otp'; setupToken: string; email: string; cooldownSeconds: number };
 export type AuthLoginResponse = AuthReady | AuthSetup | AuthOtp;

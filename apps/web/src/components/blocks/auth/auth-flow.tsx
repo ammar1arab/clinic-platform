@@ -80,7 +80,7 @@ export function AuthFlow() {
     try {
       const response = await mutation.mutateAsync(command);
       if (response.next === "ready") {
-        const me = await login(response.accessToken);
+        const me = await login(response.accessToken, response.user);
         destRef.current = postLoginPath(me.role, readReturnPath());
         setSuccess(true);
         return;

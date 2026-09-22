@@ -3,6 +3,7 @@ import {
   Controller,
   Post,
   Get,
+  Req,
   UseGuards,
   UseFilters,
 } from "@nestjs/common";
@@ -18,6 +19,7 @@ import {
 import { JwtAuthGuard } from "./guards";
 import { CurrentUser } from "./decorators";
 import type { AuthUser } from "./types";
+import type { AuthRequest } from "./strategies/jwt.strategy";
 import { AuthRateLimitGuard } from "@/security/guards/auth-rate-limit.guard";
 import { AuthExceptionFilter } from "@/security/auth-exception.filter";
 
@@ -72,7 +74,11 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get("me")
-  getMe(@CurrentUser() user: AuthUser) {
-    return this.authService.getMe(user.userId, user.clinicUserId);
+  getMe(@CurrentUser() user: AuthUser, @Req() req: AuthRequest) {
+    return this.authService.getMe(
+      user.userId,
+      user.clinicUserId,
+      req.authAccount,
+    );
   }
 }
