@@ -185,24 +185,35 @@ export function WaitingQueueBoard({
     >
       <div className="flex shrink-0 items-center justify-between gap-1.5 border-b bg-muted/20 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
         <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none sm:gap-1.5">
-          {stageTabs.map(({ key, label, short, icon, variant }) => (
-            <SoftTip key={key} label={label}>
-              <Badge
-                asChild
-                variant={stageTab === key ? variant : 'secondary'}
-              >
-                <button
-                  type="button"
-                  onClick={() => setStageTab(key)}
-                  className="cursor-pointer py-1.5 shadow-2xs active:scale-95"
+          {stageTabs.map(({ key, label, short, icon, variant }) => {
+            const selected = stageTab === key;
+            const showMobileLabel = selected || !icon;
+            return (
+              <SoftTip key={key} label={label}>
+                <Badge
+                  asChild
+                  variant={selected ? variant : 'secondary'}
                 >
-                  {icon}
-                  <span className="sm:hidden">{short}</span>
-                  <span className="hidden sm:inline">{label}</span>
-                </button>
-              </Badge>
-            </SoftTip>
-          ))}
+                  <button
+                    type="button"
+                    onClick={() => setStageTab(key)}
+                    aria-label={label}
+                    aria-pressed={selected}
+                    className={cn(
+                      'cursor-pointer py-1.5 shadow-2xs active:scale-95',
+                      !showMobileLabel && 'gap-0 px-2 sm:gap-1.5 sm:px-2.5',
+                    )}
+                  >
+                    {icon}
+                    <span className={cn(showMobileLabel ? 'sm:hidden' : 'hidden')}>
+                      {short}
+                    </span>
+                    <span className="hidden sm:inline">{label}</span>
+                  </button>
+                </Badge>
+              </SoftTip>
+            );
+          })}
         </div>
         <ViewFocusToggle />
       </div>

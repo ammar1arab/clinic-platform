@@ -16,6 +16,7 @@ export { IconCard, type IconCardProps } from './display/icon-card';
 export { IconWell, type IconWellAccent } from './display/icon-well';
 export { ImagePreview, PreviewableAvatar, isRowControlClick } from './display/image-preview';
 export { InlineLoading, PageLoadingState, SectionLoader, Spinner, LoadingState } from './states/loading';
+export { FeedbackOverlay, SUCCESS_OVERLAY_MS } from './states/feedback-overlay';
 export { MetaStat } from './display/meta-stat';
 export { MoreDotsIcon } from './display/more-dots-icon';
 export { MultiSelect, type MultiSelectOption } from './forms/multi-select';

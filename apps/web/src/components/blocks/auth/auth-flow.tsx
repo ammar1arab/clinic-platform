@@ -7,7 +7,10 @@ import { Card, CardContent, Button } from "@/components/ui";
 import { useAuth, useLanguage } from "@/providers";
 import { useAuthMutation } from "@/hooks/api/use-auth-mutations";
 import { extractErrorMessage } from "@/lib/api";
-import { FeedbackOverlay } from "@/components/primitives/states/feedback-overlay";
+import {
+  FeedbackOverlay,
+  SUCCESS_OVERLAY_MS,
+} from "@/components/primitives/states/feedback-overlay";
 import { BrandMark } from "@/components/primitives/display/brand-mark";
 import { LoadingState } from "@/components/primitives";
 import { prepareFeedbackSound } from "@/lib/feedback-sound";
@@ -34,6 +37,7 @@ export function AuthFlow() {
   const [resendAt, setResendAt] = useState(0);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const celebrating = useRef(false);
   const completing = useRef(false);
   const destRef = useRef<string>(ROUTES.DASHBOARD);
   const router = useRouter();
@@ -62,14 +66,15 @@ export function AuthFlow() {
   const complete = useCallback(() => {
     if (completing.current) return;
     completing.current = true;
+    celebrating.current = false;
     router.replace(destRef.current);
   }, [router]);
 
-  if (sessionToken && isLoading && !success) {
+  if (sessionToken && isLoading && !success && !celebrating.current) {
     return <LoadingState variant="page" text={t.auth.signingIn} />;
   }
 
-  if (sessionToken && user && !success) {
+  if (sessionToken && user && !success && !celebrating.current) {
     redirect(postLoginPath(user.role, readReturnPath()));
   }
 
@@ -80,15 +85,18 @@ export function AuthFlow() {
     try {
       const response = await mutation.mutateAsync(command);
       if (response.next === "ready") {
+        celebrating.current = true;
+        setSuccess(true);
         const me = await login(response.accessToken, response.user);
         destRef.current = postLoginPath(me.role, readReturnPath());
-        setSuccess(true);
         return;
       }
       if (response.next === "otp")
         setResendAt(Date.now() + response.cooldownSeconds * 1000);
       setStep(response);
     } catch (cause) {
+      celebrating.current = false;
+      setSuccess(false);
       setError(
         extractErrorMessage(cause as Parameters<typeof extractErrorMessage>[0]),
       );
@@ -251,6 +259,7 @@ export function AuthFlow() {
       <FeedbackOverlay
         open={success}
         title={t.auth.success}
+        durationMs={SUCCESS_OVERLAY_MS}
         onClose={complete}
       />
     </main>

@@ -5,14 +5,19 @@ import { IconError, IconInfo, IconWarning } from '@/constants/icons';
 import { playFeedbackSound } from '@/lib/feedback-sound';
 import { cn } from '@/lib/utils';
 
+export const SUCCESS_OVERLAY_MS = 800;
+
 const variants = {
   error: { icon: IconError, color: 'bg-destructive text-primary-foreground' },
   warning: { icon: IconWarning, color: 'bg-warning text-primary-foreground' },
   info: { icon: IconInfo, color: 'bg-primary text-primary-foreground' },
 };
 
-function useSuccessSession(enabled: boolean, onClose: () => void, ms = 600) {
+function useSuccessSession(enabled: boolean, onClose: () => void, ms: number) {
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   const played = useRef(false);
+
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
       if (!enabled) {
@@ -24,12 +29,12 @@ function useSuccessSession(enabled: boolean, onClose: () => void, ms = 600) {
         playFeedbackSound();
       }
       const id = window.setTimeout(() => {
-        onClose();
+        onCloseRef.current();
         onStoreChange();
       }, ms);
       return () => window.clearTimeout(id);
     },
-    [enabled, ms, onClose],
+    [enabled, ms],
   );
 
   useSyncExternalStore(
@@ -57,13 +62,15 @@ export function FeedbackOverlay({
   onClose,
   title,
   variant = 'success',
+  durationMs = SUCCESS_OVERLAY_MS,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   variant?: 'success' | keyof typeof variants;
+  durationMs?: number;
 }) {
-  useSuccessSession(open && variant === 'success', onClose);
+  useSuccessSession(open && variant === 'success', onClose, durationMs);
 
   if (!open) return null;
 
@@ -87,7 +94,12 @@ export function FeedbackOverlay({
           </p>
         </div>
       ) : (
-        <SuccessMark />
+        <div className="flex flex-col items-center gap-4 text-center">
+          <SuccessMark />
+          <p className="max-w-[16rem] font-heading text-base font-semibold text-foreground">
+            {title}
+          </p>
+        </div>
       )}
     </div>
   );
