@@ -161,7 +161,7 @@ export function ScheduleToolbar({
                   type="button"
                   onClick={() => onViewChange(target(view))}
                   className={cn(
-                    'flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1.5 text-[11px] font-semibold transition-all duration-150 cursor-pointer active:scale-95 sm:flex-initial sm:gap-1.5 sm:px-2.5 sm:text-xs',
+                    'flex min-w-0 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1.5 text-[11px] font-semibold transition-all duration-200 cursor-pointer active:scale-95 sm:flex-initial sm:gap-1.5 sm:px-2.5 sm:text-xs',
                     active
                       ? 'bg-background font-bold text-foreground shadow-xs ring-1 ring-border/50'
                       : 'text-muted-foreground hover:bg-background/40 hover:text-foreground',
