@@ -11,8 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { SearchInput } from '@/components/primitives';
-import { SoftTip } from '@/components/primitives';
+import { SearchInput, SoftTip } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { IconChevronsUpDown } from '@/constants/icons';
 import { useLanguage } from '@/providers/language-provider';

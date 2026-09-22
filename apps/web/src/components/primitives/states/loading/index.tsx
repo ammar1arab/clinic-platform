@@ -78,7 +78,7 @@ export function PageLoadingState({
       role="status"
       aria-live="polite"
       className={cn(
-        'flex min-h-80 w-full flex-col items-center justify-center gap-5 p-10 text-center animate-in fade-in-0 duration-500',
+        'flex min-h-80 w-full flex-col items-center justify-center gap-5 p-10 text-center animate-in fade-in-0 duration-200',
         className,
       )}
     >

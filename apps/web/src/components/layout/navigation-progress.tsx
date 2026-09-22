@@ -1,6 +1,6 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useRef, useSyncExternalStore } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 let isNavigating = false;
@@ -8,6 +8,18 @@ const listeners = new Set<() => void>();
 
 function notify() {
   listeners.forEach((l) => l());
+}
+
+export function markNavigating() {
+  if (isNavigating) return;
+  isNavigating = true;
+  notify();
+}
+
+function clearNavigating() {
+  if (!isNavigating) return;
+  isNavigating = false;
+  notify();
 }
 
 if (typeof window !== 'undefined') {
@@ -42,8 +54,7 @@ if (typeof window !== 'undefined') {
         const next = `${url.pathname}${url.search}`;
         const current = `${window.location.pathname}${window.location.search}`;
         if (next === current) return;
-        isNavigating = true;
-        notify();
+        markNavigating();
       } catch {}
     },
     true,
@@ -66,22 +77,26 @@ function getServerSnapshot() {
 export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const key = `${pathname}?${searchParams?.toString() ?? ''}`;
-
+  const routeKey = `${pathname}?${searchParams?.toString() ?? ''}`;
+  const settledKey = useRef(routeKey);
   const navigating = useSyncExternalStore(
     subscribe,
     getSnapshot,
     getServerSnapshot,
   );
 
+  if (settledKey.current !== routeKey) {
+    settledKey.current = routeKey;
+    if (isNavigating) queueMicrotask(clearNavigating);
+  }
+
   return (
     <div
-      key={key}
       aria-hidden
       style={{ opacity: navigating ? 1 : 0 }}
       className="pointer-events-none fixed inset-x-0 top-0 z-300 h-[2.5px] overflow-hidden transition-opacity duration-200"
     >
-      <div className="relative h-full origin-left rtl:origin-right overflow-hidden rounded-e-full bg-linear-to-r from-primary via-accent-teal to-warning transition-[width] duration-150 ease-out animate-clinic-progress-indeterminate">
+      <div className="relative h-full w-full origin-left overflow-hidden rounded-e-full bg-linear-to-r from-primary via-accent-teal to-warning rtl:origin-right animate-clinic-progress-indeterminate">
         <span className="absolute inset-0 animate-clinic-progress-shimmer bg-linear-to-r from-transparent via-white/60 to-transparent" />
       </div>
     </div>

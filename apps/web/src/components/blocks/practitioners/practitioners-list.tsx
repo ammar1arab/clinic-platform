@@ -1,16 +1,28 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Switch, Badge } from '@/components/ui';
 import {
-  PreviewableAvatar, isRowControlClick, EmailLink, PhoneLink, TruncatedText, Pagination, EmptyState, MetaStat, TableSkeleton, RowActionsMenu, SoftTip, TableFrame,
+  TwoStepDeleteDialogs,
+  useTwoStepDelete,
+  PreviewableAvatar,
+  isRowControlClick,
+  EmailLink,
+  PhoneLink,
+  TruncatedText,
+  Pagination,
+  EmptyState,
+  MetaStat,
+  TableSkeleton,
+  RowActionsMenu,
+  SoftTip,
+  TableFrame,
 } from '@/components/primitives';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Switch, Badge } from '@/components/ui';
 import {
   useDeletePractitioner,
   useDeactivatePractitioner,
   useReactivatePractitioner,
 } from '@/hooks/api/use-practitioners';
+import { useRouteNav } from '@/hooks/shared/use-route-nav';
 import type { Practitioner } from '@/services/practitioners.service';
 import { IconActivate, IconCalendar, IconDeactivate, IconDelete, IconEdit, IconPhone, IconPractitioner, IconView } from '@/constants/icons';
 import { useLanguage } from '@/providers';
@@ -59,7 +71,7 @@ export function PractitionersList({
   onPageChange,
   emptyAction,
 }: Props) {
-  const router = useRouter();
+  const { go, prefetch } = useRouteNav();
   const deactivate = useDeactivatePractitioner(clinicId);
   const reactivate = useReactivatePractitioner(clinicId);
   const remove = useDeletePractitioner(clinicId);
@@ -71,7 +83,8 @@ export function PractitionersList({
   const toggle = (p: Practitioner, on: boolean) =>
     on ? reactivate.mutate(p.id) : deactivate.mutate(p.id);
 
-  const openProfile = (id: string) => router.push(ROUTES.PRACTITIONER_DETAIL(id));
+  const openProfile = (id: string) => go(ROUTES.PRACTITIONER_DETAIL(id));
+  const prefetchProfile = (id: string) => prefetch(ROUTES.PRACTITIONER_DETAIL(id));
 
   const rowMenu = (p: Practitioner) => (
     <RowActionsMenu
@@ -149,6 +162,8 @@ export function PractitionersList({
                 <TableRow
                   key={p.id}
                   className={`cursor-pointer ${!p.isActive ? 'opacity-60' : ''}`}
+                  onMouseEnter={() => prefetchProfile(p.id)}
+                  onFocus={() => prefetchProfile(p.id)}
                   onClick={(e) => {
                     if (isRowControlClick(e)) return;
                     openProfile(p.id);
@@ -214,6 +229,8 @@ export function PractitionersList({
             key={p.id}
             role="button"
             tabIndex={0}
+            onMouseEnter={() => prefetchProfile(p.id)}
+            onFocus={() => prefetchProfile(p.id)}
             onClick={(e) => {
               if (isRowControlClick(e)) return;
               openProfile(p.id);

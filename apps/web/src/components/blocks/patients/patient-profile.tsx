@@ -10,7 +10,7 @@ import {
   PhoneLink,
   EmptyState,
   PreviewableAvatar,
-  SectionLoader,
+  FormPageSkeleton,
   RowActionsMenu,
   ProfileHero,
   ProfileInfoField,
@@ -45,7 +45,7 @@ export function PatientProfile({ patientId }: { patientId: string }) {
   const downloadReport = useDownloadPatientReport(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
-  if (isLoading) return <SectionLoader label={t.common.loading} />;
+  if (isLoading) return <FormPageSkeleton />;
   if (!patient) {
     return (
       <EmptyState

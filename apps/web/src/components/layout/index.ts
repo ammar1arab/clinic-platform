@@ -5,3 +5,4 @@ export * from './loading-chrome';
 export * from './navigation-progress';
 export * from './global-activity';
 export * from './page-transition';
+export * from './dashboard-fallback';

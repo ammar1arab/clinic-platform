@@ -7,15 +7,16 @@ import {
   PatientDetail,
 } from '@/services/patients.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
-import { useFetchData, type TResponseError, useApiMutation, INVALIDATE } from '../query';
+import { useFetchData, type TResponseError, useApiMutation, INVALIDATE, type FetchOptions } from '../query';
 import { useLanguage } from '@/providers';
 
-export function usePatients(filters: PatientFilters) {
+export function usePatients(filters: PatientFilters, options?: FetchOptions) {
   return useFetchData<Patient[]>({
     queryKey: QUERY_KEYS.patients.list(filters),
     request: () => patientsService.getAll(filters),
     options: {
-      enabled: !!filters.clinicId,
+      ...options,
+      enabled: !!filters.clinicId && (options?.enabled ?? true),
     },
   });
 }

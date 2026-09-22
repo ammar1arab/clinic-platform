@@ -2,7 +2,7 @@ import { getTranslations } from '@/i18n';
 import { useMemo, useSyncExternalStore, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { connectSocketAfterPaint, getSocket } from '@/lib/socket';
+import { getSocket } from '@/lib/socket';
 import { createLogger } from '@/lib/logger';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { INVALIDATE } from '../query';
@@ -25,6 +25,7 @@ export function useClinicRealtime(
       if (!clinicId) return () => {};
 
       const socket = getSocket();
+      if (!socket.connected) socket.connect();
 
       const join = () => {
         socket.emit('join-clinic', clinicId);
@@ -53,8 +54,9 @@ export function useClinicRealtime(
           queryKey: QUERY_KEYS.patientPackages.all,
         });
         if (notify) {
-          toast.message(getTranslations().notifications.schedule, {
-            description: getTranslations().notifications.refreshed,
+          const copy = getTranslations().notifications;
+          toast.message(copy.schedule, {
+            description: copy.refreshed,
             duration: 2200,
           });
         }
@@ -70,10 +72,7 @@ export function useClinicRealtime(
       socket.on('appointment-changed', refreshAppointments);
       socket.on('referral-changed', refreshReferrals);
 
-      const cancelConnect = connectSocketAfterPaint(socket);
-
       return () => {
-        cancelConnect();
         socket.emit('leave-clinic', clinicId);
         socket.off('connect', join);
         socket.off('disconnect', onDisconnect);
@@ -84,10 +83,17 @@ export function useClinicRealtime(
     };
   }, [clinicId, notify, queryClient]);
 
-  const getSnapshot = useCallback(() => (clinicId ? getSocket().connected : false), [clinicId]);
+  const getSnapshot = useCallback(
+    () => (clinicId ? getSocket().connected : false),
+    [clinicId],
+  );
   const getServerSnapshot = useCallback(() => false, []);
 
-  const connected = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const connected = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   return { connected };
 }

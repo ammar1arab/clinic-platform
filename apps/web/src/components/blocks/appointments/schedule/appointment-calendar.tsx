@@ -257,7 +257,7 @@ export function AppointmentCalendar({
   const renderMoreLinkContent = useCallback(
     (arg: MoreLinkContentArg) => (
       <Badge variant="info" className="fc-more-badge pointer-events-none flex w-full justify-center text-[10px] font-semibold">
-        +{arg.num} {t.appointments.more}
+        +{arg.num}
       </Badge>
     ),
     [t],

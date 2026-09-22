@@ -80,11 +80,14 @@ export function createCrudHooks<TEntity, TCreate, TUpdate>(
   }
 
   return {
-    useList(clinicId: string) {
+    useList(clinicId: string, enabled = true) {
       return useFetchData<TEntity[]>({
         queryKey: keys.list(clinicId),
         request: () => service.getAll(clinicId),
-        options: clinicListOptions(clinicId),
+        options: {
+          ...clinicListOptions(clinicId),
+          enabled: !!clinicId && enabled,
+        },
       });
     },
     useCreate(clinicId: string) {

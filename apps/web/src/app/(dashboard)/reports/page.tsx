@@ -78,17 +78,31 @@ export default function ReportsPage() {
   const [toDate, setToDate] = useSessionStorageState('reports-to', month.to);
   const [status, setStatus] = useSessionStorageState('reports-status', '');
 
-  const { data: patients, isLoading: patientsLoading, isError: patientsError } = usePatients({
-    clinicId,
-    isActive: true,
-    sortBy: 'firstNameEn',
-    sortOrder: 'asc',
-  });
+  const needsPatients =
+    activeKey === 'patientMedical' ||
+    activeKey === 'referrals' ||
+    activeKey === 'patientsDirectory';
+  const needsPractitioners =
+    activeKey === 'practitionerProfile' ||
+    activeKey === 'practitionerAppointments' ||
+    activeKey === 'practitionerHours' ||
+    activeKey === 'practitionerExceptions' ||
+    activeKey === 'practitionersDirectory';
+
+  const { data: patients, isLoading: patientsLoading, isError: patientsError } = usePatients(
+    {
+      clinicId,
+      isActive: true,
+      sortBy: 'firstNameEn',
+      sortOrder: 'asc',
+    },
+    { enabled: needsPatients },
+  );
   const {
     data: practitioners,
     isLoading: practitionersLoading,
     isError: practitionersError,
-  } = usePractitioners(clinicId);
+  } = usePractitioners(clinicId, needsPractitioners);
 
   const downloadPatient = useDownloadPatientReport(clinicId);
   const downloadPatientsDirectory = useDownloadPatientsDirectory(clinicId);
@@ -207,8 +221,6 @@ export default function ReportsPage() {
     .flatMap((group) => group.items)
     .find((item) => item.key === activeKey);
 
-  const needsPatients = Boolean(active?.filters?.patient);
-  const needsPractitioners = Boolean(active?.filters?.practitioner);
   const isDirectory =
     activeKey === 'patientsDirectory' || activeKey === 'practitionersDirectory';
 

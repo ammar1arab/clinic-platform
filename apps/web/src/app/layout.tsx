@@ -39,7 +39,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      data-scroll-behavior="smooth"
+      data-scroll-behavior="auto"
       className={`${jakarta.variable} ${alexandria.variable}`}
     >
       <body className="font-sans antialiased">

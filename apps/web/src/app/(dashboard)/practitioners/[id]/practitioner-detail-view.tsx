@@ -2,7 +2,7 @@
 
 import {
   EmptyState,
-  SectionLoader,
+  FormPageSkeleton,
 } from '@/components/primitives';
 import { PractitionerProfile } from '@/components/blocks/practitioners';
 import { IconPractitioner } from '@/constants/icons';
@@ -15,7 +15,7 @@ export function PractitionerDetailView({ id }: { id: string }) {
   const { t } = useLanguage();
   const { data: practitioner, isLoading } = usePractitioner(id);
 
-  if (isLoading) return <SectionLoader label={t.practitioner.loadingPractitioner} />;
+  if (isLoading) return <FormPageSkeleton />;
   if (!practitioner) {
     return (
       <EmptyState

@@ -1,8 +1,7 @@
 'use client';
 
 import { Badge, Button, Skeleton } from '@/components/ui';
-import { IconWell, SoftTip } from '@/components/primitives';
-import { ButtonSpinner } from '@/components/primitives';
+import { IconWell, SoftTip, ButtonSpinner } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import type { PatientBillingSummary, PatientPackageDto } from '@clinic/types';
 import {

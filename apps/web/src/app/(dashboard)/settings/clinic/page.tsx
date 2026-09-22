@@ -17,10 +17,10 @@ import {
 import {
   TimePicker,
   FormField,
-  SectionLoader,
+  FormPageSkeleton,
   PageBack,
+  ButtonSpinner,
 } from '@/components/primitives';
-import { ButtonSpinner } from '@/components/primitives';;
 import { useClinic, useUpdateClinic } from '@/hooks/api/use-clinic';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
@@ -208,7 +208,7 @@ export default function ClinicSettingsPage() {
   const { t } = useLanguage();
 
   if (isLoading || !clinic) {
-    return <SectionLoader label={t.common.loading} />;
+    return <FormPageSkeleton />;
   }
 
   return (

@@ -66,7 +66,7 @@ export class AuthService {
     };
   }
 
-  toMe(user: Account, clinicUserId?: string): AuthMe {
+  private toMe(user: Account, clinicUserId?: string): AuthMe {
     const member = this.membership(user);
     if (clinicUserId && member.id !== clinicUserId)
       securityError("invalidToken", 401);

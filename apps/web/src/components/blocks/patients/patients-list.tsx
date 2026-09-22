@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -28,12 +27,14 @@ import {
   SoftTip,
 } from '@/components/primitives';
 import { useTogglePatientStatus, useDeletePatient } from '@/hooks/api/use-patients';
+import { useRouteNav } from '@/hooks/shared/use-route-nav';
 import type { Patient } from '@/services/patients.service';
 import { genderLabel, patientAgeLabel } from '@/constants/patient';
 import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconLoyal, IconPatients, IconPhone, IconView } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 import { getPersonName } from '@/i18n';
 import { formatDate } from '@/lib/datetime';
+import { ROUTES } from '@/constants/routes';
 
 const PAGE_SIZE = 15;
 
@@ -53,7 +54,7 @@ export function PatientsList({
   emptyAction,
 }: Props) {
   const { t, lang } = useLanguage();
-  const router = useRouter();
+  const { go, prefetch } = useRouteNav();
   const toggleStatus = useTogglePatientStatus(clinicId);
   const deleteMutation = useDeletePatient(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
@@ -75,13 +76,14 @@ export function PatientsList({
     return patients.slice(start, start + PAGE_SIZE);
   }, [patients, currentPage]);
 
-  const openPatient = (id: string) => router.push(`/patients/${id}`);
+  const openPatient = (id: string) => go(ROUTES.PATIENT_DETAIL(id));
+  const prefetchPatient = (id: string) => prefetch(ROUTES.PATIENT_DETAIL(id));
 
   const rowMenu = (p: Patient, fullName: string) => (
     <RowActionsMenu
       items={[
-        { label: t?.common?.view, icon: IconView, href: `/patients/${p.id}` },
-        { label: t?.common?.edit, icon: IconEdit, href: `/patients/${p.id}/edit` },
+        { label: t?.common?.view, icon: IconView, href: ROUTES.PATIENT_DETAIL(p.id) },
+        { label: t?.common?.edit, icon: IconEdit, href: ROUTES.PATIENT_EDIT(p.id) },
         {
           label: p.isActive ? t?.common?.deactivate : t?.common?.reactivate,
           icon: p.isActive ? IconDeactivate : IconActivate,
@@ -148,6 +150,8 @@ export function PatientsList({
                   <TableRow
                     key={p.id}
                     className={`cursor-pointer ${!p.isActive ? 'opacity-60' : ''}`}
+                    onMouseEnter={() => prefetchPatient(p.id)}
+                    onFocus={() => prefetchPatient(p.id)}
                     onClick={(e) => {
                       if (isRowControlClick(e)) return;
                       openPatient(p.id);
@@ -238,6 +242,8 @@ export function PatientsList({
               key={p.id}
               role="button"
               tabIndex={0}
+              onMouseEnter={() => prefetchPatient(p.id)}
+              onFocus={() => prefetchPatient(p.id)}
               onClick={(e) => {
                 if (isRowControlClick(e)) return;
                 openPatient(p.id);

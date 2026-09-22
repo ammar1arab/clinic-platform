@@ -2,8 +2,7 @@
 
 import { Controller, useFormContext } from 'react-hook-form';
 import { Badge, Button, Input, Switch } from '@/components/ui';
-import { FormField } from '@/components/primitives';
-import { ButtonSpinner } from '@/components/primitives';
+import { FormField, ButtonSpinner } from '@/components/primitives';
 import { CLINIC_CURRENCY } from '@/constants/appointment';
 import { IconCreditCard, IconWarning } from '@/constants/icons';
 import { formatClinicAmount, formatClinicNumber } from '@/lib/package-balance';

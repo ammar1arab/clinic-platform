@@ -1,30 +1,33 @@
 'use client';
 
 import { redirect, usePathname } from 'next/navigation';
-import { useAuth, useLanguage } from '@/providers';
-import { SidebarBlock, TopbarBlock, PageTransition } from '@/components/layout';
-import { LoadingState } from '@/components/primitives';
+import { useAuth } from '@/providers';
+import {
+  SidebarBlock,
+  TopbarBlock,
+  PageTransition,
+  DashboardShellFallback,
+} from '@/components/layout';
 import { canAccessPath, hasClinicNav, homePathForRole } from '@/constants/nav-access';
 import { ROUTES } from '@/constants/routes';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, token, isLoading, isHydrated } = useAuth();
-  const { t } = useLanguage();
   const pathname = usePathname();
 
   if (!isHydrated || (token && isLoading)) {
-    return <LoadingState variant="page" text={t.common.checkingPermissions} />;
+    return <DashboardShellFallback />;
   }
 
   if (!token || !user) {
     redirect(ROUTES.LOGIN);
   }
 
-  if (!canAccessPath(pathname, user?.role)) {
-    redirect(homePathForRole(user?.role));
+  if (!canAccessPath(pathname, user.role)) {
+    redirect(homePathForRole(user.role));
   }
 
-  const showNav = hasClinicNav(user?.role);
+  const showNav = hasClinicNav(user.role);
 
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-background">

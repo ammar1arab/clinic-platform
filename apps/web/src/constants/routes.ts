@@ -10,6 +10,7 @@ export const ROUTES = {
   PATIENTS: '/patients',
   PATIENT_NEW: '/patients/new',
   PATIENT_DETAIL: (id: string) => `/patients/${id}`,
+  PATIENT_EDIT: (id: string) => `/patients/${id}/edit`,
   PRACTITIONERS: '/practitioners',
   PRACTITIONERS_NEW: '/practitioners/new',
   PRACTITIONER_DETAIL: (id: string) => `/practitioners/${id}`,
