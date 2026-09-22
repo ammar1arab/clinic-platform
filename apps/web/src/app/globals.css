@@ -1755,10 +1755,10 @@ html[data-view-focus='true'] [data-view-focus='true'] {
 @media (max-width: 768px) {
   .fc .fc-toolbar {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: 4.5rem minmax(0, 1fr) 4.5rem;
     grid-template-areas:
-      'nav title'
-      'views views';
+      'nav title tools'
+      'views views views';
     align-items: center;
     column-gap: 0.35rem;
     row-gap: 0.4rem;
@@ -1783,7 +1783,8 @@ html[data-view-focus='true'] [data-view-focus='true'] {
 
   .fc .fc-toolbar-chunk:nth-child(2) {
     grid-area: title;
-    justify-content: flex-start;
+    justify-content: center;
+    text-align: center;
     min-width: 0;
   }
 

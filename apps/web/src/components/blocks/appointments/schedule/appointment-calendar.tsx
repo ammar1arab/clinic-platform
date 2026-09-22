@@ -396,7 +396,7 @@ export function AppointmentCalendar({
           setAppointmentPopover(null);
           setDayPopover(null);
         }}
-        className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-header-toolbar]:pe-[4.5rem] [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0 sm:[&_.fc-header-toolbar]:pe-20"
+        className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0 md:[&_.fc-header-toolbar]:pe-20"
       >
         <div className="absolute top-0 inset-e-0 z-20 flex items-center gap-1">
           <SoftTip label={t.appointments.today}>
@@ -438,6 +438,10 @@ export function AppointmentCalendar({
           allDaySlot={false}
           selectable
           selectMirror
+          longPressDelay={300}
+          selectLongPressDelay={300}
+          eventLongPressDelay={300}
+          selectMinDistance={0}
           selectAllow={() => view !== "month"}
           editable
           eventDurationEditable
