@@ -150,7 +150,7 @@ function MobileNavLink({
         </span>
         <IconChevronRight
           className={cn(
-            'size-4 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5',
+            'size-4 shrink-0 transition-transform duration-300 rtl:-scale-x-100 ltr:group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5',
             active ? 'text-brand' : 'text-muted-foreground/70 group-hover:text-foreground',
           )}
         />

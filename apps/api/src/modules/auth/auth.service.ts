@@ -25,12 +25,9 @@ import { securityError } from "@/security/security-error";
 
 type Account = AuthAccount;
 
-let dummyHash: string | undefined;
+const dummyHashReady = bcrypt.hash(randomUUID(), 12);
 function compareDummy(password: string) {
-  return bcrypt.compare(
-    password,
-    (dummyHash ??= bcrypt.hashSync(randomUUID(), 12)),
-  );
+  return dummyHashReady.then((hash) => bcrypt.compare(password, hash));
 }
 
 @Injectable()
@@ -112,8 +109,10 @@ export class AuthService {
 
   async login(dto: LoginDto): Promise<AuthLoginResponse> {
     const email = dto.email.trim().toLowerCase();
-    await this.limits.consume("login-email", email, 10, 900);
-    const user = await this.repo.byEmail(email);
+    const [, user] = await Promise.all([
+      this.limits.consume("login-email", email, 10, 900),
+      this.repo.byEmail(email),
+    ]);
     const matches = user
       ? await bcrypt.compare(dto.password, user.passwordHash)
       : await compareDummy(dto.password);

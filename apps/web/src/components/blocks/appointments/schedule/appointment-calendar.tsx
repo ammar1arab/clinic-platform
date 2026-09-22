@@ -16,8 +16,10 @@ import {
   EventMountArg,
   MoreLinkContentArg,
 } from "@fullcalendar/core";
-import { Badge } from "@/components/ui";
+import { Badge, Button } from "@/components/ui";
+import { SoftTip } from "@/components/primitives";
 import { cn } from "@/lib/utils";
+import { IconCalendar } from "@/constants/icons";
 import { Appointment } from "@/services/appointments.service";
 import { STATUS_COLORS } from "../shared/status-badge";
 import { patientDisplayName } from "../shared/appointment-display";
@@ -394,9 +396,21 @@ export function AppointmentCalendar({
           setAppointmentPopover(null);
           setDayPopover(null);
         }}
-        className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-header-toolbar]:pe-9 [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0 sm:[&_.fc-header-toolbar]:pe-10"
+        className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-header-toolbar]:pe-[4.5rem] [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0 sm:[&_.fc-header-toolbar]:pe-20"
       >
-        <div className="absolute top-0 inset-e-0 z-20">
+        <div className="absolute top-0 inset-e-0 z-20 flex items-center gap-1">
+          <SoftTip label={t.appointments.today}>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              onClick={() => calendarRef.current?.getApi().today()}
+              aria-label={t.appointments.today}
+              className="size-8 shrink-0 rounded-lg border-border/70 bg-background/80 text-muted-foreground shadow-2xs hover:border-primary/40 hover:bg-card hover:text-foreground active:scale-95"
+            >
+              <IconCalendar className="size-3.5" />
+            </Button>
+          </SoftTip>
           <ViewFocusToggle />
         </div>
         <FullCalendar
@@ -408,7 +422,7 @@ export function AppointmentCalendar({
           locale={lang === "ar" ? "ar" : "en"}
           direction={lang === "ar" ? "rtl" : "ltr"}
           headerToolbar={{
-            left: "prev,next today",
+            left: "prev,next",
             center: "title",
             right: "timeGridDay,timeGridWeek,dayGridMonth",
           }}

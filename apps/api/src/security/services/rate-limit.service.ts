@@ -30,12 +30,18 @@ export class RateLimitService {
     `;
     if (now.getTime() >= this.cleanupAt) {
       this.cleanupAt = now.getTime() + 60_000;
-      await this.prisma.authRateLimit.deleteMany({
-        where: { expiresAt: { lt: new Date(now.getTime() - 86_400_000) } },
-      });
-      await this.prisma.authOtpChallenge.deleteMany({
-        where: { expiresAt: { lt: new Date(now.getTime() - 86_400_000) } },
-      });
+      void (async () => {
+        try {
+          await this.prisma.authRateLimit.deleteMany({
+            where: { expiresAt: { lt: new Date(now.getTime() - 86_400_000) } },
+          });
+          await this.prisma.authOtpChallenge.deleteMany({
+            where: { expiresAt: { lt: new Date(now.getTime() - 86_400_000) } },
+          });
+        } catch {
+          /* best-effort maintenance */
+        }
+      })();
     }
     if (row.count > limit)
       securityError(
