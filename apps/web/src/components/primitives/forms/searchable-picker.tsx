@@ -99,23 +99,28 @@ export function SearchablePicker({
           aria-expanded={open}
           size={size === 'sm' ? 'sm' : 'default'}
           className={cn(
-            'min-w-0 justify-between gap-2 font-normal',
-            size === 'sm' ? 'h-9' : 'h-auto min-h-9 px-2.5 py-2',
+            'min-w-0 justify-between gap-1.5 overflow-hidden font-normal',
+            size === 'sm' ? 'h-9 text-xs' : 'h-9 text-sm',
             className,
           )}
         >
           <span
             className={cn(
-              'flex min-w-0 flex-1 items-center gap-2 text-start',
+              'flex min-w-0 flex-1 items-center gap-2',
               !selected && 'text-muted-foreground',
             )}
           >
             {leading}
-            <span className="min-w-0 break-words whitespace-normal">
+            <span className="min-w-0 flex-1 truncate text-start">
               {selected?.label ?? placeholder ?? t.ui.select}
             </span>
           </span>
-          <IconChevronsUpDown className="size-4 shrink-0 opacity-50" />
+          <IconChevronsUpDown
+            className={cn(
+              'shrink-0 opacity-50',
+              size === 'sm' ? 'size-3.5' : 'size-4',
+            )}
+          />
         </Button>
       </PopoverTrigger>
       <PopoverContent

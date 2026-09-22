@@ -86,7 +86,7 @@ function StatusFilterDropdown({
           variant="outline"
           size="sm"
           className={cn(
-            'h-9 min-w-0 flex-1 gap-1 border-border/70 bg-background/50 px-2.5 font-semibold shadow-2xs sm:flex-none',
+            'h-9 shrink-0 gap-1 border-border/70 bg-background/50 px-2.5 text-xs font-semibold shadow-2xs sm:text-[0.8rem]',
             count > 0 && 'border-primary/35 bg-primary/5 text-foreground',
           )}
         >
@@ -101,7 +101,7 @@ function StatusFilterDropdown({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className={cn('z-[80]', STATUS_MENU_CONTENT_CLASS)}
+        className={cn('z-80', STATUS_MENU_CONTENT_CLASS)}
       >
         <StatusFilterItems active={active} onToggle={onToggle} />
         {count > 0 && (
@@ -227,7 +227,7 @@ export function ScheduleToolbar({
             extraOption={{ value: FORM_ALL, label: t.appointments.departments }}
             placeholder={t.appointments.departments}
             searchPlaceholder={t.appointments.searchPlaceholder}
-            className="h-9 min-w-0 flex-1 bg-background/50 sm:w-52 sm:flex-none"
+            className="h-9 min-w-0 flex-1 bg-background/50 sm:w-52 sm:max-w-56 sm:flex-none"
           />
 
           <StatusFilterDropdown

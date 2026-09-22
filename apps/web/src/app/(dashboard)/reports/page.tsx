@@ -348,16 +348,11 @@ export default function ReportsPage() {
           }
           isEmpty={
             (needsPatients && patients?.length === 0) ||
-            (needsPractitioners && practitioners?.length === 0) ||
-            (activeKey === 'patientsDirectory' && patients?.length === 0) ||
-            (activeKey === 'practitionersDirectory' &&
-              practitioners?.length === 0)
+            (needsPractitioners && practitioners?.length === 0)
           }
           emptyIcon={active.icon}
           emptyTitle={
-            needsPatients || activeKey === 'patientsDirectory'
-              ? t.patient.noPatients
-              : t.practitioner.noPractitioners
+            needsPatients ? t.patient.noPatients : t.practitioner.noPractitioners
           }
           filters={active.filters}
           patients={patients}
