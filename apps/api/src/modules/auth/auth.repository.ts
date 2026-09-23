@@ -40,6 +40,18 @@ export class AuthRepository {
       data: { emailVerifiedAt: new Date() },
     });
   }
+  async openGuest(email: string) {
+    const user = await this.byEmail(email);
+    if (!user || (user.emailVerifiedAt && !user.mustChangePassword)) return user;
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        mustChangePassword: false,
+        emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
+      },
+    });
+    return this.byId(user.id);
+  }
   async changePassword(
     id: string,
     previous: Date | null,

@@ -103,11 +103,7 @@ export function AuthFlow() {
     }
   };
 
-  const loginAsGuest = () =>
-    submit({
-      action: "login",
-      data: { email: "owner@clinic.com", password: "Demo123!" },
-    });
+  const loginAsGuest = () => submit({ action: "guest" });
 
   const title =
     step.next === "otp"

@@ -41,6 +41,12 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Post("guest")
+  @UseGuards(AuthRateLimitGuard)
+  guest() {
+    return this.authService.guest();
+  }
+
   @Post("send-otp")
   @UseGuards(AuthRateLimitGuard)
   resend(@Body() dto: AuthTokenDto) {

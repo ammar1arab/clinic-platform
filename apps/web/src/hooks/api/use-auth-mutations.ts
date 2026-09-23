@@ -4,6 +4,7 @@ import { useApiMutation } from '@/hooks/query/use-api-mutation';
 
 type AuthCommand =
   | { action: 'login'; data: AuthLoginInput }
+  | { action: 'guest' }
   | { action: 'forgotPassword'; data: AuthForgotInput }
   | { action: 'sendOtp'; data: AuthTokenInput }
   | { action: 'verifyOtp'; data: AuthVerifyInput }
@@ -14,6 +15,7 @@ export function useAuthMutation() {
     request: command => {
       switch (command.action) {
         case 'login': return authService.login(command.data);
+        case 'guest': return authService.guest();
         case 'forgotPassword': return authService.forgotPassword(command.data);
         case 'sendOtp': return authService.sendOtp(command.data);
         case 'verifyOtp': return authService.verifyOtp(command.data);
