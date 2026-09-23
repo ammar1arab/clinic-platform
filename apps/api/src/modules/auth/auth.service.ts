@@ -25,7 +25,7 @@ import { securityError } from "@/security/security-error";
 
 type Account = AuthAccount;
 
-const dummyHashReady = bcrypt.hash(randomUUID(), 12);
+const dummyHashReady = bcrypt.hash(randomUUID(), 10);
 function compareDummy(password: string) {
   return dummyHashReady.then((hash) => bcrypt.compare(password, hash));
 }

@@ -346,6 +346,7 @@ export const en = {
     passwordPlaceholder: "••••••••",
     signingIn: "Signing in...",
     signIn: "Sign in",
+    guest: "Continue as guest",
     welcomeBack: "Welcome back!",
   },
 

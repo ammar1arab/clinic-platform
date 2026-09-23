@@ -270,7 +270,7 @@ async function main() {
   const rooms: Room[] = [];
   let roomN = 1;
   for (const dept of departments.filter((d) => d.isActive)) {
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       rooms.push(
         await prisma.room.create({
           data: {
@@ -400,6 +400,28 @@ async function main() {
         sortOrder: 3,
       },
     }),
+    prisma.package.create({
+      data: {
+        clinicId: clinic.id,
+        name: "Monthly Wellness Plan",
+        description: "Unlimited GP visits for one month",
+        sessionCount: 30,
+        price: new Prisma.Decimal(150),
+        sortOrder: 4,
+      },
+    }),
+    prisma.package.create({
+      data: {
+        clinicId: clinic.id,
+        name: "Dermatology Bundle",
+        description: "Six dermatology sessions",
+        sessionCount: 6,
+        price: new Prisma.Decimal(180),
+        discountType: "percentage",
+        discountValue: new Prisma.Decimal(15),
+        sortOrder: 5,
+      },
+    }),
   ]);
 
   const now = new Date();
@@ -471,6 +493,30 @@ async function main() {
         discountValue: new Prisma.Decimal(25),
         validFrom: daysFromNow(-1),
         validTo: daysFromNow(365),
+      },
+    }),
+    prisma.discountCode.create({
+      data: {
+        clinicId: clinic.id,
+        code: "VIP50",
+        discountType: "percentage",
+        discountValue: new Prisma.Decimal(50),
+        maxUses: 10,
+        usedCount: 5,
+        validFrom: daysFromNow(-60),
+        validTo: daysFromNow(60),
+      },
+    }),
+    prisma.discountCode.create({
+      data: {
+        clinicId: clinic.id,
+        code: "WINTER15",
+        discountType: "fixed",
+        discountValue: new Prisma.Decimal(15),
+        maxUses: 100,
+        usedCount: 20,
+        validFrom: daysFromNow(-10),
+        validTo: daysFromNow(80),
       },
     }),
   ]);
@@ -553,8 +599,8 @@ async function main() {
 
   const notificationRows: Prisma.NotificationUncheckedCreateInput[] = [];
   let notifCount = 0;
-  for (const user of staff.slice(0, 4)) {
-    for (let i = 0; i < 6; i++) {
+  for (const user of staff.slice(0, 6)) {
+    for (let i = 0; i < 10; i++) {
       notificationRows.push({
         clinicId: clinic.id,
         userId: user.id,

@@ -8,6 +8,6 @@ export class PasswordPolicyService {
   async hash(password: string) {
     if (!Object.values(passwordRequirements(password)).every(Boolean))
       securityError("weakPassword");
-    return bcrypt.hash(password, 12);
+    return bcrypt.hash(password, 10);
   }
 }

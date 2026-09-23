@@ -60,13 +60,13 @@ function SuccessMark() {
 export function FeedbackOverlay({
   open,
   onClose,
-  title,
+  title = '',
   variant = 'success',
   durationMs = SUCCESS_OVERLAY_MS,
 }: {
   open: boolean;
   onClose: () => void;
-  title: string;
+  title?: string;
   variant?: 'success' | keyof typeof variants;
   durationMs?: number;
 }) {
@@ -89,16 +89,15 @@ export function FeedbackOverlay({
           <div className={cn('grid size-24 place-items-center rounded-full', tone.color)}>
             <Icon className="size-12" strokeWidth={2} aria-hidden />
           </div>
-          <p className="max-w-[16rem] font-heading text-base font-semibold text-foreground">
-            {title}
-          </p>
+          {title ? (
+            <p className="max-w-[16rem] font-heading text-base font-semibold text-foreground">
+              {title}
+            </p>
+          ) : null}
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex flex-col items-center justify-center text-center">
           <SuccessMark />
-          <p className="max-w-[16rem] font-heading text-base font-semibold text-foreground">
-            {title}
-          </p>
         </div>
       )}
     </div>

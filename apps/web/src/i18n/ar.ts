@@ -347,6 +347,7 @@ export const ar: Translations = {
     passwordPlaceholder: "••••••••",
     signingIn: "جاري تسجيل الدخول...",
     signIn: "تسجيل الدخول",
+    guest: "المتابعة كضيف",
     welcomeBack: "مرحباً بعودتك!",
   },
 
