@@ -103,6 +103,47 @@ export function AuthFlow() {
     }
   };
 
+  const loginAsGuest = async () => {
+    setError("");
+    try {
+      const loginRes = await mutation.mutateAsync({
+        action: "login",
+        data: { email: "owner@clinic.com", password: "Demo123!" },
+      });
+      
+      let token = "";
+      if (loginRes.next === "otp") {
+        token = "setupToken" in loginRes ? loginRes.setupToken : "";
+      }
+      
+      if (loginRes.next === "otp") {
+        const verifyRes = await mutation.mutateAsync({
+          action: "verifyOtp",
+          data: { code: "000000", token },
+        });
+        if (verifyRes.next === "ready") {
+          celebrating.current = true;
+          setSuccess(true);
+          const me = await login(verifyRes.accessToken, verifyRes.user);
+          destRef.current = postLoginPath(me.role, readReturnPath());
+          return;
+        }
+      } else if (loginRes.next === "ready") {
+        celebrating.current = true;
+        setSuccess(true);
+        const me = await login(loginRes.accessToken, loginRes.user);
+        destRef.current = postLoginPath(me.role, readReturnPath());
+        return;
+      }
+    } catch (cause) {
+      celebrating.current = false;
+      setSuccess(false);
+      setError(
+        extractErrorMessage(cause as Parameters<typeof extractErrorMessage>[0]),
+      );
+    }
+  };
+
   const title =
     step.next === "otp"
       ? t.auth.verifyEmail
@@ -179,12 +220,7 @@ export function AuthFlow() {
                 variant="outline"
                 className="w-full"
                 disabled={pending}
-                onClick={() =>
-                  submit({
-                    action: "login",
-                    data: { email: "owner@clinic.com", password: "Demo123!" },
-                  })
-                }
+                onClick={loginAsGuest}
               >
                 {t.auth.guest}
               </Button>
