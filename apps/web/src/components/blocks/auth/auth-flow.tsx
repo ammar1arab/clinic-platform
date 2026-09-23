@@ -103,46 +103,11 @@ export function AuthFlow() {
     }
   };
 
-  const loginAsGuest = async () => {
-    setError("");
-    try {
-      const loginRes = await mutation.mutateAsync({
-        action: "login",
-        data: { email: "owner@clinic.com", password: "Demo123!" },
-      });
-      
-      let token = "";
-      if (loginRes.next === "otp") {
-        token = "setupToken" in loginRes ? loginRes.setupToken : "";
-      }
-      
-      if (loginRes.next === "otp") {
-        const verifyRes = await mutation.mutateAsync({
-          action: "verifyOtp",
-          data: { code: "000000", token },
-        });
-        if (verifyRes.next === "ready") {
-          celebrating.current = true;
-          setSuccess(true);
-          const me = await login(verifyRes.accessToken, verifyRes.user);
-          destRef.current = postLoginPath(me.role, readReturnPath());
-          return;
-        }
-      } else if (loginRes.next === "ready") {
-        celebrating.current = true;
-        setSuccess(true);
-        const me = await login(loginRes.accessToken, loginRes.user);
-        destRef.current = postLoginPath(me.role, readReturnPath());
-        return;
-      }
-    } catch (cause) {
-      celebrating.current = false;
-      setSuccess(false);
-      setError(
-        extractErrorMessage(cause as Parameters<typeof extractErrorMessage>[0]),
-      );
-    }
-  };
+  const loginAsGuest = () =>
+    submit({
+      action: "login",
+      data: { email: "owner@clinic.com", password: "Demo123!" },
+    });
 
   const title =
     step.next === "otp"
@@ -212,7 +177,9 @@ export function AuthFlow() {
               </Button>
               <div className="relative flex items-center gap-3">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground select-none">or</span>
+                <span className="text-xs text-muted-foreground select-none">
+                  or
+                </span>
                 <div className="h-px flex-1 bg-border" />
               </div>
               <Button

@@ -130,6 +130,8 @@ function SchedulePopover({
         sideOffset={compact ? 10 : 12}
         collisionPadding={compact ? OVERLAY_COLLISION_PADDING : 12}
         sticky="partial"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onCloseAutoFocus={(event) => event.preventDefault()}
         onInteractOutside={keepNestedPortals}
         className={cn(
           POPOVER_SURFACE,

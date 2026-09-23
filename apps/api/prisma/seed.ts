@@ -94,12 +94,21 @@ async function upsertClinicUserByEmail(
   let user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     user = await prisma.user.create({
-      data: { email, passwordHash, mustChangePassword: false },
+      data: {
+        email,
+        passwordHash,
+        mustChangePassword: false,
+        emailVerifiedAt: new Date(),
+      },
     });
   } else {
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordHash, mustChangePassword: false },
+      data: {
+        passwordHash,
+        mustChangePassword: false,
+        emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
+      },
     });
   }
 
@@ -150,9 +159,8 @@ function practitionerWriteData(
   };
 }
 
-async function ensureJordanianStaff(clinicId: string) {
+async function ensureJordanianStaff(clinicId: string, passwordHash: string) {
   const roster = buildJordanianPractitioners();
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const practitioners = await Promise.all(
     roster.map((seed) =>
       upsertClinicUserByEmail(
@@ -239,11 +247,27 @@ async function main() {
   }
 
   console.log(`\nSeeding clinic: ${clinic.name} (${clinic.id})`);
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const owner = await prisma.user.findUnique({
+    where: { email: "owner@clinic.com" },
+  });
+  if (owner) {
+    await prisma.user.update({
+      where: { id: owner.id },
+      data: {
+        passwordHash,
+        mustChangePassword: false,
+        emailVerifiedAt: owner.emailVerifiedAt ?? new Date(),
+      },
+    });
+    console.log("Demo owner password reset: owner@clinic.com");
+  }
   await resetClinicOperationalData(clinic.id);
   console.log("Cleared operational data");
 
   const { practitioners, finance, staff, roster } = await ensureJordanianStaff(
     clinic.id,
+    passwordHash,
   );
   const doctors = practitioners;
   const payer = finance ?? staff[0];

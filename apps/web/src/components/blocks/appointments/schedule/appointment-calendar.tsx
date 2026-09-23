@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -313,23 +313,41 @@ export function AppointmentCalendar({
     [appointmentsByDay],
   );
 
-  const handleCalendarClickCapture = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const link = target.closest(".fc-more-link");
-      if (!link || !event.currentTarget.contains(link)) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      event.nativeEvent.stopImmediatePropagation();
-
+  const openMoreLink = useCallback(
+    (link: Element) => {
       const dayElement = link.closest<HTMLElement>("[data-date]");
       const rawDate = dayElement?.getAttribute("data-date");
       const date = rawDate ? new Date(`${rawDate}T00:00:00`) : new Date();
       openDayPopover(link, date);
     },
     [openDayPopover],
+  );
+
+  const handleCalendarClickCapture = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest(".fc-more-link");
+      if (!link || !event.currentTarget.contains(link)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      openMoreLink(link);
+    },
+    [openMoreLink],
+  );
+
+  const handleMoreLinkKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest(".fc-more-link");
+      if (!link || !event.currentTarget.contains(link)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      openMoreLink(link);
+    },
+    [openMoreLink],
   );
 
   const handleEventDidMount = useCallback((info: EventMountArg) => {
@@ -359,13 +377,31 @@ export function AppointmentCalendar({
     [t],
   );
 
-  const syncCalendarSize = useCallback(() => {
+  const calendarSizeRef = useRef({ width: 0, height: 0 });
+  const syncCalendarSize = useCallback((host: HTMLElement) => {
+    const width = host.clientWidth;
+    const height = host.clientHeight;
+    if (
+      calendarSizeRef.current.width === width &&
+      calendarSizeRef.current.height === height
+    ) {
+      return;
+    }
+    calendarSizeRef.current = { width, height };
     const api = calendarRef.current?.getApi();
     if (!api) return;
+    const scroller = host.querySelector(".fc-scroller");
+    const scrollTop = scroller instanceof HTMLElement ? scroller.scrollTop : 0;
+    const scrollLeft = scroller instanceof HTMLElement ? scroller.scrollLeft : 0;
     try {
       api.updateSize();
     } catch {
       return;
+    }
+    const next = host.querySelector(".fc-scroller");
+    if (next instanceof HTMLElement) {
+      next.scrollTop = scrollTop;
+      next.scrollLeft = scrollLeft;
     }
   }, []);
 
@@ -389,6 +425,7 @@ export function AppointmentCalendar({
       <div
         ref={sizeHostRef}
         onClickCapture={handleCalendarClickCapture}
+        onKeyDownCapture={handleMoreLinkKeyDown}
         onPointerDown={(event) => {
           if (!(event.target instanceof Element)) return;
           if (event.target.closest("[data-calendar-popover]")) return;
@@ -472,16 +509,6 @@ export function AppointmentCalendar({
           eventMinHeight={isMobile ? 28 : 32}
           moreLinkContent={renderMoreLinkContent}
           moreLinkClassNames={["block", "w-full"]}
-          moreLinkClick={(info) => {
-            info.jsEvent.preventDefault();
-            info.jsEvent.stopPropagation();
-            const target = info.jsEvent.target;
-            const link =
-              target instanceof Element
-                ? target.closest(".fc-more-link")
-                : null;
-            if (link) openDayPopover(link, info.date);
-          }}
           expandRows
           stickyHeaderDates
           views={{
