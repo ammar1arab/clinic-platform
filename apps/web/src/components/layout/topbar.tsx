@@ -1,7 +1,5 @@
 'use client';
 
-import { requestPageRefresh } from './pull-to-refresh';
-import { IconRotateCcw } from '@/constants/icons';
 import { ROUTES } from '@/constants/routes';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
@@ -96,12 +94,6 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
-          <SoftTip label={t.common.reloadPage}>
-            <Button type="button" variant="ghost" size="icon"
-              aria-label={t.common.reloadPage} onClick={requestPageRefresh}>
-              <IconRotateCcw className="size-4" aria-hidden />
-            </Button>
-          </SoftTip>
           <LanguageSwitcher />
           <ThemeToggle />
           <SoftTip label={t.auth.logout}>

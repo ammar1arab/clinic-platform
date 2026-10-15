@@ -10,12 +10,6 @@ import { cn } from "@/lib/utils";
 
 const THRESHOLD = 64;
 const REFRESH_PARAM = "_cureva_refresh";
-const REFRESH_EVENT = "cureva:refresh";
-
-export function requestPageRefresh() {
-  window.dispatchEvent(new Event(REFRESH_EVENT));
-}
-
 export function PullToRefresh({ children }: { children: ReactNode }) {
   const { t } = useLanguage();
   const confirm = useConfirm();
@@ -148,9 +142,9 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         }
         setDistance(pulled);
       };
-      const finish = async (force = false) => {
+      const finish = async () => {
         if (locked) return;
-        const ready = force || pulled >= THRESHOLD;
+        const ready = pulled >= THRESHOLD;
         reset();
         if (!ready) return;
         locked = true;
@@ -202,10 +196,6 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         if (pulled > 8 && event.cancelable) event.preventDefault();
         void finish();
       };
-      const refresh = () => {
-        void finish(true);
-      };
-      window.addEventListener(REFRESH_EVENT, refresh);
       root.addEventListener("click", prepareFeedbackSound, {
         once: true,
         capture: true,
@@ -224,7 +214,6 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         disposed = true;
         clearTimeout(timer);
         restoreSurface();
-        window.removeEventListener(REFRESH_EVENT, refresh);
         root.removeEventListener("click", prepareFeedbackSound, true);
         root.removeEventListener("touchstart", begin, true);
         root.removeEventListener("touchmove", move, true);
