@@ -13,6 +13,8 @@ import { RateLimitService } from "@/security/services/rate-limit.service";
 import type { AuthUser } from "@/modules/auth/types";
 import {
   LOCALE,
+  EMAIL_AUDIENCE,
+  type EmailAudiencesResponse,
   type EmailRecipientPreview,
   type EmailRecipientsResponse,
   type EmailPreviewResponse,
@@ -82,6 +84,10 @@ export class EmailsService {
     private readonly prisma: PrismaService,
     private readonly limits: RateLimitService,
   ) {}
+
+  audiences(): EmailAudiencesResponse {
+    return { audiences: ["all", ...Object.values(EMAIL_AUDIENCE)] };
+  }
 
   async recipients(
     user: AuthUser,

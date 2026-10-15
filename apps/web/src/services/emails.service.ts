@@ -1,6 +1,7 @@
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/constants/endpoints";
 import type {
+  EmailAudiencesResponse,
   EmailHistoryInput,
   EmailHistoryResponse,
   EmailMessageDetail,
@@ -30,6 +31,8 @@ export const emailsService = {
       .then((r) => r.data),
   preview: (input: EmailPreviewInput) =>
     api.post<EmailPreviewResponse>(paths.PREVIEW, input).then((r) => r.data),
+  audiences: () =>
+    api.get<EmailAudiencesResponse>(paths.AUDIENCES).then((r) => r.data),
   variables: () =>
     api.get<EmailVariablesResponse>(paths.VARIABLES).then((r) => r.data),
   test: (input: EmailTestInput) =>

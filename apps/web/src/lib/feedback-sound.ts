@@ -75,3 +75,15 @@ export function playFeedbackSound() {
 
   void ctx.resume().then(start).catch(() => {});
 }
+
+export function playRefreshSound() {
+  const ctx = audio();
+  if (!ctx) return;
+  const play = () => {
+    if (ctx.state !== 'running') return;
+    tone(ctx, ctx.destination, 660, ctx.currentTime, 0.09, 'sine', 0.08);
+    tone(ctx, ctx.destination, 880, ctx.currentTime + 0.06, 0.1, 'sine', 0.06);
+  };
+  if (ctx.state === 'running') play();
+  else void ctx.resume().then(play).catch(() => {});
+}

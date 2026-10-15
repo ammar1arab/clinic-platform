@@ -61,6 +61,11 @@ export class EmailsController {
     return this.emails.send(user, dto);
   }
 
+  @Get("audiences")
+  audiences() {
+    return this.emails.audiences();
+  }
+
   @Get("variables")
   variables() {
     return {

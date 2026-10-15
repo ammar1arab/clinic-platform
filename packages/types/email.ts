@@ -163,3 +163,7 @@ export interface EmailTestInput extends EmailContent {
 export interface EmailVariablesResponse {
   variables: string[];
 }
+
+export interface EmailAudiencesResponse {
+  audiences: EmailRecipientFilters['audience'][];
+}

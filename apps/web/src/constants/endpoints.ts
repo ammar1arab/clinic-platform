@@ -4,6 +4,7 @@ export const ENDPOINTS = {
     BY_ID: (id: string) => `/emails/${id}`,
     RECIPIENTS: "/emails/recipients/preview",
     PREVIEW: "/emails/preview",
+    AUDIENCES: "/emails/audiences",
     VARIABLES: "/emails/variables",
     TEST: "/emails/test",
     SEND: "/emails/send",

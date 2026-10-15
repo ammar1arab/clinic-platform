@@ -62,7 +62,7 @@ export function EmailRecipientList({
     {
       id: "recipient",
       label: t.common.name,
-      className: "w-[48%]",
+      className: "w-[38%]",
       render: (row) => (
         <DirectoryIdentity
           name={getBilingualName(row.name, row.nameAr, lang)}
@@ -71,9 +71,17 @@ export function EmailRecipientList({
       ),
     },
     {
+      id: "audience",
+      label: t.emails.type,
+      className: "w-[18%]",
+      render: (row) => (
+        <TruncatedText lines={2}>{t.emails[row.audience]}</TruncatedText>
+      ),
+    },
+    {
       id: "department",
       label: t.emails.department,
-      className: "w-[26%]",
+      className: "w-[20%]",
       render: (row) => (
         <TruncatedText lines={2}>
           {getBilingualName(row.department, row.departmentAr, lang) || "-"}
@@ -83,7 +91,7 @@ export function EmailRecipientList({
     {
       id: "phone",
       label: t.exports.phone,
-      className: "w-[20%]",
+      className: "w-[18%]",
       cellClassName: "text-muted-foreground",
       render: (row) => (
         <PhoneLink value={row.phone} className="block text-xs" />
@@ -99,7 +107,7 @@ export function EmailRecipientList({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="grid grid-cols-1 gap-4 md:hidden">
         {rows.map((row) => {
           const name = getBilingualName(row.name, row.nameAr, lang) || "—";
@@ -113,7 +121,7 @@ export function EmailRecipientList({
                 <DirectoryMeta
                   columns={columns}
                   item={row}
-                  ids={["phone", "department"]}
+                  ids={["audience", "phone", "department"]}
                 />
               }
             />
@@ -130,7 +138,7 @@ export function EmailRecipientList({
       />
 
       {pageCount > 1 && (
-        <div className="sticky bottom-0 z-20 bg-background pt-3 pb-2">
+        <div className="sticky bottom-0 z-20 bg-background">
           <Pagination
             page={currentPage}
             pageCount={pageCount}

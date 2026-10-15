@@ -16,6 +16,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Skeleton,
 } from "@/components/ui";
 import {
   DatePicker,
@@ -26,6 +27,7 @@ import {
   SearchInput,
   OverflowActions,
 } from "@/components/primitives";
+import { useEmailAudiences } from "@/hooks/api/use-emails";
 import { useDepartments } from "@/hooks/api/use-departments";
 import { useServices } from "@/hooks/api/use-services";
 import { useClinicStaff } from "@/hooks/api/use-clinic-staff";
@@ -42,16 +44,6 @@ const AUDIENCE = {
   ...EMAIL_AUDIENCE,
   ALL: "all",
 } as const;
-
-const AUDIENCE_OPTIONS = [
-  AUDIENCE.ALL,
-  AUDIENCE.PATIENTS,
-  AUDIENCE.PRACTITIONERS,
-  AUDIENCE.STAFF,
-  AUDIENCE.FINANCIAL,
-  AUDIENCE.OWNERS,
-  AUDIENCE.ADMINS,
-] as const;
 
 const PAYMENT = {
   ALL: "all",
@@ -73,6 +65,7 @@ export function EmailRecipientFields({
     formState: { errors },
   } = useFormContext<EmailComposerValues>();
   const audience = watch("audience");
+  const audiences = useEmailAudiences(clinicId);
   const departments = useDepartments(clinicId);
   const services = useServices(clinicId);
   const staff = useClinicStaff(clinicId);
@@ -150,29 +143,39 @@ export function EmailRecipientFields({
             name="audience"
             render={({ field }) => (
               <OverflowActions label={t.emails.audience}>
-                {AUDIENCE_OPTIONS.map((key) => (
-                  <Button
-                    key={key}
-                    type="button"
-                    size="sm"
-                    className="shrink-0"
-                    variant={field.value === key ? "default" : "outline"}
-                    aria-pressed={field.value === key}
-                    onClick={() => {
-                      if (field.value === key) return;
-                      field.onChange(key);
-                      setValue("ids", []);
-                      clearFilters();
-                      setValue("search", "");
-                    }}
-                  >
-                    {t.emails[key]}
-                  </Button>
-                ))}
+                {audiences.isLoading
+                  ? Array.from({ length: 7 }, (_, index) => (
+                      <Skeleton
+                        key={index}
+                        className="h-7 w-20 shrink-0 rounded-md"
+                      />
+                    ))
+                  : (audiences.data?.audiences ?? []).map((key) => (
+                      <Button
+                        key={key}
+                        type="button"
+                        size="sm"
+                        className="shrink-0"
+                        variant={field.value === key ? "default" : "outline"}
+                        aria-pressed={field.value === key}
+                        onClick={() => {
+                          if (field.value === key) return;
+                          field.onChange(key);
+                          setValue("ids", []);
+                          clearFilters();
+                          setValue("search", "");
+                        }}
+                      >
+                        {t.emails[key]}
+                      </Button>
+                    ))}
               </OverflowActions>
             )}
           />
         </FormField>
+        {audiences.isError && (
+          <ErrorState onRetry={() => void audiences.refetch()} />
+        )}
         {(departments.isError || services.isError || staff.isError) && (
           <ErrorState
             onRetry={() => {

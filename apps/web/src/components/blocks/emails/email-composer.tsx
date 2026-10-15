@@ -19,7 +19,7 @@ import {
   ErrorState,
   FormField,
   PageBack,
-  SectionLoader,
+  TableSkeleton,
   SoftTip,
   OverflowActions,
 } from "@/components/primitives";
@@ -316,7 +316,7 @@ export function EmailComposer() {
                 {recipientsLoading ||
                 recipientsQuery.isLoading ||
                 recipientsQuery.isPlaceholderData ? (
-                  <SectionLoader label={t.common.loading} />
+                  <TableSkeleton rows={8} cols={3} hasHeader={false} />
                 ) : recipientsQuery.isError ? (
                   <ErrorState onRetry={() => void recipientsQuery.refetch()} />
                 ) : (

@@ -1,4 +1,5 @@
 import type {
+  EmailAudiencesResponse,
   EmailHistoryInput,
   EmailHistoryResponse,
   EmailMessageDetail,
@@ -54,6 +55,14 @@ export function useEmailSettings(clinicId: string) {
   return useFetchData<EmailSettingsInput>({
     queryKey: QUERY_KEYS.emails.settings(clinicId),
     request: emailsService.settings,
+    options: { enabled: !!clinicId },
+  });
+}
+
+export function useEmailAudiences(clinicId: string) {
+  return useFetchData<EmailAudiencesResponse>({
+    queryKey: QUERY_KEYS.emails.audiences(clinicId),
+    request: emailsService.audiences,
     options: { enabled: !!clinicId },
   });
 }
