@@ -1,3 +1,5 @@
+import { useLanguage } from '@/providers';
+import type { OwnerResetPasswordInput } from '@clinic/types';
 import type { AuthForgotInput, AuthLoginInput, AuthLoginResponse, AuthPasswordInput, AuthRecovery, AuthReset, AuthTokenInput, AuthVerifyInput } from '@clinic/types';
 import { authService } from '@/services/auth.service';
 import { useApiMutation } from '@/hooks/query/use-api-mutation';
@@ -23,5 +25,13 @@ export function useAuthMutation() {
         case 'resetPassword': return authService.resetPassword(command.data);
       }
     },
+  });
+}
+
+export function useOwnerResetPassword(id: string) {
+  const { t } = useLanguage();
+  return useApiMutation<{ success: true }, Error, OwnerResetPasswordInput>({
+    request: (input) => authService.ownerResetPassword(id, input),
+    successMessage: t.common.accountPasswordReset,
   });
 }

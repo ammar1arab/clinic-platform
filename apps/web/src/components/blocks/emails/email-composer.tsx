@@ -27,6 +27,7 @@ import {
   emailSelectionFor,
   useEmailComposer,
 } from "@/hooks/api/use-email-composer";
+import { useClinic } from "@/hooks/api/use-clinic";
 import { useClinicId } from "@/hooks/shared/use-clinic-id";
 import {
   useEmailPreviewQuery,
@@ -35,7 +36,7 @@ import {
 } from "@/hooks/api/use-emails";
 import { useRouteNav } from "@/hooks/shared/use-route-nav";
 import { IconSend } from "@/constants/icons";
-import { useAuth, useLanguage } from "@/providers";
+import { useLanguage } from "@/providers";
 import { ROUTES } from "@/constants/routes";
 import { EmailRecipientFields } from "./email-recipient-fields";
 import { EmailRecipientList } from "./email-recipient-list";
@@ -47,9 +48,10 @@ import {
 
 export function EmailComposer() {
   const { t, lang, dir } = useLanguage();
-  const { user } = useAuth();
   const nav = useRouteNav();
   const clinicId = useClinicId();
+  const clinic = useClinic(clinicId);
+  const clinicEmail = clinic.data?.email?.trim();
   const sentId = useRef<string | null>(null);
   const feedback = useFeedbackOverlay(() => {
     if (sentId.current) nav.go(ROUTES.EMAIL_DETAIL(sentId.current));
@@ -57,7 +59,7 @@ export function EmailComposer() {
   const state = useEmailComposer((id) => {
     sentId.current = id;
     feedback.celebrate(t.emails.queuedSuccess);
-  });
+  }, clinicEmail);
   const { form, values } = state;
   const variables = useEmailVariables(clinicId);
   const { errors } = form.formState;
@@ -78,8 +80,8 @@ export function EmailComposer() {
     recipientsLoading ||
     recipientsQuery.isFetching ||
     recipientsQuery.isPlaceholderData;
-  const testLabel = user?.email
-    ? t.emails.testDestination.replace("{email}", user.email)
+  const testLabel = clinicEmail
+    ? t.emails.testDestination.replace("{email}", clinicEmail)
     : t.emails.testHint;
   const previewSubject = deferredValues.subject.trim();
   const previewBody = deferredValues.body.trim();
@@ -163,7 +165,7 @@ export function EmailComposer() {
                 variant="outline"
                 size="icon"
                 aria-label={testLabel}
-                disabled={state.working || feedback.open}
+                disabled={state.working || feedback.open || !clinicEmail}
                 onClick={() => void state.sendTest()}
               >
                 <IconSend className="size-4" />

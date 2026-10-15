@@ -1,5 +1,6 @@
 'use client';
 
+import { AccountPasswordReset } from '@/components/blocks/auth/account-password-reset';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/constants/query-keys';
@@ -338,6 +339,7 @@ export default function ClinicSettingsPage() {
     <div className="w-full min-w-0 space-y-4">
       <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
       <ClinicSettingsForm key={clinic.id} clinic={clinic} clinicId={clinicId} />
+      <AccountPasswordReset key={clinicId} />
     </div>
   );
 }

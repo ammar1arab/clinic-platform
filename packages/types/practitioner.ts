@@ -175,3 +175,5 @@ export interface PractitionerFilters {
   experience?: string;
   sort?: string;
 }
+
+export type { OwnerResetPasswordInput as ResetPractitionerPasswordInput } from './auth-security';

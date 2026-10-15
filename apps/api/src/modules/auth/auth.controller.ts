@@ -1,5 +1,7 @@
 import {
   Body,
+  Param,
+  ParseUUIDPipe,
   Controller,
   Post,
   Get,
@@ -12,10 +14,14 @@ import { AuthService } from "./auth.service";
 import { LoginDto, RegisterDto } from "./dto";
 import {
   AuthPasswordDto,
+  OwnerResetPasswordDto,
   AuthTokenDto,
   ForgotPasswordDto,
   VerifyOtpDto,
 } from "./dto/auth-flow.dto";
+import { Role } from "@prisma/client";
+import { RolesGuard } from "./guards";
+import { Roles } from "./decorators";
 import { JwtAuthGuard } from "./guards";
 import { CurrentUser } from "./decorators";
 import type { AuthUser } from "./types";
@@ -27,6 +33,18 @@ import { AuthExceptionFilter } from "@/security/auth-exception.filter";
 @UseFilters(AuthExceptionFilter)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Post("accounts/:id/reset-password")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.owner)
+  ownerResetPassword(
+    @CurrentUser() actor: AuthUser,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: OwnerResetPasswordDto,
+  ) {
+    return this.authService.ownerResetPassword(actor, id, dto.password);
+  }
 
   @Post("register")
   @ApiBearerAuth()

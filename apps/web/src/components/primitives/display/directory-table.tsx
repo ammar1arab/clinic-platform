@@ -89,6 +89,7 @@ export function DirectoryTable<T>({
                 key={rowKey(item)}
                 tabIndex={onOpen ? 0 : undefined}
                 className={cn(
+                  "group/directory",
                   onOpen &&
                     "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                   inactive?.(item) && "opacity-60",
@@ -135,11 +136,13 @@ export function DirectoryIdentity({
   email,
   avatar,
   badge,
+  copyContacts = false,
 }: {
   name: string;
   email?: string | null;
   avatar?: { src?: string | null; seed: string };
   badge?: ReactNode;
+  copyContacts?: boolean;
 }) {
   return (
     <div className="flex min-w-0 items-center gap-2.5">
@@ -153,6 +156,7 @@ export function DirectoryIdentity({
           <SoftTip label={email} className="w-full">
             <EmailLink
               value={email}
+              copyable={copyContacts}
               className="w-full min-w-0 text-xs text-muted-foreground"
             />
           </SoftTip>

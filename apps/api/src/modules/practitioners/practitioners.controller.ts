@@ -22,6 +22,7 @@ import {
   ReplaceAvailabilityDto,
   ReplaceTimeOffDto,
   UpdatePractitionerDto,
+  ResetPractitionerPasswordDto,
 } from "./dto";
 
 @ApiBearerAuth()
@@ -29,6 +30,17 @@ import {
 @Controller("practitioners")
 export class PractitionersController {
   constructor(private practitionersService: PractitionersService) {}
+
+  @Post(":id/reset-password")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner)
+  resetPassword(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: ResetPractitionerPasswordDto,
+  ) {
+    return this.practitionersService.resetPassword(id, user, dto.password);
+  }
 
   @Post()
   @UseGuards(RolesGuard)

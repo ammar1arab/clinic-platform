@@ -19,6 +19,7 @@ export const ENDPOINTS = {
     RELEASE_PACKAGE: (id: string) => `/appointments/${id}/release-package`,
   },
   AUTH: {
+    OWNER_RESET_PASSWORD: (id: string) => `/auth/accounts/${id}/reset-password`,
     ME: "/auth/me",
     LOGIN: "/auth/login",
     GUEST: "/auth/guest",
@@ -71,6 +72,7 @@ export const ENDPOINTS = {
     REORDER: "/payment-methods/reorder",
   },
   PRACTITIONERS: {
+    RESET_PASSWORD: (id: string) => `/practitioners/${id}/reset-password`,
     BASE: "/practitioners",
     BY_ID: (id: string) => `/practitioners/${id}`,
     DEACTIVATE: (id: string) => `/practitioners/${id}/deactivate`,

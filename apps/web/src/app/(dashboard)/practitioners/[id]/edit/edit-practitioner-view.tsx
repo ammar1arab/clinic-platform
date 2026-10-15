@@ -1,5 +1,7 @@
 'use client';
 
+import { AccountPasswordReset } from '@/components/blocks/auth/account-password-reset';
+
 import { PractitionerForm } from '@/components/blocks/practitioners';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
 import { useRouter } from 'next/navigation';
@@ -92,6 +94,8 @@ export function EditPractitionerView({ id }: { id: string }) {
           onSuccess={(savedId) => router.push(ROUTES.PRACTITIONER_DETAIL(savedId))}
         />
       )}
+
+      {data && !isError && <AccountPasswordReset id={id} />}
 
       <TwoStepDeleteDialogs
         step1={del.step1}

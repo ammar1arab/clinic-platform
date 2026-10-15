@@ -7,6 +7,7 @@ import {
   formatPhoneDisplay,
   phoneHref,
 } from '@/lib/contact';
+import { CopyButton } from './copy-button';
 import { cn } from '@/lib/utils';
 
 const linkClass =
@@ -17,6 +18,7 @@ type ContactProps = {
   className?: string;
   empty?: ReactNode;
   stopPropagation?: boolean;
+  copyable?: boolean;
 };
 
 function ContactLink({
@@ -25,10 +27,11 @@ function ContactLink({
   className,
   empty = '—',
   stopPropagation = true,
+  copyable = false,
 }: Omit<ContactProps, 'value'> & { label: string; href: string | null }) {
   if (!label) return <span className={className}>{empty}</span>;
   if (!href) return <span className={cn('truncate', className)}>{label}</span>;
-  return (
+  const link = (
     <a
       href={href}
       className={cn(linkClass, className)}
@@ -37,6 +40,12 @@ function ContactLink({
       {label}
     </a>
   );
+  return copyable ? (
+    <span className="group/contact inline-flex max-w-full min-w-0 items-center gap-1">
+      {link}
+      <CopyButton value={label} />
+    </span>
+  ) : link;
 }
 
 export function PhoneLink({ value, ...props }: ContactProps) {

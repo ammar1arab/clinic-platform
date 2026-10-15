@@ -1,7 +1,7 @@
 import { ConflictException, Injectable } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
 import { randomUUID } from "node:crypto";
-import { AuthOtpPurpose } from "@prisma/client";
+import { AuthOtpPurpose, Role } from "@prisma/client";
 import type {
   AuthLoginResponse,
   AuthMe,
@@ -40,6 +40,15 @@ export class AuthService {
     private readonly passwords: PasswordPolicyService,
     private readonly limits: RateLimitService,
   ) {}
+
+  async ownerResetPassword(actor: AuthUser, id: string, password: string) {
+    if (actor.role !== Role.owner) securityError("clinicUnavailable", 403);
+    await this.limits.consume("account-password-reset", actor.userId, 10, 3600);
+    const hash = await this.passwords.hash(password);
+    if (!(await this.repo.resetPassword(id, actor.clinicId, hash)))
+      securityError("invalidRequest", 409);
+    return { success: true as const };
+  }
 
   private membership(user: Account) {
     if (user.clinicUsers.length !== 1) securityError("clinicUnavailable", 403);

@@ -1,7 +1,7 @@
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/constants/endpoints";
 import type {
-  AuthMe, AuthLoginInput, AuthLoginResponse, AuthTokenInput, AuthOtp,
+  OwnerResetPasswordInput, AuthMe, AuthLoginInput, AuthLoginResponse, AuthTokenInput, AuthOtp,
   AuthVerifyInput, AuthVerifyResponse, AuthForgotInput, AuthRecovery,
   AuthPasswordInput, AuthReady,
 } from "@clinic/types";
@@ -9,6 +9,8 @@ import type {
 export type { AuthMe as MeResponse } from "@clinic/types";
 
 export const authService = {
+  ownerResetPassword: (id: string, input: OwnerResetPasswordInput) =>
+    api.post<{ success: true }>(ENDPOINTS.AUTH.OWNER_RESET_PASSWORD(id), input).then(r => r.data),
   getMe: () => api.get<AuthMe>(ENDPOINTS.AUTH.ME).then(r => r.data),
   login: (body: AuthLoginInput) => api.post<AuthLoginResponse>(ENDPOINTS.AUTH.LOGIN, body).then(r => r.data),
   guest: () => api.post<AuthReady>(ENDPOINTS.AUTH.GUEST).then(r => r.data),

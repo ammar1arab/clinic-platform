@@ -162,6 +162,7 @@ export function PractitionersList({
       className: "w-[22%]",
       render: (p) => (
         <DirectoryIdentity
+          copyContacts
           name={nameFor(p)}
           email={p.email}
           avatar={{ src: p.imageUrl, seed: p.id }}
@@ -187,7 +188,7 @@ export function PractitionersList({
       label: t.practitioner.phone,
       className: "w-[12%]",
       cellClassName: "text-muted-foreground",
-      render: (p) => <PhoneLink value={p.phone} className="block" />,
+      render: (p) => <PhoneLink copyable value={p.phone} className="block" />,
     },
     {
       id: "experience",
@@ -279,7 +280,7 @@ export function PractitionersList({
               key={p.id}
               avatar={<PreviewableAvatar src={p.imageUrl} seed={p.id} />}
               title={nameFor(p)}
-              subtitle={<EmailLink value={p.email} />}
+              subtitle={<EmailLink copyable value={p.email} />}
               tags={
                 specialtyFor(p) ? (
                   <CellBadge value={specialtyFor(p)} />
@@ -287,6 +288,7 @@ export function PractitionersList({
               }
               footer={
                 <PhoneLink
+                  copyable
                   value={p.phone}
                   className="text-xs text-muted-foreground"
                 />

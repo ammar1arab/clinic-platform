@@ -71,7 +71,10 @@ const contentFor = (
   body: body.trim(),
 });
 
-export function useEmailComposer(onSent: (id: string) => void) {
+export function useEmailComposer(
+  onSent: (id: string) => void,
+  clinicEmail?: string,
+) {
   const { t, lang } = useLanguage();
   const form = useForm<EmailComposerValues>({
     resolver: zodResolver(emailComposerSchema),
@@ -194,8 +197,9 @@ export function useEmailComposer(onSent: (id: string) => void) {
       if (!content) return;
       const result = await testMutation.mutateAsync({
         ...content,
-        requestId: requestId("test", content),
+        requestId: requestId("test", { ...content, clinicEmail }),
       });
+      delete requests.current.test;
       setTestId(result.id);
     });
 

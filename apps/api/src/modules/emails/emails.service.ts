@@ -8,7 +8,6 @@ import {
 import { createHash } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { EmailService } from "@/infrastructure/email.service";
-import { PrismaService } from "@/prisma/prisma.service";
 import { RateLimitService } from "@/security/services/rate-limit.service";
 import type { AuthUser } from "@/modules/auth/types";
 import {
@@ -81,7 +80,6 @@ export class EmailsService {
     private readonly repo: EmailsRepository,
     private readonly audience: EmailAudienceRepository,
     private readonly email: EmailService,
-    private readonly prisma: PrismaService,
     private readonly limits: RateLimitService,
   ) {}
 
@@ -192,30 +190,15 @@ export class EmailsService {
     let recipients: EmailRecipientPreview[];
 
     if (isTest) {
-      const member = await this.prisma.clinicUser.findFirst({
-        where: {
-          id: user.clinicUserId,
-          clinicId: user.clinicId,
-          isActive: true,
-        },
-        select: {
-          id: true,
-          name: true,
-          user: {
-            select: { email: true },
-          },
-        },
-      });
-
-      if (!member) {
-        throw new BadRequestException(emailError("emailActiveUserNotFound"));
+      if (!brand.email?.trim()) {
+        throw new BadRequestException(emailError("emailClinicAddressRequired"));
       }
 
       recipients = await this.audience.resolve(user.clinicId, {
         externalRecipients: [
           {
-            email: member.user.email,
-            name: member.name,
+            email: brand.email,
+            name: brand.name,
           },
         ],
       });

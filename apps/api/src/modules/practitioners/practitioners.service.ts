@@ -1,3 +1,5 @@
+import { AuthService } from "@/modules/auth/auth.service";
+import type { AuthUser } from "@/modules/auth/types";
 import { welcomeEmail } from "@/security/auth-email";
 import {
   BadRequestException,
@@ -37,7 +39,13 @@ export class PractitionersService {
   constructor(
     private repo: PractitionersRepository,
     private email: EmailService,
+    private auth: AuthService,
   ) {}
+
+  async resetPassword(id: string, actor: AuthUser, password: string) {
+    await this.findOne(id, actor.clinicId);
+    return this.auth.ownerResetPassword(actor, id, password);
+  }
 
   async create(dto: CreatePractitionerDto) {
     this.assertAvailabilityRules(dto);
@@ -72,7 +80,9 @@ export class PractitionersService {
 
   async findAll(clinicId: string, filters?: PractitionerFiltersDto) {
     if (!clinicId) throw new BadRequestException("clinicId is required");
-    const rows = (await this.repo.findAllByClinic(clinicId)).map(mapPractitioner);
+    const rows = (await this.repo.findAllByClinic(clinicId)).map(
+      mapPractitioner,
+    );
     return filterPractitioners(rows, filters);
   }
 

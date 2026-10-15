@@ -15,6 +15,37 @@ export type AuthAccount = Prisma.UserGetPayload<{ include: typeof include }>;
 @Injectable()
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
+  resetPassword(id: string, clinicId: string, passwordHash: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const member = await tx.clinicUser.findFirst({
+        where: { id, clinicId },
+        select: { user: { select: { id: true, passwordChangedAt: true } } },
+      });
+      if (!member) return false;
+      const previous = member.user.passwordChangedAt;
+      const changed = await tx.user.updateMany({
+        where: {
+          id: member.user.id,
+          passwordChangedAt: previous,
+          clinicUsers: { some: { id, clinicId }, every: { clinicId } },
+        },
+        data: {
+          passwordHash,
+          mustChangePassword: true,
+          passwordChangedAt: new Date(
+            Math.max(Date.now(), (previous?.getTime() ?? 0) + 1),
+          ),
+        },
+      });
+      if (!changed.count) return false;
+      await tx.authOtpChallenge.updateMany({
+        where: { userId: member.user.id, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      return true;
+    });
+  }
+
   byEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email }, include });
   }
@@ -42,7 +73,8 @@ export class AuthRepository {
   }
   async openGuest(email: string) {
     const user = await this.byEmail(email);
-    if (!user || (user.emailVerifiedAt && !user.mustChangePassword)) return user;
+    if (!user || (user.emailVerifiedAt && !user.mustChangePassword))
+      return user;
     await this.prisma.user.update({
       where: { id: user.id },
       data: {

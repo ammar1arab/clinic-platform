@@ -3,13 +3,12 @@
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
-import { IconRotateCcw } from "@/constants/icons";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useLanguage } from "@/providers/language-provider";
 import { prepareFeedbackSound, playRefreshSound } from "@/lib/feedback-sound";
 import { cn } from "@/lib/utils";
 
-const THRESHOLD = 72;
+const THRESHOLD = 64;
 const REFRESH_PARAM = "_cureva_refresh";
 
 export function PullToRefresh({ children }: { children: ReactNode }) {
@@ -19,6 +18,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
   const confirmRef = useRef(confirm);
   confirmRef.current = confirm;
   const [distance, setDistance] = useState(0);
+  const [origin, setOrigin] = useState({ top: 0, left: 0, width: 0 });
   const [refreshing, setRefreshing] = useState(false);
   const bind = useCallback(
     (root: HTMLDivElement | null) => {
@@ -31,6 +31,28 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         window.history.replaceState(window.history.state, "", url);
       }
       let start: { x: number; y: number; target: Element } | null = null;
+      let surface: HTMLElement | null = null;
+      let originalTranslate = "";
+      let originalTransition = "";
+      let settleTimer: ReturnType<typeof setTimeout> | undefined;
+      const restoreSurface = () => {
+        clearTimeout(settleTimer);
+        if (!surface) return;
+        surface.style.translate = originalTranslate;
+        surface.style.transition = originalTransition;
+        surface = null;
+      };
+      const moveSurface = (offset: number, settle = false) => {
+        if (!surface) return;
+        const reduced = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        surface.style.transition =
+          settle && !reduced
+            ? "translate 220ms cubic-bezier(0.2, 0.8, 0.2, 1)"
+            : "none";
+        surface.style.translate = `0 ${offset}px`;
+      };
       let pulled = 0;
       let locked = false;
       let armed = false;
@@ -48,29 +70,39 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         return (document.scrollingElement?.scrollTop ?? 0) <= 1;
       };
       const reset = () => {
+        moveSurface(0, true);
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(restoreSurface, 220);
         start = null;
         pulled = 0;
         armed = false;
         setDistance(0);
       };
       const begin = (event: TouchEvent) => {
-        reset();
         if (
           locked ||
           event.touches.length !== 1 ||
           !window.matchMedia("(pointer: coarse)").matches
         )
           return;
+        reset();
+        restoreSurface();
         const target = event.target;
         if (
           !(target instanceof Element) ||
           !target.closest("main") ||
           target.closest(
-            'input, textarea, select, button, a, [contenteditable="true"], [role="dialog"], [role="slider"], .fc-event',
+            'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="slider"], [draggable="true"], .fc-event',
           ) ||
           !atTop(target)
         )
           return;
+        surface = target.closest<HTMLElement>("main");
+        if (!surface) return;
+        originalTranslate = surface.style.translate;
+        originalTransition = surface.style.transition;
+        const bounds = surface.getBoundingClientRect();
+        setOrigin({ top: bounds.top, left: bounds.left, width: bounds.width });
         start = {
           x: event.touches[0].clientX,
           y: event.touches[0].clientY,
@@ -85,16 +117,18 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         }
         const dy = event.touches[0].clientY - start.y;
         const dx = Math.abs(event.touches[0].clientX - start.x);
-        if (dy <= 0 || dx > Math.max(12, dy)) {
+        if (dy < -8 || (dx > 8 && dx > Math.abs(dy))) {
           reset();
           return;
         }
+        if (dy <= 0) return;
         if (!event.cancelable) {
           reset();
           return;
         }
         event.preventDefault();
-        pulled = Math.min(104, dy * 0.5);
+        pulled = 104 * (1 - Math.exp(-dy / 120));
+        moveSurface(pulled);
         const ready = pulled >= THRESHOLD;
         if (ready && !armed) {
           armed = true;
@@ -127,6 +161,15 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
           locked = false;
           return;
         }
+        clearTimeout(settleTimer);
+        if (!surface) {
+          surface = root.querySelector<HTMLElement>("main");
+          if (surface) {
+            originalTranslate = surface.style.translate;
+            originalTransition = surface.style.transition;
+          }
+        }
+        moveSurface(56, true);
         setRefreshing(true);
         playRefreshSound();
         try {
@@ -138,20 +181,28 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
           window.location.replace(next.href);
         }, 180);
       };
-      const end = () => {
+      const end = (event: TouchEvent) => {
+        if (pulled > 8 && event.cancelable) event.preventDefault();
         void finish();
       };
-      root.addEventListener("touchstart", begin, { passive: true });
-      root.addEventListener("touchmove", move, { passive: false });
-      root.addEventListener("touchend", end);
-      root.addEventListener("touchcancel", reset);
+      root.addEventListener("touchstart", begin, {
+        passive: true,
+        capture: true,
+      });
+      root.addEventListener("touchmove", move, {
+        passive: false,
+        capture: true,
+      });
+      root.addEventListener("touchend", end, { passive: false, capture: true });
+      root.addEventListener("touchcancel", reset, { capture: true });
       return () => {
         disposed = true;
         clearTimeout(timer);
-        root.removeEventListener("touchstart", begin);
-        root.removeEventListener("touchmove", move);
-        root.removeEventListener("touchend", end);
-        root.removeEventListener("touchcancel", reset);
+        restoreSurface();
+        root.removeEventListener("touchstart", begin, true);
+        root.removeEventListener("touchmove", move, true);
+        root.removeEventListener("touchend", end, true);
+        root.removeEventListener("touchcancel", reset, true);
       };
     },
     [pathname, t],
@@ -170,30 +221,44 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-150 flex justify-center"
+        className="pointer-events-none fixed z-50 flex justify-center"
+        style={{ top: origin.top, left: origin.left, width: origin.width }}
       >
-        {visible && (
-          <div
-            className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-foreground shadow-lg motion-safe:transition-transform motion-safe:duration-150"
-            style={{
-              transform: `translateY(${refreshing ? THRESHOLD : distance}px)`,
-            }}
+        <div
+          className={cn(
+            "grid size-8 place-items-center rounded-full bg-background/90 text-muted-foreground motion-safe:transition-[transform,opacity] motion-safe:duration-200",
+            !visible && "opacity-0",
+          )}
+          style={{
+            transform: `translateY(${visible ? Math.max(0, ((refreshing ? 56 : distance) - 32) / 2) : -32}px)`,
+            opacity: visible
+              ? Math.min(1, (refreshing ? 56 : distance) / 32)
+              : 0,
+          }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className={cn("size-6", refreshing && "motion-safe:animate-spin")}
+            aria-hidden
           >
-            <IconRotateCcw
-              aria-hidden
-              className={cn(
-                "size-5 text-primary",
-                refreshing && "motion-safe:animate-spin",
-              )}
-              style={
-                refreshing
-                  ? undefined
-                  : { transform: `rotate(${distance * 4}deg)` }
-              }
+            <circle
+              cx="12"
+              cy="12"
+              r="9"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              pathLength="100"
+              strokeDasharray={`${refreshing ? 75 : Math.max(4, Math.min(90, (distance / THRESHOLD) * 90))} 100`}
+              style={{
+                transformOrigin: "center",
+                transform: `rotate(${refreshing ? -90 : distance * 3 - 90}deg)`,
+              }}
             />
-            {label}
-          </div>
-        )}
+          </svg>
+          <span className="sr-only">{visible ? label : ""}</span>
+        </div>
       </div>
     </div>
   );

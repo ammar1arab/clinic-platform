@@ -52,6 +52,10 @@ const copy = {
     en: "Invalid webhook timestamp.",
     ar: "وقت إشعار البريد الإلكتروني غير صالح.",
   },
+  emailClinicAddressRequired: {
+    en: "Set the clinic email in clinic settings before sending a test email.",
+    ar: "حدد بريد العيادة في إعدادات العيادة قبل إرسال بريد تجريبي.",
+  },
   emailClinicNotFound: {
     en: "Clinic not found.",
     ar: "العيادة غير موجودة.",

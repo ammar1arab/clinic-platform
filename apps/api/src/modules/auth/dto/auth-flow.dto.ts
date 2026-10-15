@@ -7,6 +7,7 @@ import {
   MinLength,
 } from "class-validator";
 import type {
+  OwnerResetPasswordInput,
   AuthForgotInput,
   AuthPasswordInput,
   AuthTokenInput,
@@ -35,5 +36,12 @@ export class AuthPasswordDto extends AuthTokenDto implements AuthPasswordInput {
   @IsString()
   @MaxLength(64)
   @MinLength(1)
+  password: string;
+}
+
+export class OwnerResetPasswordDto implements OwnerResetPasswordInput {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(64)
   password: string;
 }

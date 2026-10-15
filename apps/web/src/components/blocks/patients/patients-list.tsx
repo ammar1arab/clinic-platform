@@ -153,6 +153,7 @@ export function PatientsList({
       className: "w-[23%]",
       render: (p) => (
         <DirectoryIdentity
+          copyContacts
           name={nameFor(p)}
           email={p.email}
           avatar={{ src: p.imageUrl, seed: p.id }}
@@ -165,7 +166,7 @@ export function PatientsList({
       label: t.patient.phone,
       className: "w-[12%]",
       cellClassName: "text-muted-foreground",
-      render: (p) => <PhoneLink value={p.phone} className="block" />,
+      render: (p) => <PhoneLink copyable value={p.phone} className="block" />,
     },
     {
       id: "doctor",
@@ -268,7 +269,7 @@ export function PatientsList({
                   {loyalty(p)}
                 </div>
               }
-              subtitle={p.email ? <EmailLink value={p.email} /> : undefined}
+              subtitle={p.email ? <EmailLink copyable value={p.email} /> : undefined}
               tags={
                 <>
                   {gender(p)}
@@ -279,6 +280,7 @@ export function PatientsList({
               }
               footer={
                 <PhoneLink
+                  copyable
                   value={p.phone}
                   className="text-xs text-muted-foreground"
                 />
