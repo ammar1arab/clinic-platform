@@ -416,8 +416,8 @@ export const loginSchema = z.object({
     .trim()
     .min(1, { error: () => getTranslations().validation.required })
     .email({ error: () => getTranslations().validation.email }),
-  password: z.string().min(6, {
-    error: () => getTranslations().validation.passwordMin,
+  password: z.string().min(1, {
+    error: () => getTranslations().validation.required,
   }),
 });
 

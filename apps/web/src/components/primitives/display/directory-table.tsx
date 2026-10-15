@@ -22,6 +22,7 @@ import { TruncatedText } from "./truncated-text";
 export type DirectoryColumn<T> = {
   id: string;
   label: string;
+  header?: ReactNode;
   className?: string;
   cellClassName?: string;
   render: (item: T) => ReactNode;
@@ -78,7 +79,7 @@ export function DirectoryTable<T>({
                     column.className,
                   )}
                 >
-                  {column.label}
+                  {column.header ?? column.label}
                 </TableHead>
               ))}
             </TableRow>

@@ -11,7 +11,6 @@ import type {
 } from "@clinic/types";
 import {
   emailComposerSchema,
-  emailContentSchema,
   type EmailComposerValues,
 } from "@/lib/validations";
 import { useLanguage } from "@/providers";
@@ -74,6 +73,7 @@ const contentFor = (
 export function useEmailComposer(
   onSent: (id: string) => void,
   clinicEmail?: string,
+  onTestQueued?: () => void,
 ) {
   const { t, lang } = useLanguage();
   const form = useForm<EmailComposerValues>({
@@ -101,7 +101,6 @@ export function useEmailComposer(
   const sendMutation = useSendEmail();
   const testMutation = useTestEmail();
   const [error, setError] = useState("");
-  const [testId, setTestId] = useState<string>();
   const [working, setWorking] = useState(false);
   const busyRef = useRef(false);
   const requests = useRef<
@@ -132,23 +131,6 @@ export function useEmailComposer(
       busyRef.current = false;
       setWorking(false);
     }
-  };
-
-  const validateContent = () => {
-    const result = emailContentSchema.safeParse({
-      ...form.getValues(),
-      locale: lang,
-    });
-    if (!result.success) {
-      result.error.issues.forEach((issue) => {
-        const key = issue.path[0];
-        if (key === "subject" || key === "body" || key === "locale")
-          form.setError(key, { message: issue.message });
-      });
-      return undefined;
-    }
-    form.clearErrors(["subject", "body", "locale"]);
-    return result.data;
   };
 
   const send = (review: {
@@ -193,17 +175,16 @@ export function useEmailComposer(
 
   const sendTest = () =>
     run(async () => {
-      const content = validateContent();
-      if (!content) return;
-      const result = await testMutation.mutateAsync({
+      const content = { locale: lang };
+      await testMutation.mutateAsync({
         ...content,
         requestId: requestId("test", { ...content, clinicEmail }),
       });
       delete requests.current.test;
-      setTestId(result.id);
+      onTestQueued?.();
     });
 
-  const exclude = (email: string, excluded: boolean) => {
+  const exclude = (emails: string | string[], excluded: boolean) => {
     const existing = new Set(
       form
         .getValues("excludedEmails")
@@ -211,8 +192,10 @@ export function useEmailComposer(
         .map((item) => item.trim().toLowerCase())
         .filter(Boolean),
     );
-    if (excluded) existing.add(email);
-    else existing.delete(email);
+    for (const email of typeof emails === "string" ? [emails] : emails) {
+      if (excluded) existing.add(email);
+      else existing.delete(email);
+    }
     form.setValue("excludedEmails", [...existing].join("\n"), {
       shouldDirty: true,
       shouldValidate: true,
@@ -223,7 +206,6 @@ export function useEmailComposer(
     form,
     values,
     error,
-    testId,
     working,
     send,
     sendTest,

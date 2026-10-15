@@ -14,10 +14,12 @@ import {
   DirectoryIdentity,
   type DirectoryColumn,
   TruncatedText,
+  SelectionToggle,
+  SoftTip,
 } from "@/components/primitives";
 import { useLanguage } from "@/providers";
 import { getBilingualName } from "@/i18n";
-import { IconClose, IconMail } from "@/constants/icons";
+import { IconClose, IconDelete, IconMail } from "@/constants/icons";
 
 const PAGE_SIZE = 20;
 
@@ -25,15 +27,18 @@ export function EmailRecipientList({
   recipients,
   excluded = [],
   onExclude,
+  onExcludeMany,
   disabled = false,
 }: {
   recipients: EmailRecipientPreview[];
   excluded?: string[];
   onExclude?: (email: string, excluded: boolean) => void;
+  onExcludeMany?: (emails: string[]) => void;
   disabled?: boolean;
 }) {
   const { t, lang } = useLanguage();
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const visible = onExclude
     ? recipients.filter((row) => !excluded.includes(row.email))
     : recipients;
@@ -42,6 +47,44 @@ export function EmailRecipientList({
   const rows = visible.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE,
+  );
+
+  const chosen = visible.filter((row) => selected.has(row.email));
+  const selectionState =
+    chosen.length === visible.length ? true : chosen.length ? "mixed" : false;
+  const selectAll = (
+    <SelectionToggle
+      checked={selectionState}
+      label={
+        selectionState === true
+          ? t.common.clearSelection
+          : `${t.ui.selectAll} (${visible.length})`
+      }
+      disabled={disabled}
+      onChange={(checked) =>
+        setSelected(new Set(checked ? visible.map((row) => row.email) : []))
+      }
+    />
+  );
+  const selectRow = (row: EmailRecipientPreview) => (
+    <SelectionToggle
+      checked={selected.has(row.email)}
+      label={`${t.common.selectRecipient}: ${row.name || row.email}`}
+      disabled={disabled}
+      className={
+        !selected.has(row.email)
+          ? "md:opacity-0 md:group-hover/directory:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+          : undefined
+      }
+      onChange={(checked) =>
+        setSelected((current) => {
+          const next = new Set(current);
+          if (checked) next.add(row.email);
+          else next.delete(row.email);
+          return next;
+        })
+      }
+    />
   );
 
   const removeAction = (row: EmailRecipientPreview) =>
@@ -59,10 +102,21 @@ export function EmailRecipientList({
       </Button>
     ) : null;
   const columns: DirectoryColumn<EmailRecipientPreview>[] = [
+    ...(onExcludeMany
+      ? [
+          {
+            id: "selection",
+            label: "",
+            header: selectAll,
+            className: "w-10 px-2!",
+            render: selectRow,
+          },
+        ]
+      : []),
     {
       id: "recipient",
       label: t.common.name,
-      className: "w-[38%]",
+      className: onExcludeMany ? "w-[30%]" : "w-[38%]",
       render: (row) => (
         <DirectoryIdentity
           name={getBilingualName(row.name, row.nameAr, lang)}
@@ -98,7 +152,14 @@ export function EmailRecipientList({
       ),
     },
     ...(onExclude
-      ? [{ id: "remove", label: "", className: "w-[6%]", render: removeAction }]
+      ? [
+          {
+            id: "remove",
+            label: "",
+            className: "w-10 px-1!",
+            render: removeAction,
+          },
+        ]
       : []),
   ];
 
@@ -108,6 +169,45 @@ export function EmailRecipientList({
 
   return (
     <div className="space-y-2">
+      {onExcludeMany && (
+        <div
+          className={`flex items-center justify-between gap-2 ${chosen.length ? "" : "md:hidden"}`}
+        >
+          <div className="md:hidden">{selectAll}</div>
+          {chosen.length > 0 && (
+            <div className="ms-auto flex items-center gap-2">
+              <SoftTip label={t.common.clearSelection}>
+                <Button
+                  type="button"
+                  aria-label={t.common.clearSelection}
+                  size="icon"
+                  variant="ghost"
+                  disabled={disabled}
+                  onClick={() => setSelected(new Set())}
+                >
+                  <IconClose className="size-4" />
+                </Button>
+              </SoftTip>
+              <SoftTip label={`${t.common.remove} (${chosen.length})`}>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  aria-label={`${t.common.remove} (${chosen.length})`}
+                  className="text-destructive hover:text-destructive"
+                  disabled={disabled}
+                  onClick={() => {
+                    onExcludeMany(chosen.map((row) => row.email));
+                    setSelected(new Set());
+                  }}
+                >
+                  <IconDelete className="size-4" />
+                </Button>
+              </SoftTip>
+            </div>
+          )}
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-4 md:hidden">
         {rows.map((row) => {
           const name = getBilingualName(row.name, row.nameAr, lang) || "—";
@@ -116,7 +216,12 @@ export function EmailRecipientList({
               key={row.email}
               title={name}
               subtitle={<EmailLink value={row.email} className="text-xs" />}
-              actions={removeAction(row)}
+              actions={
+                <div className="flex items-center gap-2">
+                  {onExcludeMany && selectRow(row)}
+                  {removeAction(row)}
+                </div>
+              }
               meta={
                 <DirectoryMeta
                   columns={columns}
@@ -133,7 +238,7 @@ export function EmailRecipientList({
         columns={columns}
         rowKey={(row) => row.email}
         className="hidden md:flex"
-        tableClassName="min-w-[32rem]"
+        tableClassName={onExcludeMany ? "min-w-[36rem]" : "min-w-[32rem]"}
         scroll={false}
       />
 

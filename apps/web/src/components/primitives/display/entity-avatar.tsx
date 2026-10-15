@@ -103,8 +103,7 @@ export function EntityAvatar({
     >
       <AvatarImage
         src={url}
-        width={px}
-        height={px}
+        fill
         sizes={`${px}px`}
         priority={priority}
         onError={() => {

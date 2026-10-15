@@ -379,6 +379,63 @@ th, td {
     outline: none;
   }
 
+  .modal-surface,
+  .modal-backdrop {
+    animation-duration: var(--overlay-duration);
+    animation-timing-function: var(--overlay-ease);
+    animation-fill-mode: both;
+  }
+
+  .modal-surface[data-state="open"] {
+    animation-name: modal-in;
+  }
+  .modal-surface[data-state="closed"] {
+    animation-name: modal-out;
+    animation-duration: 180ms;
+  }
+  .modal-backdrop[data-state="open"] {
+    animation-name: tip-fade-in;
+  }
+  .modal-backdrop[data-state="closed"] {
+    animation-name: modal-backdrop-out;
+    animation-duration: 180ms;
+  }
+
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      scale: 0.97;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes modal-out {
+    from {
+      opacity: 1;
+      scale: 1;
+    }
+    to {
+      opacity: 0;
+      scale: 0.98;
+    }
+  }
+  @keyframes modal-backdrop-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .modal-surface[data-state],
+    .modal-backdrop[data-state] {
+      animation-duration: 1ms;
+    }
+  }
+
   .overlay-pop {
     --overlay-tx: 0px;
     --overlay-ty: calc(var(--overlay-from) * -1);

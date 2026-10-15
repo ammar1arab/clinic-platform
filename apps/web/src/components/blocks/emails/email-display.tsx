@@ -71,10 +71,10 @@ const DARK_PREVIEW = `<style>
 ${PREVIEW_LAYOUT}
 html,body{background:oklch(0.15 0.012 260)!important;color:oklch(0.96 0.005 260)!important}
 body>table{background:transparent!important}
-body table table{background:oklch(0.18 0.014 260)!important}
+body>table>tbody>tr>td>table,[data-email-shell]{background:oklch(0.18 0.014 260)!important}
 td,h1,td>div{color:oklch(0.96 0.005 260)!important}
 td[style*="border-top"]{border-top-color:oklch(0.28 0.014 260)!important}
-td[style*="border-top"] p{color:oklch(0.68 0.012 260)!important}
+td[style*="border-top"] p,td[data-email-footer] a{color:oklch(0.68 0.012 260)!important}
 td[style*="background:#"]>p{color:#fff!important}
 </style>`;
 

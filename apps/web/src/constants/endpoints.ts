@@ -19,6 +19,8 @@ export const ENDPOINTS = {
     RELEASE_PACKAGE: (id: string) => `/appointments/${id}/release-package`,
   },
   AUTH: {
+    PROFILE: "/auth/profile",
+    OWNER_OTP: (id: string) => `/auth/accounts/${id}/otp`,
     OWNER_RESET_PASSWORD: (id: string) => `/auth/accounts/${id}/reset-password`,
     ME: "/auth/me",
     LOGIN: "/auth/login",

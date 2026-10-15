@@ -39,7 +39,12 @@ export interface UpdateClinicInput {
 }
 
 
+export interface AccountProfileInput { email?: string; name: string; imageUrl: string; nameAr?: string; phone?: string; }
+
 export interface AuthMe {
+  imageUrl?: string | null;
+  nameAr?: string | null;
+  phone?: string | null;
   userId: string;
   clinicUserId: string;
   role: Role;
@@ -54,6 +59,7 @@ export interface AuthTokenResponse {
 
 
 export interface ClinicStaffMember {
+  email?: string;
   id: string;
   name: string;
   nameAr: string | null;

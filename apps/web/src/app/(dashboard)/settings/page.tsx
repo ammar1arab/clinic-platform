@@ -1,5 +1,6 @@
 'use client';
 
+import { AccountPasswordReset } from '@/components/blocks/auth/account-password-reset';
 import { ROUTES } from '@/constants/routes';
 import {
   IconCard,
@@ -32,7 +33,7 @@ export default function SettingsPage() {
   }[] = [
     {
       href: ROUTES.SETTINGS_CLINIC,
-      title: t.settings.clinicDefaults,
+      title: t.common.clinicProfile,
       description: t.settings.clinicDefaultsDesc,
       icon: IconTime,
       accent: 'default',
@@ -104,6 +105,7 @@ export default function SettingsPage() {
             }
           />
         ))}
+        <AccountPasswordReset />
       </div>
     </div>
   );

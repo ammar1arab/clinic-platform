@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useDeferredValue, useRef } from "react";
+import { prepareFeedbackSound } from "@/lib/feedback-sound";
 import { useFeedbackOverlay } from "@/hooks/shared/use-feedback-overlay";
 import { FormProvider } from "react-hook-form";
 import {
@@ -59,10 +59,17 @@ export function EmailComposer() {
   const feedback = useFeedbackOverlay(() => {
     if (sentId.current) nav.go(ROUTES.EMAIL_DETAIL(sentId.current));
   });
-  const state = useEmailComposer((id) => {
-    sentId.current = id;
-    feedback.celebrate(t.emails.queuedSuccess);
-  }, clinicEmail);
+  const state = useEmailComposer(
+    (id) => {
+      sentId.current = id;
+      feedback.celebrate(t.emails.queuedSuccess);
+    },
+    clinicEmail,
+    () => {
+      sentId.current = null;
+      feedback.celebrate(t.emails.testQueued);
+    },
+  );
   const { form, values } = state;
   const variables = useEmailVariables(clinicId);
   const { errors } = form.formState;
@@ -75,8 +82,13 @@ export function EmailComposer() {
   const recipientsLoading =
     JSON.stringify(emailSelectionFor(values)) !== JSON.stringify(selection);
   const recipientsQuery = useEmailRecipientQuery(selection, true);
+  const audiencePending =
+    JSON.stringify({
+      ...emailSelectionFor(values),
+      excludedEmails: undefined,
+    }) !== JSON.stringify({ ...selection, excludedEmails: undefined });
   const selectedCount =
-    recipientsQuery.data?.recipients.filter(
+    recipientsQuery.displayData?.recipients.filter(
       (recipient) => !excluded.includes(recipient.email),
     ).length ?? 0;
   const countPending =
@@ -134,14 +146,6 @@ export function EmailComposer() {
         backLabel={t.emails.history}
         actions={
           <div className="flex items-center gap-2">
-            {state.testId ? (
-              <Link
-                href={ROUTES.EMAIL_DETAIL(state.testId)}
-                className="text-xs text-primary hover:underline"
-              >
-                {t.emails.testQueued}
-              </Link>
-            ) : null}
             <SoftTip
               label={
                 countPending
@@ -182,7 +186,10 @@ export function EmailComposer() {
                   settings.isError ||
                   clinic.isError
                 }
-                onClick={() => void state.sendTest()}
+                onClick={() => {
+                  prepareFeedbackSound();
+                  void state.sendTest();
+                }}
               >
                 <IconSend className="size-4" />
               </Button>
@@ -327,27 +334,31 @@ export function EmailComposer() {
                   }
                 />
                 {(settings.isError || clinic.isError) && (
-                  <ErrorState onRetry={() => {
-                    void settings.refetch();
-                    void clinic.refetch();
-                  }} />
+                  <ErrorState
+                    onRetry={() => {
+                      void settings.refetch();
+                      void clinic.refetch();
+                    }}
+                  />
                 )}
                 {state.error && (
                   <ErrorState title={state.error} className="py-6" />
                 )}
               </div>
               <div dir={dir}>
-                {recipientsLoading ||
-                recipientsQuery.isLoading ||
-                recipientsQuery.isPlaceholderData ? (
-                  <TableSkeleton rows={8} cols={3} hasHeader={false} />
-                ) : recipientsQuery.isError ? (
+                {recipientsQuery.isError && (
                   <ErrorState onRetry={() => void recipientsQuery.refetch()} />
+                )}
+                {audiencePending || !recipientsQuery.displayData ? (
+                  !recipientsQuery.isError && (
+                    <TableSkeleton rows={8} cols={3} hasHeader={false} />
+                  )
                 ) : (
                   <EmailRecipientList
-                    recipients={recipientsQuery.data?.recipients ?? []}
+                    recipients={recipientsQuery.displayData.recipients}
                     excluded={excluded}
                     onExclude={state.exclude}
+                    onExcludeMany={(emails) => state.exclude(emails, true)}
                     disabled={state.working}
                   />
                 )}

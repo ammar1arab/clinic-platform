@@ -17,6 +17,7 @@ export function OtpInput({
   onChange,
   length = 6,
   disabled,
+  readOnly = false,
   error,
   autoFocus = true,
   'aria-label': ariaLabel,
@@ -25,6 +26,7 @@ export function OtpInput({
   onChange: (value: string) => void;
   length?: number;
   disabled?: boolean;
+  readOnly?: boolean;
   error?: string;
   autoFocus?: boolean;
   'aria-label': string;
@@ -49,6 +51,7 @@ export function OtpInput({
           value={value}
           autoFocus={autoFocus}
           disabled={disabled}
+          readOnly={readOnly}
           aria-label={ariaLabel}
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}
@@ -57,6 +60,7 @@ export function OtpInput({
           onChange={(event) => onChange(normalizeCode(event.target.value, length))}
           onPaste={(event) => {
             event.preventDefault();
+            if (readOnly) return;
             onChange(normalizeCode(event.clipboardData.getData('text'), length));
           }}
           className="absolute inset-0 z-10 h-full w-full cursor-text border-0 bg-transparent p-0 text-transparent shadow-none caret-transparent outline-none ring-0 focus-visible:border-0 focus-visible:ring-0 [-webkit-text-fill-color:transparent] selection:bg-transparent dark:bg-transparent"

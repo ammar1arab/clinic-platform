@@ -38,7 +38,7 @@ function EditAppointmentInner({ id }: { id: string }) {
     <div className="page-stack space-y-4">
       <PageBack
         backHref={backHref}
-        backLabel={t.appointments.backToSchedule}
+        backLabel={t.ui.back}
         actions={
           canCancel ? (
             <RowActionsMenu
@@ -77,7 +77,7 @@ function EditAppointmentInner({ id }: { id: string }) {
           description={t.appointments.notFoundDesc}
           action={
             <Button variant="outline" size="sm" onClick={() => router.push(backHref)}>
-              {t.appointments.backToSchedule}
+              {t.ui.back}
             </Button>
           }
         />

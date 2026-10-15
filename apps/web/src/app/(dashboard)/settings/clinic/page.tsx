@@ -1,6 +1,5 @@
 'use client';
 
-import { AccountPasswordReset } from '@/components/blocks/auth/account-password-reset';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/constants/query-keys';
@@ -23,6 +22,7 @@ import {
   FormPageSkeleton,
   PageBack,
   ButtonSpinner,
+  ErrorState,
   AvatarUpload,
   BilingualNameFields,
   BrandColorField,
@@ -97,6 +97,8 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
   const [name, setName] = useState(clinic.name);
   const [nameAr, setNameAr] = useState(clinic.nameAr ?? '');
   const [email, setEmail] = useState(clinic.email ?? '');
+  const [phone, setPhone] = useState(clinic.phone ?? '');
+  const [address, setAddress] = useState(clinic.address ?? '');
   const [logoUrl, setLogoUrl] = useState(
     () => readClinicLogo(clinicId) || clinic.logoUrl || '',
   );
@@ -114,6 +116,8 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
       name: name.trim(),
       nameAr: nameAr.trim() || undefined,
       email: email.trim() || undefined,
+      phone: phone.trim(),
+      address: address.trim(),
       logoUrl: logoUrl || undefined,
       brandColor,
     });
@@ -122,17 +126,15 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader>
-        </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-col items-center gap-6">
             <AvatarUpload
               plain
               value={logoUrl}
               onChange={(url) => void storeLogo(url)}
               fallbackLabel={name}
             />
-            <div className="min-w-0 flex-1 space-y-4">
+            <div className="w-full min-w-0 space-y-4">
               <BilingualNameFields
                 name={name}
                 nameAr={nameAr}
@@ -147,7 +149,7 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
                 maxLength={120}
               />
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField label={t.exports.email} htmlFor="clinic-email">
+                <FormField label={t.common.clinicContactEmail} htmlFor="clinic-email">
                   <Input
                     id="clinic-email"
                     type="email"
@@ -158,6 +160,12 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
                     }}
                     maxLength={200}
                   />
+                </FormField>
+                <FormField label={t.exports.phone} htmlFor="clinic-phone">
+                  <Input id="clinic-phone" type="tel" dir="ltr" value={phone} onChange={event => setPhone(event.target.value)} maxLength={40} />
+                </FormField>
+                <FormField label={t.emails.clinicAddress} htmlFor="clinic-address">
+                  <Input id="clinic-address" value={address} onChange={event => setAddress(event.target.value)} maxLength={500} />
                 </FormField>
                 <FormField label={t.settings.brandColor}>
                   <BrandColorField
@@ -328,18 +336,18 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
 
 export default function ClinicSettingsPage() {
   const clinicId = useClinicId();
-  const { data: clinic, isLoading } = useClinic(clinicId);
+  const { data: clinic, isLoading, isError, refetch } = useClinic(clinicId);
   const { t } = useLanguage();
 
+  if (isError) return <ErrorState onRetry={() => void refetch()} />;
   if (isLoading || !clinic) {
     return <FormPageSkeleton />;
   }
 
   return (
-    <div className="w-full min-w-0 space-y-4">
+    <div className="page-stack space-y-4">
       <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
       <ClinicSettingsForm key={clinic.id} clinic={clinic} clinicId={clinicId} />
-      <AccountPasswordReset key={clinicId} />
     </div>
   );
 }

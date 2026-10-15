@@ -42,20 +42,21 @@ describe("Security contracts", () => {
     process.env.NODE_ENV = "test";
   });
 
-  it("allows simple bilingual passwords and rejects bcrypt truncation", () => {
+  it("accepts any non-empty password", () => {
     expect(
       Object.values(passwordRequirements("عيادتي123")).every(Boolean),
     ).toBe(true);
     expect(Object.values(passwordRequirements("password")).every(Boolean)).toBe(
-      false,
+      true,
     );
     expect(Object.values(passwordRequirements("12345678")).every(Boolean)).toBe(
-      false,
+      true,
     );
     expect(
       Object.values(passwordRequirements("ك".repeat(40) + "123")).every(
         Boolean,
       ),
-    ).toBe(false);
+    ).toBe(true);
+    expect(Object.values(passwordRequirements("")).every(Boolean)).toBe(false);
   });
 });

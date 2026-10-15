@@ -93,6 +93,47 @@ export class OtpService {
     return id;
   }
 
+  async replacePending(
+    userId: string,
+    passwordChangedAt: Date | null,
+    clinicId: string,
+  ) {
+    await this.limits.consume("owner-otp-target", userId, 5, 3600);
+    const challenge = await this.prisma.authOtpChallenge.findFirst({
+      where: {
+        userId,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+        attempts: { lt: AUTH_POLICY.maxOtpAttempts },
+        ...(passwordChangedAt && { createdAt: { gt: passwordChangedAt } }),
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!challenge) securityError("noPendingOtp", 409);
+    const code = randomInt(0, 1_000_000)
+      .toString()
+      .padStart(AUTH_POLICY.otpDigits, "0");
+    const updated = await this.prisma.authOtpChallenge.updateMany({
+      where: {
+        id: challenge.id,
+        codeHash: challenge.codeHash,
+        attempts: challenge.attempts,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+        user: {
+          passwordChangedAt,
+          clinicUsers: {
+            some: { clinicId, isActive: true, clinic: { isActive: true } },
+            every: { clinicId },
+          },
+        },
+      },
+      data: { codeHash: this.hash(challenge.id, code) },
+    });
+    if (!updated.count) securityError("noPendingOtp", 409);
+    return { code, expiresAt: challenge.expiresAt.toISOString() };
+  }
+
   async consume(
     id: string,
     userId: string | undefined,
@@ -122,7 +163,12 @@ export class OtpService {
     )
       securityError("invalidOtp");
     const consumed = await this.prisma.authOtpChallenge.updateMany({
-      where: { id, usedAt: null, expiresAt: { gt: new Date() } },
+      where: {
+        id,
+        codeHash: challenge.codeHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
       data: { usedAt: new Date() },
     });
     if (!consumed.count) securityError("invalidOtp");

@@ -1,5 +1,9 @@
 'use client';
 
+import { ROLE } from '@clinic/types';
+import { useOwnerGenerateOtp } from '@/hooks/api/use-auth-mutations';
+import { AccountOtpDialog } from '@/components/blocks/auth/account-otp-dialog';
+
 import {
   useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui';
@@ -36,8 +40,8 @@ import {
 import { calcAge } from '@/lib/age';
 import { formatDate, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
-import { IconActivate, IconCalendar, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
-import { useLanguage } from '@/providers';
+import { IconMail, IconActivate, IconCalendar, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
+import { useAuth, useLanguage } from '@/providers';
 import { getBilingualName, getStaffName, type Translations } from '@/i18n';
 
 function employmentLabel(type: string | null | undefined, t: Translations) {
@@ -57,6 +61,8 @@ export function PractitionerProfile({
   const reactivate = useReactivatePractitioner(clinicId);
   const remove = useDeletePractitioner(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
+  const { user } = useAuth();
+  const otp = useOwnerGenerateOtp();
   const { t, lang } = useLanguage();
 
   const toggling = deactivate.isPending || reactivate.isPending;
@@ -91,6 +97,12 @@ export function PractitionerProfile({
       actions={
         <RowActionsMenu
           items={[
+        ...(user?.role === ROLE.OWNER ? [{
+          label: t.common.generateOtp,
+          icon: IconMail,
+          disabled: otp.isPending,
+          onSelect: () => otp.mutate(practitioner.id),
+        }] : []),
             {
               label: t.practitioner.edit,
               icon: IconEdit,
@@ -357,6 +369,8 @@ export function PractitionerProfile({
           )}
         </ProfileSection>
       </div>
+
+      <AccountOtpDialog code={otp.data} onClose={otp.reset} />
 
       <TwoStepDeleteDialogs
         step1={del.step1}

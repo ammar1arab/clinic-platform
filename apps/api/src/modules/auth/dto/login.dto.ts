@@ -10,6 +10,5 @@ export class LoginDto {
   email: string;
 
   @IsString()
-  @MaxLength(128)
   password: string;
 }

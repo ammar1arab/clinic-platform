@@ -16,18 +16,19 @@ const schema = z.object({
   confirm: z.string(),
 }).refine(value => value.password === value.confirm, { path: ['confirm'], error: () => getTranslations().auth.passwordMismatch });
 
-export function PasswordForm({ pending, onSubmit, autoFocus = true }: { pending: boolean; onSubmit: (password: string) => Promise<void>; autoFocus?: boolean }) {
+export function PasswordForm({ pending, disabled = false, onSubmit, autoFocus = true }: { pending: boolean; disabled?: boolean; onSubmit: (password: string) => Promise<void>; autoFocus?: boolean }) {
   const { t } = useLanguage();
+  const locked = pending || disabled;
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(schema), defaultValues: { password: '', confirm: '' },
   });
   return (
     <form className="space-y-5" onSubmit={handleSubmit(data => { prepareFeedbackSound(); return onSubmit(data.password); })} noValidate>
-      <FloatingInput label={t.auth.newPassword} type="password" autoComplete="new-password" autoFocus={autoFocus} disabled={pending}
+      <FloatingInput label={t.auth.newPassword} type="password" autoComplete="new-password" autoFocus={autoFocus} disabled={locked}
         error={errors.password?.message} {...register('password')} />
-      <FloatingInput label={t.auth.confirmPassword} type="password" autoComplete="new-password" disabled={pending}
+      <FloatingInput label={t.auth.confirmPassword} type="password" autoComplete="new-password" disabled={locked}
         error={errors.confirm?.message} {...register('confirm')} />
-      <Button type="submit" className="w-full" disabled={pending}>{pending && <ButtonSpinner />}{t.auth.savePassword}</Button>
+      <Button type="submit" className="w-full" disabled={locked}>{pending && <ButtonSpinner />}{t.auth.savePassword}</Button>
     </form>
   );
 }

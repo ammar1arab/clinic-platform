@@ -14,8 +14,8 @@ export class ClinicsRepository {
     return this.prisma.clinic.findUnique({ where: { id } });
   }
 
-  findStaff(clinicId: string) {
-    return this.prisma.clinicUser.findMany({
+  async findStaff(clinicId: string) {
+    const members = await this.prisma.clinicUser.findMany({
       where: { clinicId, isActive: true },
       select: {
         id: true,
@@ -23,9 +23,14 @@ export class ClinicsRepository {
         nameAr: true,
         role: true,
         initials: true,
+        user: { select: { email: true } },
       },
       orderBy: { name: "asc" },
     });
+    return members.map(({ user, ...member }) => ({
+      ...member,
+      email: user.email,
+    }));
   }
 
   departmentInClinic(id: string, clinicId: string) {

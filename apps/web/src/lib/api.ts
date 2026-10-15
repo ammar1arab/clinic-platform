@@ -160,7 +160,15 @@ function shouldSkipErrorToast(error: AxiosError<ApiErrorBody>): boolean {
 }
 
 function isAuthFlowRequest(url?: string): boolean {
-  return !!url && Object.values(ENDPOINTS.AUTH).some(endpoint => endpoint !== ENDPOINTS.AUTH.ME && endpoint === url);
+  return !!url && [
+    ENDPOINTS.AUTH.LOGIN,
+    ENDPOINTS.AUTH.GUEST,
+    ENDPOINTS.AUTH.SEND_OTP,
+    ENDPOINTS.AUTH.VERIFY_OTP,
+    ENDPOINTS.AUTH.SET_PASSWORD,
+    ENDPOINTS.AUTH.FORGOT_PASSWORD,
+    ENDPOINTS.AUTH.RESET_PASSWORD,
+  ].some(endpoint => endpoint === url);
 }
 
 export { extractErrorMessage };

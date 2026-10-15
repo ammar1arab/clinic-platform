@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type {
   EmailAudiencesResponse,
   EmailHistoryInput,
@@ -80,7 +81,12 @@ export function useEmailRecipientQuery(
   enabled = true,
 ) {
   const clinicId = useClinicId();
-  return useFetchData<EmailRecipientsResponse>({
+  const scope = JSON.stringify({ ...selection, excludedEmails: undefined });
+  const [previous, setPrevious] = useState<{
+    scope: string;
+    data: EmailRecipientsResponse;
+  }>();
+  const query = useFetchData<EmailRecipientsResponse>({
     queryKey: QUERY_KEYS.emails.recipients(clinicId, selection),
     request: () => emailsService.recipients(selection),
     options: {
@@ -89,6 +95,22 @@ export function useEmailRecipientQuery(
       staleTime: 15_000,
     },
   });
+  if (
+    query.data &&
+    !query.isPlaceholderData &&
+    (previous?.scope !== scope || previous.data !== query.data)
+  ) {
+    setPrevious({ scope, data: query.data });
+  }
+  return {
+    ...query,
+    displayData:
+      query.data && !query.isPlaceholderData
+        ? query.data
+        : previous?.scope === scope
+          ? previous.data
+          : undefined,
+  };
 }
 
 export function useEmailPreviewQuery(input: EmailPreviewInput, enabled = true) {
@@ -105,11 +127,9 @@ export function useEmailPreviewQuery(input: EmailPreviewInput, enabled = true) {
 }
 
 export function useTestEmail() {
-  const { t } = useLanguage();
   return useApiMutation<EmailMessageDetail, TResponseError, EmailTestInput>({
     request: emailsService.test,
     invalidateQueries: QUERY_KEYS.emails.all,
-    successMessage: t.emails.testQueued,
   });
 }
 

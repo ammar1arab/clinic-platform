@@ -11,7 +11,7 @@ import { ROUTES } from '@/constants/routes';
 import { schedulePath } from '@/components/blocks/appointments/schedule/schedule-nav';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
-import { IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
+import { IconWell, SoftTip, EntityAvatar, type IconWellAccent } from '@/components/primitives';
 import { BrandMark } from '@/components/primitives/display/brand-mark';
 import { useClinicLogo } from '@/hooks/api/use-clinic';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
@@ -32,6 +32,20 @@ import {
   IconSidebarCollapse,
   type LucideIcon,
 } from '@/constants/icons';
+
+function ProfileLink({ onClick }: { onClick?: () => void }) {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  if (user?.role !== ROLE.OWNER) return null;
+  return <div className="flex shrink-0 justify-center px-2 py-3">
+    <SoftTip label={t.practitioner.profile}>
+      <Link href={ROUTES.PROFILE} onClick={onClick} aria-label={t.practitioner.profile}
+        className="grid size-10 place-items-center overflow-hidden rounded-full bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <EntityAvatar src={user.imageUrl} seed={user.clinicUserId} size="lg" className="bg-transparent ring-0" />
+      </Link>
+    </SoftTip>
+  </div>;
+}
 
 function ClinicLockup() {
   const clinicId = useClinicId();
@@ -267,6 +281,7 @@ export function SidebarBlock() {
             ))}
           </div>
         </nav>
+        <ProfileLink onClick={closeMobile} />
       </div>
 
       <aside
@@ -332,6 +347,7 @@ export function SidebarBlock() {
             />
           ))}
         </nav>
+        <ProfileLink />
       </aside>
     </>
   );

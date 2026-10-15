@@ -1,5 +1,6 @@
+import type { AccountProfileInput } from "@clinic/types";
 import { Injectable } from "@nestjs/common";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "@/prisma/prisma.service";
 import { RegisterDto } from "./dto";
 
@@ -15,6 +16,68 @@ export type AuthAccount = Prisma.UserGetPayload<{ include: typeof include }>;
 @Injectable()
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) {}
+  updateProfile(id: string, clinicId: string, input: AccountProfileInput) {
+    return this.prisma.$transaction(async (tx) => {
+      const member = await tx.clinicUser.findFirst({
+        where: { id, clinicId, isActive: true },
+        select: {
+          user: { select: { id: true, email: true, passwordChangedAt: true } },
+        },
+      });
+      if (!member) return { count: 0 };
+      if (input.email !== undefined && input.email !== member.user.email) {
+        const changed = await tx.user.updateMany({
+          where: {
+            id: member.user.id,
+            email: member.user.email,
+            passwordChangedAt: member.user.passwordChangedAt,
+            clinicUsers: { some: { id, clinicId }, every: { clinicId } },
+          },
+          data: {
+            email: input.email,
+            emailVerifiedAt: null,
+            passwordChangedAt: new Date(
+              Math.max(
+                Date.now(),
+                (member.user.passwordChangedAt?.getTime() ?? 0) + 1,
+              ),
+            ),
+          },
+        });
+        if (!changed.count) return { count: 0 };
+        await tx.authOtpChallenge.updateMany({
+          where: { userId: member.user.id, usedAt: null },
+          data: { usedAt: new Date() },
+        });
+      }
+      return tx.clinicUser.updateMany({
+        where: { id, clinicId, isActive: true },
+        data: {
+          name: input.name,
+          imageUrl: input.imageUrl || null,
+          ...(input.nameAr !== undefined && {
+            nameAr: input.nameAr.trim() || null,
+          }),
+          ...(input.phone !== undefined && {
+            phone: input.phone.trim() || null,
+          }),
+        },
+      });
+    });
+  }
+
+  otpAccount(id: string, clinicId: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        clinicUsers: {
+          some: { id, clinicId, isActive: true, clinic: { isActive: true } },
+          every: { clinicId },
+        },
+      },
+      select: { id: true, passwordChangedAt: true },
+    });
+  }
+
   resetPassword(id: string, clinicId: string, passwordHash: string) {
     return this.prisma.$transaction(async (tx) => {
       const member = await tx.clinicUser.findFirst({

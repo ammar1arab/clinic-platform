@@ -27,6 +27,7 @@ type Props = {
   disabled?: boolean;
   className?: string;
   plain?: boolean;
+  showPreviewNotice?: boolean;
 };
 
 export function AvatarUpload({
@@ -36,6 +37,7 @@ export function AvatarUpload({
   disabled,
   className,
   plain = false,
+  showPreviewNotice = true,
 }: Props) {
   const { t } = useLanguage();
   const inputId = useId();
@@ -62,7 +64,7 @@ export function AvatarUpload({
         transparent: plain,
       });
       onChange(url);
-      if (!plain) {
+      if (!plain && showPreviewNotice) {
         toast.message(t.common.photoPreviewOnly, {
           description: t.common.photoPreviewOnlyDesc,
         });
@@ -97,8 +99,7 @@ export function AvatarUpload({
         ) : (
           <AvatarImage
             src={value}
-            width={112}
-            height={112}
+            fill
             sizes="112px"
             priority
           />

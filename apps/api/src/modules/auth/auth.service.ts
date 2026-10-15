@@ -1,8 +1,9 @@
 import { ConflictException, Injectable } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
 import { randomUUID } from "node:crypto";
-import { AuthOtpPurpose, Role } from "@prisma/client";
+import { AuthOtpPurpose, Role, Prisma } from "@prisma/client";
 import type {
+  AccountProfileInput,
   AuthLoginResponse,
   AuthMe,
   AuthRecovery,
@@ -40,6 +41,38 @@ export class AuthService {
     private readonly passwords: PasswordPolicyService,
     private readonly limits: RateLimitService,
   ) {}
+
+  async updateProfile(actor: AuthUser, input: AccountProfileInput) {
+    await this.limits.consume("account-profile", actor.userId, 20, 3600);
+    try {
+      const result = await this.repo.updateProfile(
+        actor.clinicUserId,
+        actor.clinicId,
+        input,
+      );
+      if (!result.count) securityError("invalidRequest", 409);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      )
+        securityError("emailInUse", 409);
+      throw error;
+    }
+    return this.getMe(actor.userId, actor.clinicUserId);
+  }
+
+  async ownerGenerateOtp(actor: AuthUser, id: string) {
+    if (actor.role !== Role.owner) securityError("clinicUnavailable", 403);
+    await this.limits.consume("owner-otp", actor.userId, 10, 3600);
+    const account = await this.repo.otpAccount(id, actor.clinicId);
+    if (!account) securityError("invalidRequest", 404);
+    return this.otp.replacePending(
+      account.id,
+      account.passwordChangedAt,
+      actor.clinicId,
+    );
+  }
 
   async ownerResetPassword(actor: AuthUser, id: string, password: string) {
     if (actor.role !== Role.owner) securityError("clinicUnavailable", 403);
@@ -82,6 +115,9 @@ export class AuthService {
       clinicUserId: member.id,
       role: member.role,
       name: member.name,
+      imageUrl: member.imageUrl,
+      nameAr: member.nameAr,
+      phone: member.phone,
       email: user.email,
       clinic: {
         id: member.clinic.id,

@@ -1,7 +1,8 @@
+import { getTranslations } from "@/i18n";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/constants/endpoints";
 import type {
-  OwnerResetPasswordInput, AuthMe, AuthLoginInput, AuthLoginResponse, AuthTokenInput, AuthOtp,
+  AccountProfileInput, OwnerOtpResponse, OwnerResetPasswordInput, AuthMe, AuthLoginInput, AuthLoginResponse, AuthTokenInput, AuthOtp,
   AuthVerifyInput, AuthVerifyResponse, AuthForgotInput, AuthRecovery,
   AuthPasswordInput, AuthReady,
 } from "@clinic/types";
@@ -9,6 +10,14 @@ import type {
 export type { AuthMe as MeResponse } from "@clinic/types";
 
 export const authService = {
+  updateProfile: async (input: AccountProfileInput) => {
+    const { data } = await api.patch<AuthMe>(ENDPOINTS.AUTH.PROFILE, input);
+    if (input.email !== undefined && data.email !== input.email.trim().toLowerCase()) {
+      throw new Error(getTranslations().errors.profileEmailNotSaved);
+    }
+    return data;
+  },
+  ownerGenerateOtp: (id: string) => api.post<OwnerOtpResponse>(ENDPOINTS.AUTH.OWNER_OTP(id)).then(r => r.data),
   ownerResetPassword: (id: string, input: OwnerResetPasswordInput) =>
     api.post<{ success: true }>(ENDPOINTS.AUTH.OWNER_RESET_PASSWORD(id), input).then(r => r.data),
   getMe: () => api.get<AuthMe>(ENDPOINTS.AUTH.ME).then(r => r.data),

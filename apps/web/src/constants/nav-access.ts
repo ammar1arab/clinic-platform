@@ -18,6 +18,7 @@ const SIDEBAR_PREFIXES = [
 ] as const;
 
 export const NAV_ACCESS: { prefix: string; roles?: Role[] }[] = [
+  { prefix: ROUTES.PROFILE, roles: [ROLE.OWNER] },
   { prefix: ROUTES.EMAILS, roles: STAFF },
   { prefix: ROUTES.HOME, roles: PRACTITIONER },
   { prefix: ROUTES.DASHBOARD, roles: OPS },

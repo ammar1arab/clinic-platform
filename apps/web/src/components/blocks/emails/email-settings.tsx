@@ -21,6 +21,7 @@ import {
   PageBack,
 } from "@/components/primitives";
 import { useEmailSettings, useSaveEmailSettings } from "@/hooks/api/use-emails";
+import { useClinic } from "@/hooks/api/use-clinic";
 import { useClinicId } from "@/hooks/shared/use-clinic-id";
 import { useAuth, useLanguage } from "@/providers";
 import {
@@ -40,6 +41,8 @@ function EmailSettingsForm({
 }) {
   const { t } = useLanguage();
   const mutation = useSaveEmailSettings();
+  const clinicId = useClinicId();
+  const clinic = useClinic(clinicId);
   const {
     register,
     handleSubmit,
@@ -89,12 +92,14 @@ function EmailSettingsForm({
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <FormField
               label={t.emails.replyTo}
+              hint={t.common.replyToHint}
               htmlFor="replyTo"
               error={errors.replyTo?.message}
               className="sm:col-span-2"
             >
               <Input
                 id="replyTo"
+                placeholder={clinic.data?.email ?? ""}
                 type="email"
                 dir="ltr"
                 maxLength={254}

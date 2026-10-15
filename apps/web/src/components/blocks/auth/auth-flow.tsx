@@ -268,7 +268,7 @@ export function AuthFlow() {
                 disabled={pending}
                 onClick={() => resetTo("login")}
               >
-                {t.auth.backToLogin}
+                {t.ui.back}
               </Button>
             </CardContent>
           </Card>

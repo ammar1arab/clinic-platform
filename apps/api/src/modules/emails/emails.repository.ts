@@ -21,6 +21,7 @@ import {
 
 type MessageWithCounts = Prisma.EmailMessageGetPayload<{
   include: {
+    recipients: { select: { subject: true } };
     _count: {
       select: { recipients: true };
     };
@@ -60,7 +61,7 @@ export class EmailsRepository {
       ...brandInfo,
       ...emailSettings,
       email: emailSettings?.replyTo?.trim() || brandInfo.email,
-      replyTo: emailSettings?.replyTo ?? undefined,
+      replyTo: emailSettings?.replyTo?.trim() || brandInfo.email || undefined,
       websiteUrl: emailSettings?.websiteUrl ?? undefined,
       instagramUrl: emailSettings?.instagramUrl ?? undefined,
       facebookUrl: emailSettings?.facebookUrl ?? undefined,
@@ -113,6 +114,11 @@ export class EmailsRepository {
     const rows = await this.prisma.emailMessage.findMany({
       where,
       include: {
+        recipients: {
+          take: 1,
+          orderBy: { id: "asc" },
+          select: { subject: true },
+        },
         _count: {
           select: { recipients: true },
         },
@@ -140,6 +146,11 @@ export class EmailsRepository {
     const row = await this.prisma.emailMessage.findFirst({
       where: { id, clinicId },
       include: {
+        recipients: {
+          take: 1,
+          orderBy: { id: "asc" },
+          select: { subject: true },
+        },
         _count: {
           select: { recipients: true },
         },
@@ -224,7 +235,7 @@ export class EmailsRepository {
       const sender = senderById.get(row.createdById);
       return {
         id: row.id,
-        subject: row.subject,
+        subject: row.recipients[0]?.subject ?? row.subject,
         locale: row.locale === LOCALE.AR ? LOCALE.AR : LOCALE.EN,
         isTest: row.isTest,
         createdAt: row.createdAt.toISOString(),

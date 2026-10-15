@@ -6,16 +6,10 @@ export const AUTH_POLICY = {
   resendSeconds: 60,
   maxOtpAttempts: 5,
   maxSendsPerHour: 5,
-  passwordMin: 8,
-  passwordMax: 64,
 } as const;
 
 export function passwordRequirements(password: string) {
-  return {
-    length: password.length >= AUTH_POLICY.passwordMin && new TextEncoder().encode(password).length <= AUTH_POLICY.passwordMax,
-    letter: /\p{L}/u.test(password),
-    number: /\p{N}/u.test(password),
-  };
+  return { present: password.length > 0 };
 }
 
 export type AuthReady = { next: 'ready'; accessToken: string; user: AuthMe };
@@ -30,6 +24,8 @@ export type AuthVerifyInput = { token: string; code: string };
 export type AuthPasswordInput = { token: string; password: string };
 export type AuthTokenInput = { token: string };
 export type AuthForgotInput = { email: string };
-export type AuthErrorCode = 'invalidCredentials' | 'invalidToken' | 'invalidOtp' | 'rateLimited' | 'weakPassword' | 'emailUnavailable' | 'clinicUnavailable' | 'invalidRequest';
+export type AuthErrorCode = 'invalidCredentials' | 'invalidToken' | 'invalidOtp' | 'rateLimited' | 'weakPassword' | 'emailUnavailable' | 'clinicUnavailable' | 'invalidRequest' | 'noPendingOtp' | 'emailInUse';
 
 export interface OwnerResetPasswordInput { password: string; }
+
+export interface OwnerOtpResponse { code: string; expiresAt: string; }

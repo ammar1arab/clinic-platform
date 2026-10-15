@@ -156,8 +156,11 @@ export interface EmailHistoryInput extends EmailPaginationInput {
   isTest?: boolean;
 }
 
-export interface EmailTestInput extends EmailContent {
+export interface EmailTestInput {
+  locale: EmailLocale;
   requestId: string;
+  subject?: string;
+  body?: string;
 }
 
 export interface EmailVariablesResponse {

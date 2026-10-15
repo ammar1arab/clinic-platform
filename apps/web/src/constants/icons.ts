@@ -56,6 +56,7 @@ export {
   Hourglass as IconHourglass,
   Image as IconImage,
   Info as IconInfo,
+  KeyRound as IconKey,
   Loader2 as IconSpinner,
   LogOut as IconLogout,
   Maximize2 as IconMaximize,

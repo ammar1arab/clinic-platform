@@ -21,31 +21,28 @@ export async function stripSolidBackdrop(src: string) {
 
   try {
     const image = await loadImage(src);
-    const width = image.naturalWidth;
-    const height = image.naturalHeight;
-    if (!width || !height) return src;
+    if (!image.naturalWidth || !image.naturalHeight) return src;
+    const scale = Math.min(1, 256 / Math.max(image.naturalWidth, image.naturalHeight));
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
 
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return src;
-    ctx.drawImage(image, 0, 0);
+    ctx.drawImage(image, 0, 0, width, height);
+    const optimized = scale < 1 ? canvas.toDataURL('image/png') : src;
     const frame = ctx.getImageData(0, 0, width, height);
     const data = frame.data;
     const at = (x: number, y: number) => {
       const index = (y * width + x) * 4;
       return [data[index], data[index + 1], data[index + 2], data[index + 3]];
     };
-    const corners = [
-      at(0, 0),
-      at(width - 1, 0),
-      at(0, height - 1),
-      at(width - 1, height - 1),
-    ];
+    const corners = [at(0, 0), at(width - 1, 0), at(0, height - 1), at(width - 1, height - 1)];
     if (corners.some((pixel) => pixel[3] < 240)) {
-      stripped.set(src, src);
-      return src;
+      stripped.set(src, optimized);
+      return optimized;
     }
     const average = [0, 1, 2].map((channel) =>
       Math.round(corners.reduce((sum, pixel) => sum + pixel[channel], 0) / corners.length),
@@ -54,8 +51,8 @@ export async function stripSolidBackdrop(src: string) {
       [0, 1, 2].some((channel) => Math.abs(pixel[channel] - average[channel]) > 18),
     );
     if (uneven) {
-      stripped.set(src, src);
-      return src;
+      stripped.set(src, optimized);
+      return optimized;
     }
 
     let changed = false;
@@ -76,8 +73,8 @@ export async function stripSolidBackdrop(src: string) {
       if (data[index + 3] > 16) opaque += 1;
     }
     if (!changed || opaque < width * height * 0.04) {
-      stripped.set(src, src);
-      return src;
+      stripped.set(src, optimized);
+      return optimized;
     }
     ctx.putImageData(frame, 0, 0);
     const next = canvas.toDataURL('image/png');

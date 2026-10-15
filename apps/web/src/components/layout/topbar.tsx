@@ -30,6 +30,7 @@ function resolveTitle(pathname: string, t: Translations): string {
   if (pathname.startsWith(`${ROUTES.EMAILS}/`)) return t.emails.detail;
   if (pathname === ROUTES.HOME_QUEUE) return t.queue.waitingQueue;
   if (pathname === ROUTES.HOME_PROFILE) return t.practitioner.profile;
+  if (pathname === ROUTES.PROFILE) return t.common.accountProfile;
   if (pathname === ROUTES.HOME) return t.layout.titles.home;
   if (pathname === ROUTES.DASHBOARD) return t.layout.titles.dashboard;
   if (pathname === ROUTES.SCHEDULE) return t.layout.titles.schedule;
@@ -46,7 +47,7 @@ function resolveTitle(pathname: string, t: Translations): string {
   if (pathname === ROUTES.SETTINGS_PAYMENT_METHODS) return t.layout.titles.paymentMethods;
   if (pathname === ROUTES.SETTINGS_PACKAGES) return t.layout.titles.packages;
   if (pathname === ROUTES.SETTINGS_DISCOUNT_CODES) return t.layout.titles.promocodes;
-  if (pathname === ROUTES.SETTINGS_CLINIC) return t.layout.titles.clinicDefaults;
+  if (pathname === ROUTES.SETTINGS_CLINIC) return t.common.clinicProfile;
 
   if (pathname.startsWith(`${ROUTES.PRACTITIONERS}/`) && pathname.endsWith('/edit')) {
     return t.layout.titles.editPractitioner;

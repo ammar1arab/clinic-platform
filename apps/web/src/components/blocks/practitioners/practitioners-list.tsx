@@ -1,5 +1,9 @@
 "use client";
 
+import { ROLE } from '@clinic/types';
+import { useOwnerGenerateOtp } from '@/hooks/api/use-auth-mutations';
+import { AccountOtpDialog } from '@/components/blocks/auth/account-otp-dialog';
+
 import {
   TwoStepDeleteDialogs,
   useTwoStepDelete,
@@ -29,6 +33,7 @@ import {
 import { useRouteNav } from "@/hooks/shared/use-route-nav";
 import type { Practitioner } from "@/services/practitioners.service";
 import {
+  IconMail,
   IconActivate,
   IconCalendar,
   IconDeactivate,
@@ -37,7 +42,7 @@ import {
   IconPractitioner,
   IconView,
 } from "@/constants/icons";
-import { useLanguage } from "@/providers";
+import { useAuth, useLanguage } from "@/providers";
 import { getBilingualName, getStaffName } from "@/i18n";
 import { ROUTES } from "@/constants/routes";
 import { languageLabels } from "@/constants/practitioner";
@@ -90,6 +95,8 @@ export function PractitionersList({
   const remove = useDeletePractitioner(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
+  const { user } = useAuth();
+  const otp = useOwnerGenerateOtp();
   const { t, lang } = useLanguage();
 
   const toggling = deactivate.isPending || reactivate.isPending;
@@ -103,6 +110,12 @@ export function PractitionersList({
   const rowMenu = (p: Practitioner) => (
     <RowActionsMenu
       items={[
+        ...(user?.role === ROLE.OWNER ? [{
+          label: t.common.generateOtp,
+          icon: IconMail,
+          disabled: otp.isPending,
+          onSelect: () => otp.mutate(p.id),
+        }] : []),
         {
           label: t.practitioner.view,
           icon: IconView,
@@ -323,6 +336,8 @@ export function PractitionersList({
         pageSize={pageSize}
         onPageChange={onPageChange}
       />
+
+      <AccountOtpDialog code={otp.data} onClose={otp.reset} />
 
       <TwoStepDeleteDialogs
         step1={del.step1}

@@ -1,5 +1,6 @@
+import { extractErrorMessage } from '@/lib/api';
 import { useLanguage } from '@/providers';
-import type { OwnerResetPasswordInput } from '@clinic/types';
+import type { AccountProfileInput, AuthMe, OwnerResetPasswordInput, OwnerOtpResponse } from '@clinic/types';
 import type { AuthForgotInput, AuthLoginInput, AuthLoginResponse, AuthPasswordInput, AuthRecovery, AuthReset, AuthTokenInput, AuthVerifyInput } from '@clinic/types';
 import { authService } from '@/services/auth.service';
 import { useApiMutation } from '@/hooks/query/use-api-mutation';
@@ -33,5 +34,22 @@ export function useOwnerResetPassword(id: string) {
   return useApiMutation<{ success: true }, Error, OwnerResetPasswordInput>({
     request: (input) => authService.ownerResetPassword(id, input),
     successMessage: t.common.accountPasswordReset,
+  });
+}
+
+export function useOwnerGenerateOtp() {
+  return useApiMutation<OwnerOtpResponse, Error, string>({
+    request: authService.ownerGenerateOtp,
+    errorMessage: (error) => extractErrorMessage(error),
+  });
+}
+
+export function useUpdateAccountProfile() {
+  const { t } = useLanguage();
+  return useApiMutation<AuthMe, Error, AccountProfileInput>({
+    request: authService.updateProfile,
+    invalidateQueries: [['auth', 'me']],
+    successMessage: t.common.clinicSettingsSaved,
+    errorMessage: (error) => extractErrorMessage(error),
   });
 }

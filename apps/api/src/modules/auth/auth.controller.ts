@@ -1,5 +1,7 @@
 import {
   Body,
+  Patch,
+  Header,
   Param,
   ParseUUIDPipe,
   Controller,
@@ -13,6 +15,7 @@ import { ApiBearerAuth } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 import { LoginDto, RegisterDto } from "./dto";
 import {
+  AccountProfileDto,
   AuthPasswordDto,
   OwnerResetPasswordDto,
   AuthTokenDto,
@@ -33,6 +36,29 @@ import { AuthExceptionFilter } from "@/security/auth-exception.filter";
 @UseFilters(AuthExceptionFilter)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Patch("profile")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.owner)
+  updateProfile(
+    @CurrentUser() actor: AuthUser,
+    @Body() dto: AccountProfileDto,
+  ) {
+    return this.authService.updateProfile(actor, dto);
+  }
+
+  @Post("accounts/:id/otp")
+  @Header("Cache-Control", "no-store")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.owner)
+  ownerGenerateOtp(
+    @CurrentUser() actor: AuthUser,
+    @Param("id", ParseUUIDPipe) id: string,
+  ) {
+    return this.authService.ownerGenerateOtp(actor, id);
+  }
 
   @Post("accounts/:id/reset-password")
   @ApiBearerAuth()

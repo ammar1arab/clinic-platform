@@ -23,13 +23,6 @@ const DEFAULT_ACCENT = "#0f766e";
 const accentOf = (value?: string | null) =>
   value && /^#[0-9A-Fa-f]{6}$/.test(value) ? value : DEFAULT_ACCENT;
 
-const socialIcon = (
-  id: Parameters<typeof emailIcon>[0],
-  label: string,
-  accent: string,
-) =>
-  `<img src="${emailIcon(id, accent)}" width="20" height="20" alt="${label}" style="display:inline-block;border:0;vertical-align:middle">`;
-
 const storedLogo = (value?: string | null): string | null => {
   const https = secureUrl(value);
   if (https) return https;
@@ -112,19 +105,22 @@ export const renderEmail = (
   const logo = storedLogo(brand.logoUrl);
   const website = secureUrl(brand.websiteUrl);
 
-  const socialLinks = (
+  const links = (
     [
-      ["website", "Website", website],
+      ["website", isArabic ? "الموقع" : "Website", website],
       ["instagram", "Instagram", brand.instagramUrl],
       ["facebook", "Facebook", brand.facebookUrl],
       ["linkedin", "LinkedIn", brand.linkedinUrl],
     ] as const
-  )
-    .map(([id, label, href]) => {
-      const url = id === "website" ? href : secureUrl(href);
-      if (!url) return "";
-      return `<a href="${escapeHtml(url)}" title="${label}" style="display:inline-block;margin:0 6px;text-decoration:none">${socialIcon(id, label, accent)}</a>`;
-    })
+  ).flatMap(([id, label, href]) => {
+    const url = secureUrl(href);
+    return url ? [{ id, label, url }] : [];
+  });
+  const socialLinks = links
+    .map(
+      ({ id, label, url }) =>
+        `<td align="center" style="padding:0 7px"><a href="${escapeHtml(url)}" title="${label}" style="display:inline-block;text-decoration:none"><img src="${emailIcon(id)}" width="22" height="22" alt="${label}" style="display:block;border:0"></a></td>`,
+    )
     .join("");
 
   const align = isArabic ? "right" : "left";
@@ -134,43 +130,46 @@ export const renderEmail = (
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light">
+  <meta name="x-apple-disable-message-reformatting">
   <title>${escapeHtml(subject)}</title>
 </head>
-<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif">
+<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff">
     <tr>
       <td align="center" style="padding:0">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden">
+        <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+        <table data-email-shell="true" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-collapse:separate;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt">
           <tr>
-            <td style="padding:28px 24px;text-align:center;background:${accent}">
+            <td data-email-header="true" align="center" bgcolor="${accent}" style="padding:24px;text-align:center;background:${accent};border-radius:12px 12px 0 0">
               ${
                 logo
-                  ? `<img src="${escapeHtml(logo)}" width="72" height="72" alt="" style="display:block;margin:0 auto 12px;border:0;background:transparent;object-fit:contain">`
+                  ? `<img src="${escapeHtml(logo)}" width="56" height="56" alt="" style="display:block;margin:0 auto 12px;border:0;background:transparent;object-fit:contain">`
                   : ""
               }
-              <p style="margin:0;font-size:22px;line-height:1.3;font-weight:700;color:#ffffff">${escapeHtml(clinicName)}</p>
+              <p style="margin:0;font-size:20px;line-height:1.4;font-weight:700;color:#ffffff">${escapeHtml(clinicName)}</p>
             </td>
           </tr>
           <tr>
-            <td style="padding:32px 28px 16px;text-align:${align};color:#1f2937">
-              <h1 style="margin:0 0 16px;font-size:22px;line-height:1.35;font-weight:700;color:#111827">${escapeHtml(subject)}</h1>
-              <div style="font-size:16px;line-height:1.75;overflow-wrap:anywhere">${escapeHtml(body).replace(/\r?\n/g, "<br>")}</div>
+            <td data-email-content="true" dir="${isArabic ? "rtl" : "ltr"}" align="${align}" style="padding:28px 24px 12px;text-align:${align};color:#1f2937">
+              <h1 style="margin:0 0 16px;font-size:20px;line-height:1.45;font-weight:700;color:#111827">${escapeHtml(subject)}</h1>
+              <div style="font-size:16px;line-height:1.7;overflow-wrap:anywhere;word-break:break-word">${escapeHtml(body).replace(/\r?\n/g, "<br>")}</div>
             </td>
           </tr>
           <tr>
-            <td data-email-gap="true" height="96" style="height:96px;line-height:96px;font-size:1px">&nbsp;</td>
+            <td data-email-gap="true" height="48" style="height:48px;line-height:48px;font-size:1px">&nbsp;</td>
           </tr>
           <tr>
-            <td style="padding:8px 28px 28px;text-align:center;border-top:1px solid #e5e7eb">
+            <td data-email-footer="true" align="center" style="padding:20px 24px;text-align:center;border-top:1px solid #e5e7eb">
               ${
                 footer
-                  ? `<p style="margin:16px 0;font-size:13px;line-height:1.6;color:#6b7280">${escapeHtml(footer).replace(/\r?\n/g, "<br>")}</p>`
+                  ? `<p style="margin:0 0 16px;font-size:13px;line-height:1.6;color:#6b7280">${escapeHtml(footer).replace(/\r?\n/g, "<br>")}</p>`
                   : ""
               }
-              ${socialLinks ? `<p style="margin:12px 0 0">${socialLinks}</p>` : ""}
+              ${socialLinks ? `<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt"><tr>${socialLinks}</tr></table>` : ""}
             </td>
           </tr>
         </table>
+        <!--[if mso]></td></tr></table><![endif]-->
       </td>
     </tr>
   </table>
@@ -180,7 +179,13 @@ export const renderEmail = (
   return {
     subject,
     html,
-    text: [clinicName, subject, body, footer, website]
+    text: [
+      clinicName,
+      subject,
+      body,
+      footer,
+      ...links.map(({ label, url }) => `${label}: ${url}`),
+    ]
       .filter(Boolean)
       .join("\n\n"),
   };

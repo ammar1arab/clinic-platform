@@ -146,7 +146,19 @@ export class EmailsService {
   }
 
   async test(user: AuthUser, dto: TestEmailDto) {
-    return this.enqueue(user, dto, true);
+    const arabic = dto.locale === LOCALE.AR;
+    return this.enqueue(
+      user,
+      {
+        locale: dto.locale,
+        requestId: dto.requestId,
+        subject: arabic ? "بريد تجريبي" : "Test email",
+        body: arabic
+          ? "هذا بريد تجريبي من {{clinicName}}."
+          : "This is a test email from {{clinicName}}.",
+      },
+      true,
+    );
   }
 
   private async enqueue(

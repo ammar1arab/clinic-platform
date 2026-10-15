@@ -30,6 +30,7 @@ import {
   LOCALE,
   type EmailAudience,
   type Locale,
+  type EmailTestInput,
 } from "@clinic/types";
 
 export class EmailFiltersDto {
@@ -178,7 +179,20 @@ export class PreviewEmailDto extends EmailContentDto {
   recipient?: PreviewRecipientDto;
 }
 
-export class TestEmailDto extends EmailContentDto {
+export class TestEmailDto implements EmailTestInput {
+  @IsIn([LOCALE.EN, LOCALE.AR])
+  locale: Locale;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  subject?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20000)
+  body?: string;
+
   @IsUUID()
   requestId: string;
 }

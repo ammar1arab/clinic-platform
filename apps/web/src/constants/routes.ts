@@ -1,4 +1,5 @@
 export const ROUTES = {
+  PROFILE: '/profile',
   EMAILS: '/emails',
   EMAIL_NEW: '/emails/new',
   EMAIL_DETAIL: (id: string) => `/emails/${id}`,
