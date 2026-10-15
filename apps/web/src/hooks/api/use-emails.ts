@@ -132,11 +132,19 @@ export function useSendEmail() {
 
 export function useSaveEmailSettings() {
   const { t } = useLanguage();
+  const clinicId = useClinicId();
+  const queryClient = useQueryClient();
   return useApiMutation<EmailSettingsInput, TResponseError, EmailSettingsInput>(
     {
       request: emailsService.saveSettings,
       invalidateQueries: QUERY_KEYS.emails.all,
       successMessage: t.emails.settingsSaved,
+      onSuccess: (settings) => {
+        queryClient.setQueryData(
+          QUERY_KEYS.emails.settings(clinicId),
+          settings,
+        );
+      },
     },
   );
 }

@@ -33,6 +33,7 @@ import {
   useEmailPreviewQuery,
   useEmailRecipientQuery,
   useEmailVariables,
+  useEmailSettings,
 } from "@/hooks/api/use-emails";
 import { useRouteNav } from "@/hooks/shared/use-route-nav";
 import { IconSend } from "@/constants/icons";
@@ -51,7 +52,9 @@ export function EmailComposer() {
   const nav = useRouteNav();
   const clinicId = useClinicId();
   const clinic = useClinic(clinicId);
-  const clinicEmail = clinic.data?.email?.trim();
+  const settings = useEmailSettings(clinicId);
+  const clinicEmail =
+    settings.data?.replyTo?.trim() || clinic.data?.email?.trim();
   const sentId = useRef<string | null>(null);
   const feedback = useFeedbackOverlay(() => {
     if (sentId.current) nav.go(ROUTES.EMAIL_DETAIL(sentId.current));
@@ -80,9 +83,14 @@ export function EmailComposer() {
     recipientsLoading ||
     recipientsQuery.isFetching ||
     recipientsQuery.isPlaceholderData;
-  const testLabel = clinicEmail
-    ? t.emails.testDestination.replace("{email}", clinicEmail)
-    : t.emails.testHint;
+  const testLabel =
+    settings.isLoading || clinic.isLoading
+      ? t.common.loading
+      : settings.isError || clinic.isError
+        ? t.common.somethingWentWrong
+        : clinicEmail
+          ? t.emails.testDestination.replace("{email}", clinicEmail)
+          : t.emails.testHint;
   const previewSubject = deferredValues.subject.trim();
   const previewBody = deferredValues.body.trim();
   const canPreview = Boolean(previewSubject && previewBody);
@@ -165,7 +173,15 @@ export function EmailComposer() {
                 variant="outline"
                 size="icon"
                 aria-label={testLabel}
-                disabled={state.working || feedback.open || !clinicEmail}
+                disabled={
+                  state.working ||
+                  feedback.open ||
+                  !clinicEmail ||
+                  settings.isLoading ||
+                  clinic.isLoading ||
+                  settings.isError ||
+                  clinic.isError
+                }
                 onClick={() => void state.sendTest()}
               >
                 <IconSend className="size-4" />
@@ -310,6 +326,12 @@ export function EmailComposer() {
                     recipientsQuery.isPlaceholderData
                   }
                 />
+                {(settings.isError || clinic.isError) && (
+                  <ErrorState onRetry={() => {
+                    void settings.refetch();
+                    void clinic.refetch();
+                  }} />
+                )}
                 {state.error && (
                   <ErrorState title={state.error} className="py-6" />
                 )}

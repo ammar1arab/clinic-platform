@@ -10,6 +10,11 @@ import { cn } from "@/lib/utils";
 
 const THRESHOLD = 64;
 const REFRESH_PARAM = "_cureva_refresh";
+const REFRESH_EVENT = "cureva:refresh";
+
+export function requestPageRefresh() {
+  window.dispatchEvent(new Event(REFRESH_EVENT));
+}
 
 export function PullToRefresh({ children }: { children: ReactNode }) {
   const { t } = useLanguage();
@@ -42,11 +47,11 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         surface.style.transition = originalTransition;
         surface = null;
       };
+      const reduced = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
       const moveSurface = (offset: number, settle = false) => {
         if (!surface) return;
-        const reduced = window.matchMedia(
-          "(prefers-reduced-motion: reduce)",
-        ).matches;
         surface.style.transition =
           settle && !reduced
             ? "translate 220ms cubic-bezier(0.2, 0.8, 0.2, 1)"
@@ -79,26 +84,31 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         setDistance(0);
       };
       const begin = (event: TouchEvent) => {
-        if (
-          locked ||
-          event.touches.length !== 1 ||
-          !window.matchMedia("(pointer: coarse)").matches
-        )
+        if (locked) return;
+        if (event.touches.length !== 1) {
+          reset();
           return;
+        }
         reset();
         restoreSurface();
         const target = event.target;
+        if (!(target instanceof Element)) return;
+        const header = target.closest("[data-app-topbar]");
         if (
-          !(target instanceof Element) ||
-          !target.closest("main") ||
+          (!header && !target.closest("main")) ||
+          (header && target.closest('button, a, [role="button"]')) ||
           target.closest(
             'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="slider"], [draggable="true"], .fc-event',
           ) ||
           !atTop(target)
         )
           return;
-        surface = target.closest<HTMLElement>("main");
+        surface = header
+          ? root.querySelector<HTMLElement>("main")
+          : target.closest<HTMLElement>("main");
         if (!surface) return;
+        prepareFeedbackSound();
+        if (header && event.cancelable) event.preventDefault();
         originalTranslate = surface.style.translate;
         originalTransition = surface.style.transition;
         const bounds = surface.getBoundingClientRect();
@@ -138,10 +148,11 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         }
         setDistance(pulled);
       };
-      const finish = async () => {
-        const ready = pulled >= THRESHOLD;
+      const finish = async (force = false) => {
+        if (locked) return;
+        const ready = force || pulled >= THRESHOLD;
         reset();
-        if (!ready || locked) return;
+        if (!ready) return;
         locked = true;
         prepareFeedbackSound();
         if (root.querySelector('main form, main [contenteditable="true"]')) {
@@ -167,6 +178,12 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
           if (surface) {
             originalTranslate = surface.style.translate;
             originalTransition = surface.style.transition;
+            const bounds = surface.getBoundingClientRect();
+            setOrigin({
+              top: bounds.top,
+              left: bounds.left,
+              width: bounds.width,
+            });
           }
         }
         moveSurface(56, true);
@@ -185,8 +202,16 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         if (pulled > 8 && event.cancelable) event.preventDefault();
         void finish();
       };
+      const refresh = () => {
+        void finish(true);
+      };
+      window.addEventListener(REFRESH_EVENT, refresh);
+      root.addEventListener("click", prepareFeedbackSound, {
+        once: true,
+        capture: true,
+      });
       root.addEventListener("touchstart", begin, {
-        passive: true,
+        passive: false,
         capture: true,
       });
       root.addEventListener("touchmove", move, {
@@ -199,6 +224,8 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         disposed = true;
         clearTimeout(timer);
         restoreSurface();
+        window.removeEventListener(REFRESH_EVENT, refresh);
+        root.removeEventListener("click", prepareFeedbackSound, true);
         root.removeEventListener("touchstart", begin, true);
         root.removeEventListener("touchmove", move, true);
         root.removeEventListener("touchend", end, true);

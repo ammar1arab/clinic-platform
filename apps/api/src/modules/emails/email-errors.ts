@@ -53,8 +53,8 @@ const copy = {
     ar: "وقت إشعار البريد الإلكتروني غير صالح.",
   },
   emailClinicAddressRequired: {
-    en: "Set the clinic email in clinic settings before sending a test email.",
-    ar: "حدد بريد العيادة في إعدادات العيادة قبل إرسال بريد تجريبي.",
+    en: "Set the reply-to address in email settings or the clinic email in clinic settings before sending a test email.",
+    ar: "حدد عنوان الرد في إعدادات البريد أو بريد العيادة في إعدادات العيادة قبل إرسال بريد تجريبي.",
   },
   emailClinicNotFound: {
     en: "Clinic not found.",

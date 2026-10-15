@@ -2,7 +2,11 @@ let context: AudioContext | null = null;
 
 function audio() {
   try {
-    context ??= new AudioContext();
+    const Audio = window.AudioContext ?? (window as Window & {
+      webkitAudioContext?: typeof AudioContext;
+    }).webkitAudioContext;
+    if (!Audio) return null;
+    if (!context || context.state === 'closed') context = new Audio();
   } catch {
     return null;
   }

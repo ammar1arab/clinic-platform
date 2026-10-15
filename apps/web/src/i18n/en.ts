@@ -82,7 +82,7 @@ export const en = {
   },
   "sendTest": "Send test to me",
   "testDestination": "Send one test email to {email}",
-  "testHint": "Set the clinic email in clinic settings to send a test email.",
+  "testHint": "Set the reply-to address in email settings or the clinic email in clinic settings to send a test email.",
   "testQueued": "Test email queued. Delivery is tracked in history.",
   "review": "Review final email",
   "reviewTitle": "Final recipient review",

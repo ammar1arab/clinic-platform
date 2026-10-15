@@ -59,6 +59,7 @@ export class EmailsRepository {
     return {
       ...brandInfo,
       ...emailSettings,
+      email: emailSettings?.replyTo?.trim() || brandInfo.email,
       replyTo: emailSettings?.replyTo ?? undefined,
       websiteUrl: emailSettings?.websiteUrl ?? undefined,
       instagramUrl: emailSettings?.instagramUrl ?? undefined,
