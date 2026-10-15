@@ -87,8 +87,14 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         }
         reset();
         restoreSurface();
-        const target = event.target;
-        if (!(target instanceof Element)) return;
+        const touched = event.touches[0].target;
+        const target =
+          touched instanceof Element
+            ? touched
+            : touched instanceof Node
+              ? touched.parentElement
+              : null;
+        if (!target || !root.contains(target)) return;
         const header = target.closest("[data-app-topbar]");
         if (
           (!header && !target.closest("main")) ||
@@ -203,29 +209,32 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         if (pulled > 8 && event.cancelable) event.preventDefault();
         void finish();
       };
-      root.addEventListener("click", prepareFeedbackSound, {
+      document.addEventListener("click", prepareFeedbackSound, {
         once: true,
         capture: true,
       });
-      root.addEventListener("touchstart", begin, {
+      document.addEventListener("touchstart", begin, {
         passive: false,
         capture: true,
       });
-      root.addEventListener("touchmove", move, {
+      document.addEventListener("touchmove", move, {
         passive: false,
         capture: true,
       });
-      root.addEventListener("touchend", end, { passive: false, capture: true });
-      root.addEventListener("touchcancel", reset, { capture: true });
+      document.addEventListener("touchend", end, {
+        passive: false,
+        capture: true,
+      });
+      document.addEventListener("touchcancel", reset, { capture: true });
       return () => {
         disposed = true;
         clearTimeout(timer);
         restoreSurface();
-        root.removeEventListener("click", prepareFeedbackSound, true);
-        root.removeEventListener("touchstart", begin, true);
-        root.removeEventListener("touchmove", move, true);
-        root.removeEventListener("touchend", end, true);
-        root.removeEventListener("touchcancel", reset, true);
+        document.removeEventListener("click", prepareFeedbackSound, true);
+        document.removeEventListener("touchstart", begin, true);
+        document.removeEventListener("touchmove", move, true);
+        document.removeEventListener("touchend", end, true);
+        document.removeEventListener("touchcancel", reset, true);
       };
     },
     [pathname, t],
@@ -240,7 +249,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       : t.common.pullToRefresh;
 
   return (
-    <div ref={bind} className="contents">
+    <div ref={bind} className="h-full w-full">
       {children}
       <div
         role="status"

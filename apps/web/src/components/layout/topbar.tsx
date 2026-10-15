@@ -73,7 +73,7 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
     <>
       <header
         data-app-topbar=""
-        className="relative z-10 flex h-app-header shrink-0 items-center justify-between border-b border-border/80 bg-background/80 px-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md md:px-5"
+        className="relative z-10 flex h-app-header touch-pan-x touch-pinch-zoom shrink-0 items-center justify-between border-b border-border/80 bg-background/80 px-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md md:px-5"
       >
         <div className="flex min-w-0 items-center gap-2.5">
           {showNav ? (
