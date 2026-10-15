@@ -9,7 +9,7 @@ import {
 } from "../security.constants";
 import { securityError } from "../security-error";
 
-export type TokenPurpose = "access" | "setup" | "recovery" | "password_reset";
+export type TokenPurpose = "access" | "setup" | "recovery" | "password_reset" | "email_change";
 export interface SecurityPayload {
   sub: string;
   purpose: TokenPurpose;

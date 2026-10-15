@@ -25,31 +25,6 @@ export class AuthRepository {
         },
       });
       if (!member) return { count: 0 };
-      if (input.email !== undefined && input.email !== member.user.email) {
-        const changed = await tx.user.updateMany({
-          where: {
-            id: member.user.id,
-            email: member.user.email,
-            passwordChangedAt: member.user.passwordChangedAt,
-            clinicUsers: { some: { id, clinicId }, every: { clinicId } },
-          },
-          data: {
-            email: input.email,
-            emailVerifiedAt: null,
-            passwordChangedAt: new Date(
-              Math.max(
-                Date.now(),
-                (member.user.passwordChangedAt?.getTime() ?? 0) + 1,
-              ),
-            ),
-          },
-        });
-        if (!changed.count) return { count: 0 };
-        await tx.authOtpChallenge.updateMany({
-          where: { userId: member.user.id, usedAt: null },
-          data: { usedAt: new Date() },
-        });
-      }
       return tx.clinicUser.updateMany({
         where: { id, clinicId, isActive: true },
         data: {
@@ -103,6 +78,42 @@ export class AuthRepository {
       if (!changed.count) return false;
       await tx.authOtpChallenge.updateMany({
         where: { userId: member.user.id, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      return true;
+    });
+  }
+
+  changeEmail(id: string, email: string, passwordVersion: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id },
+        select: { email: true, passwordChangedAt: true },
+      });
+      if (!user || (user.passwordChangedAt?.getTime() ?? 0) !== passwordVersion)
+        return false;
+      const taken = await tx.user.findUnique({
+        where: { email },
+        select: { id: true },
+      });
+      if (taken && taken.id !== id) return false;
+      const changed = await tx.user.updateMany({
+        where: {
+          id,
+          email: user.email,
+          passwordChangedAt: user.passwordChangedAt,
+        },
+        data: {
+          email,
+          emailVerifiedAt: new Date(),
+          passwordChangedAt: new Date(
+            Math.max(Date.now(), (user.passwordChangedAt?.getTime() ?? 0) + 1),
+          ),
+        },
+      });
+      if (!changed.count) return false;
+      await tx.authOtpChallenge.updateMany({
+        where: { userId: id, usedAt: null },
         data: { usedAt: new Date() },
       });
       return true;

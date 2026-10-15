@@ -16,6 +16,8 @@ import { AuthService } from "./auth.service";
 import { LoginDto, RegisterDto } from "./dto";
 import {
   AccountProfileDto,
+  ConfirmEmailChangeDto,
+  EmailChangeDto,
   AuthPasswordDto,
   OwnerResetPasswordDto,
   AuthTokenDto,
@@ -46,6 +48,28 @@ export class AuthController {
     @Body() dto: AccountProfileDto,
   ) {
     return this.authService.updateProfile(actor, dto);
+  }
+
+  @Post("profile/email")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.owner)
+  requestEmailChange(
+    @CurrentUser() actor: AuthUser,
+    @Body() dto: EmailChangeDto,
+  ) {
+    return this.authService.requestEmailChange(actor, dto.email);
+  }
+
+  @Post("profile/email/confirm")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.owner)
+  confirmEmailChange(
+    @CurrentUser() actor: AuthUser,
+    @Body() dto: ConfirmEmailChangeDto,
+  ) {
+    return this.authService.confirmEmailChange(actor, dto.token, dto.code);
   }
 
   @Post("accounts/:id/otp")

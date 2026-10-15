@@ -172,6 +172,10 @@ export class OtpService {
       data: { usedAt: new Date() },
     });
     if (!consumed.count) securityError("invalidOtp");
-    return { userId: challenge.userId!, createdAt: challenge.createdAt };
+    return {
+      userId: challenge.userId!,
+      email: challenge.email,
+      createdAt: challenge.createdAt,
+    };
   }
 }

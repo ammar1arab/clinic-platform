@@ -62,6 +62,61 @@ export class AuthService {
     return this.getMe(actor.userId, actor.clinicUserId);
   }
 
+  async requestEmailChange(actor: AuthUser, email: string) {
+    await this.limits.consume("account-email", actor.userId, 5, 3600);
+    const next = email.trim().toLowerCase();
+    const user = await this.repo.byId(actor.userId);
+    if (!user || user.id !== actor.userId) securityError("invalidToken", 401);
+    this.membership(user);
+    if (next === user.email) return { next: "unchanged" as const };
+    if (await this.repo.byEmail(next)) securityError("emailInUse", 409);
+    return this.emailChangeChallenge(user, next);
+  }
+
+  async confirmEmailChange(actor: AuthUser, token: string, code: string) {
+    const payload = this.tokens.verify(token, ["email_change"]);
+    if (payload.sub !== actor.userId || !payload.challengeId || !payload.email)
+      securityError("invalidToken", 401);
+    const challenge = await this.otp.consume(
+      payload.challengeId,
+      actor.userId,
+      AuthOtpPurpose.EMAIL_VERIFY,
+      code,
+    );
+    if (challenge.email !== payload.email) securityError("invalidOtp");
+    const existing = await this.repo.byEmail(payload.email);
+    if (existing && existing.id !== actor.userId)
+      securityError("emailInUse", 409);
+    if (
+      !(await this.repo.changeEmail(
+        actor.userId,
+        payload.email,
+        payload.passwordVersion,
+      ))
+    )
+      securityError("invalidToken", 401);
+    return { success: true as const };
+  }
+
+  private async emailChangeChallenge(user: Account, email: string) {
+    const challengeId = await this.otp.send(
+      email,
+      user.id,
+      AuthOtpPurpose.EMAIL_VERIFY,
+    );
+    return {
+      next: "otp" as const,
+      email,
+      cooldownSeconds: AUTH_POLICY.resendSeconds,
+      token: this.tokens.sign({
+        ...this.payload(user),
+        purpose: "email_change",
+        challengeId,
+        email,
+      }),
+    };
+  }
+
   async ownerGenerateOtp(actor: AuthUser, id: string) {
     if (actor.role !== Role.owner) securityError("clinicUnavailable", 403);
     await this.limits.consume("owner-otp", actor.userId, 10, 3600);
@@ -228,9 +283,19 @@ export class AuthService {
   }
 
   async resend(token: string) {
-    const payload = this.tokens.verify(token, ["setup", "recovery"]);
+    const payload = this.tokens.verify(token, ["setup", "recovery", "email_change"]);
     if (!payload.challengeId || !payload.email)
       securityError("invalidToken", 401);
+    if (payload.purpose === "email_change") {
+      const user = await this.repo.byId(payload.sub);
+      if (
+        !user ||
+        (user.passwordChangedAt?.getTime() ?? 0) !== payload.passwordVersion
+      )
+        securityError("invalidToken", 401);
+      if (await this.repo.byEmail(payload.email)) securityError("emailInUse", 409);
+      return this.emailChangeChallenge(user, payload.email);
+    }
     if (payload.purpose === "recovery") return this.forgot(payload.email);
     const user = await this.account(payload);
     if (user.emailVerifiedAt) securityError("invalidToken", 401);

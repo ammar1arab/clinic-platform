@@ -45,6 +45,25 @@ export class OwnerResetPasswordDto implements OwnerResetPasswordInput {
   password: string;
 }
 
+export class EmailChangeDto {
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === "string" ? value.trim().toLowerCase() : value,
+  )
+  @IsEmail()
+  @MaxLength(254)
+  email: string;
+}
+
+export class ConfirmEmailChangeDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(4096)
+  token: string;
+
+  @Matches(/^\d{6}$/)
+  code: string;
+}
+
 export class AccountProfileDto {
   @ValidateIf((_object: unknown, value: unknown) => value !== undefined)
   @Transform(({ value }: { value: unknown }) =>
