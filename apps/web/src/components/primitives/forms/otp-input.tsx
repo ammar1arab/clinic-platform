@@ -63,14 +63,14 @@ export function OtpInput({
             if (readOnly) return;
             onChange(normalizeCode(event.clipboardData.getData('text'), length));
           }}
-          className="absolute inset-0 z-10 h-full w-full cursor-text border-0 bg-transparent p-0 text-transparent shadow-none caret-transparent outline-none ring-0 focus-visible:border-0 focus-visible:ring-0 [-webkit-text-fill-color:transparent] selection:bg-transparent dark:bg-transparent"
+          className="absolute inset-0 z-10 size-full cursor-text appearance-none border-0 bg-transparent p-0 opacity-0 shadow-none outline-none ring-0"
         />
-        <div aria-hidden className="pointer-events-none flex gap-2">
+        <div aria-hidden className="pointer-events-none mx-auto grid w-full max-w-[20.5rem] grid-cols-6 gap-2">
           {Array.from({ length }, (_, index) => (
             <span
               key={index}
               className={cn(
-                'flex h-12 min-w-0 flex-1 items-center justify-center rounded-lg border bg-background text-xl font-semibold tabular-nums transition-colors motion-reduce:transition-none',
+                'flex aspect-square items-center justify-center rounded-lg border bg-background text-xl font-semibold tabular-nums transition-colors motion-reduce:transition-none',
                 error ? 'border-destructive' : 'border-input',
                 focused &&
                   index === Math.min(value.length, length - 1) &&

@@ -22,9 +22,15 @@ import {
   DialogTrigger,
 } from "@/components/ui";
 import { useAuth, useLanguage } from "@/providers";
-import { useOwnerResetPassword } from "@/hooks/api/use-auth-mutations";
+import {
+  useConfirmPasswordChange,
+  useOwnerResetPassword,
+  useRequestPasswordChange,
+} from "@/hooks/api/use-auth-mutations";
 import { extractErrorMessage } from "@/lib/api";
+import { authService } from "@/services/auth.service";
 import { PasswordForm } from "@/components/blocks/auth/password-form";
+import { AccountVerificationDialog } from "@/components/blocks/auth/account-verification-dialog";
 import { IconKey } from "@/constants/icons";
 
 export function AccountPasswordReset({ id }: { id?: string }) {
@@ -36,11 +42,31 @@ export function AccountPasswordReset({ id }: { id?: string }) {
   const [open, setOpen] = useState(false);
   const targetId = id ?? selectedId;
   const mutation = useOwnerResetPassword(targetId);
+  const requestPassword = useRequestPasswordChange();
+  const confirmPassword = useConfirmPasswordChange();
   const [revision, setRevision] = useState(0);
+  const [otpError, setOtpError] = useState("");
+  const [challenge, setChallenge] = useState<{
+    token: string;
+    resendAt: number;
+    password: string;
+  } | null>(null);
   if (user?.role !== ROLE.OWNER) return null;
 
   const save = async (password: string) => {
     if (!targetId) return;
+    if (id) {
+      try {
+        const pending = await requestPassword.mutateAsync();
+        setOtpError("");
+        setChallenge({
+          token: pending.token,
+          resendAt: Date.now() + pending.cooldownSeconds * 1000,
+          password,
+        });
+      } catch {}
+      return;
+    }
     try {
       await mutation.mutateAsync({ password });
       setRevision((value) => value + 1);
@@ -83,8 +109,8 @@ export function AccountPasswordReset({ id }: { id?: string }) {
       <PasswordForm
         key={`${targetId}-${revision}`}
         autoFocus={false}
-        pending={mutation.isPending}
-        disabled={!targetId}
+        pending={mutation.isPending || requestPassword.isPending}
+        disabled={!targetId || !!challenge}
         onSubmit={save}
       />
       {mutation.isError && (
@@ -125,11 +151,60 @@ export function AccountPasswordReset({ id }: { id?: string }) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t.common.resetAccountPassword}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">{fields}</CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.common.resetAccountPassword}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">{fields}</CardContent>
+      </Card>
+      <AccountVerificationDialog
+        open={!!challenge}
+        pending={confirmPassword.isPending}
+        resendAt={challenge?.resendAt ?? 0}
+        error={otpError}
+        onClose={() => setChallenge(null)}
+        onVerify={async (code) => {
+          if (!challenge) return;
+          setOtpError("");
+          try {
+            await confirmPassword.mutateAsync({
+              token: challenge.token,
+              code,
+              password: challenge.password,
+            });
+            setChallenge(null);
+            setRevision((value) => value + 1);
+            logout();
+          } catch (cause) {
+            setOtpError(
+              extractErrorMessage(
+                cause as Parameters<typeof extractErrorMessage>[0],
+              ),
+            );
+          }
+        }}
+        onResend={async () => {
+          if (!challenge) return;
+          setOtpError("");
+          try {
+            const pending = await authService.resendPasswordChange(
+              challenge.token,
+            );
+            setChallenge({
+              ...challenge,
+              token: pending.token,
+              resendAt: Date.now() + pending.cooldownSeconds * 1000,
+            });
+          } catch (cause) {
+            setOtpError(
+              extractErrorMessage(
+                cause as Parameters<typeof extractErrorMessage>[0],
+              ),
+            );
+          }
+        }}
+      />
+    </>
   );
 }

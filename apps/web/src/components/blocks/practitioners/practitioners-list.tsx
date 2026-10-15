@@ -110,12 +110,6 @@ export function PractitionersList({
   const rowMenu = (p: Practitioner) => (
     <RowActionsMenu
       items={[
-        ...(user?.role === ROLE.OWNER ? [{
-          label: t.common.generateOtp,
-          icon: IconMail,
-          disabled: otp.isPending,
-          onSelect: () => otp.mutate(p.id),
-        }] : []),
         {
           label: t.practitioner.view,
           icon: IconView,
@@ -139,6 +133,16 @@ export function PractitionersList({
           onSelect: () => toggle(p, !p.isActive),
           disabled: toggling,
         },
+        ...(user?.role === ROLE.OWNER
+          ? [
+              {
+                label: t.common.generateOtp,
+                icon: IconMail,
+                disabled: otp.isPending,
+                onSelect: () => otp.mutate(p.id),
+              },
+            ]
+          : []),
         {
           label: t.practitioner.delete,
           icon: IconDelete,

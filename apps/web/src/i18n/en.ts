@@ -360,7 +360,7 @@ export const en = {
     generateOtp: "Create OTP",
     otpExpiry: "Single use. Expires at",
     clinicProfile: "Clinic profile",
-    emailChangeHint: "Changing your sign-in email signs you out. Sign in with the new email and verify it to continue.",
+    emailChangeHint: "A code is sent to the new address. The sign-in email changes only when that code is correct.",
     accountArabicName: "Name in Arabic",
     accountProfile: "My account",
     signInEmail: "Sign-in email",
@@ -483,7 +483,7 @@ export const en = {
       invalidCredentials: "The email or password is incorrect.",
       invalidToken: "This session has expired. Please start again.",
       emailInUse: "This email is already used by another account.",
-      noPendingOtp: "Ask the user to request a new code from the login page first.",
+      noPendingOtp: "The code could not be created. Try again.",
       invalidOtp:
         "The code is incorrect, expired, or already used. Check it or request a new code.",
       rateLimited: "Too many attempts. Please wait before trying again.",

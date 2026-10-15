@@ -9,6 +9,7 @@ import {
 import { PrismaService } from "@/prisma/prisma.service";
 import { EmailService } from "@/infrastructure/email.service";
 import { otpEmail } from "../auth-email";
+import { loadEmailBrand } from "@/modules/emails/email-brand";
 import { AUTH_POLICY } from "../security.constants";
 import { RateLimitService } from "./rate-limit.service";
 import { securityError } from "../security-error";
@@ -76,9 +77,17 @@ export class OtpService {
     });
     if (userId && !demo) {
       try {
+        const member = await this.prisma.clinicUser.findFirst({
+          where: { userId, isActive: true, clinic: { isActive: true } },
+          select: { clinicId: true, name: true },
+        });
+        const brand = member
+          ? await loadEmailBrand(this.prisma, member.clinicId)
+          : null;
+        if (!member || !brand) securityError("emailUnavailable", 503);
         const result = await this.email.send({
           to: email,
-          ...otpEmail(code),
+          ...otpEmail(code, brand, member.name),
         });
         if (result.skipped) throw new Error("Email unavailable");
       } catch {
@@ -93,8 +102,30 @@ export class OtpService {
     return id;
   }
 
-  async replacePending(
+  pendingId(
     userId: string,
+    purpose: AuthOtpPurpose,
+    passwordChangedAt: Date | null,
+  ) {
+    return this.prisma.authOtpChallenge
+      .findFirst({
+        where: {
+          userId,
+          purpose,
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+          attempts: { lt: AUTH_POLICY.maxOtpAttempts },
+          ...(passwordChangedAt && { createdAt: { gt: passwordChangedAt } }),
+        },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      })
+      .then((challenge) => challenge?.id ?? null);
+  }
+
+  async issue(
+    userId: string,
+    email: string,
     passwordChangedAt: Date | null,
     clinicId: string,
   ) {
@@ -102,6 +133,7 @@ export class OtpService {
     const challenge = await this.prisma.authOtpChallenge.findFirst({
       where: {
         userId,
+        purpose: AuthOtpPurpose.EMAIL_VERIFY,
         usedAt: null,
         expiresAt: { gt: new Date() },
         attempts: { lt: AUTH_POLICY.maxOtpAttempts },
@@ -109,7 +141,24 @@ export class OtpService {
       },
       orderBy: { createdAt: "desc" },
     });
-    if (!challenge) securityError("noPendingOtp", 409);
+    if (!challenge) {
+      const id = randomUUID();
+      const code = randomInt(0, 1_000_000)
+        .toString()
+        .padStart(AUTH_POLICY.otpDigits, "0");
+      const expiresAt = new Date(Date.now() + AUTH_POLICY.otpExpiresSeconds * 1000);
+      await this.prisma.authOtpChallenge.create({
+        data: {
+          id,
+          email,
+          userId,
+          purpose: AuthOtpPurpose.EMAIL_VERIFY,
+          codeHash: this.hash(id, code),
+          expiresAt,
+        },
+      });
+      return { code, expiresAt: expiresAt.toISOString() };
+    }
     const code = randomInt(0, 1_000_000)
       .toString()
       .padStart(AUTH_POLICY.otpDigits, "0");

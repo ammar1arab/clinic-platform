@@ -13,6 +13,7 @@ import {
   type EmailHistoryResponse,
 } from "@clinic/types";
 import { PrismaService } from "@/prisma/prisma.service";
+import { loadEmailBrand } from "./email-brand";
 import {
   EmailHistoryDto,
   EmailPaginationDto,
@@ -33,42 +34,9 @@ export class EmailsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async brand(clinicId: string): Promise<EmailBrandDetails> {
-    const clinic = await this.prisma.clinic.findFirst({
-      where: {
-        id: clinicId,
-        isActive: true,
-      },
-      select: {
-        name: true,
-        nameAr: true,
-        logoUrl: true,
-        brandColor: true,
-        timezone: true,
-        phone: true,
-        address: true,
-        email: true,
-        emailSettings: true,
-      },
-    });
-
-    if (!clinic) {
-      throw new NotFoundException(emailError("emailClinicNotFound"));
-    }
-
-    const { emailSettings, ...brandInfo } = clinic;
-
-    return {
-      ...brandInfo,
-      ...emailSettings,
-      email: emailSettings?.replyTo?.trim() || brandInfo.email,
-      replyTo: emailSettings?.replyTo?.trim() || brandInfo.email || undefined,
-      websiteUrl: emailSettings?.websiteUrl ?? undefined,
-      instagramUrl: emailSettings?.instagramUrl ?? undefined,
-      facebookUrl: emailSettings?.facebookUrl ?? undefined,
-      linkedinUrl: emailSettings?.linkedinUrl ?? undefined,
-      footerEn: emailSettings?.footerEn ?? undefined,
-      footerAr: emailSettings?.footerAr ?? undefined,
-    };
+    const brand = await loadEmailBrand(this.prisma, clinicId);
+    if (!brand) throw new NotFoundException(emailError("emailClinicNotFound"));
+    return brand;
   }
 
   findRequest(clinicId: string, requestId: string) {

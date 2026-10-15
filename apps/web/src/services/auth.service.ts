@@ -2,7 +2,7 @@ import { getTranslations } from "@/i18n";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/constants/endpoints";
 import type {
-  AccountProfileInput, OwnerOtpResponse, OwnerResetPasswordInput, AuthMe, AuthLoginInput, AuthLoginResponse, AuthTokenInput, AuthOtp,
+  AccountProfileInput, OwnerOtpResponse, OwnerResetPasswordInput, AuthMe, AuthLoginInput, AuthLoginResponse, AuthTokenInput, AuthOtp, AuthEmailChange, AuthPasswordChange, AuthPasswordConfirmInput,
   AuthVerifyInput, AuthVerifyResponse, AuthForgotInput, AuthRecovery,
   AuthPasswordInput, AuthReady,
 } from "@clinic/types";
@@ -10,6 +10,18 @@ import type {
 export type { AuthMe as MeResponse } from "@clinic/types";
 
 export const authService = {
+  requestEmailChange: (email: string) =>
+    api.post<AuthEmailChange>(ENDPOINTS.AUTH.PROFILE_EMAIL, { email }).then((r) => r.data),
+  confirmEmailChange: (body: AuthVerifyInput) =>
+    api.post<{ success: true }>(ENDPOINTS.AUTH.PROFILE_EMAIL_CONFIRM, body).then((r) => r.data),
+  requestPasswordChange: () =>
+    api.post<AuthPasswordChange>(ENDPOINTS.AUTH.PROFILE_PASSWORD).then((r) => r.data),
+  confirmPasswordChange: (body: AuthPasswordConfirmInput) =>
+    api.post<{ success: true }>(ENDPOINTS.AUTH.PROFILE_PASSWORD_CONFIRM, body).then((r) => r.data),
+  resendPasswordChange: (token: string) =>
+    api.post<AuthPasswordChange>(ENDPOINTS.AUTH.SEND_OTP, { token }).then((r) => r.data),
+  resendEmailChange: (token: string) =>
+    api.post<AuthEmailChange>(ENDPOINTS.AUTH.SEND_OTP, { token }).then((r) => r.data),
   updateProfile: async (input: AccountProfileInput) => {
     const { data } = await api.patch<AuthMe>(ENDPOINTS.AUTH.PROFILE, input);
     if (input.email !== undefined && data.email !== input.email.trim().toLowerCase()) {

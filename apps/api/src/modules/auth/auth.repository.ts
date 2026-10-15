@@ -49,7 +49,7 @@ export class AuthRepository {
           every: { clinicId },
         },
       },
-      select: { id: true, passwordChangedAt: true },
+      select: { id: true, email: true, passwordChangedAt: true },
     });
   }
 

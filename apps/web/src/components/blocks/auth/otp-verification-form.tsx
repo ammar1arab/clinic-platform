@@ -49,7 +49,7 @@ export function OtpVerificationForm({
         aria-label={t.auth.otpLabel}
         disabled={pending}
       />
-      <p className="text-xs text-muted-foreground">{t.auth.otpExpiry}</p>
+      <p className="text-center text-xs text-muted-foreground">{t.auth.otpExpiry}</p>
       <Button
         type="submit"
         className="w-full"

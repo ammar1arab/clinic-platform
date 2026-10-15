@@ -122,11 +122,61 @@ export class AuthService {
     await this.limits.consume("owner-otp", actor.userId, 10, 3600);
     const account = await this.repo.otpAccount(id, actor.clinicId);
     if (!account) securityError("invalidRequest", 404);
-    return this.otp.replacePending(
+    return this.otp.issue(
       account.id,
+      account.email,
       account.passwordChangedAt,
       actor.clinicId,
     );
+  }
+
+  private async passwordChangeChallenge(user: Account) {
+    const challengeId = await this.otp.send(
+      user.email,
+      user.id,
+      AuthOtpPurpose.FORGOT_PASSWORD,
+    );
+    return {
+      next: "otp" as const,
+      cooldownSeconds: AUTH_POLICY.resendSeconds,
+      token: this.tokens.sign({
+        ...this.payload(user),
+        purpose: "password_change",
+        challengeId,
+        email: user.email,
+      }),
+    };
+  }
+
+  async requestPasswordChange(actor: AuthUser) {
+    await this.limits.consume("account-password", actor.userId, 5, 3600);
+    const user = await this.repo.byId(actor.userId);
+    if (!user || user.id !== actor.userId) securityError("invalidToken", 401);
+    this.membership(user);
+    return this.passwordChangeChallenge(user);
+  }
+
+  async confirmPasswordChange(
+    actor: AuthUser,
+    token: string,
+    code: string,
+    password: string,
+  ) {
+    const payload = this.tokens.verify(token, ["password_change"]);
+    if (payload.sub !== actor.userId || !payload.challengeId)
+      securityError("invalidToken", 401);
+    const user = await this.account(payload);
+    const challenge = await this.otp.consume(
+      payload.challengeId,
+      actor.userId,
+      AuthOtpPurpose.FORGOT_PASSWORD,
+      code,
+    );
+    if (challenge.email !== user.email) securityError("invalidOtp");
+    const hash = await this.passwords.hash(password);
+    if (!(await this.repo.changePassword(user.id, user.passwordChangedAt, hash)))
+      securityError("invalidToken", 401);
+    return { success: true as const };
   }
 
   async ownerResetPassword(actor: AuthUser, id: string, password: string) {
@@ -220,11 +270,13 @@ export class AuthService {
     if (!user || !matches) securityError("invalidCredentials", 401);
     this.membership(user);
     if (!user.emailVerifiedAt) {
-      const challengeId = await this.otp.send(
-        email,
-        user.id,
-        AuthOtpPurpose.EMAIL_VERIFY,
-      );
+      const challengeId =
+        (await this.otp.pendingId(
+          user.id,
+          AuthOtpPurpose.EMAIL_VERIFY,
+          user.passwordChangedAt,
+        )) ??
+        (await this.otp.send(email, user.id, AuthOtpPurpose.EMAIL_VERIFY));
       return {
         next: "otp",
         email,
@@ -283,9 +335,13 @@ export class AuthService {
   }
 
   async resend(token: string) {
-    const payload = this.tokens.verify(token, ["setup", "recovery", "email_change"]);
+    const payload = this.tokens.verify(token, ["setup", "recovery", "email_change", "password_change"]);
     if (!payload.challengeId || !payload.email)
       securityError("invalidToken", 401);
+    if (payload.purpose === "password_change") {
+      const user = await this.account(payload);
+      return this.passwordChangeChallenge(user);
+    }
     if (payload.purpose === "email_change") {
       const user = await this.repo.byId(payload.sub);
       if (

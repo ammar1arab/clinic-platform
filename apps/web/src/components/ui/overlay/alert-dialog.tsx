@@ -36,7 +36,7 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        'fixed inset-0 z-50 bg-black/10 modal-backdrop supports-backdrop-filter:backdrop-blur-xs',
+        'fixed inset-0 z-50 bg-[color-mix(in_oklch,var(--foreground)_12%,transparent)] modal-backdrop',
         className,
       )}
       {...props}
@@ -123,7 +123,7 @@ function AlertDialogTitle({
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
       className={cn(
-        'font-heading min-w-0 truncate text-base font-medium sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2',
+        'font-heading text-base leading-snug font-medium text-pretty sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2',
         className,
       )}
       {...props}

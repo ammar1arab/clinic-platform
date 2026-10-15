@@ -118,7 +118,7 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
             <AlertDialogMedia className="bg-destructive/10 text-destructive">
               <IconLogout />
             </AlertDialogMedia>
-            <AlertDialogTitle>{t.auth.logout}?</AlertDialogTitle>
+            <AlertDialogTitle>{t.auth.logout}</AlertDialogTitle>
             <AlertDialogDescription>
               {t.auth.logoutConfirmDescription}
             </AlertDialogDescription>

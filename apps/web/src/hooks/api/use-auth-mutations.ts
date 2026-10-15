@@ -1,7 +1,22 @@
 import { extractErrorMessage } from '@/lib/api';
 import { useLanguage } from '@/providers';
-import type { AccountProfileInput, AuthMe, OwnerResetPasswordInput, OwnerOtpResponse } from '@clinic/types';
-import type { AuthForgotInput, AuthLoginInput, AuthLoginResponse, AuthPasswordInput, AuthRecovery, AuthReset, AuthTokenInput, AuthVerifyInput } from '@clinic/types';
+import type {
+  AccountProfileInput,
+  AuthEmailChange,
+  AuthPasswordChange,
+  AuthPasswordConfirmInput,
+  AuthForgotInput,
+  AuthLoginInput,
+  AuthLoginResponse,
+  AuthMe,
+  AuthPasswordInput,
+  AuthRecovery,
+  AuthReset,
+  AuthTokenInput,
+  AuthVerifyInput,
+  OwnerOtpResponse,
+  OwnerResetPasswordInput,
+} from '@clinic/types';
 import { authService } from '@/services/auth.service';
 import { useApiMutation } from '@/hooks/query/use-api-mutation';
 
@@ -41,6 +56,34 @@ export function useOwnerGenerateOtp() {
   return useApiMutation<OwnerOtpResponse, Error, string>({
     request: authService.ownerGenerateOtp,
     errorMessage: (error) => extractErrorMessage(error),
+  });
+}
+
+export function useRequestEmailChange() {
+  return useApiMutation<AuthEmailChange, Error, string>({
+    request: (email) => authService.requestEmailChange(email),
+    errorMessage: (error) => extractErrorMessage(error),
+  });
+}
+
+export function useRequestPasswordChange() {
+  return useApiMutation<AuthPasswordChange, Error, void>({
+    request: () => authService.requestPasswordChange(),
+    errorMessage: (error) => extractErrorMessage(error),
+  });
+}
+
+export function useConfirmPasswordChange() {
+  const { t } = useLanguage();
+  return useApiMutation<{ success: true }, Error, AuthPasswordConfirmInput>({
+    request: (input) => authService.confirmPasswordChange(input),
+    successMessage: t.common.accountPasswordReset,
+  });
+}
+
+export function useConfirmEmailChange() {
+  return useApiMutation<{ success: true }, Error, AuthVerifyInput>({
+    request: (input) => authService.confirmEmailChange(input),
   });
 }
 

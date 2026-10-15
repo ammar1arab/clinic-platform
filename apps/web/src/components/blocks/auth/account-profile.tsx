@@ -2,6 +2,7 @@
 
 import { toast } from "sonner";
 import { compressImageToJpeg } from "@/lib/upload-local";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   Card,
@@ -16,16 +17,31 @@ import {
   FormField,
   ButtonSpinner,
 } from "@/components/primitives";
-import { useUpdateAccountProfile } from "@/hooks/api/use-auth-mutations";
+import {
+  useConfirmEmailChange,
+  useRequestEmailChange,
+  useUpdateAccountProfile,
+} from "@/hooks/api/use-auth-mutations";
+import { authService } from "@/services/auth.service";
+import { extractErrorMessage } from "@/lib/api";
 import { useAuth, useLanguage } from "@/providers";
 import type { AccountProfileInput } from "@clinic/types";
 import { ROLE } from "@clinic/types";
 import { AccountPasswordReset } from "./account-password-reset";
+import { AccountVerificationDialog } from "./account-verification-dialog";
 
 export function AccountProfile() {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const mutation = useUpdateAccountProfile();
+  const emailChange = useRequestEmailChange();
+  const confirmEmail = useConfirmEmailChange();
+  const [emailOtp, setEmailOtp] = useState<{
+    token: string;
+    email: string;
+    resendAt: number;
+  } | null>(null);
+  const [otpError, setOtpError] = useState("");
   const {
     register,
     watch,
@@ -67,19 +83,28 @@ export function AccountProfile() {
             toast.error(t.common.couldNotProcessImage);
             return;
           }
+          const nextEmail = values.email?.trim().toLowerCase() ?? "";
           try {
-            const updated = await mutation.mutateAsync({
+            await mutation.mutateAsync({
               ...values,
+              email: user.email,
               name: values.name.trim(),
               imageUrl,
             });
             if (values.imageUrl.startsWith("blob:"))
               URL.revokeObjectURL(values.imageUrl);
-            if (updated.email !== user.email) {
-              logout();
-              return;
-            }
             setValue("imageUrl", imageUrl);
+            if (nextEmail && nextEmail !== user.email.trim().toLowerCase()) {
+              const pending = await emailChange.mutateAsync(nextEmail);
+              if (pending.next === "otp") {
+                setOtpError("");
+                setEmailOtp({
+                  token: pending.token,
+                  email: pending.email,
+                  resendAt: Date.now() + pending.cooldownSeconds * 1000,
+                });
+              }
+            }
           } catch {}
         })}
       >
@@ -138,6 +163,7 @@ export function AccountProfile() {
                   <FormField
                     label={t.common.signInEmail}
                     htmlFor="account-email"
+                    hint={t.common.emailChangeHint}
                   >
                     <Input
                       id="account-email"
@@ -163,6 +189,49 @@ export function AccountProfile() {
           </Card>
         </fieldset>
       </form>
+      <AccountVerificationDialog
+        open={!!emailOtp}
+        pending={confirmEmail.isPending}
+        resendAt={emailOtp?.resendAt ?? 0}
+        error={otpError}
+        onClose={() => {
+          setEmailOtp(null);
+          setValue("email", user.email);
+        }}
+        onVerify={async (code) => {
+          if (!emailOtp) return;
+          setOtpError("");
+          try {
+            await confirmEmail.mutateAsync({ token: emailOtp.token, code });
+            logout();
+          } catch (cause) {
+            setOtpError(
+              extractErrorMessage(
+                cause as Parameters<typeof extractErrorMessage>[0],
+              ),
+            );
+          }
+        }}
+        onResend={async () => {
+          if (!emailOtp) return;
+          setOtpError("");
+          try {
+            const pending = await authService.resendEmailChange(emailOtp.token);
+            if (pending.next !== "otp") return;
+            setEmailOtp({
+              token: pending.token,
+              email: pending.email,
+              resendAt: Date.now() + pending.cooldownSeconds * 1000,
+            });
+          } catch (cause) {
+            setOtpError(
+              extractErrorMessage(
+                cause as Parameters<typeof extractErrorMessage>[0],
+              ),
+            );
+          }
+        }}
+      />
       <AccountPasswordReset id={user.clinicUserId} />
     </div>
   );

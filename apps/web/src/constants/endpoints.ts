@@ -20,6 +20,10 @@ export const ENDPOINTS = {
   },
   AUTH: {
     PROFILE: "/auth/profile",
+    PROFILE_EMAIL: "/auth/profile/email",
+    PROFILE_EMAIL_CONFIRM: "/auth/profile/email/confirm",
+    PROFILE_PASSWORD: "/auth/profile/password",
+    PROFILE_PASSWORD_CONFIRM: "/auth/profile/password/confirm",
     OWNER_OTP: (id: string) => `/auth/accounts/${id}/otp`,
     OWNER_RESET_PASSWORD: (id: string) => `/auth/accounts/${id}/reset-password`,
     ME: "/auth/me",

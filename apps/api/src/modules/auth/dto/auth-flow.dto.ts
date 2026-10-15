@@ -54,6 +54,20 @@ export class EmailChangeDto {
   email: string;
 }
 
+export class ConfirmPasswordChangeDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(4096)
+  token: string;
+
+  @Matches(/^\d{6}$/)
+  code: string;
+
+  @IsString()
+  @MinLength(1)
+  password: string;
+}
+
 export class ConfirmEmailChangeDto {
   @IsString()
   @MinLength(1)

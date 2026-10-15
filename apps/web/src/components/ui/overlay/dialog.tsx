@@ -55,7 +55,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        'fixed inset-0 isolate z-50 bg-black/10 modal-backdrop supports-backdrop-filter:backdrop-blur-xs',
+        'fixed inset-0 isolate z-50 bg-[color-mix(in_oklch,var(--foreground)_12%,transparent)] modal-backdrop',
         className,
       )}
       {...props}
@@ -118,7 +118,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn('flex min-w-0 flex-col gap-2 pe-8', className)}
+      className={cn('flex min-w-0 flex-col gap-2', className)}
       {...props}
     />
   );
@@ -160,7 +160,7 @@ function DialogTitle({
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={cn(
-        'font-heading min-w-0 truncate text-base leading-none font-medium',
+        'pe-8 font-heading text-base leading-snug font-medium text-pretty',
         className,
       )}
       {...props}

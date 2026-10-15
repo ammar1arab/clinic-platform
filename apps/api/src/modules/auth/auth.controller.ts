@@ -17,6 +17,7 @@ import { LoginDto, RegisterDto } from "./dto";
 import {
   AccountProfileDto,
   ConfirmEmailChangeDto,
+  ConfirmPasswordChangeDto,
   EmailChangeDto,
   AuthPasswordDto,
   OwnerResetPasswordDto,
@@ -70,6 +71,30 @@ export class AuthController {
     @Body() dto: ConfirmEmailChangeDto,
   ) {
     return this.authService.confirmEmailChange(actor, dto.token, dto.code);
+  }
+
+  @Post("profile/password")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.owner)
+  requestPasswordChange(@CurrentUser() actor: AuthUser) {
+    return this.authService.requestPasswordChange(actor);
+  }
+
+  @Post("profile/password/confirm")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.owner)
+  confirmPasswordChange(
+    @CurrentUser() actor: AuthUser,
+    @Body() dto: ConfirmPasswordChangeDto,
+  ) {
+    return this.authService.confirmPasswordChange(
+      actor,
+      dto.token,
+      dto.code,
+      dto.password,
+    );
   }
 
   @Post("accounts/:id/otp")

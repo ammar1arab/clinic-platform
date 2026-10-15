@@ -97,12 +97,6 @@ export function PractitionerProfile({
       actions={
         <RowActionsMenu
           items={[
-        ...(user?.role === ROLE.OWNER ? [{
-          label: t.common.generateOtp,
-          icon: IconMail,
-          disabled: otp.isPending,
-          onSelect: () => otp.mutate(practitioner.id),
-        }] : []),
             {
               label: t.practitioner.edit,
               icon: IconEdit,
@@ -124,6 +118,16 @@ export function PractitionerProfile({
                   ? deactivate.mutate(practitioner.id)
                   : reactivate.mutate(practitioner.id),
             },
+            ...(user?.role === ROLE.OWNER
+              ? [
+                  {
+                    label: t.common.generateOtp,
+                    icon: IconMail,
+                    disabled: otp.isPending,
+                    onSelect: () => otp.mutate(practitioner.id),
+                  },
+                ]
+              : []),
             {
               label: t.practitioner.delete,
               icon: IconDelete,

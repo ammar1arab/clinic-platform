@@ -1,6 +1,8 @@
 import { AuthService } from "@/modules/auth/auth.service";
 import type { AuthUser } from "@/modules/auth/types";
 import { welcomeEmail } from "@/security/auth-email";
+import { loadEmailBrand } from "@/modules/emails/email-brand";
+import { PrismaService } from "@/prisma/prisma.service";
 import {
   BadRequestException,
   ConflictException,
@@ -40,6 +42,7 @@ export class PractitionersService {
     private repo: PractitionersRepository,
     private email: EmailService,
     private auth: AuthService,
+    private prisma: PrismaService,
   ) {}
 
   async resetPassword(id: string, actor: AuthUser, password: string) {
@@ -70,6 +73,7 @@ export class PractitionersService {
 
     const practitioner = mapPractitioner(row);
     const welcomeEmailSent = await this.sendWelcomeEmail({
+      clinicId: dto.clinicId,
       to: email,
       name: practitioner.name,
       temporaryPassword,
@@ -265,14 +269,17 @@ export class PractitionersService {
   }
 
   private async sendWelcomeEmail(input: {
+    clinicId: string;
     to: string;
     name: string;
     temporaryPassword: string;
   }) {
     try {
+      const brand = await loadEmailBrand(this.prisma, input.clinicId);
+      if (!brand) return false;
       const result = await this.email.send({
         to: input.to,
-        ...welcomeEmail(input),
+        ...welcomeEmail(input, brand),
       });
       return !result.skipped;
     } catch (err) {
