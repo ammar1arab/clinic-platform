@@ -9,6 +9,8 @@ import { prepareFeedbackSound, playRefreshSound } from "@/lib/feedback-sound";
 import { cn } from "@/lib/utils";
 
 const THRESHOLD = 64;
+const HOLD_DISTANCE = 60;
+const SETTLE_MS = 280;
 const REFRESH_PARAM = "_cureva_refresh";
 export function PullToRefresh({ children }: { children: ReactNode }) {
   const { t } = useLanguage();
@@ -48,7 +50,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         if (!surface) return;
         surface.style.transition =
           settle && !reduced
-            ? "translate 220ms cubic-bezier(0.2, 0.8, 0.2, 1)"
+            ? `translate ${SETTLE_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`
             : "none";
         surface.style.translate = `0 ${offset}px`;
       };
@@ -71,7 +73,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       const reset = () => {
         moveSurface(0, true);
         clearTimeout(settleTimer);
-        settleTimer = setTimeout(restoreSurface, 220);
+        settleTimer = setTimeout(restoreSurface, SETTLE_MS);
         start = null;
         pulled = 0;
         armed = false;
@@ -125,7 +127,12 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
           reset();
           return;
         }
-        if (dy <= 0) return;
+        if (dy <= 0) {
+          pulled = 0;
+          moveSurface(0);
+          setDistance(0);
+          return;
+        }
         if (!event.cancelable) {
           reset();
           return;
@@ -180,7 +187,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
             });
           }
         }
-        moveSurface(56, true);
+        moveSurface(HOLD_DISTANCE, true);
         setRefreshing(true);
         playRefreshSound();
         try {
@@ -224,6 +231,8 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
     [pathname, t],
   );
   const visible = distance > 0 || refreshing;
+  const progress = Math.min(1, distance / THRESHOLD);
+  const ready = distance >= THRESHOLD || refreshing;
   const label = refreshing
     ? t.common.refreshing
     : distance >= THRESHOLD
@@ -242,21 +251,37 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       >
         <div
           className={cn(
-            "grid size-8 place-items-center rounded-full bg-background/90 text-muted-foreground motion-safe:transition-[transform,opacity] motion-safe:duration-200",
+            "grid size-9 place-items-center rounded-full border border-primary/10 bg-card text-primary/70 shadow-sm motion-safe:transition-[opacity,box-shadow,color] motion-safe:duration-200",
+            ready && "text-primary ring-4 ring-primary/5 shadow-primary/15",
+            (!visible || refreshing) &&
+              "motion-safe:transition-[transform,opacity,box-shadow,color] motion-safe:duration-300 motion-safe:ease-out",
             !visible && "opacity-0",
           )}
           style={{
-            transform: `translateY(${visible ? Math.max(0, ((refreshing ? 56 : distance) - 32) / 2) : -32}px)`,
+            transform: `translateY(${visible ? Math.max(0, ((refreshing ? HOLD_DISTANCE : distance) - 36) / 2) : -36}px) scale(${visible ? (refreshing ? 1 : 0.76 + progress * 0.3) : 0.65})`,
             opacity: visible
-              ? Math.min(1, (refreshing ? 56 : distance) / 32)
+              ? Math.min(1, (refreshing ? HOLD_DISTANCE : distance) / 36)
               : 0,
           }}
         >
           <svg
             viewBox="0 0 24 24"
-            className={cn("size-6", refreshing && "motion-safe:animate-spin")}
+            className={cn(
+              "size-6",
+              refreshing &&
+                "motion-safe:animate-spin motion-safe:[animation-duration:700ms]",
+            )}
             aria-hidden
           >
+            <circle
+              cx="12"
+              cy="12"
+              r="9"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="opacity-10"
+            />
             <circle
               cx="12"
               cy="12"
