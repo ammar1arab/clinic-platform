@@ -8,3 +8,4 @@ export * from './referral';
 export * from './dashboard';
 export * from './practitioner';
 export * from './auth-security';
+export * from './email';

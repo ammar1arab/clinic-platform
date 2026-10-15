@@ -10,7 +10,7 @@ import {
 import { ApiBearerAuth, ApiProduces, ApiQuery, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 import { JwtAuthGuard, RolesGuard } from "@/modules/auth/guards";
-import { Roles } from "@/modules/auth/decorators";
+import { CurrentUser, Roles, type AuthUser } from "@/modules/auth/decorators";
 import { Role } from "@prisma/client";
 import { ReportsService } from "./reports.service";
 import {
@@ -53,13 +53,14 @@ export class ReportsController {
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   async patientMedical(
     @Param("patientId") patientId: string,
+    @CurrentUser() user: AuthUser,
     @Query() query: PatientReportQueryDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     return sendExport(
       res,
       await this.reportsService.exportPatientMedical(
-        query.clinicId,
+        user.clinicId,
         patientId,
         query.format ?? ReportFormatDto.pdf,
       ),
@@ -71,12 +72,16 @@ export class ReportsController {
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   async patientsDirectory(
+    @CurrentUser() user: AuthUser,
     @Query() query: DirectoryReportQueryDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     return sendExport(
       res,
-      await this.reportsService.exportPatientsDirectory(query),
+      await this.reportsService.exportPatientsDirectory({
+        ...query,
+        clinicId: user.clinicId,
+      }),
     );
   }
 
@@ -85,12 +90,16 @@ export class ReportsController {
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   async practitionersDirectory(
+    @CurrentUser() user: AuthUser,
     @Query() query: DirectoryReportQueryDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     return sendExport(
       res,
-      await this.reportsService.exportPractitionersDirectory(query),
+      await this.reportsService.exportPractitionersDirectory({
+        ...query,
+        clinicId: user.clinicId,
+      }),
     );
   }
 
@@ -100,13 +109,14 @@ export class ReportsController {
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   async practitionerAppointments(
     @Param("practitionerId") practitionerId: string,
+    @CurrentUser() user: AuthUser,
     @Query() query: PractitionerScopedReportQueryDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     return sendExport(
       res,
       await this.reportsService.exportPractitionerAppointments({
-        clinicId: query.clinicId,
+        clinicId: user.clinicId,
         practitionerId,
         format: query.format ?? ReportFormatDto.pdf,
         from: query.from,
@@ -121,13 +131,14 @@ export class ReportsController {
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   async practitionerHours(
     @Param("practitionerId") practitionerId: string,
+    @CurrentUser() user: AuthUser,
     @Query() query: PractitionerScopedReportQueryDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     return sendExport(
       res,
       await this.reportsService.exportPractitionerHours(
-        query.clinicId,
+        user.clinicId,
         practitionerId,
         query.format ?? ReportFormatDto.pdf,
       ),
@@ -140,13 +151,14 @@ export class ReportsController {
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   async practitionerExceptions(
     @Param("practitionerId") practitionerId: string,
+    @CurrentUser() user: AuthUser,
     @Query() query: PractitionerScopedReportQueryDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     return sendExport(
       res,
       await this.reportsService.exportPractitionerExceptions(
-        query.clinicId,
+        user.clinicId,
         practitionerId,
         query.format ?? ReportFormatDto.pdf,
       ),
@@ -159,13 +171,14 @@ export class ReportsController {
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   async practitionerProfile(
     @Param("practitionerId") practitionerId: string,
+    @CurrentUser() user: AuthUser,
     @Query() query: PractitionerScopedReportQueryDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     return sendExport(
       res,
       await this.reportsService.exportPractitionerProfile(
-        query.clinicId,
+        user.clinicId,
         practitionerId,
         query.format ?? ReportFormatDto.pdf,
       ),
@@ -177,13 +190,14 @@ export class ReportsController {
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
   async clinicAppointments(
+    @CurrentUser() user: AuthUser,
     @Query() query: ClinicAppointmentsReportQueryDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     return sendExport(
       res,
       await this.reportsService.exportClinicAppointments({
-        clinicId: query.clinicId,
+        clinicId: user.clinicId,
         format: query.format ?? ReportFormatDto.pdf,
         from: query.from,
         to: query.to,
@@ -201,13 +215,14 @@ export class ReportsController {
   @ApiQuery({ name: "from", required: false })
   @ApiQuery({ name: "to", required: false })
   async referrals(
+    @CurrentUser() user: AuthUser,
     @Query() query: ReferralsReportQueryDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     return sendExport(
       res,
       await this.reportsService.exportReferrals({
-        clinicId: query.clinicId,
+        clinicId: user.clinicId,
         format: query.format ?? ReportFormatDto.pdf,
         patientId: query.patientId,
         toDoctorId: query.toDoctorId,
@@ -226,13 +241,14 @@ export class ReportsController {
   @ApiQuery({ name: "from", required: false })
   @ApiQuery({ name: "to", required: false })
   async finance(
+    @CurrentUser() user: AuthUser,
     @Query() query: FinanceReportQueryDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<StreamableFile> {
     return sendExport(
       res,
       await this.reportsService.exportFinance({
-        clinicId: query.clinicId,
+        clinicId: user.clinicId,
         format: query.format ?? ReportFormatDto.pdf,
         from: query.from,
         to: query.to,

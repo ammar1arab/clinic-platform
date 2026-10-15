@@ -1,5 +1,12 @@
 
 
+export type Locale = 'en' | 'ar';
+
+export const LOCALE = {
+  EN: 'en',
+  AR: 'ar',
+} as const satisfies Record<string, Locale>;
+
 export type Role = 'owner' | 'admin' | 'practitioner' | 'financial';
 
 export const ROLE = {
@@ -8,6 +15,46 @@ export const ROLE = {
   PRACTITIONER: 'practitioner',
   FINANCIAL: 'financial',
 } as const satisfies Record<string, Role>;
+
+export type EmailDeliveryStatus =
+  | 'queued'
+  | 'processing'
+  | 'accepted'
+  | 'delivered'
+  | 'delayed'
+  | 'bounced'
+  | 'complained'
+  | 'failed'
+  | 'suppressed';
+
+export const EMAIL_DELIVERY_STATUS = {
+  QUEUED: 'queued',
+  PROCESSING: 'processing',
+  ACCEPTED: 'accepted',
+  DELIVERED: 'delivered',
+  DELAYED: 'delayed',
+  BOUNCED: 'bounced',
+  COMPLAINED: 'complained',
+  FAILED: 'failed',
+  SUPPRESSED: 'suppressed',
+} as const satisfies Record<string, EmailDeliveryStatus>;
+
+export type EmailAudience =
+  | 'patients'
+  | 'practitioners'
+  | 'staff'
+  | 'financial'
+  | 'owners'
+  | 'admins';
+
+export const EMAIL_AUDIENCE = {
+  PATIENTS: 'patients',
+  PRACTITIONERS: 'practitioners',
+  STAFF: 'staff',
+  FINANCIAL: 'financial',
+  OWNERS: 'owners',
+  ADMINS: 'admins',
+} as const satisfies Record<string, EmailAudience>;
 
 export type SessionType = 'in_person' | 'online';
 

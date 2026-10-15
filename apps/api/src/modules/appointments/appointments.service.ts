@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ConflictException,
 } from "@nestjs/common";
 import {
   AppointmentStatus,
@@ -10,12 +9,17 @@ import {
   type Room,
   type Service,
 } from "@prisma/client";
-import { AppointmentsRepository } from "./appointments.repository";
+import {
+  AppointmentsRepository,
+  type PackageRedemption,
+} from "./appointments.repository";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { PrismaService } from "@/prisma/prisma.service";
 import { DiscountCodesService } from "@/modules/discount-codes/discount-codes.service";
 import { PatientPackagesService } from "@/modules/patient-packages/patient-packages.service";
 import { computePayable } from "./payable";
+import type { AuthUser } from "@/modules/auth/types";
+import { securityError } from "@/security/security-error";
 import {
   CreateAppointmentDto,
   UpdateAppointmentDto,
@@ -31,6 +35,25 @@ function asDate(value: Date | string | null | undefined) {
   if (value == null || value === "") return null;
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function clinicClock(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const fields = Object.fromEntries(
+    parts.map(({ type, value }) => [type, value]),
+  );
+  return {
+    day: new Date(`${fields.year}-${fields.month}-${fields.day}T00:00:00.000Z`),
+    time: `${fields.hour}:${fields.minute}`,
+  };
 }
 
 function queueClock(
@@ -248,36 +271,40 @@ export class AppointmentsService {
     });
 
     if (hasSchedule > 0) {
-      const clinicLocalStr = scheduledAt.toLocaleString("en-US", {
-        timeZone: timezone,
-        hour12: false,
-      });
-      const clinicLocalTime = new Date(clinicLocalStr);
+      const start = clinicClock(scheduledAt, timezone);
+      const endAt = new Date(scheduledAt.getTime() + durationMins * 60_000);
+      const end = clinicClock(endAt, timezone);
+      const dayOfWeek = start.day.getUTCDay();
+      const startTimeStr = start.time;
+      const endTimeStr = end.time;
+      const localDate = start.day;
+      const sameDay = start.day.getTime() === end.day.getTime();
 
-      const dayOfWeek = clinicLocalTime.getDay();
-      const h = clinicLocalTime.getHours().toString().padStart(2, "0");
-      const m = clinicLocalTime.getMinutes().toString().padStart(2, "0");
-      const startTimeStr = `${h}:${m}`;
-
-      const endAt = new Date(scheduledAt.getTime() + durationMins * 60000);
-      const endLocalStr = endAt.toLocaleString("en-US", {
-        timeZone: timezone,
-        hour12: false,
-      });
-      const endLocalTime = new Date(endLocalStr);
-      const eh = endLocalTime.getHours().toString().padStart(2, "0");
-      const em = endLocalTime.getMinutes().toString().padStart(2, "0");
-      const endTimeStr = `${eh}:${em}`;
-
-      const avail = await this.prisma.doctorAvailability.findFirst({
-        where: {
-          doctorId,
-          dayOfWeek,
-          isActive: true,
-          startTime: { lte: startTimeStr },
-          endTime: { gte: endTimeStr },
-        },
-      });
+      const avail =
+        sameDay &&
+        (await this.prisma.doctorAvailability.findFirst({
+          where: {
+            doctorId,
+            dayOfWeek,
+            isActive: true,
+            startTime: { lte: startTimeStr },
+            endTime: { gte: endTimeStr },
+            AND: [
+              {
+                OR: [
+                  { effectiveFrom: null },
+                  { effectiveFrom: { lte: localDate } },
+                ],
+              },
+              {
+                OR: [
+                  { effectiveUntil: null },
+                  { effectiveUntil: { gte: localDate } },
+                ],
+              },
+            ],
+          },
+        }));
 
       if (!avail) {
         const override = await this.prisma.doctorAvailabilityOverride.findFirst(
@@ -309,40 +336,7 @@ export class AppointmentsService {
     }
   }
 
-  private async checkConflicts(
-    clinicId: string,
-    doctorId: string,
-    roomId: string | null | undefined,
-    scheduledAt: Date,
-    durationMins: number,
-    excludeId?: string,
-  ) {
-    if (roomId) {
-      const roomConflict = await this.appointmentsRepository.findConflict(
-        clinicId,
-        roomId,
-        scheduledAt,
-        durationMins,
-        excludeId,
-      );
-      if (roomConflict)
-        throw new ConflictException("Room is already booked at this time");
-    }
-
-    const docConflict = await this.appointmentsRepository.findDoctorConflict(
-      clinicId,
-      doctorId,
-      scheduledAt,
-      durationMins,
-      excludeId,
-    );
-    if (docConflict)
-      throw new ConflictException(
-        "Doctor already has an appointment at this time",
-      );
-  }
-
-  async create(clinicId: string, userId: string, dto: CreateAppointmentDto) {
+  async create(clinicId: string, _userId: string, dto: CreateAppointmentDto) {
     const { service } = await this.validateEntities(clinicId, dto);
     const sessionType = dto.sessionType ?? SessionTypeDto.in_person;
     const durationMins =
@@ -378,13 +372,6 @@ export class AppointmentsService {
       scheduledAt,
       durationMins,
     );
-    await this.checkConflicts(
-      clinicId,
-      dto.doctorId,
-      dto.roomId,
-      scheduledAt,
-      durationMins,
-    );
 
     const appointment = await this.appointmentsRepository.create(clinicId, {
       patientId: dto.patientId,
@@ -404,10 +391,6 @@ export class AppointmentsService {
       discountCodeId: codeFields.discountCodeId,
     });
 
-    if (codeFields.discountCodeId) {
-      await this.discountCodesService.consume(codeFields.discountCodeId);
-    }
-
     this.dashboardGateway.emitAppointmentChanged(clinicId);
     return appointment;
   }
@@ -424,10 +407,11 @@ export class AppointmentsService {
     });
   }
 
-  async findOne(clinicId: string, id: string) {
+  async findOne(clinicId: string, id: string, doctorId?: string) {
     const appointment = await this.appointmentsRepository.findById(
       clinicId,
       id,
+      doctorId,
     );
     if (!appointment) {
       throw new NotFoundException("Appointment not found");
@@ -440,8 +424,22 @@ export class AppointmentsService {
     userId: string,
     id: string,
     dto: UpdateAppointmentDto,
+    actor?: AuthUser,
   ) {
-    const existing = await this.findOne(clinicId, id);
+    const practitionerId =
+      actor?.role === Role.practitioner ? actor.clinicUserId : undefined;
+    if (
+      practitionerId &&
+      Object.keys(dto).some(
+        (key) =>
+          !["status", "notes", "statusReason", "cancelReason"].includes(key),
+      )
+    ) {
+      securityError("clinicUnavailable", 403);
+    }
+    const existing = await this.findOne(clinicId, id, practitionerId);
+    if (dto.discountCodeId)
+      await this.resolveDiscountCode(clinicId, dto.discountCodeId);
 
     if (dto.status && String(dto.status) !== String(existing.status)) {
       if (dto.status === AppointmentStatusDto.cancelled && !dto.cancelReason) {
@@ -456,17 +454,7 @@ export class AppointmentsService {
     const becomingNonBillable =
       nextStatus === AppointmentStatusDto.cancelled ||
       nextStatus === AppointmentStatusDto.no_show;
-    if (existing.patientPackageId && becomingNonBillable) {
-      await this.appointmentsRepository.setPackageRedemption(clinicId, id, {
-        patientPackageId: null,
-        packageCredit: null,
-        isPaid: false,
-        paidAt: null,
-        paidById: null,
-        paymentMethodId: null,
-        paymentMethod: null,
-      });
-    } else if (existing.patientPackageId) {
+    if (existing.patientPackageId && !becomingNonBillable) {
       const pricingTouched =
         dto.feeOverride !== undefined ||
         dto.discount !== undefined ||
@@ -558,14 +546,6 @@ export class AppointmentsService {
         scheduledAt,
         durationMins,
       );
-      await this.checkConflicts(
-        clinicId,
-        doctorId,
-        roomId,
-        scheduledAt,
-        durationMins,
-        id,
-      );
     }
 
     const pricing = this.calculatePricing(
@@ -599,7 +579,18 @@ export class AppointmentsService {
       waitingStartedAt?: Date | null;
       inProgressAt?: Date | null;
       waitingMins?: number | null;
-    } = {
+    } & Partial<PackageRedemption> = {
+      ...(existing.patientPackageId && becomingNonBillable
+        ? {
+            patientPackageId: null,
+            packageCredit: null,
+            isPaid: false,
+            paidAt: null,
+            paidById: null,
+            paymentMethodId: null,
+            paymentMethod: null,
+          }
+        : {}),
       doctorId: dto.doctorId,
       departmentId: dto.departmentId,
       roomId: dto.roomId,
@@ -629,6 +620,7 @@ export class AppointmentsService {
       clinicId,
       id,
       updateData,
+      existing.updatedAt,
     );
     this.dashboardGateway.emitAppointmentChanged(clinicId);
     return appointment;
@@ -666,6 +658,7 @@ export class AppointmentsService {
         paidById: clinicUserId,
         paymentMethodId: paymentMethod.id,
       },
+      existing.updatedAt,
     );
 
     this.dashboardGateway.emitAppointmentChanged(clinicId);
@@ -683,6 +676,7 @@ export class AppointmentsService {
     const appointment = await this.appointmentsRepository.markUnpaid(
       clinicId,
       id,
+      existing.updatedAt,
     );
     this.dashboardGateway.emitAppointmentChanged(clinicId);
     return appointment;
@@ -730,6 +724,7 @@ export class AppointmentsService {
         paymentMethodId: null,
         paymentMethod: `Package: ${enrollment.package.name}`,
       },
+      existing.updatedAt,
     );
 
     this.dashboardGateway.emitAppointmentChanged(clinicId);
@@ -756,6 +751,7 @@ export class AppointmentsService {
         paymentMethodId: null,
         paymentMethod: null,
       },
+      existing.updatedAt,
     );
 
     this.dashboardGateway.emitAppointmentChanged(clinicId);

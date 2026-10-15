@@ -17,28 +17,31 @@ export class PaymentMethodsRepository {
     });
   }
 
-  findById(id: string) {
-    return this.prisma.paymentMethod.findUnique({ where: { id } });
+  findById(id: string, clinicId: string) {
+    return this.prisma.paymentMethod.findUnique({ where: { id, clinicId } });
   }
 
-  update(id: string, dto: UpdatePaymentMethodDto) {
-    return this.prisma.paymentMethod.update({ where: { id }, data: dto });
-  }
-
-  deactivate(id: string) {
+  update(id: string, dto: UpdatePaymentMethodDto, clinicId: string) {
     return this.prisma.paymentMethod.update({
-      where: { id },
+      where: { id, clinicId },
+      data: dto,
+    });
+  }
+
+  deactivate(id: string, clinicId: string) {
+    return this.prisma.paymentMethod.update({
+      where: { id, clinicId },
       data: { isActive: false },
     });
   }
 
-  hardDelete(id: string) {
+  hardDelete(id: string, clinicId: string) {
     return this.prisma.$transaction(async (tx) => {
       await tx.appointment.updateMany({
-        where: { paymentMethodId: id },
+        where: { paymentMethodId: id, clinicId },
         data: { paymentMethodId: null },
       });
-      return tx.paymentMethod.delete({ where: { id } });
+      return tx.paymentMethod.delete({ where: { id, clinicId } });
     });
   }
 

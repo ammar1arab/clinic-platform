@@ -8,7 +8,6 @@ import {
   phoneHref,
 } from '@/lib/contact';
 import { cn } from '@/lib/utils';
-import { SoftTip } from './soft-tip';
 
 const linkClass =
   'truncate text-inherit underline-offset-2 hover:text-foreground hover:underline';
@@ -20,49 +19,43 @@ type ContactProps = {
   stopPropagation?: boolean;
 };
 
-export function PhoneLink({
-  value,
+function ContactLink({
+  label,
+  href,
   className,
   empty = '—',
   stopPropagation = true,
-}: ContactProps) {
-  const label = formatPhoneDisplay(value);
-  const href = phoneHref(value);
+}: Omit<ContactProps, 'value'> & { label: string; href: string | null }) {
   if (!label) return <span className={className}>{empty}</span>;
   if (!href) return <span className={cn('truncate', className)}>{label}</span>;
   return (
-    <SoftTip label={label}>
-      <a
-        href={href}
-        className={cn(linkClass, className)}
-        onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
-      >
-        {label}
-      </a>
-    </SoftTip>
+    <a
+      href={href}
+      className={cn(linkClass, className)}
+      onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
+    >
+      {label}
+    </a>
   );
 }
 
-export function EmailLink({
-  value,
-  className,
-  empty = '—',
-  stopPropagation = true,
-}: ContactProps) {
-  const label = formatEmailDisplay(value);
-  const href = emailHref(value);
-  if (!label) return <span className={className}>{empty}</span>;
-  if (!href) return <span className={cn('truncate', className)}>{label}</span>;
+export function PhoneLink({ value, ...props }: ContactProps) {
   return (
-    <SoftTip label={label}>
-      <a
-        href={href}
-        className={cn(linkClass, className)}
-        onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
-      >
-        {label}
-      </a>
-    </SoftTip>
+    <ContactLink
+      {...props}
+      label={formatPhoneDisplay(value)}
+      href={phoneHref(value)}
+    />
+  );
+}
+
+export function EmailLink({ value, ...props }: ContactProps) {
+  return (
+    <ContactLink
+      {...props}
+      label={formatEmailDisplay(value)}
+      href={emailHref(value)}
+    />
   );
 }
 

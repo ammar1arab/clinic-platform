@@ -28,6 +28,10 @@ export class ClinicsRepository {
     });
   }
 
+  departmentInClinic(id: string, clinicId: string) {
+    return this.prisma.department.count({ where: { id, clinicId } });
+  }
+
   update(id: string, dto: UpdateClinicDto) {
     return this.prisma.clinic.update({ where: { id }, data: dto });
   }

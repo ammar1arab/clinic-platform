@@ -1,6 +1,7 @@
 export type { LucideIcon } from 'lucide-react';
 
 export {
+  Mail as IconMail,
   LayoutDashboard as IconDashboard,
   Calendar as IconSchedule,
   Calendar as IconCalendar,
@@ -68,6 +69,7 @@ export {
   Play as IconPlay,
   RotateCcw as IconRotateCcw,
   Search as IconSearch,
+  Send as IconSend,
   SlidersHorizontal as IconFilters,
   Sun as IconSun,
   Timer as IconTimer,

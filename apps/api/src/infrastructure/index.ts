@@ -49,3 +49,16 @@ export function formatPhoneDisplay(value: string | null | undefined): string {
   }
   return raw;
 }
+
+const HTML_ENTITIES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
+
+export const escapeHtml = (value: string): string =>
+  value.replace(/[&<>"']/g, (character) => {
+    return HTML_ENTITIES[character] || character;
+  });

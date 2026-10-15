@@ -28,13 +28,15 @@ export class NotificationsRepository {
     });
   }
 
-  findById(id: string) {
-    return this.prisma.notification.findUnique({ where: { id } });
+  findById(id: string, clinicId: string, userId: string) {
+    return this.prisma.notification.findUnique({
+      where: { id, clinicId, userId },
+    });
   }
 
-  markRead(id: string) {
+  markRead(id: string, clinicId: string, userId: string) {
     return this.prisma.notification.update({
-      where: { id },
+      where: { id, clinicId, userId },
       data: { readAt: new Date() },
     });
   }

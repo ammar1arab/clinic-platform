@@ -14,24 +14,24 @@ export class PackagesService {
     return this.packagesRepository.findAllByClinic(clinicId);
   }
 
-  async findOne(id: string) {
-    const pkg = await this.packagesRepository.findById(id);
+  async findOne(id: string, clinicId: string) {
+    const pkg = await this.packagesRepository.findById(id, clinicId);
     if (!pkg) throw new NotFoundException("Package not found");
     return pkg;
   }
 
-  async update(id: string, dto: UpdatePackageDto) {
-    await this.findOne(id);
-    return this.packagesRepository.update(id, dto);
+  async update(id: string, dto: UpdatePackageDto, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.packagesRepository.update(id, dto, clinicId);
   }
 
-  async deactivate(id: string) {
-    await this.findOne(id);
-    return this.packagesRepository.deactivate(id);
+  async deactivate(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.packagesRepository.deactivate(id, clinicId);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.packagesRepository.hardDelete(id);
+  async remove(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.packagesRepository.hardDelete(id, clinicId);
   }
 }

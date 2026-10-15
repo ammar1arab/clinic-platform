@@ -13,6 +13,9 @@ import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
 import { IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
 import { BrandMark } from '@/components/primitives/display/brand-mark';
+import { useClinicLogo } from '@/hooks/api/use-clinic';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { stripSolidBackdrop, writeClinicLogo } from '@/lib/clinic-logo';
 import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
 import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
 import { useAuth, useLanguage } from '@/providers';
@@ -23,11 +26,35 @@ import {
   IconPatients,
   IconPractitioner,
   IconReports,
+  IconMail,
   IconSchedule,
   IconSettings,
   IconSidebarCollapse,
   type LucideIcon,
 } from '@/constants/icons';
+
+function ClinicLockup() {
+  const clinicId = useClinicId();
+  const logoUrl = useClinicLogo();
+
+  if (!logoUrl) return <BrandMark size="sm" />;
+
+  return (
+    <img
+      key={logoUrl}
+      src={logoUrl}
+      alt=""
+      className="size-8 shrink-0 object-contain bg-transparent"
+      onLoad={() => {
+        if (!clinicId) return;
+        void stripSolidBackdrop(logoUrl).then((next) => {
+          if (!next || next === logoUrl) return;
+          writeClinicLogo(clinicId, next);
+        });
+      }}
+    />
+  );
+}
 
 type NavItem = {
   label: string;
@@ -50,6 +77,7 @@ function getNavItems(t: Translations, role?: Role | null): NavItem[] {
     { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
     { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner, accent: 'default' },
     { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'warning' },
+    { label: t.emails.title, href: ROUTES.EMAILS, icon: IconMail, accent: 'teal' },
     { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings, accent: 'muted' },
   ];
   return items.filter((item) => canSeeNavHref(item.href, role));
@@ -204,10 +232,7 @@ export function SidebarBlock() {
           )}
         >
           <div className="flex min-w-0 items-center gap-2.5">
-            <BrandMark size="sm" />
-            <p className="truncate font-heading text-lg font-semibold tracking-tight text-foreground">
-              {t.layout.titles.default}
-            </p>
+            <ClinicLockup />
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <LanguageSwitcher />
@@ -251,6 +276,7 @@ export function SidebarBlock() {
           'md:static md:shrink-0',
           'transition-all duration-300 ease-in-out',
           isCollapsed ? 'md:w-18' : 'md:w-56 lg:w-64',
+          '[[data-sidebar=collapsed]_&]:md:w-18 [[data-sidebar=collapsed]_&]:lg:w-18',
         )}
       >
         <div
@@ -267,16 +293,13 @@ export function SidebarBlock() {
                 aria-label={t.layout.sidebar.expand}
                 className="rounded-lg"
               >
-                <BrandMark size="sm" />
+                <ClinicLockup />
               </button>
             </SoftTip>
           ) : (
             <>
               <div className="flex min-w-0 items-center gap-2">
-                <BrandMark size="sm" />
-                <p className="truncate font-heading text-sm font-semibold tracking-tight">
-                  {t.layout.titles.default}
-                </p>
+                <ClinicLockup />
               </div>
               <SoftTip label={t.layout.sidebar.collapse} side="bottom">
                 <button

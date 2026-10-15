@@ -17,35 +17,39 @@ export class ServicesRepository {
     });
   }
 
-  findById(id: string) {
-    return this.prisma.service.findUnique({ where: { id } });
+  departmentInClinic(id: string, clinicId: string) {
+    return this.prisma.department.count({ where: { id, clinicId } });
   }
 
-  update(id: string, dto: UpdateServiceDto) {
-    return this.prisma.service.update({ where: { id }, data: dto });
+  findById(id: string, clinicId: string) {
+    return this.prisma.service.findUnique({ where: { id, clinicId } });
   }
 
-  deactivate(id: string) {
+  update(id: string, dto: UpdateServiceDto, clinicId: string) {
+    return this.prisma.service.update({ where: { id, clinicId }, data: dto });
+  }
+
+  deactivate(id: string, clinicId: string) {
     return this.prisma.service.update({
-      where: { id },
+      where: { id, clinicId },
       data: { isActive: false },
     });
   }
 
-  reactivate(id: string) {
+  reactivate(id: string, clinicId: string) {
     return this.prisma.service.update({
-      where: { id },
+      where: { id, clinicId },
       data: { isActive: true },
     });
   }
 
-  hardDelete(id: string) {
+  hardDelete(id: string, clinicId: string) {
     return this.prisma.$transaction(async (tx) => {
       await tx.appointment.deleteMany({
-        where: { serviceId: id },
+        where: { serviceId: id, clinicId },
       });
 
-      return tx.service.delete({ where: { id } });
+      return tx.service.delete({ where: { id, clinicId } });
     });
   }
 }

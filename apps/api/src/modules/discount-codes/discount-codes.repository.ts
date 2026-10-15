@@ -29,8 +29,8 @@ export class DiscountCodesRepository {
     });
   }
 
-  findById(id: string) {
-    return this.prisma.discountCode.findUnique({ where: { id } });
+  findById(id: string, clinicId: string) {
+    return this.prisma.discountCode.findUnique({ where: { id, clinicId } });
   }
 
   findByCode(clinicId: string, code: string) {
@@ -41,7 +41,7 @@ export class DiscountCodesRepository {
     });
   }
 
-  update(id: string, dto: UpdateDiscountCodeDto) {
+  update(id: string, dto: UpdateDiscountCodeDto, clinicId: string) {
     const data: Prisma.DiscountCodeUpdateInput = {};
 
     if (dto.code !== undefined) {
@@ -67,36 +67,29 @@ export class DiscountCodesRepository {
     }
 
     return this.prisma.discountCode.update({
-      where: { id },
+      where: { id, clinicId },
       data,
     });
   }
 
-  deactivate(id: string) {
+  deactivate(id: string, clinicId: string) {
     return this.prisma.discountCode.update({
-      where: { id },
+      where: { id, clinicId },
       data: { isActive: false },
     });
   }
 
-  hardDelete(id: string) {
+  hardDelete(id: string, clinicId: string) {
     return this.prisma.$transaction(async (tx) => {
       await tx.patient.updateMany({
-        where: { discountCodeId: id },
+        where: { discountCodeId: id, clinicId },
         data: { discountCodeId: null },
       });
       await tx.appointment.updateMany({
-        where: { discountCodeId: id },
+        where: { discountCodeId: id, clinicId },
         data: { discountCodeId: null },
       });
-      return tx.discountCode.delete({ where: { id } });
-    });
-  }
-
-  incrementUsedCount(id: string) {
-    return this.prisma.discountCode.update({
-      where: { id },
-      data: { usedCount: { increment: 1 } },
+      return tx.discountCode.delete({ where: { id, clinicId } });
     });
   }
 }

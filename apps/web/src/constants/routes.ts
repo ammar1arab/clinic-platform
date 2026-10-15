@@ -1,4 +1,8 @@
 export const ROUTES = {
+  EMAILS: '/emails',
+  EMAIL_NEW: '/emails/new',
+  EMAIL_DETAIL: (id: string) => `/emails/${id}`,
+  EMAIL_SETTINGS: '/emails/settings',
   LOGIN: '/login',
   HOME: '/home',
   HOME_QUEUE: '/home/queue',

@@ -73,6 +73,7 @@ model Clinic {
   phone                String?
   address              String?
   logoUrl              String?
+  brandColor           String?
   letterheadFooter     String?
   workingHoursStart    String       @default("08:00")
   workingHoursEnd      String       @default("20:00")
@@ -96,6 +97,9 @@ model Clinic {
   patientPackages PatientPackage[]
   discountCodes   DiscountCode[]
   notifications   Notification[]
+  emailMessages     EmailMessage[]
+  emailSettings     EmailSettings?
+  emailSuppressions EmailSuppression[]
 }
 
 model User {
@@ -502,4 +506,101 @@ model Notification {
   user   ClinicUser @relation(fields: [userId], references: [id])
 
   @@index([clinicId, userId, readAt])
+}
+
+enum EmailRecipientStatus {
+  queued
+  processing
+  accepted
+  delivered
+  delayed
+  bounced
+  complained
+  failed
+  suppressed
+}
+
+model EmailSettings {
+  clinicId     String   @id
+  replyTo      String?
+  websiteUrl   String?
+  instagramUrl String?
+  facebookUrl  String?
+  linkedinUrl  String?
+  footerEn     String?
+  footerAr     String?
+  updatedAt    DateTime @updatedAt
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+}
+
+model EmailMessage {
+  id          String   @id @default(uuid())
+  clinicId    String
+  createdById String
+  requestId   String
+  requestHash String
+  locale      String
+  subject     String
+  body        String
+  isTest      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  clinic     Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  recipients EmailRecipient[]
+
+  @@unique([clinicId, requestId])
+  @@index([clinicId, createdAt, id])
+}
+
+model EmailRecipient {
+  id             String               @id @default(uuid())
+  messageId      String
+  sourceId       String?
+  audience       String
+  email          String
+  name           String
+  subject        String
+  fromAddress    String
+  html           String
+  text           String
+  replyTo        String?
+  status         EmailRecipientStatus @default(queued)
+  providerId     String?              @unique
+  attempts       Int                  @default(0)
+  nextAttemptAt  DateTime             @default(now())
+  firstAttemptAt DateTime?
+  leaseToken     String?
+  leaseUntil     DateTime?
+  lastError      String?
+  lastEventAt    DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  message EmailMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, email])
+  @@index([status, nextAttemptAt])
+  @@index([status, leaseUntil])
+}
+
+model EmailWebhookReceipt {
+  id         String   @id
+  providerId String
+  type       String
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model EmailSuppression {
+  id        String   @id @default(uuid())
+  clinicId  String
+  email     String
+  reason    String
+  createdAt DateTime @default(now())
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, email])
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { ROUTES } from '@/constants/routes';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
@@ -23,32 +24,36 @@ import { SoftTip } from '@/components/primitives';
 import { IconLogout, IconMenu } from '@/constants/icons';
 
 function resolveTitle(pathname: string, t: Translations): string {
-  if (pathname === '/home/queue') return t.queue.waitingQueue;
-  if (pathname === '/home/profile') return t.practitioner.profile;
-  if (pathname === '/home') return t.layout.titles.home;
-  if (pathname === '/dashboard') return t.layout.titles.dashboard;
-  if (pathname === '/schedule') return t.layout.titles.schedule;
-  if (pathname === '/schedule/new') return t.layout.titles.newAppointment;
-  if (pathname === '/patients') return t.layout.titles.patients;
-  if (pathname === '/patients/new') return t.layout.titles.newPatient;
-  if (pathname === '/practitioners') return t.layout.titles.practitioners;
-  if (pathname === '/practitioners/new') return t.layout.titles.newPractitioner;
-  if (pathname === '/reports') return t.layout.titles.reports;
-  if (pathname === '/settings') return t.layout.titles.settings;
-  if (pathname === '/settings/departments') return t.layout.titles.departments;
-  if (pathname === '/settings/rooms') return t.layout.titles.rooms;
-  if (pathname === '/settings/services') return t.layout.titles.services;
-  if (pathname === '/settings/payment-methods') return t.layout.titles.paymentMethods;
-  if (pathname === '/settings/packages') return t.layout.titles.packages;
-  if (pathname === '/settings/discount-codes') return t.layout.titles.promocodes;
-  if (pathname === '/settings/clinic') return t.layout.titles.clinicDefaults;
+  if (pathname === ROUTES.EMAIL_NEW) return t.emails.compose;
+  if (pathname === ROUTES.EMAIL_SETTINGS) return t.emails.settings;
+  if (pathname === ROUTES.EMAILS) return t.emails.title;
+  if (pathname.startsWith(`${ROUTES.EMAILS}/`)) return t.emails.detail;
+  if (pathname === ROUTES.HOME_QUEUE) return t.queue.waitingQueue;
+  if (pathname === ROUTES.HOME_PROFILE) return t.practitioner.profile;
+  if (pathname === ROUTES.HOME) return t.layout.titles.home;
+  if (pathname === ROUTES.DASHBOARD) return t.layout.titles.dashboard;
+  if (pathname === ROUTES.SCHEDULE) return t.layout.titles.schedule;
+  if (pathname === ROUTES.SCHEDULE_NEW) return t.layout.titles.newAppointment;
+  if (pathname === ROUTES.PATIENTS) return t.layout.titles.patients;
+  if (pathname === ROUTES.PATIENT_NEW) return t.layout.titles.newPatient;
+  if (pathname === ROUTES.PRACTITIONERS) return t.layout.titles.practitioners;
+  if (pathname === ROUTES.PRACTITIONERS_NEW) return t.layout.titles.newPractitioner;
+  if (pathname === ROUTES.REPORTS) return t.layout.titles.reports;
+  if (pathname === ROUTES.SETTINGS) return t.layout.titles.settings;
+  if (pathname === ROUTES.SETTINGS_DEPARTMENTS) return t.layout.titles.departments;
+  if (pathname === ROUTES.SETTINGS_ROOMS) return t.layout.titles.rooms;
+  if (pathname === ROUTES.SETTINGS_SERVICES) return t.layout.titles.services;
+  if (pathname === ROUTES.SETTINGS_PAYMENT_METHODS) return t.layout.titles.paymentMethods;
+  if (pathname === ROUTES.SETTINGS_PACKAGES) return t.layout.titles.packages;
+  if (pathname === ROUTES.SETTINGS_DISCOUNT_CODES) return t.layout.titles.promocodes;
+  if (pathname === ROUTES.SETTINGS_CLINIC) return t.layout.titles.clinicDefaults;
 
-  if (pathname.startsWith('/practitioners/') && pathname.endsWith('/edit')) {
+  if (pathname.startsWith(`${ROUTES.PRACTITIONERS}/`) && pathname.endsWith('/edit')) {
     return t.layout.titles.editPractitioner;
   }
-  if (pathname.startsWith('/practitioners/')) return t.layout.titles.practitioner;
-  if (pathname.startsWith('/schedule/')) return t.layout.titles.appointment;
-  if (pathname.startsWith('/patients/')) return t.layout.titles.patient;
+  if (pathname.startsWith(`${ROUTES.PRACTITIONERS}/`)) return t.layout.titles.practitioner;
+  if (pathname.startsWith(`${ROUTES.SCHEDULE}/`)) return t.layout.titles.appointment;
+  if (pathname.startsWith(`${ROUTES.PATIENTS}/`)) return t.layout.titles.patient;
   return t.layout.titles.default;
 }
 
@@ -83,15 +88,9 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
             </SoftTip>
           ) : null}
 
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span
-              className="hidden h-4 w-1 shrink-0 rounded-full bg-linear-to-b from-brand to-accent-teal sm:block"
-              aria-hidden
-            />
-            <h1 className="truncate font-heading text-[0.9375rem] font-semibold tracking-tight text-foreground md:text-base">
-              {title}
-            </h1>
-          </div>
+          <h1 className="truncate font-heading text-[0.9375rem] font-semibold tracking-tight text-foreground md:text-base">
+            {title}
+          </h1>
         </div>
 
         <div className="flex shrink-0 items-center gap-1">

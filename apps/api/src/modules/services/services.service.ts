@@ -1,3 +1,4 @@
+import { securityError } from "@/security/security-error";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { ServicesRepository } from "./services.repository";
 import { CreateServiceDto, UpdateServiceDto } from "./dto";
@@ -6,7 +7,15 @@ import { CreateServiceDto, UpdateServiceDto } from "./dto";
 export class ServicesService {
   constructor(private servicesRepository: ServicesRepository) {}
 
-  create(dto: CreateServiceDto) {
+  async create(dto: CreateServiceDto) {
+    if (
+      dto.departmentId &&
+      !(await this.servicesRepository.departmentInClinic(
+        dto.departmentId,
+        dto.clinicId,
+      ))
+    )
+      securityError("clinicUnavailable", 403);
     return this.servicesRepository.create(dto);
   }
 
@@ -14,31 +23,39 @@ export class ServicesService {
     return this.servicesRepository.findAllByClinic(clinicId);
   }
 
-  async findOne(id: string) {
-    const service = await this.servicesRepository.findById(id);
+  async findOne(id: string, clinicId: string) {
+    const service = await this.servicesRepository.findById(id, clinicId);
     if (!service) {
       throw new NotFoundException("Service not found");
     }
     return service;
   }
 
-  async update(id: string, dto: UpdateServiceDto) {
-    await this.findOne(id);
-    return this.servicesRepository.update(id, dto);
+  async update(id: string, dto: UpdateServiceDto, clinicId: string) {
+    await this.findOne(id, clinicId);
+    if (
+      dto.departmentId &&
+      !(await this.servicesRepository.departmentInClinic(
+        dto.departmentId,
+        clinicId,
+      ))
+    )
+      securityError("clinicUnavailable", 403);
+    return this.servicesRepository.update(id, dto, clinicId);
   }
 
-  async deactivate(id: string) {
-    await this.findOne(id);
-    return this.servicesRepository.deactivate(id);
+  async deactivate(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.servicesRepository.deactivate(id, clinicId);
   }
 
-  async reactivate(id: string) {
-    await this.findOne(id);
-    return this.servicesRepository.reactivate(id);
+  async reactivate(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.servicesRepository.reactivate(id, clinicId);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.servicesRepository.hardDelete(id);
+  async remove(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.servicesRepository.hardDelete(id, clinicId);
   }
 }

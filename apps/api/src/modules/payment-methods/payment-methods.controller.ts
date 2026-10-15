@@ -6,13 +6,12 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth } from "@nestjs/swagger";
 import { Role } from "@prisma/client";
 import { JwtAuthGuard, RolesGuard } from "@/modules/auth/guards";
-import { Roles } from "@/modules/auth/decorators";
+import { CurrentUser, Roles, type AuthUser } from "@/modules/auth/decorators";
 import { PaymentMethodsService } from "./payment-methods.service";
 import {
   CreatePaymentMethodDto,
@@ -29,48 +28,55 @@ export class PaymentMethodsController {
   @Post()
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin, Role.financial)
-  create(@Body() dto: CreatePaymentMethodDto) {
-    return this.paymentMethodsService.create(dto);
+  create(@CurrentUser() user: AuthUser, @Body() dto: CreatePaymentMethodDto) {
+    return this.paymentMethodsService.create({
+      ...dto,
+      clinicId: user.clinicId,
+    });
   }
 
   @Get()
-  findAll(@Query("clinicId") clinicId: string) {
-    return this.paymentMethodsService.findAll(clinicId);
+  findAll(@CurrentUser() user: AuthUser) {
+    return this.paymentMethodsService.findAll(user.clinicId);
   }
 
   @Patch("reorder")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin, Role.financial)
   reorder(
-    @Query("clinicId") clinicId: string,
+    @CurrentUser() user: AuthUser,
     @Body() dto: ReorderPaymentMethodsDto,
   ) {
-    return this.paymentMethodsService.reorder(clinicId, dto);
+    return this.paymentMethodsService.reorder(user.clinicId, dto);
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.paymentMethodsService.findOne(id);
+  findOne(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.paymentMethodsService.findOne(id, user.clinicId);
   }
 
   @Patch(":id/deactivate")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin, Role.financial)
-  deactivate(@Param("id") id: string) {
-    return this.paymentMethodsService.deactivate(id);
+  deactivate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.paymentMethodsService.deactivate(id, user.clinicId);
   }
 
   @Patch(":id")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin, Role.financial)
-  update(@Param("id") id: string, @Body() dto: UpdatePaymentMethodDto) {
-    return this.paymentMethodsService.update(id, dto);
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: UpdatePaymentMethodDto,
+  ) {
+    return this.paymentMethodsService.update(id, dto, user.clinicId);
   }
 
   @Delete(":id")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin, Role.financial)
-  remove(@Param("id") id: string) {
-    return this.paymentMethodsService.remove(id);
+  remove(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.paymentMethodsService.remove(id, user.clinicId);
   }
 }

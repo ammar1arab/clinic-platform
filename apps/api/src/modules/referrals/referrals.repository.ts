@@ -57,18 +57,30 @@ export class ReferralsRepository {
     });
   }
 
-  findById(id: string) {
+  findById(id: string, clinicId: string) {
     return this.prisma.referral.findUnique({
-      where: { id },
+      where: { id, clinicId },
       include: this.include,
     });
   }
 
-  updateStatus(id: string, status: "accepted" | "rejected") {
-    return this.prisma.referral.update({
-      where: { id },
-      data: { status },
-      include: this.include,
+  updateStatus(
+    id: string,
+    status: "accepted" | "rejected",
+    clinicId: string,
+    toDoctorId: string,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const changed = await tx.referral.updateMany({
+        where: { id, clinicId, toDoctorId, status: "pending" },
+        data: { status },
+      });
+      return changed.count
+        ? tx.referral.findUniqueOrThrow({
+            where: { id, clinicId },
+            include: this.include,
+          })
+        : null;
     });
   }
 

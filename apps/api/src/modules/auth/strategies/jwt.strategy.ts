@@ -25,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(
-    req: AuthRequest,
+    req: AuthRequest | null,
     payload: SecurityPayload,
   ): Promise<AuthUser> {
     if (
@@ -51,7 +51,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     );
     if (!member || user.clinicUsers.length !== 1)
       securityError("invalidToken", 401);
-    req.authAccount = user;
+    if (req) req.authAccount = user;
     return {
       userId: user.id,
       clinicUserId: member.id,

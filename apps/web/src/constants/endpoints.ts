@@ -1,4 +1,14 @@
 export const ENDPOINTS = {
+  EMAILS: {
+    BASE: "/emails",
+    BY_ID: (id: string) => `/emails/${id}`,
+    RECIPIENTS: "/emails/recipients/preview",
+    PREVIEW: "/emails/preview",
+    VARIABLES: "/emails/variables",
+    TEST: "/emails/test",
+    SEND: "/emails/send",
+    SETTINGS: "/emails/settings",
+  },
   APPOINTMENTS: {
     BASE: "/appointments",
     BY_ID: (id: string) => `/appointments/${id}`,

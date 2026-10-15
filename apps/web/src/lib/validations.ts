@@ -1,4 +1,5 @@
 import { getTranslations, getLanguage } from '@/i18n';
+import { httpsUrl } from '@/lib/contact';
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'react-phone-number-input';
 
@@ -428,3 +429,63 @@ export type AppointmentFormData = z.infer<typeof appointmentSchema>;
 export type PractitionerFormData = z.infer<typeof practitionerSchema>;
 export type PractitionerHoursData = z.infer<typeof practitionerHoursSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;
+
+export const emailContentSchema = z.object({
+  locale: z.enum(['en', 'ar']),
+  subject: requiredText(200).refine(value => !/[\r\n]/.test(value), {
+    error: () => getTranslations().emails.subjectNewline,
+  }),
+  body: requiredText(20000),
+});
+
+export const emailComposerSchema = emailContentSchema.extend({
+  audience: z.enum([
+    'patients',
+    'practitioners',
+    'staff',
+    'financial',
+    'owners',
+    'admins',
+    'all',
+  ]),
+  ids: z.array(z.string().uuid()).max(500),
+  search: z.string().max(100),
+  roles: z.array(z.enum(['owner', 'admin', 'practitioner', 'financial'])),
+  doctorId: z.string(),
+  departmentId: z.string(),
+  serviceId: z.string(),
+  appointmentStatuses: z.array(z.enum(['unconfirmed', 'confirmed', 'checked_in', 'waiting', 'in_progress', 'completed', 'no_show', 'cancelled'])),
+  appointmentFrom: z.string(),
+  appointmentTo: z.string(),
+  isPaid: z.enum(['all', 'true', 'false']),
+  externalRecipients: z.array(z.object({
+    email: z.string().trim().email({ error: () => getTranslations().validation.email }).max(254),
+    name: z.string().trim().max(150),
+  })).max(100),
+  excludedEmails: z.string().refine(value => {
+    const emails = value.split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+    return emails.length <= 500 && emails.every(item => z.email().safeParse(item).success);
+  }, { error: () => getTranslations().validation.email }),
+}).superRefine((value, ctx) => {
+  if (value.appointmentFrom && value.appointmentTo && value.appointmentFrom > value.appointmentTo) {
+    ctx.addIssue({ code: 'custom', path: ['appointmentTo'], message: getTranslations().emails.invalidDateRange });
+  }
+});
+
+const emailLink = z.string().trim().max(2048).refine(
+  (value) => !value || httpsUrl(value) !== undefined,
+  { error: () => getTranslations().emails.httpsHint },
+);
+
+export const emailSettingsSchema = z.object({
+  replyTo: optionalEmail,
+  websiteUrl: emailLink,
+  instagramUrl: emailLink,
+  facebookUrl: emailLink,
+  linkedinUrl: emailLink,
+  footerEn: z.string().max(1000),
+  footerAr: z.string().max(1000),
+});
+
+export type EmailComposerValues = z.infer<typeof emailComposerSchema>;
+export type EmailSettingsValues = z.infer<typeof emailSettingsSchema>;

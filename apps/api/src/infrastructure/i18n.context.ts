@@ -1,9 +1,8 @@
 import { AsyncLocalStorage } from "async_hooks";
+import type { Locale } from "@clinic/types";
 
-export type Locale = "en" | "ar";
+export type { Locale };
 
 export const i18nContext = new AsyncLocalStorage<Locale>();
 
-export function getLocale(): Locale {
-  return i18nContext.getStore() || "en";
-}
+export const getLocale = (): Locale => i18nContext.getStore() || "en";

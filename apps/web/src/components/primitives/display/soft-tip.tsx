@@ -33,7 +33,7 @@ export function SoftTip({
 
   return (
     <Tooltip
-      delayDuration={220}
+      delayDuration={420}
       disableHoverableContent
       open={canHover ? undefined : false}
     >

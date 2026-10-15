@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEmail, IsEnum } from "class-validator";
+import { IsString, IsOptional, IsEmail, IsEnum, Matches } from "class-validator";
 
 export enum CalendarViewDto {
   day = "day",
@@ -34,6 +34,10 @@ export class CreateClinicDto {
   @IsOptional()
   @IsString()
   logoUrl?: string;
+
+  @IsOptional()
+  @Matches(/^#[0-9A-Fa-f]{6}$/)
+  brandColor?: string | null;
 
   @IsOptional()
   @IsString()

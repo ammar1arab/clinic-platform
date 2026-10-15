@@ -33,14 +33,20 @@ export class PractitionersController {
   @Post()
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin)
-  create(@Body() dto: CreatePractitionerDto) {
-    return this.practitionersService.create(dto);
+  create(@CurrentUser() user: AuthUser, @Body() dto: CreatePractitionerDto) {
+    return this.practitionersService.create({
+      ...dto,
+      clinicId: user.clinicId,
+    });
   }
 
   @Get()
   @ApiQuery({ name: "clinicId", required: true, type: String })
-  findAll(@Query() filters: PractitionerFiltersDto) {
-    return this.practitionersService.findAll(filters.clinicId, filters);
+  findAll(
+    @CurrentUser() user: AuthUser,
+    @Query() filters: PractitionerFiltersDto,
+  ) {
+    return this.practitionersService.findAll(user.clinicId, filters);
   }
 
   @Get(":id")
@@ -99,7 +105,11 @@ export class PractitionersController {
     @Param("id") id: string,
     @Body() dto: ReplaceAvailabilityDto,
   ) {
-    return this.practitionersService.replaceAvailability(id, dto, user.clinicId);
+    return this.practitionersService.replaceAvailability(
+      id,
+      dto,
+      user.clinicId,
+    );
   }
 
   @Put(":id/time-off")

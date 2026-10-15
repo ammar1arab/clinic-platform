@@ -30,15 +30,19 @@ export class NotificationsService {
     );
   }
 
-  async markRead(id: string) {
-    const notification = await this.notificationsRepository.findById(id);
+  async markRead(id: string, clinicId: string, userId: string) {
+    const notification = await this.notificationsRepository.findById(
+      id,
+      clinicId,
+      userId,
+    );
     if (!notification) {
       throw new NotFoundException("Notification not found");
     }
     if (notification.readAt) {
       return notification;
     }
-    return this.notificationsRepository.markRead(id);
+    return this.notificationsRepository.markRead(id, clinicId, userId);
   }
 
   async markAllRead(clinicId: string, userId: string) {

@@ -22,27 +22,27 @@ export class PaymentMethodsService {
     return this.paymentMethodsRepository.findAllByClinic(clinicId);
   }
 
-  async findOne(id: string) {
-    const method = await this.paymentMethodsRepository.findById(id);
+  async findOne(id: string, clinicId: string) {
+    const method = await this.paymentMethodsRepository.findById(id, clinicId);
     if (!method) {
       throw new NotFoundException("Payment method not found");
     }
     return method;
   }
 
-  async update(id: string, dto: UpdatePaymentMethodDto) {
-    await this.findOne(id);
-    return this.paymentMethodsRepository.update(id, dto);
+  async update(id: string, dto: UpdatePaymentMethodDto, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.paymentMethodsRepository.update(id, dto, clinicId);
   }
 
-  async deactivate(id: string) {
-    await this.findOne(id);
-    return this.paymentMethodsRepository.deactivate(id);
+  async deactivate(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.paymentMethodsRepository.deactivate(id, clinicId);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.paymentMethodsRepository.hardDelete(id);
+  async remove(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.paymentMethodsRepository.hardDelete(id, clinicId);
   }
 
   async reorder(clinicId: string, dto: ReorderPaymentMethodsDto) {

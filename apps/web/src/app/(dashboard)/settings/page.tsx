@@ -1,10 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { ROUTES } from '@/constants/routes';
 import {
   IconCard,
-  IconWell,
   type IconWellAccent,
 } from '@/components/primitives';
 import {
@@ -17,6 +15,7 @@ import {
   IconRoom,
   IconService,
   IconTime,
+  IconMail,
 } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 
@@ -78,6 +77,13 @@ export default function SettingsPage() {
       title: t.settings.promocodes,
       description: t.settings.promocodesDesc,
       icon: IconDiscount,
+      accent: 'teal',
+    },
+    {
+      href: ROUTES.EMAIL_SETTINGS,
+      title: t.emails.settings,
+      description: t.emails.settingsDesc,
+      icon: IconMail,
       accent: 'teal',
     },
   ];

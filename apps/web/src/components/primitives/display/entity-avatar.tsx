@@ -31,8 +31,9 @@ export function AvatarImage({
   onError,
   ...props
 }: Omit<ComponentProps<typeof Image>, 'alt'> & { src: string }) {
+  const instant = src.startsWith('blob:') || src.startsWith('data:');
   const [prev, setPrev] = useState(src);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(instant);
   if (src !== prev) {
     setPrev(src);
     setReady(false);
@@ -40,7 +41,7 @@ export function AvatarImage({
 
   return (
     <>
-      {!ready ? (
+      {!ready && !instant ? (
         <span className="absolute inset-0 grid place-items-center">
           <IconSpinner className="size-3 animate-spin text-muted-foreground" />
         </span>
@@ -50,7 +51,11 @@ export function AvatarImage({
         {...props}
         src={src}
         alt=""
-        className={cn('size-full object-cover', !ready && 'opacity-0', className)}
+        className={cn(
+          'size-full object-cover',
+          !ready && !instant && 'opacity-0',
+          className,
+        )}
         onLoad={(e) => {
           setReady(true);
           onLoad?.(e);

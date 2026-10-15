@@ -1,7 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
-import { useMounted } from '@/hooks/shared/use-mounted';
+import React, { createContext, useContext, useMemo, useState, useSyncExternalStore } from 'react';
 
 interface SidebarContextType {
   isCollapsed: boolean;
@@ -10,34 +9,60 @@ interface SidebarContextType {
   setMobileOpen: (open: boolean) => void;
 }
 
+const STORAGE_KEY = 'sidebar-collapsed';
+const listeners = new Set<() => void>();
+let collapsedSnapshot = false;
+let storageAvailable = true;
+
+function readCollapsed() {
+  if (storageAvailable) {
+    try {
+      collapsedSnapshot = localStorage.getItem(STORAGE_KEY) === 'true';
+    } catch {
+      storageAvailable = false;
+    }
+  }
+  return collapsedSnapshot;
+}
+
+function publishCollapsed(collapsed: boolean) {
+  collapsedSnapshot = collapsed;
+  if (storageAvailable) {
+    try {
+      localStorage.setItem(STORAGE_KEY, String(collapsed));
+    } catch {
+      storageAvailable = false;
+    }
+  }
+  if (collapsed) document.documentElement.setAttribute('data-sidebar', 'collapsed');
+  else document.documentElement.removeAttribute('data-sidebar');
+  listeners.forEach((listener) => listener());
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('sidebar-collapsed') === 'true';
-    }
-    return false;
-  });
+  const isCollapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const mounted = useMounted();
 
   const toggleSidebar = () => {
-    setIsCollapsed((prev) => {
-      const next = !prev;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('sidebar-collapsed', String(next));
-      }
-      return next;
-    });
+    publishCollapsed(!readCollapsed());
   };
 
-  const stateValue = {
-    isCollapsed: mounted ? isCollapsed : false,
-    toggleSidebar,
-    mobileOpen,
-    setMobileOpen,
-  };
+  const stateValue = useMemo(
+    () => ({
+      isCollapsed,
+      toggleSidebar,
+      mobileOpen,
+      setMobileOpen,
+    }),
+    [isCollapsed, mobileOpen],
+  );
 
   return (
     <SidebarContext.Provider value={stateValue}>

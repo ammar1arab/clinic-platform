@@ -9,9 +9,10 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
+import { Role } from "@prisma/client";
 import { ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
-import { JwtAuthGuard } from "@/modules/auth/guards";
-import { CurrentUser, type AuthUser } from "@/modules/auth/decorators";
+import { JwtAuthGuard, RolesGuard } from "@/modules/auth/guards";
+import { CurrentUser, Roles, type AuthUser } from "@/modules/auth/decorators";
 import { PatientsService } from "./patients.service";
 import { CreatePatientDto, UpdatePatientDto, PatientFiltersDto } from "./dto";
 
@@ -22,8 +23,10 @@ export class PatientsController {
   constructor(private patientsService: PatientsService) {}
 
   @Post()
-  create(@Body() dto: CreatePatientDto) {
-    return this.patientsService.create(dto);
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
+  create(@CurrentUser() user: AuthUser, @Body() dto: CreatePatientDto) {
+    return this.patientsService.create({ ...dto, clinicId: user.clinicId });
   }
 
   @Get()
@@ -78,8 +81,11 @@ export class PatientsController {
   @ApiQuery({ name: "sortOrder", required: false, enum: ["asc", "desc"] })
   @ApiQuery({ name: "page", required: false, type: Number })
   @ApiQuery({ name: "limit", required: false, type: Number })
-  findAll(@Query() filters: PatientFiltersDto) {
-    return this.patientsService.findAll(filters);
+  findAll(@CurrentUser() user: AuthUser, @Query() filters: PatientFiltersDto) {
+    return this.patientsService.findAll({
+      ...filters,
+      clinicId: user.clinicId,
+    });
   }
 
   @Get(":id")
@@ -88,6 +94,8 @@ export class PatientsController {
   }
 
   @Patch(":id")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
   update(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string,
@@ -97,16 +105,22 @@ export class PatientsController {
   }
 
   @Patch(":id/deactivate")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
   deactivate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.patientsService.deactivate(id, user.clinicId);
   }
 
   @Patch(":id/reactivate")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
   reactivate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.patientsService.reactivate(id, user.clinicId);
   }
 
   @Delete(":id")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
   remove(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.patientsService.remove(id, user.clinicId);
   }

@@ -29,11 +29,11 @@ export class PackagesRepository {
     });
   }
 
-  findById(id: string) {
-    return this.prisma.package.findUnique({ where: { id } });
+  findById(id: string, clinicId: string) {
+    return this.prisma.package.findUnique({ where: { id, clinicId } });
   }
 
-  update(id: string, dto: UpdatePackageDto) {
+  update(id: string, dto: UpdatePackageDto, clinicId: string) {
     const data: Prisma.PackageUncheckedUpdateInput = {
       name: dto.name,
       description: dto.description,
@@ -44,23 +44,23 @@ export class PackagesRepository {
       sortOrder: dto.sortOrder,
       isActive: dto.isActive,
     };
-    return this.prisma.package.update({ where: { id }, data });
+    return this.prisma.package.update({ where: { id, clinicId }, data });
   }
 
-  deactivate(id: string) {
+  deactivate(id: string, clinicId: string) {
     return this.prisma.package.update({
-      where: { id },
+      where: { id, clinicId },
       data: { isActive: false },
     });
   }
 
-  hardDelete(id: string) {
+  hardDelete(id: string, clinicId: string) {
     return this.prisma.$transaction(async (tx) => {
       await tx.patient.updateMany({
-        where: { packageId: id },
+        where: { packageId: id, clinicId },
         data: { packageId: null },
       });
-      return tx.package.delete({ where: { id } });
+      return tx.package.delete({ where: { id, clinicId } });
     });
   }
 }

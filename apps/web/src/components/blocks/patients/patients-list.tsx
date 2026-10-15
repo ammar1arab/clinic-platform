@@ -1,40 +1,47 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Switch,
-  Badge,
-} from '@/components/ui';
+import { useMemo, useState } from "react";
+import { Badge } from "@/components/ui";
 import {
   TableFrame,
   useTwoStepDelete,
   TwoStepDeleteDialogs,
   PreviewableAvatar,
-  isRowControlClick,
   PhoneLink,
+  EmailLink,
   TruncatedText,
   Pagination,
   EmptyState,
-  MetaStat,
+  DirectoryMeta,
+  EntityMobileCard,
+  DirectoryTable,
+  DirectoryIdentity,
+  DirectoryActions,
+  type DirectoryColumn,
   TableSkeleton,
   RowActionsMenu,
   SoftTip,
-} from '@/components/primitives';
-import { useTogglePatientStatus, useDeletePatient } from '@/hooks/api/use-patients';
-import { useRouteNav } from '@/hooks/shared/use-route-nav';
-import type { Patient } from '@/services/patients.service';
-import { genderLabel, patientAgeLabel } from '@/constants/patient';
-import { IconActivate, IconDeactivate, IconDelete, IconEdit, IconLoyal, IconPatients, IconPhone, IconView } from '@/constants/icons';
-import { useLanguage } from '@/providers';
-import { getPersonName } from '@/i18n';
-import { formatDate } from '@/lib/datetime';
-import { ROUTES } from '@/constants/routes';
+} from "@/components/primitives";
+import {
+  useTogglePatientStatus,
+  useDeletePatient,
+} from "@/hooks/api/use-patients";
+import { useRouteNav } from "@/hooks/shared/use-route-nav";
+import type { Patient } from "@/services/patients.service";
+import { genderLabel, patientAgeLabel } from "@/constants/patient";
+import {
+  IconActivate,
+  IconDeactivate,
+  IconDelete,
+  IconEdit,
+  IconLoyal,
+  IconPatients,
+  IconView,
+} from "@/constants/icons";
+import { useLanguage } from "@/providers";
+import { getPersonName } from "@/i18n";
+import { formatDate } from "@/lib/datetime";
+import { ROUTES } from "@/constants/routes";
 
 const PAGE_SIZE = 15;
 
@@ -82,27 +89,142 @@ export function PatientsList({
   const rowMenu = (p: Patient, fullName: string) => (
     <RowActionsMenu
       items={[
-        { label: t?.common?.view, icon: IconView, href: ROUTES.PATIENT_DETAIL(p.id) },
-        { label: t?.common?.edit, icon: IconEdit, href: ROUTES.PATIENT_EDIT(p.id) },
         {
-          label: p.isActive ? t?.common?.deactivate : t?.common?.reactivate,
+          label: t.common.view,
+          icon: IconView,
+          href: ROUTES.PATIENT_DETAIL(p.id),
+        },
+        {
+          label: t.common.edit,
+          icon: IconEdit,
+          href: ROUTES.PATIENT_EDIT(p.id),
+        },
+        {
+          label: p.isActive ? t.common.deactivate : t.common.reactivate,
           icon: p.isActive ? IconDeactivate : IconActivate,
           disabled: toggleStatus.isPending,
           onSelect: () =>
             toggleStatus.mutate({ id: p.id, isActive: !p.isActive }),
         },
         {
-          label: t?.common?.delete,
+          label: t.common.delete,
           icon: IconDelete,
-          variant: 'destructive',
+          variant: "destructive",
           onSelect: () => del.ask({ id: p.id, name: fullName }),
         },
       ]}
     />
   );
 
+  const nameFor = (patient: Patient) => getPersonName(patient, lang);
+  const loyalty = (patient: Patient) =>
+    patient.isLoyal ? (
+      <SoftTip label={t.patient.loyalPatient}>
+        <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
+      </SoftTip>
+    ) : null;
+  const gender = (patient: Patient) => {
+    const label = genderLabel(patient.gender, t);
+    return label ? (
+      <Badge
+        variant={patient.gender === "female" ? "warning" : "info"}
+        className="font-normal"
+      >
+        {label}
+      </Badge>
+    ) : (
+      "-"
+    );
+  };
+  const controls = (patient: Patient) => (
+    <DirectoryActions
+      name={nameFor(patient)}
+      active={patient.isActive}
+      disabled={toggleStatus.isPending}
+      onChange={(isActive) => toggleStatus.mutate({ id: patient.id, isActive })}
+    >
+      {rowMenu(patient, nameFor(patient))}
+    </DirectoryActions>
+  );
+  const columns: DirectoryColumn<Patient>[] = [
+    {
+      id: "patient",
+      label: t.patient.patient,
+      className: "w-[23%]",
+      render: (p) => (
+        <DirectoryIdentity
+          name={nameFor(p)}
+          email={p.email}
+          avatar={{ src: p.imageUrl, seed: p.id }}
+          badge={loyalty(p)}
+        />
+      ),
+    },
+    {
+      id: "phone",
+      label: t.patient.phone,
+      className: "w-[12%]",
+      cellClassName: "text-muted-foreground",
+      render: (p) => <PhoneLink value={p.phone} className="block" />,
+    },
+    {
+      id: "doctor",
+      label: t.patient.practitioner,
+      className: "w-[13%]",
+      render: (p) => (
+        <TruncatedText>{p.primaryDoctorName ?? "-"}</TruncatedText>
+      ),
+    },
+    {
+      id: "lastVisit",
+      label: t.patient.lastVisit,
+      className: "w-[12%]",
+      cellClassName: "text-xs text-muted-foreground",
+      render: (p) => formatDate(p.lastVisit, undefined, lang),
+    },
+    {
+      id: "sessions",
+      label: t.patient.sessions,
+      className: "w-[6%]",
+      cellClassName: "tabular-nums",
+      render: (p) => p.totalSessions,
+    },
+    {
+      id: "age",
+      label: t.patient.age,
+      className: "w-[7%]",
+      render: (p) => patientAgeLabel(p.dob, t) || "-",
+    },
+    {
+      id: "gender",
+      label: t.patient.gender,
+      className: "w-[8%]",
+      render: gender,
+    },
+    {
+      id: "nationalId",
+      label: t.patient.nationalId,
+      className: "w-[9%]",
+      cellClassName: "text-muted-foreground tabular-nums",
+      render: (p) => <TruncatedText>{p.nationalId ?? "-"}</TruncatedText>,
+    },
+    {
+      id: "actions",
+      label: t.common.active,
+      className: "w-[10%]",
+      render: controls,
+    },
+  ];
+
   if (isLoading) {
-    return <TableSkeleton className="page-fill" rows={8} cols={6} hasHeader={false} />;
+    return (
+      <TableSkeleton
+        className="page-fill"
+        rows={8}
+        cols={6}
+        hasHeader={false}
+      />
+    );
   }
 
   if (!patients || patients.length === 0) {
@@ -110,11 +232,11 @@ export function PatientsList({
       <TableFrame className="page-fill">
         <EmptyState
           icon={IconPatients}
-          title={hasActiveFilters ? t?.patient?.noMatches : t?.patient?.noPatients}
+          title={hasActiveFilters ? t.patient.noMatches : t.patient.noPatients}
           description={
             hasActiveFilters
-              ? t?.patient?.noMatchesDesc
-              : t?.patient?.noPatientsDesc
+              ? t.patient.noMatchesDesc
+              : t.patient.noPatientsDesc
           }
           action={hasActiveFilters ? undefined : emptyAction}
         />
@@ -124,206 +246,57 @@ export function PatientsList({
 
   return (
     <div className="page-fill min-h-0 gap-2">
-      <TableFrame className="page-fill hidden min-h-0 md:flex">
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[20%]">{t?.patient?.patient}</TableHead>
-                <TableHead className="hidden lg:table-cell w-[12%]">{t?.patient?.nationalId}</TableHead>
-                <TableHead className="w-[13%]">{t?.patient?.phone}</TableHead>
-                <TableHead className="w-[8%]">{t?.patient?.gender}</TableHead>
-                <TableHead className="w-[8%]">{t?.patient?.age}</TableHead>
-                <TableHead className="hidden lg:table-cell w-[14%]">{t?.patient?.practitioner}</TableHead>
-                <TableHead className="w-[8%]">{t?.patient?.sessions}</TableHead>
-                <TableHead className="hidden xl:table-cell w-[11%]">{t?.patient?.lastVisit}</TableHead>
-                <TableHead className="w-[8%]">{t?.common?.active}</TableHead>
-                <TableHead className="w-[8%]" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pageItems.map((p) => {
-                const fullName = getPersonName(p, lang);
-                const gLabel = genderLabel(p.gender, t);
-                const aLabel = patientAgeLabel(p.dob, t);
-                return (
-                  <TableRow
-                    key={p.id}
-                    className={`cursor-pointer ${!p.isActive ? 'opacity-60' : ''}`}
-                    onMouseEnter={() => prefetchPatient(p.id)}
-                    onFocus={() => prefetchPatient(p.id)}
-                    onClick={(e) => {
-                      if (isRowControlClick(e)) return;
-                      openPatient(p.id);
-                    }}
-                  >
-                    <TableCell className="max-w-0 overflow-hidden">
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <PreviewableAvatar
-                          src={p.imageUrl}
-                          seed={p.id}
-                          size="sm"
-                        />
-                        <span className="flex min-w-0 items-center gap-1.5 font-medium">
-                          <TruncatedText className="font-medium">{fullName}</TruncatedText>
-                          {p.isLoyal && (
-                            <SoftTip label={t?.patient?.loyalPatient}>
-                              <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
-                            </SoftTip>
-                          )}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden text-muted-foreground">
-                      <TruncatedText>{p.nationalId ?? '—'}</TruncatedText>
-                    </TableCell>
-                    <TableCell
-                      className="max-w-0 overflow-hidden text-muted-foreground"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <PhoneLink value={p.phone} className="block" />
-                    </TableCell>
-                    <TableCell>
-                      {gLabel ? (
-                        <SoftTip label={gLabel}>
-                          <Badge
-                            variant={
-                              p.gender === 'female'
-                                ? 'warning'
-                                : 'info'
-                            }
-                            className="font-normal"
-                          >
-                            {gLabel}
-                          </Badge>
-                        </SoftTip>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {aLabel || '—'}
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden text-muted-foreground">
-                      <TruncatedText>{p.primaryDoctorName ?? '—'}</TruncatedText>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{p.totalSessions}</TableCell>
-                    <TableCell className="hidden xl:table-cell text-muted-foreground">
-                      {formatDate(p.lastVisit, undefined, lang)}
-                    </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Switch
-                        checked={p.isActive}
-                        disabled={toggleStatus.isPending}
-                        onCheckedChange={(checked) =>
-                          toggleStatus.mutate({ id: p.id, isActive: checked })
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                      {rowMenu(p, fullName)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      </TableFrame>
-
+      <DirectoryTable
+        rows={pageItems}
+        columns={columns}
+        rowKey={(p) => p.id}
+        onOpen={(p) => openPatient(p.id)}
+        onPrefetch={(p) => prefetchPatient(p.id)}
+        inactive={(p) => !p.isActive}
+        className="hidden md:flex"
+        tableClassName="min-w-[64rem]"
+      />
       <div className="page-fill overflow-y-auto overscroll-y-contain md:hidden">
-        <div className="grid grid-cols-1 gap-4">
-        {pageItems.map((p) => {
-          const fullName = getPersonName(p, lang);
-          const gLabel = genderLabel(p.gender, t);
-          const aLabel = patientAgeLabel(p.dob, t);
-          return (
-            <div
+        <div className="grid grid-cols-1 gap-3">
+          {pageItems.map((p) => (
+            <EntityMobileCard
               key={p.id}
-              role="button"
-              tabIndex={0}
+              avatar={<PreviewableAvatar src={p.imageUrl} seed={p.id} />}
+              title={
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <TruncatedText>{nameFor(p)}</TruncatedText>
+                  {loyalty(p)}
+                </div>
+              }
+              subtitle={p.email ? <EmailLink value={p.email} /> : undefined}
+              tags={
+                <>
+                  {gender(p)}
+                  <span className="text-xs text-muted-foreground">
+                    {patientAgeLabel(p.dob, t)}
+                  </span>
+                </>
+              }
+              footer={
+                <PhoneLink
+                  value={p.phone}
+                  className="text-xs text-muted-foreground"
+                />
+              }
+              actions={controls(p)}
+              active={p.isActive}
+              onClick={() => openPatient(p.id)}
               onMouseEnter={() => prefetchPatient(p.id)}
               onFocus={() => prefetchPatient(p.id)}
-              onClick={(e) => {
-                if (isRowControlClick(e)) return;
-                openPatient(p.id);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  openPatient(p.id);
-                }
-              }}
-              className={`cursor-pointer rounded-xl bg-card p-3 ${
-                !p.isActive ? 'opacity-60' : ''
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <PreviewableAvatar src={p.imageUrl} seed={p.id} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex min-w-0 items-center gap-1.5 font-medium">
-                    <TruncatedText className="font-medium">{fullName}</TruncatedText>
-                    {p.isLoyal && (
-                      <SoftTip label={t?.patient?.loyalPatient}>
-                        <IconLoyal className="size-3.5 shrink-0 fill-warning text-warning" />
-                      </SoftTip>
-                    )}
-                  </div>
-                  {gLabel || aLabel ? (
-                    <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                      {gLabel ? (
-                        <SoftTip label={gLabel}>
-                          <Badge
-                            variant={
-                              p.gender === 'female'
-                                ? 'warning'
-                                : 'info'
-                            }
-                            className="font-normal"
-                          >
-                            {gLabel}
-                          </Badge>
-                        </SoftTip>
-                      ) : null}
-                      {aLabel ? (
-                        <span className="text-xs text-muted-foreground">
-                          {aLabel}
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <div
-                    className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <IconPhone className="size-3 shrink-0" />
-                    <PhoneLink value={p.phone} className="min-w-0" />
-                  </div>
-                </div>
-                <div
-                  className="flex shrink-0 items-center gap-1"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Switch
-                    checked={p.isActive}
-                    disabled={toggleStatus.isPending}
-                    onCheckedChange={(checked) =>
-                      toggleStatus.mutate({ id: p.id, isActive: checked })
-                    }
-                  />
-                  {rowMenu(p, fullName)}
-                </div>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs">
-                <MetaStat label={t?.patient?.nationalId} value={p.nationalId ?? '—'} />
-                <MetaStat label={t?.patient?.practitioner} value={p.primaryDoctorName ?? '—'} />
-                <MetaStat label={t?.patient?.sessions} value={String(p.totalSessions)} />
-                <MetaStat label={t?.patient?.lastVisit} value={formatDate(p.lastVisit, undefined, lang)} />
-              </div>
-            </div>
-          );
-        })}
+              meta={
+                <DirectoryMeta
+                  columns={columns}
+                  item={p}
+                  ids={["doctor", "lastVisit", "sessions", "nationalId"]}
+                />
+              }
+            />
+          ))}
         </div>
       </div>
 
@@ -346,9 +319,9 @@ export function PatientsList({
           deleteMutation.mutate(del.step2.id, { onSuccess: del.clear });
         }}
         isPending={deleteMutation.isPending}
-        warning={t?.patient?.deleteWarning1}
-        finalWarning={t?.patient?.deleteWarning2}
-        confirmLabel={t?.patient?.deleteConfirm}
+        warning={t.patient.deleteWarning1}
+        finalWarning={t.patient.deleteWarning2}
+        confirmLabel={t.patient.deleteConfirm}
       />
     </div>
   );

@@ -1,4 +1,13 @@
 export const QUERY_KEYS = {
+  emails: {
+    all: ['emails'] as const,
+    history: (clinicId: string, lang: string, filters: object) => ['emails', clinicId, lang, 'history', filters] as const,
+    detail: (clinicId: string, lang: string, id: string, page: number) => ['emails', clinicId, lang, 'detail', id, page] as const,
+    settings: (clinicId: string) => ['emails', clinicId, 'settings'] as const,
+    variables: (clinicId: string) => ['emails', clinicId, 'variables'] as const,
+    recipients: (clinicId: string, selection: object) => ['emails', clinicId, 'recipients', selection] as const,
+    preview: (clinicId: string, input: object) => ['emails', clinicId, 'preview', input] as const,
+  },
   departments: {
     all: ['departments'] as const,
     list: (clinicId: string) => ['departments', clinicId] as const,

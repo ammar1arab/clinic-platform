@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { SearchInput, SoftTip } from '@/components/primitives';
+import { SearchInput } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { IconChevronsUpDown } from '@/constants/icons';
 import { useLanguage } from '@/providers/language-provider';
@@ -24,11 +24,13 @@ export function DirectoryToolbar({
   onSearchChange,
   searchPlaceholder,
   actions,
+  searchLoading = false,
 }: {
   search: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder: string;
   actions: ReactNode;
+  searchLoading?: boolean;
 }) {
   return (
     <div className="card-aura flex items-center gap-1.5 rounded-xl border bg-card/90 p-2 shadow-xs backdrop-blur-md sm:gap-2 sm:rounded-2xl sm:p-2.5">
@@ -37,7 +39,7 @@ export function DirectoryToolbar({
         onChange={onSearchChange}
         placeholder={searchPlaceholder}
         className="min-w-0 flex-1"
-        inputClassName="h-9 bg-background/50"
+        loading={searchLoading}
       />
       <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
         {actions}
@@ -61,7 +63,6 @@ export function DirectorySortMenu({
 
   return (
     <DropdownMenu>
-      <SoftTip label={`${t.common.sort}: ${current}`}>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
@@ -79,7 +80,6 @@ export function DirectorySortMenu({
             </span>
           </Button>
         </DropdownMenuTrigger>
-      </SoftTip>
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuLabel>{t.common.sort}</DropdownMenuLabel>
         <DropdownMenuSeparator />

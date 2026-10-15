@@ -39,9 +39,17 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      data-scroll-behavior="auto"
+      data-scroll-behavior="smooth"
       className={`${jakarta.variable} ${alexandria.variable}`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('sidebar-collapsed')==='true')document.documentElement.setAttribute('data-sidebar','collapsed')}catch(e){}",
+          }}
+        />
+      </head>
       <body className="font-sans antialiased">
         <AppProviders>{children}</AppProviders>
       </body>

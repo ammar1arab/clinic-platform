@@ -1,40 +1,53 @@
-'use client';
+"use client";
 
 import {
   TwoStepDeleteDialogs,
   useTwoStepDelete,
   PreviewableAvatar,
-  isRowControlClick,
   EmailLink,
   PhoneLink,
   TruncatedText,
   Pagination,
   EmptyState,
-  MetaStat,
+  DirectoryMeta,
+  EntityMobileCard,
+  DirectoryTable,
+  DirectoryIdentity,
+  DirectoryActions,
+  SoftTip,
+  type DirectoryColumn,
   TableSkeleton,
   RowActionsMenu,
-  SoftTip,
   TableFrame,
-} from '@/components/primitives';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Switch, Badge } from '@/components/ui';
+} from "@/components/primitives";
+import { Badge } from "@/components/ui";
 import {
   useDeletePractitioner,
   useDeactivatePractitioner,
   useReactivatePractitioner,
-} from '@/hooks/api/use-practitioners';
-import { useRouteNav } from '@/hooks/shared/use-route-nav';
-import type { Practitioner } from '@/services/practitioners.service';
-import { IconActivate, IconCalendar, IconDeactivate, IconDelete, IconEdit, IconPhone, IconPractitioner, IconView } from '@/constants/icons';
-import { useLanguage } from '@/providers';
-import { getBilingualName, getStaffName } from '@/i18n';
-import { ROUTES } from '@/constants/routes';
+} from "@/hooks/api/use-practitioners";
+import { useRouteNav } from "@/hooks/shared/use-route-nav";
+import type { Practitioner } from "@/services/practitioners.service";
+import {
+  IconActivate,
+  IconCalendar,
+  IconDeactivate,
+  IconDelete,
+  IconEdit,
+  IconPractitioner,
+  IconView,
+} from "@/constants/icons";
+import { useLanguage } from "@/providers";
+import { getBilingualName, getStaffName } from "@/i18n";
+import { ROUTES } from "@/constants/routes";
+import { languageLabels } from "@/constants/practitioner";
 
 function CellBadge({
   value,
-  variant = 'secondary',
+  variant = "secondary",
 }: {
   value: string | null | undefined;
-  variant?: 'secondary' | 'outline' | 'warning' | 'info' | 'muted';
+  variant?: "secondary" | "outline" | "warning" | "info" | "muted";
 }) {
   if (!value) return <span className="text-muted-foreground">—</span>;
   return (
@@ -78,13 +91,14 @@ export function PractitionersList({
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
   const { t, lang } = useLanguage();
-  
+
   const toggling = deactivate.isPending || reactivate.isPending;
   const toggle = (p: Practitioner, on: boolean) =>
     on ? reactivate.mutate(p.id) : deactivate.mutate(p.id);
 
   const openProfile = (id: string) => go(ROUTES.PRACTITIONER_DETAIL(id));
-  const prefetchProfile = (id: string) => prefetch(ROUTES.PRACTITIONER_DETAIL(id));
+  const prefetchProfile = (id: string) =>
+    prefetch(ROUTES.PRACTITIONER_DETAIL(id));
 
   const rowMenu = (p: Practitioner) => (
     <RowActionsMenu
@@ -105,7 +119,9 @@ export function PractitionersList({
           href: ROUTES.PRACTITIONER_HOURS(p.id),
         },
         {
-          label: p.isActive ? t.practitioner.deactivate : t.practitioner.reactivate,
+          label: p.isActive
+            ? t.practitioner.deactivate
+            : t.practitioner.reactivate,
           icon: p.isActive ? IconDeactivate : IconActivate,
           onSelect: () => toggle(p, !p.isActive),
           disabled: toggling,
@@ -113,15 +129,114 @@ export function PractitionersList({
         {
           label: t.practitioner.delete,
           icon: IconDelete,
-          variant: 'destructive',
+          variant: "destructive",
           onSelect: () => del.ask({ id: p.id, name: getStaffName(p, lang) }),
         },
       ]}
     />
   );
 
+  const nameFor = (p: Practitioner) => getStaffName(p, lang);
+  const specialtyFor = (p: Practitioner) =>
+    getBilingualName(p.specialty, p.specialtyAr, lang);
+  const departmentFor = (p: Practitioner) =>
+    getBilingualName(p.departmentName, p.departmentNameAr, lang);
+  const roomFor = (p: Practitioner) =>
+    getBilingualName(p.defaultRoomName, p.defaultRoomNameAr, lang);
+  const experienceFor = (p: Practitioner) =>
+    p.experienceYears == null ? "-" : `${p.experienceYears} ${t.common.years}`;
+  const controls = (p: Practitioner) => (
+    <DirectoryActions
+      name={nameFor(p)}
+      active={p.isActive}
+      disabled={toggling}
+      onChange={(on) => toggle(p, on)}
+    >
+      {rowMenu(p)}
+    </DirectoryActions>
+  );
+  const columns: DirectoryColumn<Practitioner>[] = [
+    {
+      id: "practitioner",
+      label: t.practitioner.practitioner,
+      className: "w-[22%]",
+      render: (p) => (
+        <DirectoryIdentity
+          name={nameFor(p)}
+          email={p.email}
+          avatar={{ src: p.imageUrl, seed: p.id }}
+        />
+      ),
+    },
+    {
+      id: "specialty",
+      label: t.practitioner.specialty,
+      className: "w-[13%]",
+      render: (p) => (
+        <TruncatedText lines={2}>{specialtyFor(p) || "-"}</TruncatedText>
+      ),
+    },
+    {
+      id: "department",
+      label: t.practitioner.department,
+      className: "w-[10%]",
+      render: (p) => <CellBadge value={departmentFor(p)} variant="outline" />,
+    },
+    {
+      id: "phone",
+      label: t.practitioner.phone,
+      className: "w-[12%]",
+      cellClassName: "text-muted-foreground",
+      render: (p) => <PhoneLink value={p.phone} className="block" />,
+    },
+    {
+      id: "experience",
+      label: t.practitioner.experience,
+      className: "w-[8%]",
+      cellClassName: "text-muted-foreground",
+      render: experienceFor,
+    },
+    {
+      id: "languages",
+      label: t.practitioner.languages,
+      className: "w-[11%]",
+      cellClassName: "text-xs text-muted-foreground",
+      render: (p) => (
+        <TruncatedText lines={2}>
+          {languageLabels(p.languages, t) || "-"}
+        </TruncatedText>
+      ),
+    },
+    {
+      id: "room",
+      label: t.entities.room,
+      className: "w-[9%]",
+      render: (p) => <CellBadge value={roomFor(p)} variant="outline" />,
+    },
+    {
+      id: "services",
+      label: t.practitioner.services,
+      className: "w-[5%]",
+      cellClassName: "tabular-nums",
+      render: (p) => p.serviceIds.length,
+    },
+    {
+      id: "actions",
+      label: t.practitioner.active,
+      className: "w-[10%]",
+      render: controls,
+    },
+  ];
+
   if (isLoading) {
-    return <TableSkeleton className="page-fill" rows={8} cols={7} hasHeader={false} />;
+    return (
+      <TableSkeleton
+        className="page-fill"
+        rows={8}
+        cols={10}
+        hasHeader={false}
+      />
+    );
   }
 
   if (totalItems === 0) {
@@ -129,7 +244,11 @@ export function PractitionersList({
       <TableFrame className="page-fill">
         <EmptyState
           icon={IconPractitioner}
-          title={hasActiveFilters ? t.practitioner.noMatches : t.practitioner.noPractitioners}
+          title={
+            hasActiveFilters
+              ? t.practitioner.noMatches
+              : t.practitioner.noPractitioners
+          }
           description={
             hasActiveFilters
               ? t.practitioner.noMatchesDesc
@@ -143,155 +262,55 @@ export function PractitionersList({
 
   return (
     <div className="page-fill min-h-0 gap-2">
-      <TableFrame className="page-fill hidden min-h-0 md:flex">
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[28%]">{t.practitioner.practitioner}</TableHead>
-                <TableHead className="w-[16%]">{t.practitioner.phone}</TableHead>
-                <TableHead className="w-[18%]">{t.practitioner.specialty}</TableHead>
-                <TableHead className="hidden lg:table-cell w-[16%]">{t.practitioner.department}</TableHead>
-                <TableHead className="w-[8%]">{t.practitioner.services}</TableHead>
-                <TableHead className="w-[8%]">{t.practitioner.active}</TableHead>
-                <TableHead className="w-[6%]" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pageItems.map((p) => (
-                <TableRow
-                  key={p.id}
-                  className={`cursor-pointer ${!p.isActive ? 'opacity-60' : ''}`}
-                  onMouseEnter={() => prefetchProfile(p.id)}
-                  onFocus={() => prefetchProfile(p.id)}
-                  onClick={(e) => {
-                    if (isRowControlClick(e)) return;
-                    openProfile(p.id);
-                  }}
-                >
-                  <TableCell className="max-w-0 overflow-hidden">
-                    <div className="flex min-w-0 items-start gap-2.5">
-                      <PreviewableAvatar
-                        src={p.imageUrl}
-                        seed={p.id}
-                        size="sm"
-                      />
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <TruncatedText className="font-medium">
-                          {getStaffName(p, lang)}
-                        </TruncatedText>
-                        <EmailLink
-                          value={p.email}
-                          className="min-w-0 w-full text-xs text-muted-foreground"
-                        />
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell
-                    className="max-w-0 overflow-hidden text-muted-foreground"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <PhoneLink value={p.phone} className="block" />
-                  </TableCell>
-                  <TableCell className="max-w-0 overflow-hidden">
-                    <CellBadge value={lang === 'ar' && p.specialtyAr ? p.specialtyAr : p.specialty} />
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell max-w-0 overflow-hidden">
-                    <CellBadge value={getBilingualName(p.departmentName, p.departmentNameAr, lang)} variant="outline" />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {p.serviceIds.length}
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Switch
-                      checked={p.isActive}
-                      disabled={toggling}
-                      onCheckedChange={(on) => toggle(p, on)}
-                    />
-                  </TableCell>
-                  <TableCell
-                    className="text-right"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {rowMenu(p)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </TableFrame>
-
+      <DirectoryTable
+        rows={pageItems}
+        columns={columns}
+        rowKey={(p) => p.id}
+        onOpen={(p) => openProfile(p.id)}
+        onPrefetch={(p) => prefetchProfile(p.id)}
+        inactive={(p) => !p.isActive}
+        className="hidden md:flex"
+        tableClassName="min-w-[72rem]"
+      />
       <div className="page-fill overflow-y-auto overscroll-y-contain md:hidden">
-        <div className="grid grid-cols-1 gap-4">
-        {pageItems.map((p) => (
-          <div
-            key={p.id}
-            role="button"
-            tabIndex={0}
-            onMouseEnter={() => prefetchProfile(p.id)}
-            onFocus={() => prefetchProfile(p.id)}
-            onClick={(e) => {
-              if (isRowControlClick(e)) return;
-              openProfile(p.id);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                openProfile(p.id);
+        <div className="grid grid-cols-1 gap-3">
+          {pageItems.map((p) => (
+            <EntityMobileCard
+              key={p.id}
+              avatar={<PreviewableAvatar src={p.imageUrl} seed={p.id} />}
+              title={nameFor(p)}
+              subtitle={<EmailLink value={p.email} />}
+              tags={
+                specialtyFor(p) ? (
+                  <CellBadge value={specialtyFor(p)} />
+                ) : undefined
               }
-            }}
-            className={`cursor-pointer rounded-xl bg-card p-3 ${
-              !p.isActive ? 'opacity-60' : ''
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <PreviewableAvatar src={p.imageUrl} seed={p.id} />
-              <div className="min-w-0 flex-1">
-                <TruncatedText className="font-medium">{getStaffName(p, lang)}</TruncatedText>
-                <div className="mt-0.5 min-w-0" onClick={(e) => e.stopPropagation()}>
-                  <EmailLink
-                    value={p.email}
-                    className="min-w-0 w-full text-xs text-muted-foreground"
-                  />
-                </div>
-                {p.specialty ? (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    <CellBadge value={lang === 'ar' && p.specialtyAr ? p.specialtyAr : p.specialty} />
-                  </div>
-                ) : null}
-                {p.phone ? (
-                  <div
-                    className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <IconPhone className="size-3 shrink-0" />
-                    <PhoneLink value={p.phone} className="min-w-0" />
-                  </div>
-                ) : null}
-              </div>
-              <div
-                className="flex shrink-0 items-center gap-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Switch
-                  checked={p.isActive}
-                  disabled={toggling}
-                  onCheckedChange={(on) => toggle(p, on)}
+              footer={
+                <PhoneLink
+                  value={p.phone}
+                  className="text-xs text-muted-foreground"
                 />
-                {rowMenu(p)}
-              </div>
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-2.5 text-xs">
-              <MetaStat
-                label={t.practitioner.department}
-                value={getBilingualName(p.departmentName, p.departmentNameAr, lang) || '—'}
-              />
-              <MetaStat label={t.practitioner.services} value={String(p.serviceIds.length)} />
-            </div>
-          </div>
-        ))}
+              }
+              actions={controls(p)}
+              active={p.isActive}
+              onClick={() => openProfile(p.id)}
+              onMouseEnter={() => prefetchProfile(p.id)}
+              onFocus={() => prefetchProfile(p.id)}
+              meta={
+                <DirectoryMeta
+                  columns={columns}
+                  item={p}
+                  ids={[
+                    "department",
+                    "experience",
+                    "languages",
+                    "room",
+                    "services",
+                  ]}
+                />
+              }
+            />
+          ))}
         </div>
       </div>
 

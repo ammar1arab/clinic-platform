@@ -7,6 +7,7 @@ import { createLogger } from '@/lib/logger';
 import { useFetchData } from '@/hooks/query/use-fetch-data';
 import { useMounted } from '@/hooks/shared/use-mounted';
 import { useQueryClient } from '@tanstack/react-query';
+import { getSocket } from '@/lib/socket';
 
 const log = createLogger('auth');
 
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const login = useCallback(async (newToken: string, me?: MeResponse) => {
+    getSocket().disconnect();
     setToken(newToken);
     const profile = me ?? (await authService.getMe());
     queryClient.setQueryData(['auth', 'me', newToken], profile);
@@ -48,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [queryClient]);
 
   const logout = useCallback(() => {
+    getSocket().disconnect();
     clearToken();
     queryClient.clear();
     log.info('logout');

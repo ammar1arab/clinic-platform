@@ -31,12 +31,12 @@ Keep Next patterns in web and Nest patterns in api. Never cross-import the two a
 
 ## Theme first
 
-Every UI task stands on `.agents/rules/theme.md` and `apps/web/src/app/globals.css`.
+Every UI task stands on `.agents/rules/02-quality-and-verification.md` and `apps/web/src/app/globals.css`.
 No hardcoded hex/rgb. No parallel design system.
 
 ## Absolute constraints
 
-- Prefer **no new `useEffect`**. Use TanStack Query, `useSyncExternalStore`, event handlers, or existing hooks (`use-now`, `use-mounted`, `use-media-query`, …). Add `useEffect` only when nothing else fits and a sibling file already needs that pattern.
+- **No `useEffect` and no `useLayoutEffect`.** Data loads through TanStack Query. Subscribe with `useSyncExternalStore`. Measure with a ref callback that returns its cleanup. React to images with `onLoad`. Do not add an effect whose only job is to fetch.
 - Prefer **no code comments** unless the logic cannot be made clear by naming.
 - Prefer **no `any`**. Narrow types from `@clinic/types`, Prisma, or Zod.
 - Never use the em dash character. Use a normal hyphen `-`.
@@ -65,6 +65,23 @@ page / block  →  hooks/*  →  services/*.service.ts  →  api (Axios)  →  N
 
 - Wire shapes both sides need go in `packages/types`, then typecheck.
 - App paths go through `apps/web/src/constants/routes.ts`.
+
+## Memory
+
+Any-project craft and screen rules live in `.agent-library/rules/00-core.md` and `.agent-library/rules/20-ui-localization.md` when that folder is present. This file still wins on Cureva facts.
+
+- Edit only the node the user pointed at. Reuse skeleton, spinner, empty, and error components. One control, one job. Tips only on icon-only or cut-off controls. Focus is a border color change only.
+- One scroll owner. Leave a list where the user placed it. A named ratio stays (`2fr` / `3fr` for a 40% preview) on every screen that shares the pane. "Left" and "right" are the sides of the monitor.
+- Chips stay one row; arrows only when they overflow; in Arabic, flip the icon and the scroll distance. Name cells follow the page direction. Table headers stick in the scrolling box. Short badge text; the sentence is the tooltip. Count badges use the brand color.
+- Product words only. Email screens say email, not message. A local hide filters the list already loaded. Persist only real columns. Inbox images are attached files, not data URLs or SVG. Search delay lives in the shared search field.
+- Empty body still leaves space between a letter header and its footer icons.
+- A reload keeps an upload and the sidebar width. Show the uploaded file with no extra caption and no fill behind it. A new file replaces the old one.
+- Clinic color is applied on `documentElement` for light and dark. No raw hex in the app. Email HTML may use hex because mail clients cannot read CSS variables.
+- English and Arabic keys stay identical. Sessions are «وجاهي» and «اونلاين». The report note is «ملاحظة التقرير».
+- The clinic image stays in the sidebar and the browser icon, not in the top bar.
+- A test email goes to the signed-in user, not the selected audience. Audiences are everyone, patients, doctors, staff, finance, super admins, and sub admins.
+- Use the local Prisma binary. Do not run a casual migration. Do not send real mail while changing the composer.
+- Verify with IronBee when it is available. Light, dark, English, and Arabic stay correct. A crushed card, a second scrollbar, or a wrapped chip row means the layout is not done.
 
 ## Workflow
 

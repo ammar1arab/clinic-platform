@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { QUERY_KEYS } from '@/constants/query-keys';
 import {
   Button,
   Card,
@@ -20,6 +22,9 @@ import {
   FormPageSkeleton,
   PageBack,
   ButtonSpinner,
+  AvatarUpload,
+  BilingualNameFields,
+  BrandColorField,
 } from '@/components/primitives';
 import { useClinic, useUpdateClinic } from '@/hooks/api/use-clinic';
 import { useDepartments } from '@/hooks/api/use-departments';
@@ -27,6 +32,7 @@ import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useLanguage } from '@/providers';
 import { FORM_NONE } from '@/constants/form';
 import { ROUTES } from '@/constants/routes';
+import { readClinicLogo, stripSolidBackdrop, writeClinicLogo } from '@/lib/clinic-logo';
 import type { Clinic } from '@/services/clinics.service';
 
 const TIMEZONES = [
@@ -51,6 +57,30 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
   const { t, lang } = useLanguage();
   const { data: departments } = useDepartments(clinicId);
   const updateMutation = useUpdateClinic(clinicId);
+  const queryClient = useQueryClient();
+  const mirror = (patch: Partial<Clinic>) => {
+    queryClient.setQueryData<Clinic>(QUERY_KEYS.clinics.detail(clinicId), (current) =>
+      current ? { ...current, ...patch } : current,
+    );
+  };
+  const storeLogo = async (url: string) => {
+    let stored = url;
+    if (url.startsWith('blob:')) {
+      const blob = await fetch(url).then((response) => response.blob());
+      stored = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+      URL.revokeObjectURL(url);
+    }
+    stored = await stripSolidBackdrop(stored);
+    if (logoUrl.startsWith('blob:') && logoUrl !== url) URL.revokeObjectURL(logoUrl);
+    setLogoUrl(stored);
+    writeClinicLogo(clinicId, stored || null);
+    mirror({ logoUrl: stored || null });
+  };
 
   const [workingHoursStart, setWorkingHoursStart] = useState(clinic.workingHoursStart || '08:00');
   const [workingHoursEnd, setWorkingHoursEnd] = useState(clinic.workingHoursEnd || '20:00');
@@ -63,6 +93,13 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
   );
   const [defaultDepartmentId, setDefaultDepartmentId] = useState(clinic.defaultDepartmentId ?? '');
   const [letterheadFooter, setLetterheadFooter] = useState(clinic.letterheadFooter ?? '');
+  const [name, setName] = useState(clinic.name);
+  const [nameAr, setNameAr] = useState(clinic.nameAr ?? '');
+  const [email, setEmail] = useState(clinic.email ?? '');
+  const [logoUrl, setLogoUrl] = useState(
+    () => readClinicLogo(clinicId) || clinic.logoUrl || '',
+  );
+  const [brandColor, setBrandColor] = useState(clinic.brandColor ?? '#0f766e');
 
   const handleSave = () => {
     updateMutation.mutate({
@@ -73,11 +110,70 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
       defaultSessionType,
       defaultDepartmentId: defaultDepartmentId || null,
       letterheadFooter: letterheadFooter.trim() || undefined,
+      name: name.trim(),
+      nameAr: nameAr.trim() || undefined,
+      email: email.trim() || undefined,
+      logoUrl: logoUrl || undefined,
+      brandColor,
     });
   };
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardHeader>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <AvatarUpload
+              plain
+              value={logoUrl}
+              onChange={(url) => void storeLogo(url)}
+              fallbackLabel={name}
+            />
+            <div className="min-w-0 flex-1 space-y-4">
+              <BilingualNameFields
+                name={name}
+                nameAr={nameAr}
+                onNameChange={(value) => {
+                  setName(value);
+                  mirror({ name: value });
+                }}
+                onNameArChange={(value) => {
+                  setNameAr(value);
+                  mirror({ nameAr: value || null });
+                }}
+                maxLength={120}
+              />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField label={t.exports.email} htmlFor="clinic-email">
+                  <Input
+                    id="clinic-email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      mirror({ email: event.target.value || null });
+                    }}
+                    maxLength={200}
+                  />
+                </FormField>
+                <FormField label={t.settings.brandColor}>
+                  <BrandColorField
+                    value={brandColor}
+                    onChange={(value) => {
+                      setBrandColor(value);
+                      if (/^#[0-9A-Fa-f]{6}$/.test(value)) mirror({ brandColor: value });
+                    }}
+                    label={t.settings.brandColor}
+                  />
+                </FormField>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">{t.settings.workingHours}</CardTitle>
@@ -86,7 +182,10 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
           <FormField label={t.settings.opens} htmlFor="hours-start">
             <TimePicker
               value={workingHoursStart}
-              onChange={setWorkingHoursStart}
+              onChange={(value) => {
+                setWorkingHoursStart(value);
+                mirror({ workingHoursStart: value });
+              }}
               placeholder={t.settings.opens}
               className="h-10"
               step={15}
@@ -95,14 +194,23 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
           <FormField label={t.settings.closes} htmlFor="hours-end">
             <TimePicker
               value={workingHoursEnd}
-              onChange={setWorkingHoursEnd}
+              onChange={(value) => {
+                setWorkingHoursEnd(value);
+                mirror({ workingHoursEnd: value });
+              }}
               placeholder={t.settings.closes}
               className="h-10"
               step={15}
             />
           </FormField>
           <FormField label={t.settings.timezone} className="sm:col-span-2">
-            <Select value={timezone} onValueChange={setTimezone}>
+            <Select
+              value={timezone}
+              onValueChange={(value) => {
+                setTimezone(value);
+                mirror({ timezone: value });
+              }}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -126,7 +234,11 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
           <FormField label={t.settings.defaultCalendarView}>
             <Select
               value={defaultCalendarView}
-              onValueChange={(v) => setDefaultCalendarView(v as 'day' | 'week' | 'month')}
+              onValueChange={(v) => {
+                const next = v as 'day' | 'week' | 'month';
+                setDefaultCalendarView(next);
+                mirror({ defaultCalendarView: next });
+              }}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -142,7 +254,11 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
           <FormField label={t.settings.defaultSessionType}>
             <Select
               value={defaultSessionType}
-              onValueChange={(v) => setDefaultSessionType(v as 'in_person' | 'online')}
+              onValueChange={(v) => {
+                const next = v as 'in_person' | 'online';
+                setDefaultSessionType(next);
+                mirror({ defaultSessionType: next });
+              }}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -157,7 +273,11 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
           <FormField label={t.settings.defaultDepartment}>
             <Select
               value={defaultDepartmentId || FORM_NONE}
-              onValueChange={(v) => setDefaultDepartmentId(v === FORM_NONE ? '' : v)}
+              onValueChange={(v) => {
+                const next = v === FORM_NONE ? '' : v;
+                setDefaultDepartmentId(next);
+                mirror({ defaultDepartmentId: next || null });
+              }}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={t.common.none} />
@@ -184,7 +304,10 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
             <Input
               id="footer"
               value={letterheadFooter}
-              onChange={(e) => setLetterheadFooter(e.target.value)}
+              onChange={(e) => {
+                setLetterheadFooter(e.target.value);
+                mirror({ letterheadFooter: e.target.value || null });
+              }}
               placeholder={t.settings.reportLetterheadDesc}
               maxLength={200}
             />

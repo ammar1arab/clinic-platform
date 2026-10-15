@@ -14,6 +14,7 @@ export interface Clinic extends ClinicSummary {
   phone: string | null;
   address: string | null;
   logoUrl: string | null;
+  brandColor: string | null;
   letterheadFooter: string | null;
   defaultCalendarView: CalendarView;
   defaultSessionType: SessionType;
@@ -27,6 +28,7 @@ export interface UpdateClinicInput {
   phone?: string;
   address?: string;
   logoUrl?: string;
+  brandColor?: string | null;
   letterheadFooter?: string;
   workingHoursStart?: string;
   workingHoursEnd?: string;

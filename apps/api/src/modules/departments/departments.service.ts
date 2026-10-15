@@ -14,31 +14,31 @@ export class DepartmentsService {
     return this.departmentsRepository.findAllByClinic(clinicId);
   }
 
-  async findOne(id: string) {
-    const department = await this.departmentsRepository.findById(id);
+  async findOne(id: string, clinicId: string) {
+    const department = await this.departmentsRepository.findById(id, clinicId);
     if (!department) {
       throw new NotFoundException("Department not found");
     }
     return department;
   }
 
-  async update(id: string, dto: UpdateDepartmentDto) {
-    await this.findOne(id);
-    return this.departmentsRepository.update(id, dto);
+  async update(id: string, dto: UpdateDepartmentDto, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.departmentsRepository.update(id, dto, clinicId);
   }
 
-  async deactivate(id: string) {
-    await this.findOne(id);
-    return this.departmentsRepository.deactivate(id);
+  async deactivate(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.departmentsRepository.deactivate(id, clinicId);
   }
 
-  async reactivate(id: string) {
-    await this.findOne(id);
-    return this.departmentsRepository.reactivate(id);
+  async reactivate(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.departmentsRepository.reactivate(id, clinicId);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.departmentsRepository.hardDelete(id);
+  async remove(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.departmentsRepository.hardDelete(id, clinicId);
   }
 }

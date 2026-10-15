@@ -156,8 +156,8 @@ export function ScheduleToolbar({
             const active = match(view);
             const label = tabLabels[id];
             return (
-              <SoftTip key={id} label={label}>
                 <button
+                  key={id}
                   type="button"
                   onClick={() => onViewChange(target(view))}
                   className={cn(
@@ -175,7 +175,6 @@ export function ScheduleToolbar({
                   />
                   <span className="whitespace-nowrap">{label}</span>
                 </button>
-              </SoftTip>
             );
           })}
         </div>
@@ -207,15 +206,14 @@ export function ScheduleToolbar({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 border-t border-border/40 pt-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+      <div className="flex flex-col gap-1.5 border-t border-border/40 pt-2 sm:flex-row sm:items-center sm:gap-2">
         <SearchInput
           value={search}
           onChange={onSearchChange}
           placeholder={t.appointments.searchPlaceholder}
-          className="min-w-0 w-full sm:max-w-64 sm:flex-1 lg:max-w-72"
+          className="min-w-0 w-full sm:max-w-64 sm:flex-none lg:max-w-72"
         />
-
-        <div className="flex min-w-0 items-center gap-1.5 sm:contents">
+        <div className="flex min-w-0 items-center gap-1.5 sm:ms-auto">
           <SearchablePicker
             size="sm"
             options={(departments ?? []).map((dept) => ({
@@ -237,19 +235,20 @@ export function ScheduleToolbar({
           />
 
           {isLoading ? (
-            <Badge variant="muted" className="h-9 sm:ms-auto">
+            <Badge
+              variant="muted"
+              className="size-9 justify-center rounded-full p-0"
+            >
               <Spinner size="sm" className="text-primary" />
             </Badge>
           ) : (
             <SoftTip label={`${count} ${t.appointments.appts}`}>
               <Badge
-                variant="success"
-                className="h-9 tabular-nums sm:ms-auto"
+                variant="default"
+                className="h-9 min-w-9 justify-center rounded-full px-2 tabular-nums"
               >
-                <span className="size-1.5 shrink-0 rounded-full bg-success" />
-                <span>{count}</span>
-                <span className="hidden sm:inline">{t.appointments.appts}</span>
-               </Badge>
+                {count}
+              </Badge>
             </SoftTip>
           )}
         </div>

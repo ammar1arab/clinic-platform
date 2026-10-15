@@ -5,3 +5,6 @@ export * from './profile-chrome';
 export * from './theme-toggle';
 export * from './language-switcher';
 export * from './brand-mark';
+
+export * from './directory-table';
+export * from './overflow-actions';

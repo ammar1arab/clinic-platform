@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useDebounce } from './use-debounce';
 
 export function useListFilter<T>(
   items: T[] | undefined,
@@ -10,9 +9,8 @@ export function useListFilter<T>(
 ) {
   const [search, setSearchRaw] = useState('');
   const [page, setPage] = useState(1);
-  const debouncedSearch = useDebounce(search);
 
-  const term = debouncedSearch.trim().toLowerCase();
+  const term = search.trim().toLowerCase();
   const filtered =
     !items
       ? []

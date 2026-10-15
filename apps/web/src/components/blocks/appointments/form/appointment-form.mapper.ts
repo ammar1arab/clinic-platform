@@ -15,18 +15,24 @@ import type { Patient } from '@/services/patients.service';
 import { computePayable } from '@/services/appointments.service';
 
 export function emptyAppointmentValues(
-  defaults: { date?: string; time?: string; doctorId?: string } = {},
+  defaults: {
+    date?: string;
+    time?: string;
+    doctorId?: string;
+    departmentId?: string;
+    sessionType?: AppointmentFormData['sessionType'];
+  } = {},
 ): AppointmentFormData {
   return {
     patientId: '',
     doctorId: defaults.doctorId ?? '',
-    departmentId: '',
+    departmentId: defaults.departmentId ?? '',
     roomId: '',
     serviceId: '',
     date: defaults.date ?? '',
     time: defaults.time ?? '',
     durationMins: DEFAULT_DURATION_MINS,
-    sessionType: 'in_person',
+    sessionType: defaults.sessionType ?? 'in_person',
     meetingUrl: '',
     feeOverride: '',
     discount: '',

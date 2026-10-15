@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui';
-import { PageBack, SoftTip, TruncatedText } from '@/components/primitives';
+import { PageBack, TruncatedText } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/providers/language-provider';
 
@@ -175,9 +175,7 @@ export function ProfileInfoField({
       >
         {children ??
           (filled ? (
-            <SoftTip label={value} className="justify-end sm:justify-start">
-              <span className="break-words">{value}</span>
-            </SoftTip>
+            <span className="break-words">{value}</span>
           ) : (
             '—'
           ))}

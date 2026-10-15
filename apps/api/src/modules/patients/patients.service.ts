@@ -1,3 +1,4 @@
+import { securityError } from "@/security/security-error";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { defaultAvatarUrl, persistableImageUrl } from "@/infrastructure";
 import { PatientsRepository } from "./patients.repository";
@@ -12,6 +13,8 @@ export class PatientsService {
   ) {}
 
   async create(dto: CreatePatientDto) {
+    if (!(await this.patientsRepository.referencesInClinic(dto.clinicId, dto)))
+      securityError("clinicUnavailable", 403);
     const seed =
       dto.email?.trim() ||
       dto.phone?.trim() ||
@@ -102,7 +105,14 @@ export class PatientsService {
   }
 
   async update(id: string, dto: UpdatePatientDto, clinicId?: string) {
-    await this.findOne(id, clinicId);
+    const existing = await this.findOne(id, clinicId);
+    if (
+      !(await this.patientsRepository.referencesInClinic(
+        existing.clinicId,
+        dto,
+      ))
+    )
+      securityError("clinicUnavailable", 403);
     const imageUrl =
       dto.imageUrl === undefined
         ? undefined

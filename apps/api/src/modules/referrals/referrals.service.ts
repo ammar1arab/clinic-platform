@@ -64,16 +64,16 @@ export class ReferralsService {
     return this.referralsRepository.findAll(filters);
   }
 
-  async findOne(id: string) {
-    const referral = await this.referralsRepository.findById(id);
+  async findOne(id: string, clinicId: string) {
+    const referral = await this.referralsRepository.findById(id, clinicId);
     if (!referral) {
       throw new NotFoundException("Referral not found");
     }
     return referral;
   }
 
-  async accept(id: string, clinicUserId: string) {
-    const referral = await this.findOne(id);
+  async accept(id: string, clinicUserId: string, clinicId: string) {
+    const referral = await this.findOne(id, clinicId);
     if (referral.toDoctorId !== clinicUserId) {
       throw new ForbiddenException(
         "Only the receiving doctor can accept this referral",
@@ -83,7 +83,13 @@ export class ReferralsService {
       throw new BadRequestException("Referral is not pending");
     }
 
-    const updated = await this.referralsRepository.updateStatus(id, "accepted");
+    const updated = await this.referralsRepository.updateStatus(
+      id,
+      "accepted",
+      clinicId,
+      clinicUserId,
+    );
+    if (!updated) throw new BadRequestException("Referral is not pending");
 
     await this.notificationsService.create({
       clinicId: referral.clinicId,
@@ -98,8 +104,8 @@ export class ReferralsService {
     return updated;
   }
 
-  async reject(id: string, clinicUserId: string) {
-    const referral = await this.findOne(id);
+  async reject(id: string, clinicUserId: string, clinicId: string) {
+    const referral = await this.findOne(id, clinicId);
     if (referral.toDoctorId !== clinicUserId) {
       throw new ForbiddenException(
         "Only the receiving doctor can reject this referral",
@@ -109,7 +115,13 @@ export class ReferralsService {
       throw new BadRequestException("Referral is not pending");
     }
 
-    const updated = await this.referralsRepository.updateStatus(id, "rejected");
+    const updated = await this.referralsRepository.updateStatus(
+      id,
+      "rejected",
+      clinicId,
+      clinicUserId,
+    );
+    if (!updated) throw new BadRequestException("Referral is not pending");
 
     await this.notificationsService.create({
       clinicId: referral.clinicId,
@@ -124,8 +136,13 @@ export class ReferralsService {
     return updated;
   }
 
-  async setOpinion(id: string, clinicUserId: string, dto: ReferralOpinionDto) {
-    const referral = await this.findOne(id);
+  async setOpinion(
+    id: string,
+    clinicUserId: string,
+    dto: ReferralOpinionDto,
+    clinicId: string,
+  ) {
+    const referral = await this.findOne(id, clinicId);
     if (referral.toDoctorId !== clinicUserId) {
       throw new ForbiddenException(
         "Only the receiving doctor can provide an opinion",

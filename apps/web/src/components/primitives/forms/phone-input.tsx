@@ -209,7 +209,7 @@ export function PhoneInputField({
       countrySelectComponent={PhoneCountrySelect}
       className={cn(
         'flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors md:text-sm',
-        'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50',
+        'focus-within:border-primary focus-within:ring-0',
         'has-disabled:cursor-not-allowed has-disabled:opacity-50',
         'dark:bg-input/30',
         '[&_input]:min-w-0 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:text-base [&_input]:text-foreground [&_input]:outline-none md:[&_input]:text-sm [&_input]:placeholder:text-muted-foreground',

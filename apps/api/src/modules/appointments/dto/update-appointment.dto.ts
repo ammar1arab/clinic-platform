@@ -3,6 +3,8 @@ import {
   IsString,
   IsDateString,
   IsNumber,
+  IsInt,
+  Min,
   IsEnum,
 } from "class-validator";
 import { SessionTypeDto, DiscountTypeDto } from "./create-appointment.dto";
@@ -41,7 +43,8 @@ export class UpdateAppointmentDto implements UpdateAppointmentInput {
   scheduledAt?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   durationMins?: number;
 
   @IsOptional()
@@ -62,10 +65,12 @@ export class UpdateAppointmentDto implements UpdateAppointmentInput {
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   feeOverride?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   discount?: number;
 
   @IsOptional()

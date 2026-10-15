@@ -50,6 +50,7 @@ function readBodyMessage(
 ): string | null {
   if (!data) return null;
   if (data.code && Object.prototype.hasOwnProperty.call(getTranslations().auth.errors, data.code)) return getTranslations().auth.errors[data.code];
+  if (data.code && Object.prototype.hasOwnProperty.call(getTranslations().errors, data.code)) return getTranslations().errors[data.code as keyof ReturnType<typeof getTranslations>["errors"]];
   if (Array.isArray(data.message)) return data.message.join(', ');
   if (typeof data.message === 'string') return data.message;
   if (typeof data.error === 'string') return data.error;

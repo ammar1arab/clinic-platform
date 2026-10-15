@@ -6,11 +6,12 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   UseGuards,
 } from "@nestjs/common";
+import { Role } from "@prisma/client";
 import { ApiBearerAuth } from "@nestjs/swagger";
-import { JwtAuthGuard } from "@/modules/auth/guards";
+import { CurrentUser, Roles, type AuthUser } from "@/modules/auth/decorators";
+import { JwtAuthGuard, RolesGuard } from "@/modules/auth/guards";
 import { RoomsService } from "./rooms.service";
 import { CreateRoomDto, UpdateRoomDto } from "./dto";
 
@@ -21,37 +22,51 @@ export class RoomsController {
   constructor(private roomsService: RoomsService) {}
 
   @Post()
-  create(@Body() dto: CreateRoomDto) {
-    return this.roomsService.create(dto);
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
+  create(@CurrentUser() user: AuthUser, @Body() dto: CreateRoomDto) {
+    return this.roomsService.create({ ...dto, clinicId: user.clinicId });
   }
 
   @Get()
-  findAll(@Query("clinicId") clinicId: string) {
-    return this.roomsService.findAll(clinicId);
+  findAll(@CurrentUser() user: AuthUser) {
+    return this.roomsService.findAll(user.clinicId);
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.roomsService.findOne(id);
+  findOne(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.roomsService.findOne(id, user.clinicId);
   }
 
   @Patch(":id/deactivate")
-  deactivate(@Param("id") id: string) {
-    return this.roomsService.deactivate(id);
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
+  deactivate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.roomsService.deactivate(id, user.clinicId);
   }
 
   @Patch(":id/reactivate")
-  reactivate(@Param("id") id: string) {
-    return this.roomsService.reactivate(id);
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
+  reactivate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.roomsService.reactivate(id, user.clinicId);
   }
 
   @Patch(":id")
-  update(@Param("id") id: string, @Body() dto: UpdateRoomDto) {
-    return this.roomsService.update(id, dto);
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: UpdateRoomDto,
+  ) {
+    return this.roomsService.update(id, dto, user.clinicId);
   }
 
   @Delete(":id")
-  remove(@Param("id") id: string) {
-    return this.roomsService.remove(id);
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
+  remove(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.roomsService.remove(id, user.clinicId);
   }
 }

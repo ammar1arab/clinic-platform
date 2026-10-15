@@ -30,14 +30,14 @@ export class DiscountCodesService {
     return this.discountCodesRepository.findAllByClinic(clinicId);
   }
 
-  async findOne(id: string) {
-    const code = await this.discountCodesRepository.findById(id);
+  async findOne(id: string, clinicId: string) {
+    const code = await this.discountCodesRepository.findById(id, clinicId);
     if (!code) throw new NotFoundException("Promocode not found");
     return code;
   }
 
-  async update(id: string, dto: UpdateDiscountCodeDto) {
-    const existing = await this.findOne(id);
+  async update(id: string, dto: UpdateDiscountCodeDto, clinicId: string) {
+    const existing = await this.findOne(id, clinicId);
     if (dto.code && dto.code.trim().toUpperCase() !== existing.code) {
       const clash = await this.discountCodesRepository.findByCode(
         existing.clinicId,
@@ -45,17 +45,17 @@ export class DiscountCodesService {
       );
       if (clash) throw new ConflictException("Promocode already exists");
     }
-    return this.discountCodesRepository.update(id, dto);
+    return this.discountCodesRepository.update(id, dto, clinicId);
   }
 
-  async deactivate(id: string) {
-    await this.findOne(id);
-    return this.discountCodesRepository.deactivate(id);
+  async deactivate(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.discountCodesRepository.deactivate(id, clinicId);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
-    return this.discountCodesRepository.hardDelete(id);
+  async remove(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.discountCodesRepository.hardDelete(id, clinicId);
   }
 
   async validate(dto: ValidateDiscountCodeDto) {
@@ -84,9 +84,5 @@ export class DiscountCodesService {
       discountType: row.discountType,
       discountValue: Number(row.discountValue),
     };
-  }
-
-  async consume(id: string) {
-    return this.discountCodesRepository.incrementUsedCount(id);
   }
 }

@@ -20,6 +20,7 @@ import {
   ReferralsModule,
   NotificationsModule,
   PractitionersModule,
+  EmailsModule,
 } from "@/modules";
 
 @Module({
@@ -42,6 +43,7 @@ import {
     ReferralsModule,
     NotificationsModule,
     PractitionersModule,
+    EmailsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

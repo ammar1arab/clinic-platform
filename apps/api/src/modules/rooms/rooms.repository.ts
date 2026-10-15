@@ -17,35 +17,39 @@ export class RoomsRepository {
     });
   }
 
-  findById(id: string) {
-    return this.prisma.room.findUnique({ where: { id } });
+  departmentInClinic(id: string, clinicId: string) {
+    return this.prisma.department.count({ where: { id, clinicId } });
   }
 
-  update(id: string, dto: UpdateRoomDto) {
-    return this.prisma.room.update({ where: { id }, data: dto });
+  findById(id: string, clinicId: string) {
+    return this.prisma.room.findUnique({ where: { id, clinicId } });
   }
 
-  deactivate(id: string) {
+  update(id: string, dto: UpdateRoomDto, clinicId: string) {
+    return this.prisma.room.update({ where: { id, clinicId }, data: dto });
+  }
+
+  deactivate(id: string, clinicId: string) {
     return this.prisma.room.update({
-      where: { id },
+      where: { id, clinicId },
       data: { isActive: false },
     });
   }
 
-  reactivate(id: string) {
+  reactivate(id: string, clinicId: string) {
     return this.prisma.room.update({
-      where: { id },
+      where: { id, clinicId },
       data: { isActive: true },
     });
   }
 
-  hardDelete(id: string) {
+  hardDelete(id: string, clinicId: string) {
     return this.prisma.$transaction(async (tx) => {
       await tx.appointment.deleteMany({
-        where: { roomId: id },
+        where: { roomId: id, clinicId },
       });
 
-      return tx.room.delete({ where: { id } });
+      return tx.room.delete({ where: { id, clinicId } });
     });
   }
 }

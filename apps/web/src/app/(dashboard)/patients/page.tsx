@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useDebounce } from '@/hooks/shared/use-debounce';
 import { Button } from '@/components/ui';
 import { usePatients } from '@/hooks/api/use-patients';
 import { useDepartments } from '@/hooks/api/use-departments';
@@ -40,14 +39,13 @@ export default function PatientsPage() {
     INITIAL_FILTERS,
   );
 
-  const debouncedSearch = useDebounce(filters.search);
   const { sortBy, sortOrder } = parsePatientSort(filters.sort);
   const { data: departments } = useDepartments(clinicId);
   const { data: staff } = useClinicStaff(clinicId);
 
-  const { data: patients, isLoading } = usePatients({
+  const { data: patients, isLoading, isPlaceholderData } = usePatients({
     clinicId,
-    search: debouncedSearch || undefined,
+    search: filters.search || undefined,
     isActive: filters.status === 'all' ? undefined : filters.status === 'active',
     gender: filters.gender || undefined,
     bloodType: filters.bloodType || undefined,
@@ -79,7 +77,7 @@ export default function PatientsPage() {
     }
     downloadDirectory.mutate({
       format,
-      search: debouncedSearch || undefined,
+      search: filters.search || undefined,
       status: filters.status,
       gender: filters.gender || undefined,
       bloodType: filters.bloodType || undefined,
@@ -94,8 +92,11 @@ export default function PatientsPage() {
     });
   };
 
+  const searchLoading =
+    isLoading || isPlaceholderData;
+
   const hasActiveFilters =
-    Boolean(debouncedSearch) ||
+    Boolean(filters.search) ||
     filters.status !== 'all' ||
     Boolean(filters.gender) ||
     Boolean(filters.bloodType) ||
@@ -115,14 +116,15 @@ export default function PatientsPage() {
           onReset={resetFilters}
           staff={staff}
           departments={departments}
-          exportDisabled={isLoading || downloadDirectory.isPending || !patients?.length}
+          exportDisabled={searchLoading || downloadDirectory.isPending || !patients?.length}
           onExport={handleExport}
+          searchLoading={searchLoading}
         />
       </div>
 
       <PatientsList
         patients={patients}
-        isLoading={isLoading}
+        isLoading={searchLoading}
         clinicId={clinicId}
         hasActiveFilters={hasActiveFilters}
         emptyAction={

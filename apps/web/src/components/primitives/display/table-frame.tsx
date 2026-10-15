@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 export function TableFrame({
   children,
@@ -8,8 +8,16 @@ export function TableFrame({
   className?: string;
 }) {
   return (
-    <div className={cn('card-aura overflow-hidden rounded-xl border-0 bg-card', className)}>
-      {children}
+    <div
+      className={cn(
+        "table-frame overflow-hidden rounded-xl border-0 bg-card p-px",
+        className,
+      )}
+    >
+      <div className="relative z-0 flex min-h-0 w-full min-w-0 flex-1 flex-col">
+        {children}
+      </div>
+      <div aria-hidden className="card-aura table-aura" />
     </div>
   );
 }

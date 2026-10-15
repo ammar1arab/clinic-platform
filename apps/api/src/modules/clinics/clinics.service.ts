@@ -1,3 +1,4 @@
+import { securityError } from "@/security/security-error";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { ClinicsRepository } from "./clinics.repository";
 import { CreateClinicDto, UpdateClinicDto } from "./dto";
@@ -25,6 +26,14 @@ export class ClinicsService {
 
   async update(id: string, dto: UpdateClinicDto) {
     await this.findOne(id);
+    if (
+      dto.defaultDepartmentId &&
+      !(await this.clinicsRepository.departmentInClinic(
+        dto.defaultDepartmentId,
+        id,
+      ))
+    )
+      securityError("clinicUnavailable", 403);
     return this.clinicsRepository.update(id, dto);
   }
 }

@@ -3,6 +3,8 @@ import {
   IsOptional,
   IsDateString,
   IsNumber,
+  IsInt,
+  Min,
   IsEnum,
 } from "class-validator";
 import type { CreateAppointmentInput } from "@clinic/types";
@@ -40,7 +42,8 @@ export class CreateAppointmentDto implements CreateAppointmentInput {
   scheduledAt: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
+  @Min(1)
   durationMins?: number;
 
   @IsOptional()
@@ -53,10 +56,12 @@ export class CreateAppointmentDto implements CreateAppointmentInput {
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   feeOverride?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   discount?: number;
 
   @IsOptional()

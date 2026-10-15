@@ -10,7 +10,6 @@ import {
   type PractitionerFilterState,
 } from '@/constants/practitioner';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
-import { useDebounce } from '@/hooks/shared/use-debounce';
 import { useDepartments } from '@/hooks/api/use-departments';
 import {
   usePractitionerDirectory,
@@ -76,13 +75,12 @@ export default function PractitionersPage() {
   );
   const [page, setPage] = useState(1);
 
-  const debouncedSearch = useDebounce(filters.search);
   const query = useMemo(
-    () => toDirectoryQuery(clinicId, debouncedSearch, filters),
-    [clinicId, debouncedSearch, filters],
+    () => toDirectoryQuery(clinicId, filters.search, filters),
+    [clinicId, filters],
   );
 
-  const resetKey = filterResetKey(debouncedSearch, filters);
+  const resetKey = filterResetKey(filters.search, filters);
   const [prevResetKey, setPrevResetKey] = useState(resetKey);
   if (resetKey !== prevResetKey) {
     setPrevResetKey(resetKey);
@@ -90,7 +88,8 @@ export default function PractitionersPage() {
   }
 
   const { data: catalog } = usePractitioners(clinicId);
-  const { data: filtered, isLoading } = usePractitionerDirectory(query);
+  const { data: filtered, isLoading, isPlaceholderData } =
+    usePractitionerDirectory(query);
   const { data: departments } = useDepartments(clinicId);
   const { data: rooms } = useRooms(clinicId);
   const directory = filtered ?? EMPTY_DIRECTORY;
@@ -135,8 +134,11 @@ export default function PractitionersPage() {
     [directory.length, downloadDirectory, query],
   );
 
+  const searchLoading =
+    isLoading || isPlaceholderData;
+
   const hasActiveFilters =
-    Boolean(debouncedSearch) ||
+    Boolean(filters.search) ||
     filters.status !== 'all' ||
     Boolean(filters.departmentId) ||
     Boolean(filters.employmentType) ||
@@ -158,14 +160,15 @@ export default function PractitionersPage() {
           practitioners={catalog}
           departments={departments}
           rooms={rooms}
-          exportDisabled={isLoading || downloadDirectory.isPending || !directory.length}
+          exportDisabled={searchLoading || downloadDirectory.isPending || !directory.length}
           onExport={handleExport}
+          searchLoading={searchLoading}
         />
       </div>
 
       <PractitionersList
         pageItems={pageItems}
-        isLoading={isLoading}
+        isLoading={searchLoading}
         clinicId={clinicId}
         hasActiveFilters={hasActiveFilters}
         page={currentPage}

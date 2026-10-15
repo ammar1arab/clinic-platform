@@ -8,7 +8,7 @@ export class CsvExporter implements ReportExporter {
   readonly format = "csv" as const;
 
   export(doc: ReportDocument): Promise<ExportedReport> {
-    const lines: string[] = [...csvPreface(doc)];
+    const lines: string[] = csvPreface(doc).map((line) => this.row([line]));
 
     lines.push(this.row(doc.columns.map((c) => c.header)));
 
@@ -36,9 +36,10 @@ export class CsvExporter implements ReportExporter {
   }
 
   private escape(value: string): string {
-    if (/[",\r\n]/.test(value)) {
-      return `"${value.replace(/"/g, '""')}"`;
+    const safe = /^\s*[=+@-]/.test(value) ? `'${value}` : value;
+    if (/[",\r\n]/.test(safe)) {
+      return `"${safe.replace(/"/g, '""')}"`;
     }
-    return value;
+    return safe;
   }
 }

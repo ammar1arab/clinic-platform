@@ -17,36 +17,39 @@ export class DepartmentsRepository {
     });
   }
 
-  findById(id: string) {
-    return this.prisma.department.findUnique({ where: { id } });
+  findById(id: string, clinicId: string) {
+    return this.prisma.department.findUnique({ where: { id, clinicId } });
   }
 
-  update(id: string, dto: UpdateDepartmentDto) {
-    return this.prisma.department.update({ where: { id }, data: dto });
-  }
-
-  deactivate(id: string) {
+  update(id: string, dto: UpdateDepartmentDto, clinicId: string) {
     return this.prisma.department.update({
-      where: { id },
+      where: { id, clinicId },
+      data: dto,
+    });
+  }
+
+  deactivate(id: string, clinicId: string) {
+    return this.prisma.department.update({
+      where: { id, clinicId },
       data: { isActive: false },
     });
   }
 
-  reactivate(id: string) {
+  reactivate(id: string, clinicId: string) {
     return this.prisma.department.update({
-      where: { id },
+      where: { id, clinicId },
       data: { isActive: true },
     });
   }
 
-  hardDelete(id: string) {
+  hardDelete(id: string, clinicId: string) {
     return this.prisma.$transaction(async (tx) => {
       const rooms = await tx.room.findMany({
-        where: { departmentId: id },
+        where: { departmentId: id, clinicId },
         select: { id: true },
       });
       const services = await tx.service.findMany({
-        where: { departmentId: id },
+        where: { departmentId: id, clinicId },
         select: { id: true },
       });
       const roomIds = rooms.map((r) => r.id);
@@ -54,6 +57,7 @@ export class DepartmentsRepository {
 
       await tx.appointment.deleteMany({
         where: {
+          clinicId,
           OR: [
             { departmentId: id },
             ...(roomIds.length ? [{ roomId: { in: roomIds } }] : []),
@@ -62,10 +66,10 @@ export class DepartmentsRepository {
         },
       });
 
-      await tx.service.deleteMany({ where: { departmentId: id } });
-      await tx.room.deleteMany({ where: { departmentId: id } });
+      await tx.service.deleteMany({ where: { departmentId: id, clinicId } });
+      await tx.room.deleteMany({ where: { departmentId: id, clinicId } });
 
-      return tx.department.delete({ where: { id } });
+      return tx.department.delete({ where: { id, clinicId } });
     });
   }
 }

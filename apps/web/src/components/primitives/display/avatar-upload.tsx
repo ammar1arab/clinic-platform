@@ -10,7 +10,7 @@ import {
 } from '@/components/ui';
 import { AvatarImage } from './entity-avatar';
 import { ImagePreview } from './image-preview';
-import { Spinner } from '@/components/primitives';
+import { SoftTip, Spinner } from '@/components/primitives';
 import {
   ImageCompressError,
   uploadCompressedLocalImage,
@@ -26,6 +26,7 @@ type Props = {
   fallbackLabel?: string;
   disabled?: boolean;
   className?: string;
+  plain?: boolean;
 };
 
 export function AvatarUpload({
@@ -34,6 +35,7 @@ export function AvatarUpload({
   fallbackLabel = '',
   disabled,
   className,
+  plain = false,
 }: Props) {
   const { t } = useLanguage();
   const inputId = useId();
@@ -57,11 +59,14 @@ export function AvatarUpload({
         maxBytes: 3 * 1024 * 1024,
         maxEdge: 1600,
         quality: 0.88,
+        transparent: plain,
       });
       onChange(url);
-      toast.message(t.common.photoPreviewOnly, {
-        description: t.common.photoPreviewOnlyDesc,
-      });
+      if (!plain) {
+        toast.message(t.common.photoPreviewOnly, {
+          description: t.common.photoPreviewOnlyDesc,
+        });
+      }
     } catch (err) {
       const message =
         err instanceof ImageCompressError || err instanceof Error
@@ -77,20 +82,27 @@ export function AvatarUpload({
   const face = (
     <span
       className={cn(
-        'relative grid size-28 place-items-center overflow-hidden rounded-full',
+        'relative grid size-28 place-items-center overflow-hidden',
+        plain ? 'rounded-none' : 'rounded-full',
         value
-          ? 'bg-background ring-1 ring-border'
+          ? plain
+            ? 'bg-transparent'
+            : 'bg-background ring-1 ring-border'
           : 'border-2 border-dashed border-primary/30 bg-primary/5',
       )}
     >
       {value ? (
-        <AvatarImage
-          src={value}
-          width={112}
-          height={112}
-          sizes="112px"
-          priority
-        />
+        plain ? (
+          <img key={value} src={value} alt="" className="size-full object-contain" />
+        ) : (
+          <AvatarImage
+            src={value}
+            width={112}
+            height={112}
+            sizes="112px"
+            priority
+          />
+        )
       ) : (
         <span className="grid size-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm">
           <IconCamera className="size-5" aria-hidden />
@@ -131,20 +143,27 @@ export function AvatarUpload({
             >
               {face}
               <span className="pointer-events-none absolute inset-0 rounded-full bg-foreground/35 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-aria-expanded:opacity-100" />
-              <span className="pointer-events-none absolute inset-x-0 bottom-2.5 text-center text-[11px] font-medium text-primary-foreground opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-aria-expanded:opacity-100">
-                {t.common.change}
-              </span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="center" className="min-w-40">
-            <DropdownMenuItem onSelect={() => setPreviewOpen(true)}>
-              <IconImage />
-              {t.common.view}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={pickFile}>
-              <IconUpload />
-              {t.common.uploadNew}
-            </DropdownMenuItem>
+          <DropdownMenuContent align="center" className="flex w-auto min-w-0 gap-1 p-1">
+            <SoftTip label={t.common.view}>
+              <DropdownMenuItem
+                aria-label={t.common.view}
+                className="size-8 justify-center px-0"
+                onSelect={() => setPreviewOpen(true)}
+              >
+                <IconImage />
+              </DropdownMenuItem>
+            </SoftTip>
+            <SoftTip label={t.common.uploadNew}>
+              <DropdownMenuItem
+                aria-label={t.common.uploadNew}
+                className="size-8 justify-center px-0"
+                onSelect={pickFile}
+              >
+                <IconUpload />
+              </DropdownMenuItem>
+            </SoftTip>
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
@@ -163,9 +182,6 @@ export function AvatarUpload({
         </button>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        {value ? t.common.tapPhotoHint : t.common.addPhoto}
-      </p>
       <span className="sr-only">{initials}</span>
 
       <ImagePreview

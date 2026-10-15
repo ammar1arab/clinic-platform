@@ -4,6 +4,7 @@ import { QUERY_KEYS } from '@/constants/query-keys';
 
 export type FetchOptions = {
   enabled?: boolean;
+  refetchInterval?: number | false;
   retry?: boolean | number;
   staleTime?: number;
   gcTime?: number;

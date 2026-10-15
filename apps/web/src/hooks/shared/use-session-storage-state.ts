@@ -3,12 +3,25 @@ import { createLogger } from '@/lib/logger';
 
 const log = createLogger('hooks/session-storage');
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
 function readSession<T>(key: string, initial: T): T {
   if (typeof window === 'undefined') return initial;
   try {
     const raw = sessionStorage.getItem(key);
     if (!raw) return initial;
-    return { ...initial, ...(JSON.parse(raw) as Partial<T>) };
+    const parsed = JSON.parse(raw) as T;
+    const initialObject = isPlainObject(initial);
+    const parsedObject = isPlainObject(parsed);
+    if (initialObject && parsedObject) {
+      return { ...initial, ...parsed };
+    }
+    if (initialObject !== parsedObject || typeof parsed !== typeof initial) {
+      return initial;
+    }
+    return parsed;
   } catch (error) {
     log.warn('read_failed', {
       key,

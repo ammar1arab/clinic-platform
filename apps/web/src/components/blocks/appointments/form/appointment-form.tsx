@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { FormActions } from '@/components/primitives';
 import { useAppointmentFormResources } from '@/hooks/api/use-appointment-form';
 import { useNow } from '@/hooks/shared/use-now';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useClinic } from '@/hooks/api/use-clinic';
 import { extractErrorMessage, isHttpStatus } from '@/lib/api';
 import { appointmentSchema, type AppointmentFormData } from '@/lib/validations';
 import { resolveWaitingMins } from '@/lib/waiting-time';
@@ -53,6 +55,8 @@ export function AppointmentForm({
   onSuccess,
 }: Props) {
   const { t, lang } = useLanguage();
+  const clinicId = useClinicId();
+  const { data: clinic } = useClinic(clinicId);
   const confirm = useConfirm();
   const isEdit = !!appointment;
   const now = useNow(30_000);
@@ -65,6 +69,8 @@ export function AppointmentForm({
           date: defaultDate,
           time: defaultTime,
           doctorId: currentDoctorId,
+          departmentId: clinic?.defaultDepartmentId ?? '',
+          sessionType: clinic?.defaultSessionType,
         }),
   });
   const { control, handleSubmit, setValue } = form;

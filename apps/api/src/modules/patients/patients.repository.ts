@@ -13,6 +13,23 @@ import {
 export class PatientsRepository {
   constructor(private prisma: PrismaService) {}
 
+  async referencesInClinic(
+    clinicId: string,
+    dto: Pick<CreatePatientDto, "packageId" | "discountCodeId">,
+  ) {
+    const counts = await Promise.all([
+      dto.packageId
+        ? this.prisma.package.count({ where: { id: dto.packageId, clinicId } })
+        : 1,
+      dto.discountCodeId
+        ? this.prisma.discountCode.count({
+            where: { id: dto.discountCodeId, clinicId },
+          })
+        : 1,
+    ]);
+    return counts.every((count) => count === 1);
+  }
+
   create(dto: CreatePatientDto) {
     const data: Prisma.PatientUncheckedCreateInput = {
       clinicId: dto.clinicId,

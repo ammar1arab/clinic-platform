@@ -11,12 +11,15 @@ async function bootstrap() {
   const log = createLogger("Bootstrap");
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
+    rawBody: true,
   });
   const proxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
   if (!Number.isInteger(proxyHops) || proxyHops < 0)
     throw new Error("TRUST_PROXY_HOPS must be a non-negative integer");
   app.set("trust proxy", proxyHops);
   app.useLogger(new Logger());
+  app.useBodyParser("json", { limit: "8mb" });
+  app.useBodyParser("urlencoded", { limit: "8mb", extended: true });
 
   app.enableCors({
     origin: corsOrigin,

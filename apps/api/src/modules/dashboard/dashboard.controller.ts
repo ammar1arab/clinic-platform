@@ -1,8 +1,8 @@
-import { Controller, Get, Query, UseGuards } from "@nestjs/common";
+import { Controller, Get, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth } from "@nestjs/swagger";
 import { Role } from "@prisma/client";
 import { JwtAuthGuard, RolesGuard } from "@/modules/auth/guards";
-import { Roles } from "@/modules/auth/decorators";
+import { CurrentUser, Roles, type AuthUser } from "@/modules/auth/decorators";
 import { DashboardService } from "./dashboard.service";
 
 @ApiBearerAuth()
@@ -13,12 +13,12 @@ export class DashboardController {
   constructor(private dashboardService: DashboardService) {}
 
   @Get("kpis")
-  getKpis(@Query("clinicId") clinicId: string) {
-    return this.dashboardService.getKpis(clinicId);
+  getKpis(@CurrentUser() user: AuthUser) {
+    return this.dashboardService.getKpis(user.clinicId);
   }
 
   @Get("room-utilization")
-  getRoomUtilization(@Query("clinicId") clinicId: string) {
-    return this.dashboardService.getRoomUtilization(clinicId);
+  getRoomUtilization(@CurrentUser() user: AuthUser) {
+    return this.dashboardService.getRoomUtilization(user.clinicId);
   }
 }

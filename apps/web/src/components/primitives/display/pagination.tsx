@@ -10,10 +10,16 @@ interface Props {
   totalItems: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  resetScroll?: boolean;
 }
 
-function goToPage(page: number, onPageChange: (page: number) => void) {
+function goToPage(
+  page: number,
+  onPageChange: (page: number) => void,
+  resetScroll: boolean,
+) {
   onPageChange(page);
+  if (!resetScroll) return;
   const scroller = document.querySelector('[data-page-scroll]');
   if (scroller instanceof HTMLElement) {
     scroller.scrollTo({ top: 0, behavior: 'auto' });
@@ -26,6 +32,7 @@ export function Pagination({
   totalItems,
   pageSize,
   onPageChange,
+  resetScroll = true,
 }: Props) {
   const { t, dir } = useLanguage();
   if (totalItems === 0 || pageCount <= 1) return null;
@@ -47,10 +54,11 @@ export function Pagination({
       </p>
       <div className="flex shrink-0 items-center gap-1.5">
         <Button
+          type="button"
           variant="outline"
           size="icon-sm"
           disabled={page <= 1}
-          onClick={() => goToPage(page - 1, onPageChange)}
+          onClick={() => goToPage(page - 1, onPageChange, resetScroll)}
           aria-label={t.common.previous}
         >
           <PrevIcon className="size-4" />
@@ -63,10 +71,11 @@ export function Pagination({
           </span>
         </span>
         <Button
+          type="button"
           variant="outline"
           size="icon-sm"
           disabled={page >= pageCount}
-          onClick={() => goToPage(page + 1, onPageChange)}
+          onClick={() => goToPage(page + 1, onPageChange, resetScroll)}
           aria-label={t.common.next}
         >
           <NextIcon className="size-4" />

@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import Link from 'next/link';
 import {
   Button,
@@ -16,14 +15,13 @@ import {
 } from '@/components/ui';
 import {
   DatePicker,
-  DirectorySortMenu,
   DirectoryToolbar,
   DIRECTORY_ACTION_CLASS,
   FormField,
+  FilterSelect,
   SoftTip,
 } from '@/components/primitives';
 import { ExportFormatButton } from '@/components/blocks/reports';
-import { FORM_ANY } from '@/constants/form';
 import { getGenders, BLOOD_TYPES, getPatientSorts } from '@/constants/patient';
 import { ROUTES } from '@/constants/routes';
 import { keepNestedPortals } from '@/lib/overlay';
@@ -48,35 +46,6 @@ export type PatientFilterState = {
   sort: string;
 };
 
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  placeholder,
-  children,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  children: ReactNode;
-}) {
-  const { t } = useLanguage();
-  const anyText = placeholder ?? t?.common?.any;
-  return (
-    <FormField label={label} labelClassName="text-xs">
-      <Select value={value || FORM_ANY} onValueChange={(v) => onChange(v === FORM_ANY ? '' : v)}>
-        <SelectTrigger className="h-8 w-full rounded-lg">
-          <SelectValue placeholder={anyText} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={FORM_ANY}>{anyText}</SelectItem>
-          {children}
-        </SelectContent>
-      </Select>
-    </FormField>
-  );
-}
 
 type Props = {
   values: PatientFilterState;
@@ -86,6 +55,7 @@ type Props = {
   departments?: Department[];
   exportDisabled?: boolean;
   onExport?: (format: ReportFormat) => void;
+  searchLoading?: boolean;
 };
 
 export function PatientFiltersBlock({
@@ -96,6 +66,7 @@ export function PatientFiltersBlock({
   departments,
   exportDisabled,
   onExport,
+  searchLoading,
 }: Props) {
   const { t } = useLanguage();
   const activeCount =
@@ -114,16 +85,10 @@ export function PatientFiltersBlock({
       search={values.search}
       onSearchChange={(search) => onChange({ search })}
       searchPlaceholder={t?.common?.search}
+      searchLoading={searchLoading}
       actions={
         <>
-          <DirectorySortMenu
-            value={values.sort}
-            onChange={(sort) => onChange({ sort })}
-            options={getPatientSorts(t).map(s => ({ ...s, label: t?.constants?.patientSorts?.[s.value] ?? s.label }))}
-          />
-
           <Popover>
-            <SoftTip label={t?.common?.filters}>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
@@ -145,7 +110,6 @@ export function PatientFiltersBlock({
                   ) : null}
                 </Button>
               </PopoverTrigger>
-            </SoftTip>
             <PopoverContent
               align="end"
               className="w-80 max-h-[min(32rem,calc(100dvh-var(--app-header-height)-2rem))] space-y-3 overflow-y-auto"
@@ -161,6 +125,24 @@ export function PatientFiltersBlock({
                   </Button>
                 ) : null}
               </div>
+
+              <FormField label={t?.common?.sort} labelClassName="text-xs">
+                <Select
+                  value={values.sort}
+                  onValueChange={(sort) => onChange({ sort })}
+                >
+                  <SelectTrigger className="h-8 w-full rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getPatientSorts(t).map((sort) => (
+                      <SelectItem key={sort.value} value={sort.value}>
+                        {t?.constants?.patientSorts?.[sort.value] ?? sort.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
 
               <FormField label={t?.common?.status} labelClassName="text-xs">
                 <Select

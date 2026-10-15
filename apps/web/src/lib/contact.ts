@@ -49,3 +49,26 @@ export function emailHref(value: string | null | undefined): string | null {
   if (!email || !email.includes('@')) return null;
   return `mailto:${email}`;
 }
+
+export function httpsUrl(value: string | null | undefined): string | undefined {
+  const raw = value?.trim();
+  if (!raw) return undefined;
+  const withProtocol = /^[a-z][a-z\d+.-]*:/i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const url = new URL(withProtocol);
+    if (url.protocol === 'http:') url.protocol = 'https:';
+    const host = url.hostname;
+    if (
+      url.protocol !== 'https:' ||
+      !host ||
+      url.username ||
+      url.password ||
+      (host !== 'localhost' && !host.includes('.'))
+    ) {
+      return undefined;
+    }
+    return url.href;
+  } catch {
+    return undefined;
+  }
+}

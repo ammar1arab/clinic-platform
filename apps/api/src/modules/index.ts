@@ -14,3 +14,4 @@ export * from "./discount-codes/discount-codes.module";
 export * from "./referrals/referrals.module";
 export * from "./notifications/notifications.module";
 export * from "./practitioners/practitioners.module";
+export * from "./emails/emails.module";

@@ -11,7 +11,7 @@ description: >-
 
 ## Stand on
 
-`apps/web/src/app/globals.css` + `.agents/rules/theme.md`
+`apps/web/src/app/globals.css` + [quality and theme rules](../../rules/02-quality-and-verification.md)
 
 ## Quick map
 

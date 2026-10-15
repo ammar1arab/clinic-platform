@@ -36,6 +36,7 @@ export function PickerSearch({
         placeholder={placeholder}
         className="w-full flex-none"
         inputClassName="h-8"
+        debounceMs={0}
       />
     </div>
   );

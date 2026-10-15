@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import { ApiBearerAuth } from "@nestjs/swagger";
 import { JwtAuthGuard } from "@/modules/auth/guards";
+import { CurrentUser, type AuthUser } from "@/modules/auth/decorators";
 import { NotificationsService } from "./notifications.service";
 import { NotificationFiltersDto } from "./dto";
 
@@ -18,20 +19,31 @@ export class NotificationsController {
   constructor(private notificationsService: NotificationsService) {}
 
   @Get()
-  findAll(@Query() filters: NotificationFiltersDto) {
-    return this.notificationsService.findAll(filters);
+  findAll(
+    @CurrentUser() user: AuthUser,
+    @Query() filters: NotificationFiltersDto,
+  ) {
+    return this.notificationsService.findAll({
+      ...filters,
+      clinicId: user.clinicId,
+      userId: user.clinicUserId,
+    });
   }
 
   @Patch("read-all")
-  markAllRead(
-    @Query("clinicId") clinicId: string,
-    @Query("userId") userId: string,
-  ) {
-    return this.notificationsService.markAllRead(clinicId, userId);
+  markAllRead(@CurrentUser() user: AuthUser) {
+    return this.notificationsService.markAllRead(
+      user.clinicId,
+      user.clinicUserId,
+    );
   }
 
   @Patch(":id/read")
-  markRead(@Param("id") id: string) {
-    return this.notificationsService.markRead(id);
+  markRead(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.notificationsService.markRead(
+      id,
+      user.clinicId,
+      user.clinicUserId,
+    );
   }
 }

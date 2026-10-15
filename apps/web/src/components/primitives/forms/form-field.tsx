@@ -1,6 +1,17 @@
-import type { ReactNode } from 'react';
-import { Label } from '@/components/ui';
-import { cn } from '@/lib/utils';
+"use client";
+
+import { useId, type ReactNode } from "react";
+import { useLanguage } from "@/providers/language-provider";
+import { FORM_ANY } from "@/constants/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Label,
+} from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 type FormFieldProps = {
   label?: ReactNode;
@@ -24,8 +35,8 @@ export function FormField({
   children,
 }: FormFieldProps) {
   return (
-    <div className={cn('min-w-0 space-y-1.5', className)}>
-      {label != null && label !== '' ? (
+    <div className={cn("min-w-0 space-y-1.5", className)}>
+      {label != null && label !== "" ? (
         <Label htmlFor={htmlFor} className={labelClassName}>
           {label}
           {required ? <span className="ms-0.5 text-destructive">*</span> : null}
@@ -37,5 +48,39 @@ export function FormField({
         <p className="text-xs text-muted-foreground">{hint}</p>
       ) : null}
     </div>
+  );
+}
+
+export function FilterSelect({
+  label,
+  value,
+  onChange,
+  placeholder,
+  children,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  children: ReactNode;
+}) {
+  const { t } = useLanguage();
+  const id = useId();
+  const anyText = placeholder ?? t.common.any;
+  return (
+    <FormField htmlFor={id} label={label} labelClassName="text-xs">
+      <Select
+        value={value || FORM_ANY}
+        onValueChange={(v) => onChange(v === FORM_ANY ? "" : v)}
+      >
+        <SelectTrigger id={id} className="h-8 w-full rounded-lg">
+          <SelectValue placeholder={anyText} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={FORM_ANY}>{anyText}</SelectItem>
+          {children}
+        </SelectContent>
+      </Select>
+    </FormField>
   );
 }

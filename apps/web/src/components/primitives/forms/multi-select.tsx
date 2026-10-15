@@ -11,6 +11,7 @@ import {
   Input,
 } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/primitives/states/empty';
 import {
   IconCheck,
   IconChevronsUpDown,
@@ -153,9 +154,11 @@ export function MultiSelect({
         </div>
         <div className="max-h-56 overflow-y-auto p-1">
           {filtered.length === 0 ? (
-            <p className="px-2 py-6 text-center text-xs text-muted-foreground">
-              {emptyText ?? t.ui.noOptions}
-            </p>
+            <EmptyState
+              icon={IconSearch}
+              title={emptyText ?? t.ui.noOptions}
+              className="gap-1 py-5"
+            />
           ) : (
             filtered.map((option) => {
               const isSelected = value.includes(option.value);

@@ -28,6 +28,8 @@ export class AppointmentsController {
   constructor(private appointmentsService: AppointmentsService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin)
   create(@CurrentUser() user: AuthUser, @Body() dto: CreateAppointmentDto) {
     return this.appointmentsService.create(user.clinicId, user.userId, dto);
   }
@@ -51,7 +53,11 @@ export class AppointmentsController {
 
   @Get(":id")
   findOne(@CurrentUser() user: AuthUser, @Param("id") id: string) {
-    return this.appointmentsService.findOne(user.clinicId, id);
+    return this.appointmentsService.findOne(
+      user.clinicId,
+      id,
+      user.role === Role.practitioner ? user.clinicUserId : undefined,
+    );
   }
 
   @Patch(":id/mark-paid")
@@ -101,11 +107,19 @@ export class AppointmentsController {
   }
 
   @Patch(":id")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.practitioner)
   update(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string,
     @Body() dto: UpdateAppointmentDto,
   ) {
-    return this.appointmentsService.update(user.clinicId, user.userId, id, dto);
+    return this.appointmentsService.update(
+      user.clinicId,
+      user.userId,
+      id,
+      dto,
+      user,
+    );
   }
 }

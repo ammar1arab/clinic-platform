@@ -264,6 +264,14 @@ th, td {
     user-select: text;
   }
 
+  input:is(:autofill, :-webkit-autofill),
+  textarea:is(:autofill, :-webkit-autofill),
+  select:is(:autofill, :-webkit-autofill) {
+    -webkit-text-fill-color: var(--color-foreground);
+    caret-color: var(--color-foreground);
+    box-shadow: inset 0 0 0 1000px var(--color-background) !important;
+  }
+
   .font-heading {
     font-family: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -0.02em;
@@ -421,104 +429,28 @@ th, td {
 
   .overlay-pop-tip,
   [data-calendar-popover] {
-    --overlay-duration: 220ms;
-    --overlay-from: 0px;
-    --overlay-scale-from: 1;
-  }
-
-  .overlay-pop-tip {
-    --overlay-duration: 420ms;
+    --overlay-duration: 160ms;
+    --overlay-from: 4px;
+    --overlay-scale-from: 0.98;
   }
 
   .tip-bubble-body {
     position: relative;
     display: block;
-    overflow: hidden;
     max-width: min(16rem, calc(100vw - 2rem));
-    border-radius: 1.35rem;
-    background:
-      linear-gradient(
-        165deg,
-        color-mix(in oklch, var(--color-primary-foreground) 16%, var(--color-primary)) 0%,
-        var(--color-primary) 42%,
-        color-mix(in oklch, var(--color-primary) 82%, var(--color-foreground)) 100%
-      );
-    color: white;
-    padding: 0.45rem 0.8rem;
+    border-radius: 0.5rem;
+    background: var(--color-foreground);
+    color: var(--color-background);
+    padding: 0.28rem 0.5rem;
     text-align: center;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    font-size: 0.75rem;
+    font-weight: 500;
     line-height: 1.35;
     pointer-events: none;
-    transform-origin: inherit;
-    box-shadow:
-      0 0 0 1px color-mix(in oklch, var(--color-primary-foreground) 12%, transparent),
-      0 12px 28px -10px color-mix(in oklch, var(--color-primary) 62%, transparent),
-      0 0 24px color-mix(in oklch, var(--color-primary) 28%, transparent);
-    animation: tip-bubble-in 520ms var(--overlay-ease) both;
   }
 
-  .tip-bubble-body::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklch, var(--color-primary-foreground) 26%, transparent),
-      transparent 58%
-    );
-    pointer-events: none;
-  }
-
-  .tip-bubble-body::after {
-    content: '';
-    position: absolute;
-    inset-inline-start: -35%;
-    top: -120%;
-    width: 70%;
-    height: 220%;
-    background: linear-gradient(
-      115deg,
-      transparent 35%,
-      color-mix(in oklch, var(--color-primary-foreground) 34%, transparent) 50%,
-      transparent 65%
-    );
-    pointer-events: none;
-    animation: tip-sheen 1.1s var(--overlay-ease) 0.12s both;
-  }
-
-  .tip-bubble-swoosh {
-    display: block;
-    color: var(--color-primary);
-    filter: drop-shadow(0 6px 10px color-mix(in oklch, var(--color-primary) 40%, transparent));
-    overflow: visible;
-  }
-
-  .tip-bubble-swoosh-inner {
-    transform-origin: 20px 0;
-    animation: tip-swoosh-in 560ms var(--overlay-ease) both;
-  }
-
-  .tip-bubble-swoosh-fill {
-    fill: currentColor;
-  }
-
-  .tip-bubble-swoosh-wire {
-    fill: none;
-    stroke: color-mix(in oklch, var(--color-primary-foreground) 55%, var(--color-primary));
-    stroke-width: 1.15;
-    stroke-linecap: round;
-    stroke-dasharray: 42;
-    stroke-dashoffset: 42;
-    animation: tip-wire-draw 640ms var(--overlay-ease) 80ms both;
-  }
-
-  .tip-bubble-spark {
-    fill: var(--color-primary-foreground);
-    transform-origin: center;
-    animation: tip-spark 1.15s ease-in-out infinite;
+  .tip-bubble-arrow {
+    fill: var(--color-foreground);
   }
 
   .schedule-pop-arrow {
@@ -559,73 +491,12 @@ th, td {
     }
   }
 
-  @keyframes tip-bubble-in {
-    0% {
-      opacity: 0;
-      transform: scale(0.64);
-      filter: blur(5px);
-    }
-    58% {
-      opacity: 1;
-      transform: scale(1.06);
-      filter: blur(0);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-      filter: blur(0);
-    }
-  }
-
   @keyframes tip-fade-in {
     from {
       opacity: 0;
     }
     to {
       opacity: 1;
-    }
-  }
-
-  @keyframes tip-swoosh-in {
-    from {
-      opacity: 0;
-      transform: scale(0.35);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes tip-wire-draw {
-    to {
-      stroke-dashoffset: 0;
-    }
-  }
-
-  @keyframes tip-sheen {
-    from {
-      transform: translate3d(-20%, 0, 0) rotate(12deg);
-      opacity: 0;
-    }
-    30% {
-      opacity: 1;
-    }
-    to {
-      transform: translate3d(180%, 0, 0) rotate(12deg);
-      opacity: 0;
-    }
-  }
-
-  @keyframes tip-spark {
-    0%,
-    100% {
-      opacity: 0.45;
-      transform: scale(0.75);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.25);
     }
   }
 
@@ -636,11 +507,6 @@ th, td {
       animation-duration: 1ms;
     }
 
-    .tip-bubble-body,
-    .tip-bubble-swoosh-inner,
-    .tip-bubble-swoosh-wire,
-    .tip-bubble-body::after,
-    .tip-bubble-spark,
     .schedule-pop-arrow {
       animation: none;
     }
@@ -899,6 +765,31 @@ th, td {
     z-index: 1;
   }
 
+
+  .table-frame {
+    position: relative;
+    isolation: isolate;
+    box-shadow: 0 1px 2px color-mix(in oklch, var(--foreground) 3%, transparent);
+  }
+
+  .table-aura {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: none;
+    isolation: auto;
+  }
+
+  .table-frame thead th:first-child {
+    border-start-start-radius: calc(var(--radius-xl) - 1px);
+  }
+
+  .table-frame thead th:last-child {
+    border-start-end-radius: calc(var(--radius-xl) - 1px);
+  }
+
   @media (hover: hover) and (pointer: fine) {
     .card-aura:hover {
       --aura-pad: 2px;
@@ -909,27 +800,36 @@ th, td {
       opacity: 0.95;
       animation-duration: 6.5s;
     }
-  }
 
-  .card-aura:focus-within {
-    --aura-pad: 2px;
-  }
+    .table-frame:hover {
+      box-shadow: 0 6px 20px -8px color-mix(in oklch, var(--foreground) 16%, transparent);
+    }
 
-  .card-aura:focus-within::before {
-    opacity: 0.9;
+    .table-frame:hover > .table-aura {
+      --aura-pad: 2px;
+    }
+
+    .table-frame:hover > .table-aura::before {
+      opacity: 0.95;
+      animation-duration: 6.5s;
+    }
   }
 
   .dark .card-aura::before {
     opacity: 0.62;
   }
 
-  .dark .card-aura:hover::before,
-  .dark .card-aura:focus-within::before {
+  .dark .card-aura:hover::before {
     opacity: 1;
   }
 
-  .dark .card-aura:hover {
+  .dark .card-aura:hover,
+  .dark .table-frame:hover {
     box-shadow: 0 8px 24px -10px color-mix(in oklch, black 55%, transparent);
+  }
+
+  .dark .table-frame:hover > .table-aura::before {
+    opacity: 1;
   }
 
   @keyframes auraSpin {

@@ -4,6 +4,7 @@ export type CompressOptions = {
   quality?: number;
   maxBytes?: number;
   minQuality?: number;
+  transparent?: boolean;
 };
 
 export class ImageCompressError extends Error {
@@ -60,16 +61,28 @@ export async function compressImageToJpeg(
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext('2d', { alpha: false });
+    const transparent = options.transparent === true;
+    const ctx = canvas.getContext('2d', { alpha: transparent });
     if (!ctx) throw new ImageCompressError(getTranslations().uploads.canvas);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, width, height);
+    if (!transparent) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+    }
     ctx.drawImage(bitmap, 0, 0, width, height);
 
-    let blob = await toJpeg(canvas, quality);
-    while (blob.size > maxBytes && quality > minQuality + 0.01) {
+    const encode = async (nextQuality: number) => {
+      if (!transparent) return toJpeg(canvas, nextQuality);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, 'image/png'),
+      );
+      if (!blob) throw new ImageCompressError(getTranslations().uploads.encode);
+      return blob;
+    };
+
+    let blob = await encode(quality);
+    while (!transparent && blob.size > maxBytes && quality > minQuality + 0.01) {
       quality = Math.max(minQuality, quality - 0.08);
-      blob = await toJpeg(canvas, quality);
+      blob = await encode(quality);
     }
 
     const base =
@@ -80,8 +93,8 @@ export async function compressImageToJpeg(
             .slice(0, 60)
         : 'image';
 
-    return new File([blob], `${base || 'image'}.jpg`, {
-      type: 'image/jpeg',
+    return new File([blob], `${base || 'image'}.${transparent ? 'png' : 'jpg'}`, {
+      type: transparent ? 'image/png' : 'image/jpeg',
       lastModified: Date.now(),
     });
   } finally {

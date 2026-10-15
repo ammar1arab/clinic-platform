@@ -91,6 +91,7 @@ interface Props {
   onVisibleRangeChange?: (start: Date, end: Date) => void;
   onEventClick: (appointment: Appointment) => void;
   onSelectSlot: (date: Date) => void;
+  hours?: { start: string; end: string };
 }
 
 export function AppointmentCalendar({
@@ -103,6 +104,7 @@ export function AppointmentCalendar({
   onVisibleRangeChange,
   onEventClick,
   onSelectSlot,
+  hours,
 }: Props) {
   const calendarRef = useRef<FullCalendar>(null);
   const updateMutation = useUpdateAppointment();
@@ -451,7 +453,7 @@ export function AppointmentCalendar({
           <ViewFocusToggle />
         </div>
         <FullCalendar
-          key={`${view}-${lang}`}
+          key={`${view}-${lang}-${hours?.start ?? ''}-${hours?.end ?? ''}`}
           ref={calendarRef}
           plugins={PLUGINS}
           initialView={VIEW_TO_FC[view]}
@@ -470,8 +472,8 @@ export function AppointmentCalendar({
             month: t.appointments.month,
           }}
           height="100%"
-          slotMinTime="07:00:00"
-          slotMaxTime="21:00:00"
+          slotMinTime={hours ? `${hours.start}:00` : '07:00:00'}
+          slotMaxTime={hours ? `${hours.end}:00` : '21:00:00'}
           allDaySlot={false}
           selectable
           selectMirror
@@ -513,8 +515,8 @@ export function AppointmentCalendar({
           stickyHeaderDates
           views={{
             timeGridDay: {
-              slotMinTime: "07:00:00",
-              slotMaxTime: "21:00:00",
+              slotMinTime: hours ? `${hours.start}:00` : '07:00:00',
+              slotMaxTime: hours ? `${hours.end}:00` : '21:00:00',
               eventMaxStack: isMobile ? 2 : 4,
             },
             timeGridWeek: {
@@ -527,8 +529,8 @@ export function AppointmentCalendar({
           }}
           businessHours={{
             daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
-            startTime: "08:00",
-            endTime: "20:00",
+            startTime: hours?.start ?? "08:00",
+            endTime: hours?.end ?? "20:00",
           }}
         />
       </div>

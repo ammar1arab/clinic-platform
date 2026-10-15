@@ -7,6 +7,7 @@ import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker';
 
 import { ar, enUS } from 'date-fns/locale';
 import { format } from 'date-fns';
+import { WEEKDAY_OPTIONS } from '@/constants/practitioner';
 import { cn } from '@/lib/utils';
 import { Button, buttonVariants } from '../forms/button';
 import {
@@ -55,7 +56,7 @@ function Calendar({
         ...labels,
       }}
       className={cn(
-        'group/calendar bg-background p-3 [--cell-size:--spacing(8)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent',
+        'group/calendar bg-background p-3 [--cell-size:--spacing(10)] in-data-[slot=card-content]:bg-transparent in-data-[slot=popover-content]:bg-transparent',
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
         String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
         className,
@@ -64,6 +65,8 @@ function Calendar({
       formatters={{
         formatMonthDropdown: (date) =>
           date.toLocaleString(lang, { month: 'short' }),
+        formatWeekdayName: (date) =>
+          t.constants.weekdaysShort[WEEKDAY_OPTIONS[date.getDay()]],
         ...formatters,
       }}
       classNames={{
@@ -107,7 +110,7 @@ function Calendar({
         month_grid: cn('w-full border-collapse', defaultClassNames.month_grid),
         weekdays: cn('flex', defaultClassNames.weekdays),
         weekday: cn(
-          'flex-1 rounded-md text-[0.8rem] font-normal text-muted-foreground select-none',
+          'flex-1 rounded-md text-center text-xs font-normal text-muted-foreground select-none',
           defaultClassNames.weekday,
         ),
         week: cn('mt-2 flex w-full', defaultClassNames.week),

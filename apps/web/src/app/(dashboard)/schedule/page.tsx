@@ -9,7 +9,6 @@ import { useClinic } from "@/hooks/api/use-clinic";
 import { useClinicStaff } from "@/hooks/api/use-clinic-staff";
 import { useClinicRealtime } from "@/hooks/api/use-clinic-realtime";
 import { useDepartments } from "@/hooks/api/use-departments";
-import { useDebounce } from "@/hooks/shared/use-debounce";
 import { useSessionStorageState } from "@/hooks/shared/use-session-storage-state";
 import {
   Appointment,
@@ -77,8 +76,6 @@ function SchedulePageInner() {
   const [statusFilters, setStatusFilters] = useState<Set<AppointmentStatus>>(
     () => new Set(),
   );
-  const debouncedSearch = useDebounce(search);
-
   useClinicRealtime(clinicId);
 
   const { data: departments } = useDepartments(clinicId);
@@ -129,9 +126,9 @@ function SchedulePageInner() {
       list = list?.filter((appt) => statusFilters.has(appt.status));
     }
     return list?.filter((appt) =>
-      matchesAppointmentSearch(appt, debouncedSearch),
+      matchesAppointmentSearch(appt, search),
     );
-  }, [appointments, debouncedSearch, statusFilters]);
+  }, [appointments, search, statusFilters]);
 
   const returnTo = schedulePath(view);
 
@@ -217,6 +214,11 @@ function SchedulePageInner() {
               onVisibleRangeChange={handleVisibleRangeChange}
               onEventClick={handleEventClick}
               onSelectSlot={goNewAppointment}
+              hours={
+                clinic
+                  ? { start: clinic.workingHoursStart, end: clinic.workingHoursEnd }
+                  : undefined
+              }
             />
           )}
         </ViewFocus>
