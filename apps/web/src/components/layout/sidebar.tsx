@@ -89,8 +89,8 @@ function getNavItems(t: Translations, role?: Role | null): NavItem[] {
   const items: NavItem[] = [
     { label: t.layout.sidebar.dashboard, href: ROUTES.DASHBOARD, icon: IconDashboard, accent: 'default' },
     { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'teal' },
-    { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconPractitioner, accent: 'default' },
     { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer, accent: 'warning' },
+    { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconPractitioner, accent: 'default' },
     { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
     { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner, accent: 'default' },
     { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'warning' },
