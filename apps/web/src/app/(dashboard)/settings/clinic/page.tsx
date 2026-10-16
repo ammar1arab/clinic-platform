@@ -336,7 +336,6 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
 export default function ClinicSettingsPage() {
   const clinicId = useClinicId();
   const { data: clinic, isLoading, isError, refetch } = useClinic(clinicId);
-  const { t } = useLanguage();
 
   if (isError) return <ErrorState onRetry={() => void refetch()} />;
   if (isLoading || !clinic) {
@@ -345,7 +344,7 @@ export default function ClinicSettingsPage() {
 
   return (
     <div className="page-stack space-y-4">
-      <SettingsPageBack section="clinic" />
+      <SettingsPageBack />
       <ClinicSettingsForm key={clinic.id} clinic={clinic} clinicId={clinicId} />
     </div>
   );
