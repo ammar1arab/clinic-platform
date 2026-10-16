@@ -14,14 +14,37 @@ import { IconMoon, IconSun, IconSystem } from '@/constants/icons';
 import { useLanguage } from '@/providers/language-provider';
 
 const OPTIONS = [
-  { value: 'light', label: 'Light', icon: IconSun },
-  { value: 'dark', label: 'Dark', icon: IconMoon },
-  { value: 'system', label: 'System', icon: IconSystem },
+  { value: 'light', icon: IconSun },
+  { value: 'dark', icon: IconMoon },
+  { value: 'system', icon: IconSystem },
 ] as const;
 
-export function ThemeToggle() {
+export function ThemeOptions() {
   const { theme, setTheme } = useTheme();
   const mounted = useMounted();
+  const { t } = useLanguage();
+
+  return OPTIONS.map(({ value, icon: Icon }) => (
+    <DropdownMenuItem
+      key={value}
+      onClick={() => setTheme(value)}
+      className="cursor-pointer"
+      data-active={mounted && theme === value}
+    >
+      <Icon className="size-4 me-2" />
+      {value === 'light'
+        ? t.layout.light
+        : value === 'dark'
+          ? t.layout.dark
+          : t.layout.system}
+      {mounted && theme === value && (
+        <span className="ms-auto size-1.5 rounded-full bg-primary" />
+      )}
+    </DropdownMenuItem>
+  ));
+}
+
+export function ThemeToggle() {
   const { t } = useLanguage();
 
   return (
@@ -35,24 +58,7 @@ export function ThemeToggle() {
         </DropdownMenuTrigger>
       </SoftTip>
       <DropdownMenuContent align="end" className="w-36">
-        {OPTIONS.map(({ value, icon: Icon }) => (
-          <DropdownMenuItem
-            key={value}
-            onClick={() => setTheme(value)}
-            className="cursor-pointer"
-            data-active={mounted && theme === value}
-          >
-            <Icon className="size-4 me-2" />
-            {value === 'light'
-              ? t.layout.light
-              : value === 'dark'
-                ? t.layout.dark
-                : t.layout.system}
-            {mounted && theme === value && (
-              <span className="ms-auto size-1.5 rounded-full bg-primary" />
-            )}
-          </DropdownMenuItem>
-        ))}
+        <ThemeOptions />
       </DropdownMenuContent>
     </DropdownMenu>
   );
