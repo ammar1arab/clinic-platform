@@ -1,11 +1,12 @@
 'use client';
 
 import { ROUTES } from '@/constants/routes';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useAuth, useLanguage } from '@/providers';
+import { useAuth, useConfirm, useLanguage } from '@/providers';
 import type { Translations } from '@/i18n';
 import { useSidebar } from '@/providers/sidebar-provider';
+import { toast } from 'sonner';
 import {
   Button,
   AlertDialog,
@@ -17,11 +18,22 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
 } from '@/components/ui';
-import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
-import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
+import { ThemeOptions, ThemeToggle } from '@/components/primitives/display/theme-toggle';
+import { LanguageOptions, LanguageSwitcher } from '@/components/primitives/display/language-switcher';
 import { SoftTip } from '@/components/primitives';
-import { IconLogout, IconMenu } from '@/constants/icons';
+import { IconLanguage, IconLogout, IconMenu, IconMore, IconRotateCcw, IconSun } from '@/constants/icons';
+import { playRefreshSound } from '@/lib/feedback-sound';
+import { queryClient } from '@/lib/query-client';
+
+const REFRESH_PARAM = '_cureva_refresh';
 
 function resolveTitle(pathname: string, scheduleView: string | null, t: Translations): string {
   if (pathname === ROUTES.EMAIL_NEW) return t.emails.compose;
@@ -66,10 +78,47 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { logout } = useAuth();
+  const confirm = useConfirm();
   const { setMobileOpen } = useSidebar();
   const [signOutOpen, setSignOutOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { t } = useLanguage();
   const title = resolveTitle(pathname, searchParams.get('view'), t);
+
+  const cleanRefreshParam = useCallback((header: HTMLElement | null) => {
+    if (!header) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has(REFRESH_PARAM)) return;
+    url.searchParams.delete(REFRESH_PARAM);
+    window.history.replaceState(window.history.state, '', url);
+  }, []);
+
+  const refreshApp = async () => {
+    if (refreshing) return;
+    if (document.querySelector('main form, main [contenteditable="true"]')) {
+      const accepted = await confirm({
+        title: t.common.reloadPage,
+        description: t.common.refreshUnsaved,
+        confirmLabel: t.common.reloadPage,
+      });
+      if (!accepted) return;
+    }
+    if (!navigator.onLine) {
+      toast.error(t.common.refreshOffline);
+      return;
+    }
+    queryClient.clear();
+    setRefreshing(true);
+    playRefreshSound();
+    try {
+      navigator.vibrate?.([12, 35, 12]);
+    } catch {}
+    window.setTimeout(() => {
+      const next = new URL(window.location.href);
+      next.searchParams.set(REFRESH_PARAM, String(Date.now()));
+      window.location.replace(next.href);
+    }, 420);
+  };
 
   const handleSignOut = () => {
     logout();
@@ -78,6 +127,7 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   return (
     <>
       <header
+        ref={cleanRefreshParam}
         className="relative z-10 flex h-app-header touch-pan-x touch-pinch-zoom shrink-0 items-center justify-between border-b border-border/80 bg-background/80 px-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md md:px-5"
       >
         <div className="flex min-w-0 items-center gap-2.5">
@@ -98,7 +148,7 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
           </h1>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="hidden shrink-0 items-center gap-1 md:flex">
           <LanguageSwitcher />
           <ThemeToggle />
           <SoftTip label={t.auth.logout}>
@@ -114,6 +164,56 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
             </Button>
           </SoftTip>
         </div>
+        <DropdownMenu>
+          <SoftTip label={t.common.moreOptions}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="md:hidden"
+                aria-label={t.common.moreOptions}
+              >
+                {refreshing ? (
+                  <IconRotateCcw className="size-4 animate-spin" />
+                ) : (
+                  <IconMore className="size-5" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+          </SoftTip>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem disabled={refreshing} onSelect={() => void refreshApp()}>
+              <IconRotateCcw className={refreshing ? 'animate-spin' : ''} />
+              {t.emails.refresh}
+            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <IconLanguage />
+                {t.layout.languageSwitcher}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <LanguageOptions />
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <IconSun />
+                {t.layout.themeToggle}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <ThemeOptions />
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={() => setSignOutOpen(true)}
+            >
+              <IconLogout />
+              {t.auth.logout}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
