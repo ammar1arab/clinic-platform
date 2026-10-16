@@ -69,7 +69,7 @@ function formatPackageDiscount(p: ClinicPackage) {
 
 export default function PackagesPage() {
   const clinicId = useClinicId();
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const { data: packages, isLoading } = usePackages(clinicId);
   const {
     search,
@@ -168,7 +168,7 @@ export default function PackagesPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <SettingsPageBack section="packages" />
+      <SettingsPageBack />
 
       <div className="flex items-center gap-2">
         <SearchInput
