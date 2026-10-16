@@ -1,4 +1,3 @@
-import type { Translations } from '@/i18n';
 import {
   departmentsService,
   CreateDepartmentInput,
@@ -18,7 +17,7 @@ const {
 } = createCrudHooks<Department, CreateDepartmentInput, UpdateDepartmentInput>({
   keys: QUERY_KEYS.departments,
   entity: 'department',
-  labels: (t: Translations) => ({ removed: 'Department permanently deleted' }),
+  labels: () => ({ removed: 'Department permanently deleted' }),
   service: {
     getAll: departmentsService.getAll,
     create: departmentsService.create,

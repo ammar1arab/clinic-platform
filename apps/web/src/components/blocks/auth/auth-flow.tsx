@@ -37,7 +37,6 @@ export function AuthFlow() {
   const [resendAt, setResendAt] = useState(0);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const celebrating = useRef(false);
   const completing = useRef(false);
   const destRef = useRef<string>(ROUTES.DASHBOARD);
   const router = useRouter();
@@ -66,15 +65,15 @@ export function AuthFlow() {
   const complete = useCallback(() => {
     if (completing.current) return;
     completing.current = true;
-    celebrating.current = false;
+    setSuccess(false);
     router.replace(destRef.current);
   }, [router]);
 
-  if (isAuthenticated && isLoading && !success && !celebrating.current) {
+  if (isAuthenticated && isLoading && !success) {
     return <LoadingState variant="page" text={t.auth.signingIn} />;
   }
 
-  if (isAuthenticated && user && !success && !celebrating.current) {
+  if (isAuthenticated && user && !success) {
     redirect(postLoginPath(user.role, readReturnPath()));
   }
 
@@ -85,17 +84,16 @@ export function AuthFlow() {
     try {
       const response = await mutation.mutateAsync(command);
       if (response.next === "ready") {
-        celebrating.current = true;
         setSuccess(true);
         const me = await login(response.user);
         destRef.current = postLoginPath(me.role, readReturnPath());
+        window.setTimeout(complete, SUCCESS_OVERLAY_MS);
         return;
       }
       if (response.next === "otp")
         setResendAt(Date.now() + response.cooldownSeconds * 1000);
       setStep(response);
     } catch (cause) {
-      celebrating.current = false;
       setSuccess(false);
       setError(
         extractErrorMessage(cause as Parameters<typeof extractErrorMessage>[0]),

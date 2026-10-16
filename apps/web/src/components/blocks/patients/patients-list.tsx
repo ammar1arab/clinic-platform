@@ -48,7 +48,6 @@ const PAGE_SIZE = 15;
 interface Props {
   patients: Patient[] | undefined;
   isLoading: boolean;
-  clinicId: string;
   hasActiveFilters?: boolean;
   emptyAction?: React.ReactNode;
 }
@@ -56,14 +55,13 @@ interface Props {
 export function PatientsList({
   patients,
   isLoading,
-  clinicId,
   hasActiveFilters = false,
   emptyAction,
 }: Props) {
   const { t, lang } = useLanguage();
   const { go, prefetch } = useRouteNav();
-  const toggleStatus = useTogglePatientStatus(clinicId);
-  const deleteMutation = useDeletePatient(clinicId);
+  const toggleStatus = useTogglePatientStatus();
+  const deleteMutation = useDeletePatient();
   const del = useTwoStepDelete<{ id: string; name: string }>();
   const [page, setPage] = useState(1);
 

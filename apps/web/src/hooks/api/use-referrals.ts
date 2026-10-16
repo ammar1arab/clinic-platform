@@ -18,7 +18,7 @@ export function useReferrals(filters: ReferralFilters) {
   });
 }
 
-export function useCreateReferral(_clinicId?: string) {
+export function useCreateReferral() {
   const { t } = useLanguage();
   return useApiMutation<Referral, TResponseError, CreateReferralInput>({
     request: (data) => referralsService.create(data),
@@ -27,7 +27,7 @@ export function useCreateReferral(_clinicId?: string) {
   });
 }
 
-export function useAcceptReferral(_clinicId?: string) {
+export function useAcceptReferral() {
   const { t } = useLanguage();
   return useApiMutation<Referral, TResponseError, string>({
     request: (id) => referralsService.accept(id),
@@ -36,7 +36,7 @@ export function useAcceptReferral(_clinicId?: string) {
   });
 }
 
-export function useRejectReferral(_clinicId?: string) {
+export function useRejectReferral() {
   const { t } = useLanguage();
   return useApiMutation<Referral, TResponseError, string>({
     request: (id) => referralsService.reject(id),
@@ -45,7 +45,7 @@ export function useRejectReferral(_clinicId?: string) {
   });
 }
 
-export function useSaveOpinion(_clinicId?: string) {
+export function useSaveOpinion() {
   const { t } = useLanguage();
   return useApiMutation<Referral, TResponseError, { id: string; opinion: string }>({
     request: ({ id, opinion }) => referralsService.setOpinion(id, opinion),

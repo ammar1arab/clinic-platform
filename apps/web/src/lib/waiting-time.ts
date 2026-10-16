@@ -13,7 +13,6 @@ export function elapsedMinutesSince(
 
 export function formatWaitingMins(
   mins: number | null | undefined,
-  _compact = false,
   t: Translations = translations.en,
 ): string {
   if (mins == null || Number.isNaN(mins)) return '—';

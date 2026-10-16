@@ -14,34 +14,21 @@ const variants = {
 };
 
 function useSuccessSession(enabled: boolean, onClose: () => void, ms: number) {
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
   const played = useRef(false);
+  const subscribe = useCallback(() => {
+    if (!enabled) {
+      played.current = false;
+      return () => {};
+    }
+    if (!played.current) {
+      played.current = true;
+      playFeedbackSound();
+    }
+    const id = window.setTimeout(onClose, ms);
+    return () => window.clearTimeout(id);
+  }, [enabled, onClose, ms]);
 
-  const subscribe = useCallback(
-    (onStoreChange: () => void) => {
-      if (!enabled) {
-        played.current = false;
-        return () => {};
-      }
-      if (!played.current) {
-        played.current = true;
-        playFeedbackSound();
-      }
-      const id = window.setTimeout(() => {
-        onCloseRef.current();
-        onStoreChange();
-      }, ms);
-      return () => window.clearTimeout(id);
-    },
-    [enabled, ms],
-  );
-
-  useSyncExternalStore(
-    subscribe,
-    () => enabled,
-    () => false,
-  );
+  useSyncExternalStore(subscribe, () => enabled, () => false);
 }
 
 function SuccessMark() {

@@ -113,8 +113,8 @@ function toPayload(data: PatientFormData): Omit<CreatePatientInput, 'clinicId'> 
 export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
   const isEdit = !!patient;
   const { t } = useLanguage();
-  const createMutation = useCreatePatient(clinicId);
-  const updateMutation = useUpdatePatient(clinicId);
+  const createMutation = useCreatePatient();
+  const updateMutation = useUpdatePatient();
   const { data: packages } = usePackages(clinicId);
   const { data: discountCodes } = useDiscountCodes(clinicId);
   const isPending = createMutation.isPending || updateMutation.isPending;

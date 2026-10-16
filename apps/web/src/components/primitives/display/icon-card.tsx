@@ -108,8 +108,18 @@ export const IconCard = forwardRef<HTMLButtonElement, IconCardProps>(
     }
 
     if (!isInteractive) {
-      const { type, disabled, form, formAction, formEncType, formMethod, formNoValidate, formTarget, name, value, ...divProps } = props;
-      
+      const divProps = { ...props };
+      delete divProps.type;
+      delete divProps.disabled;
+      delete divProps.form;
+      delete divProps.formAction;
+      delete divProps.formEncType;
+      delete divProps.formMethod;
+      delete divProps.formNoValidate;
+      delete divProps.formTarget;
+      delete divProps.name;
+      delete divProps.value;
+
       return (
         <div
           className={cn(baseClasses, 'md:border-border')}

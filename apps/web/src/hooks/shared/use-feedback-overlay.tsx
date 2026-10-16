@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   FeedbackOverlay,
   SUCCESS_OVERLAY_MS,
@@ -9,8 +9,6 @@ import {
 export function useFeedbackOverlay(onDone?: () => void) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
-  const doneRef = useRef(onDone);
-  doneRef.current = onDone;
 
   const celebrate = useCallback((nextTitle: string) => {
     setTitle(nextTitle);
@@ -19,8 +17,8 @@ export function useFeedbackOverlay(onDone?: () => void) {
 
   const onClose = useCallback(() => {
     setOpen(false);
-    doneRef.current?.();
-  }, []);
+    onDone?.();
+  }, [onDone]);
 
   const overlay = (
     <FeedbackOverlay

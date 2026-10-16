@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 let isNavigating = false;
@@ -61,8 +61,9 @@ if (typeof window !== 'undefined') {
   );
 }
 
-function subscribe(onStoreChange: () => void) {
+function subscribe(onStoreChange: () => void, routeKey: string) {
   listeners.add(onStoreChange);
+  if (routeKey) clearNavigating();
   return () => listeners.delete(onStoreChange);
 }
 
@@ -78,17 +79,15 @@ export function NavigationProgress() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const routeKey = `${pathname}?${searchParams?.toString() ?? ''}`;
-  const settledKey = useRef(routeKey);
+  const routeSubscribe = useCallback(
+    (onStoreChange: () => void) => subscribe(onStoreChange, routeKey),
+    [routeKey],
+  );
   const navigating = useSyncExternalStore(
-    subscribe,
+    routeSubscribe,
     getSnapshot,
     getServerSnapshot,
   );
-
-  if (settledKey.current !== routeKey) {
-    settledKey.current = routeKey;
-    if (isNavigating) queueMicrotask(clearNavigating);
-  }
 
   return (
     <div

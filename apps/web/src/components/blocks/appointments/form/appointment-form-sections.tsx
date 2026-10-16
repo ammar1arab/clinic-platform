@@ -179,7 +179,7 @@ export function AppointmentStatusFields({
             </span>
             <Badge variant="warning" className="tabular-nums">
               <IconTimer className="size-3" />
-              {formatWaitingMins(waitingMins, false, t)}
+              {formatWaitingMins(waitingMins, t)}
             </Badge>
           </div>
         ) : null}

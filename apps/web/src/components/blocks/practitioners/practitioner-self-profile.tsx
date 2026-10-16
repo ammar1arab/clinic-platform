@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { IconCalendarClock, IconPractitioner, IconRoom, IconService } from '@/constants/icons';
+import { IconCalendarClock, IconPractitioner, IconService } from '@/constants/icons';
 import { IconWell, MetaStat } from '@/components/primitives';
 import { getBilingualName } from '@/i18n';
 import type { PractitionerDetail } from '@/services/practitioners.service';

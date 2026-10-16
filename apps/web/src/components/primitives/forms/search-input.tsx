@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
 import { cn } from '@/lib/utils';
 import { IconClose, IconSearch } from '@/constants/icons';
 import { Spinner } from '@/components/primitives/states/loading';
@@ -31,29 +31,24 @@ export function SearchInput({
   const { t } = useLanguage();
   const resolvedPlaceholder = placeholder ?? t.common.search;
   const immediate = debounceMs <= 0;
-  const publishedRef = useRef(value);
   const [draft, setDraft] = useState(value);
   const [seen, setSeen] = useState(value);
   if (!immediate && value !== seen) {
-    publishedRef.current = value;
     setSeen(value);
     setDraft(value);
   }
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      if (immediate || Object.is(publishedRef.current, draft)) return () => {};
+      if (immediate || Object.is(value, draft)) return () => {};
       const id = window.setTimeout(() => {
-        publishedRef.current = draft;
-        onChangeRef.current(draft);
+        onChange(draft);
         onStoreChange();
       }, debounceMs);
       return () => window.clearTimeout(id);
     },
-    [draft, immediate, debounceMs],
+    [draft, immediate, debounceMs, onChange, value],
   );
-  useSyncExternalStore(subscribe, () => publishedRef.current, () => value);
+  useSyncExternalStore(subscribe, () => value, () => value);
   const shown = immediate ? value : draft;
   const pending = !immediate && shown !== value;
   return (
@@ -92,7 +87,6 @@ export function SearchInput({
           type="button"
           aria-label={t.ui.clearSearch}
           onClick={() => {
-            publishedRef.current = '';
             setDraft('');
             onChange('');
           }}

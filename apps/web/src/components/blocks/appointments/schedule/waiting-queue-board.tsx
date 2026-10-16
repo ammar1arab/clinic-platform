@@ -253,7 +253,7 @@ export function WaitingQueueBoard({
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant={timerVariant} className={cn('font-semibold', waitMins >= 25 && 'animate-pulse')}>
                         <IconTime className="size-3" />
-                        {formatWaitingMins(waitMins, true, t)} · {waitLabel}
+                        {formatWaitingMins(waitMins, t)} · {waitLabel}
                       </Badge>
                       <div onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />
@@ -304,7 +304,7 @@ export function WaitingQueueBoard({
                         className={cn('font-semibold', isLong && 'animate-pulse')}
                       >
                         <IconTimer className="size-3 animate-spin" />
-                        {formatWaitingMins(sessionMins, true, t)} / {appt.durationMins}{t.appointments.minutesShort}
+                        {formatWaitingMins(sessionMins, t)} / {appt.durationMins}{t.appointments.minutesShort}
                       </Badge>
                       <div onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />

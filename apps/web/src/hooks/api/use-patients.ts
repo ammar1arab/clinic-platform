@@ -31,7 +31,7 @@ export function usePatient(id: string) {
   });
 }
 
-export function useCreatePatient(_clinicId?: string) {
+export function useCreatePatient() {
   const { t } = useLanguage();
   return useApiMutation<PatientDetail, TResponseError, CreatePatientInput>({
     request: (data) => patientsService.create(data),
@@ -40,7 +40,7 @@ export function useCreatePatient(_clinicId?: string) {
   });
 }
 
-export function useUpdatePatient(_clinicId?: string) {
+export function useUpdatePatient() {
   const { t } = useLanguage();
   return useApiMutation<
     PatientDetail,
@@ -53,7 +53,7 @@ export function useUpdatePatient(_clinicId?: string) {
   });
 }
 
-export function useTogglePatientStatus(_clinicId?: string) {
+export function useTogglePatientStatus() {
   const { t } = useLanguage();
   return useApiMutation<
     null,
@@ -73,7 +73,7 @@ export function useTogglePatientStatus(_clinicId?: string) {
   });
 }
 
-export function useDeletePatient(_clinicId?: string) {
+export function useDeletePatient() {
   const { t } = useLanguage();
   return useApiMutation<null, TResponseError, string>({
     request: async (id) => {

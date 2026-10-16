@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { ROLE, type Role } from '@clinic/types';
 import type { Translations } from '@/i18n';
@@ -176,12 +175,6 @@ export function SidebarBlock() {
   const { t } = useLanguage();
   const { user } = useAuth();
   const navItems = getNavItems(t, user?.role);
-
-  const [prevPathname, setPrevPathname] = useState(pathname);
-  if (pathname !== prevPathname) {
-    setPrevPathname(pathname);
-    setMobileOpen(false);
-  }
 
   const closeMobile = () => setMobileOpen(false);
   useKeyboardShortcut('escape', closeMobile, {

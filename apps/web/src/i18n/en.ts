@@ -1226,8 +1226,8 @@ export const en = {
     validTo: "Valid to",
   },
   errors: {
-    profileEmailNotSaved: "The API did not save the new email. Restart it with the latest build, then try again.",
-    network: "Cannot reach the server. Is the backend running?",
+    profileEmailNotSaved: "We couldn't save the new email. Please try again.",
+    network: "Connection failed. Please try again.",
     generic: "Something went wrong. Please try again.",
     appointmentChanged: "This appointment changed. Reload it before trying again.",
   },

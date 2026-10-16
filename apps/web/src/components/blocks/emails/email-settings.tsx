@@ -187,7 +187,6 @@ function EmailSettingsForm({
 export function EmailSettings() {
   const clinicId = useClinicId();
   const { user } = useAuth();
-  const { t } = useLanguage();
   const settings = useEmailSettings(clinicId);
   return (
     <div className="w-full min-w-0 space-y-4">

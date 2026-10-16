@@ -20,8 +20,8 @@ export function EditPatientView({ id }: { id: string }) {
   const router = useRouter();
   const { t, lang } = useLanguage();
   const { data: patient, isLoading } = usePatient(id);
-  const deleteMutation = useDeletePatient(clinicId);
-  const toggleStatus = useTogglePatientStatus(clinicId);
+  const deleteMutation = useDeletePatient();
+  const toggleStatus = useTogglePatientStatus();
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
   const fullName = patient ? getPersonName(patient, lang) : '';

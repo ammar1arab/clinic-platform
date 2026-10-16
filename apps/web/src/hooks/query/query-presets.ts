@@ -39,9 +39,9 @@ export function toQueryOptions(options?: FetchOptions) {
     keepPreviousData: keepPrev,
     retry,
     refetchOnWindowFocus,
-    skipNormalization: _skip,
     ...rest
   } = options ?? {};
+  delete rest.skipNormalization;
 
   return {
     retry: retry ?? false,

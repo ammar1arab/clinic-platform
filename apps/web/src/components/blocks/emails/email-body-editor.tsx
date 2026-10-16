@@ -1,6 +1,6 @@
 "use client";
 
-import { useImperativeHandle, useRef, type Ref } from "react";
+import { useCallback, useImperativeHandle, useRef, type Ref } from "react";
 import { cn } from "@/lib/utils";
 
 const TOKEN = /\{\{\s*([^{}]+?)\s*\}\}/g;
@@ -125,10 +125,12 @@ export function EmailBodyEditor({
     onChange(readEditor(root));
   };
 
-  const root = rootRef.current;
-  if (root && document.activeElement !== root && readEditor(root) !== value) {
-    paint(root, value, labelFor);
-  }
+  const attachRoot = useCallback((root: HTMLDivElement | null) => {
+    rootRef.current = root;
+    if (root && document.activeElement !== root && readEditor(root) !== value) {
+      paint(root, value, labelFor);
+    }
+  }, [labelFor, value]);
 
   useImperativeHandle(ref, () => ({
     insert(key: string) {
@@ -160,7 +162,7 @@ export function EmailBodyEditor({
   return (
     <div
       id={id}
-      ref={rootRef}
+      ref={attachRoot}
       role="textbox"
       aria-multiline="true"
       contentEditable={!disabled}

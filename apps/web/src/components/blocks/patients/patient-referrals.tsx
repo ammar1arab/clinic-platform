@@ -52,10 +52,10 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
   const clinicUserId = user?.clinicUserId ?? '';
   const { data: referrals } = useReferrals({ clinicId, patientId });
   const { data: staff } = useClinicStaff(clinicId);
-  const createMutation = useCreateReferral(clinicId);
-  const acceptMutation = useAcceptReferral(clinicId);
-  const rejectMutation = useRejectReferral(clinicId);
-  const opinionMutation = useSaveOpinion(clinicId);
+  const createMutation = useCreateReferral();
+  const acceptMutation = useAcceptReferral();
+  const rejectMutation = useRejectReferral();
+  const opinionMutation = useSaveOpinion();
 
   const [open, setOpen] = useState(false);
   const [appointmentId, setAppointmentId] = useState('');

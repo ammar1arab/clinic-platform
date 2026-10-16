@@ -125,7 +125,6 @@ export default function PatientsPage() {
       <PatientsList
         patients={patients}
         isLoading={searchLoading}
-        clinicId={clinicId}
         hasActiveFilters={hasActiveFilters}
         emptyAction={
           <Button asChild>

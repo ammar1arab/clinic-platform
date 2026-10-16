@@ -62,7 +62,7 @@ export default function DashboardPage() {
         />
         <KpiCardBlock
           label={t?.dashboard?.avgWait}
-          value={formatWaitingMins(kpis?.avgWaitingMins, true, t)}
+          value={formatWaitingMins(kpis?.avgWaitingMins, t)}
           icon={IconHourglass}
           accent="error"
           isLoading={kpisLoading}

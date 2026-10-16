@@ -40,8 +40,8 @@ export function PatientProfile({ patientId }: { patientId: string }) {
   const clinicId = useClinicId();
   const { t, lang } = useLanguage();
   const { data: patient, isLoading } = usePatient(patientId);
-  const toggleStatus = useTogglePatientStatus(clinicId);
-  const deleteMutation = useDeletePatient(clinicId);
+  const toggleStatus = useTogglePatientStatus();
+  const deleteMutation = useDeletePatient();
   const downloadReport = useDownloadPatientReport(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 

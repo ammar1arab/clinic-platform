@@ -458,7 +458,7 @@ export function AppointmentPopover({
               <DetailRow
                 icon={<IconHourglass />}
                 label={t.queue.estimatedWait}
-                value={formatWaitingMins(waitingMins, false, t)}
+                value={formatWaitingMins(waitingMins, t)}
               />
             ) : null}
             {appointment.notes ? (
