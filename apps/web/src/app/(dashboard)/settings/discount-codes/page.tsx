@@ -33,13 +33,12 @@ import {
   SearchInput,
   Pagination,
   DatePicker,
-  PageBack,
   TableFrame,
   EntityMetaStat,
   EntityMobileCard,
 } from '@/components/primitives';
 
-import { ROUTES } from '@/constants/routes';
+import { SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
 import {
   IconAdd,
   IconDelete,
@@ -179,7 +178,7 @@ export default function DiscountCodesPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
+      <SettingsPageBack section="discountCodes" />
 
       <div className="flex items-center gap-2">
         <SearchInput
