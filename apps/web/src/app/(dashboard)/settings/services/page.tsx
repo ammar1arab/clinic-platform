@@ -163,7 +163,7 @@ export default function ServicesPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <SettingsPageBack section="services" />
+      <SettingsPageBack />
 
       <div className="flex items-center gap-2">
         <SearchInput
