@@ -1,16 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth, useConfirm, useLanguage } from '@/providers';
+import { useAuth, useLanguage } from '@/providers';
 import { Button, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui';
 import { LanguageOptions } from '@/components/primitives/display/language-switcher';
 import { ThemeOptions } from '@/components/primitives/display/theme-toggle';
 import { IconChevronLeft, IconLanguage, IconLogout, IconRotateCcw, IconSun } from '@/constants/icons';
-import { playRefreshSound } from '@/lib/feedback-sound';
-import { queryClient } from '@/lib/query-client';
-import { toast } from 'sonner';
-
-const REFRESH_PARAM = '_cureva_refresh';
+import { useAppRefresh } from '@/hooks/shared/use-app-refresh';
 
 function AnimatedDots({ open }: { open: boolean }) {
   return (
@@ -37,107 +33,14 @@ function AnimatedDots({ open }: { open: boolean }) {
 export function MobileActionsMenu() {
   const { logout } = useAuth();
   const { t } = useLanguage();
-  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<'actions' | 'language' | 'theme'>('actions');
   const [signOutOpen, setSignOutOpen] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshProgress, setRefreshProgress] = useState(0);
-  const [refreshComplete, setRefreshComplete] = useState(false);
-
-  const refreshApp = async () => {
-    if (refreshing) return;
-    if (document.querySelector('main form, main [contenteditable="true"]')) {
-      const accepted = await confirm({
-        title: t.common.reloadPage,
-        description: t.common.refreshUnsaved,
-        confirmLabel: t.common.reloadPage,
-      });
-      if (!accepted) return;
-    }
-    if (!navigator.onLine) {
-      toast.error(t.common.refreshOffline);
-      return;
-    }
-
-    const surface = document.querySelector<HTMLElement>('main');
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (surface && !reduceMotion) {
-      surface.style.transition = 'translate 460ms cubic-bezier(0.16, 1, 0.3, 1)';
-      surface.style.translate = '0 60px';
-    }
-
-    queryClient.clear();
-    setRefreshProgress(0);
-    setRefreshComplete(false);
-    setRefreshing(true);
-    window.requestAnimationFrame(() => setRefreshProgress(1));
-    window.setTimeout(() => setRefreshComplete(true), reduceMotion ? 100 : 760);
-    playRefreshSound();
-    try {
-      navigator.vibrate?.([12, 35, 12]);
-    } catch {}
-    window.setTimeout(() => {
-      const next = new URL(window.location.href);
-      next.searchParams.set(REFRESH_PARAM, String(Date.now()));
-      window.location.replace(next.href);
-    }, reduceMotion ? 420 : 1120);
-  };
+  const { refreshing, refreshApp, animation } = useAppRefresh({ animate: true });
 
   return (
     <>
-      <div
-        role="status"
-        aria-live="polite"
-        aria-hidden={!refreshing}
-        className={`pointer-events-none fixed inset-x-0 z-[60] flex justify-center transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none ${
-          refreshing ? 'translate-y-0 opacity-100' : '-translate-y-3 opacity-0'
-        }`}
-        style={{ top: 'calc(var(--app-header-height) + 0.25rem)' }}
-      >
-        <svg viewBox="0 0 24 24" className="size-11 overflow-visible text-primary" aria-hidden="true">
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            className="text-muted-foreground/25"
-          />
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            pathLength="100"
-            strokeDasharray={`${refreshProgress * 100} 100`}
-            transform="rotate(-90 12 12)"
-            className="motion-safe:transition-[stroke-dasharray] motion-safe:duration-700 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]"
-          />
-          <path
-            d="M12 6v11m-4-4 4 4 4-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className={`origin-center transition-[transform,opacity] duration-300 ease-out ${
-              refreshing && refreshProgress > 0 ? 'translate-y-1.5 opacity-0' : 'translate-y-0 opacity-90'
-            }`}
-          />
-          <path
-            d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z"
-            fill="currentColor"
-            className={`origin-center transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none ${
-              refreshing && refreshComplete ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
-            }`}
-          />
-        </svg>
-      </div>
+      {animation}
 
       <DropdownMenu
         open={open}
