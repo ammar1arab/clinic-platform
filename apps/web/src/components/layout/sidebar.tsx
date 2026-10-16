@@ -14,8 +14,6 @@ import { useSidebar } from '@/providers/sidebar-provider';
 import { IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
 import { useAuth, useLanguage } from '@/providers';
 import { ClinicLockup, MobileClinicIdentity, ProfileLink } from '@/components/layout/clinic-identity';
-import { MobileActionsMenu } from '@/components/layout/mobile-actions-menu';
-import { MobileMenuToggle } from '@/components/layout/mobile-menu-toggle';
 import {
   IconChevronRight,
   IconDashboard,
@@ -195,36 +193,25 @@ export function SidebarBlock() {
     <>
       <div
         role={mobileOpen ? 'dialog' : undefined}
-        aria-modal={mobileOpen ? true : undefined}
+        aria-modal={mobileOpen ? false : undefined}
         aria-label="Navigation"
         aria-hidden={!mobileOpen}
         inert={!mobileOpen}
         id="mobile-navigation"
         data-app-sidebar=""
         className={cn(
-          'fixed inset-0 z-50 flex flex-col bg-background md:hidden',
-          'pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]',
+          'fixed inset-x-0 bottom-0 top-[var(--app-header-height)] z-20 flex flex-col border-t border-border/80 bg-background md:hidden',
+          'pb-[max(1rem,env(safe-area-inset-bottom))]',
           'transition-opacity duration-300 ease-out motion-safe:transition-[opacity,transform]',
           mobileOpen
             ? 'pointer-events-auto opacity-100 motion-safe:translate-y-0'
             : 'pointer-events-none opacity-0 motion-safe:translate-y-2',
         )}
       >
-        <div
-          className={cn(
-            'flex shrink-0 items-center justify-between gap-3 px-5 py-3.5',
-            'transition-all duration-500 ease-out motion-reduce:transition-none',
-            mobileOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0',
-          )}
-        >
-          <div className="flex min-w-0 items-center gap-2.5">
-            <MobileMenuToggle open={mobileOpen} onClick={closeMobile} />
+        <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 pt-3">
+          <div className="mb-3 border-b border-border/70 px-1 pb-3">
             <MobileClinicIdentity onProfileClick={closeMobile} />
           </div>
-          <MobileActionsMenu />
-        </div>
-
-        <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 pt-2">
           <div className="flex flex-col gap-2.5">
             {navItems.map(({ label, href, icon, accent }, index) => (
               <MobileNavLink
