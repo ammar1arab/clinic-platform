@@ -2,7 +2,6 @@
 
 import { Toaster, TooltipProvider } from '@/components/ui';
 import { ErrorBoundary } from '@/components/layout/error-boundary';
-import { PullToRefresh } from '@/components/layout/pull-to-refresh';
 import { LoadingChrome } from '@/components/layout/loading-chrome';
 
 import { ThemeProvider } from './theme-provider';
@@ -34,7 +33,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
               <SidebarProvider>
                 <ConfirmProvider>
                   <TooltipProvider>
-                    <PullToRefresh>{children}</PullToRefresh>
+                    {children}
                     <LoadingChrome />
                     <Toaster position="top-right" richColors closeButton />
                   </TooltipProvider>
