@@ -165,8 +165,6 @@ function SchedulePageInner() {
         statusFilters={statusFilters}
         onToggleStatus={toggleStatus}
         onClearStatuses={clearStatuses}
-        count={filteredAppointments?.length ?? 0}
-        isLoading={isLoading}
         onNewPatient={() =>
           router.push(
             `${ROUTES.PATIENT_NEW}?returnTo=${encodeURIComponent(returnTo)}`,
