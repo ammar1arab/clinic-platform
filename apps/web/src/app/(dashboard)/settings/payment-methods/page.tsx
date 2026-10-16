@@ -27,13 +27,12 @@ import {
   TruncatedText,
   SearchInput,
   Pagination,
-  PageBack,
   TableFrame,
   EntityMetaStat,
   EntityMobileCard,
 } from '@/components/primitives';
 
-import { ROUTES } from '@/constants/routes';
+import { SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
 import {
   usePaymentMethods,
   useCreatePaymentMethod,
@@ -164,7 +163,7 @@ export default function PaymentMethodsPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
+      <SettingsPageBack section="paymentMethods" />
 
       <div className="flex items-center gap-2">
         <SearchInput
