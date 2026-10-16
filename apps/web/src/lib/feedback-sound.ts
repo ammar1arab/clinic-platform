@@ -45,31 +45,43 @@ function tone(
   };
 }
 
-function chime(ctx: AudioContext) {
+type Tone = [number, number, number, OscillatorType, number];
+
+const confirmationTones: Tone[] = [
+  [523.25, 0, 0.16, 'triangle', 0.55],
+  [659.25, 0.08, 0.18, 'triangle', 0.62],
+  [783.99, 0.16, 0.28, 'sine', 0.7],
+  [1046.5, 0.26, 0.42, 'sine', 0.48],
+  [1318.5, 0.34, 0.22, 'sine', 0.22],
+];
+
+const refreshTones: Tone[] = [
+  [587.33, 0, 0.16, 'sine', 0.16],
+  [783.99, 0.09, 0.22, 'sine', 0.13],
+];
+
+const copyTones: Tone[] = [
+  [880, 0, 0.055, 'sine', 0.14],
+  [1174.66, 0.045, 0.075, 'sine', 0.12],
+];
+
+function playTones(ctx: AudioContext, notes: Tone[], volume = 1) {
   const master = ctx.createGain();
-  master.gain.value = 0.28;
+  master.gain.value = volume;
   master.connect(ctx.destination);
 
   const now = ctx.currentTime;
-  const notes: Array<[number, number, number, OscillatorType, number]> = [
-    [523.25, 0, 0.16, 'triangle', 0.55],
-    [659.25, 0.08, 0.18, 'triangle', 0.62],
-    [783.99, 0.16, 0.28, 'sine', 0.7],
-    [1046.5, 0.26, 0.42, 'sine', 0.48],
-    [1318.5, 0.34, 0.22, 'sine', 0.22],
-  ];
-
   for (const [frequency, offset, duration, type, peak] of notes) {
     tone(ctx, master, frequency, now + offset, duration, type, peak);
   }
 }
 
-export function playFeedbackSound() {
+function play(notes: Tone[], volume = 1) {
   const ctx = audio();
   if (!ctx) return;
 
   const start = () => {
-    if (ctx.state === 'running') chime(ctx);
+    if (ctx.state === 'running') playTones(ctx, notes, volume);
   };
 
   if (ctx.state === 'running') {
@@ -80,14 +92,14 @@ export function playFeedbackSound() {
   void ctx.resume().then(start).catch(() => {});
 }
 
+export function playFeedbackSound() {
+  play(confirmationTones, 0.28);
+}
+
 export function playRefreshSound() {
-  const ctx = audio();
-  if (!ctx) return;
-  const play = () => {
-    if (ctx.state !== 'running') return;
-    tone(ctx, ctx.destination, 587.33, ctx.currentTime, 0.16, 'sine', 0.16);
-    tone(ctx, ctx.destination, 783.99, ctx.currentTime + 0.09, 0.22, 'sine', 0.13);
-  };
-  if (ctx.state === 'running') play();
-  else void ctx.resume().then(play).catch(() => {});
+  play(refreshTones);
+}
+
+export function playCopySound() {
+  play(copyTones, 0.65);
 }
