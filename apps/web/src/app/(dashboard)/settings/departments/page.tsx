@@ -28,7 +28,6 @@ import {
   BilingualNameFields,
   optionalArabicName,
   TableFrame,
-  EntityMetaStat,
   EntityMobileCard,
 } from '@/components/primitives';
 
@@ -136,7 +135,7 @@ export default function DepartmentsPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <SettingsPageBack section="departments" />
+      <SettingsPageBack />
 
       <div className="flex items-center gap-2">
         <SearchInput
