@@ -17,7 +17,6 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
       ref={setScroller}
       data-page-scroll
       className="page-scroll"
-      style={{ WebkitOverflowScrolling: "touch" }}
     >
       {children}
     </div>
