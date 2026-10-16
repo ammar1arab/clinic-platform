@@ -192,7 +192,7 @@ export function EmailSettings() {
   const settings = useEmailSettings(clinicId);
   return (
     <div className="w-full min-w-0 space-y-4">
-      <SettingsPageBack section="email" backHref={ROUTES.EMAILS} />
+      <SettingsPageBack backHref={ROUTES.EMAILS} />
       {settings.isLoading && <FormPageSkeleton />}
       {settings.isError && (
         <ErrorState onRetry={() => void settings.refetch()} />
