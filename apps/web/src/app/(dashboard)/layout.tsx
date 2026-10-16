@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { Suspense, useCallback } from 'react';
 import { redirect, usePathname } from 'next/navigation';
 import { useAuth } from '@/providers';
 import {
@@ -92,9 +92,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div ref={bindChrome} className="flex h-dvh w-full overflow-hidden bg-background">
-      {showNav ? <SidebarBlock /> : null}
+      {showNav ? (
+        <Suspense
+          fallback={
+            <div
+              aria-hidden
+              className="hidden shrink-0 md:block md:w-56 lg:w-64"
+            />
+          }
+        >
+          <SidebarBlock />
+        </Suspense>
+      ) : null}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background transition-all duration-300 ease-in-out">
-        <TopbarBlock showNav={showNav} />
+        <Suspense
+          fallback={
+            <div
+              aria-hidden
+              className="h-app-header shrink-0 border-b border-border/80 bg-background/80"
+            />
+          }
+        >
+          <TopbarBlock showNav={showNav} />
+        </Suspense>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-app-main-pad py-app-main-pad-y">
           <PageTransition>{children}</PageTransition>
         </main>
