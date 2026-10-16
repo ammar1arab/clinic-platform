@@ -111,7 +111,6 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
           : target.closest<HTMLElement>("main");
         if (!surface) return;
         prepareFeedbackSound();
-        if (header && event.cancelable) event.preventDefault();
         originalTranslate = surface.style.translate;
         originalTransition = surface.style.transition;
         const bounds = surface.getBoundingClientRect();
@@ -215,28 +214,31 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         once: true,
         capture: true,
       });
-      document.addEventListener("touchstart", begin, {
+      // Keep the gesture handlers inside the app surface. Capturing touch events
+      // on document (and cancelling a touchstart in the top bar) can suppress
+      // native vertical scrolling on mobile browsers for the whole page.
+      root.addEventListener("touchstart", begin, {
+        passive: true,
+        capture: true,
+      });
+      root.addEventListener("touchmove", move, {
         passive: false,
         capture: true,
       });
-      document.addEventListener("touchmove", move, {
+      root.addEventListener("touchend", end, {
         passive: false,
         capture: true,
       });
-      document.addEventListener("touchend", end, {
-        passive: false,
-        capture: true,
-      });
-      document.addEventListener("touchcancel", reset, { capture: true });
+      root.addEventListener("touchcancel", reset, { capture: true });
       return () => {
         disposed = true;
         clearTimeout(timer);
         restoreSurface();
         document.removeEventListener("click", prepareFeedbackSound, true);
-        document.removeEventListener("touchstart", begin, true);
-        document.removeEventListener("touchmove", move, true);
-        document.removeEventListener("touchend", end, true);
-        document.removeEventListener("touchcancel", reset, true);
+        root.removeEventListener("touchstart", begin, true);
+        root.removeEventListener("touchmove", move, true);
+        root.removeEventListener("touchend", end, true);
+        root.removeEventListener("touchcancel", reset, true);
       };
     },
     [pathname, t],
@@ -263,7 +265,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       >
         <div
           className={cn(
-            "grid size-11 place-items-center rounded-full border border-border bg-card text-primary",
+            "grid size-11 place-items-center text-primary",
             dragging
               ? "transition-none"
               : "motion-safe:transition-[transform,opacity] motion-safe:duration-300 motion-safe:ease-out",
@@ -278,11 +280,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         >
           <svg
             viewBox="0 0 24 24"
-            className={cn(
-              "size-6",
-              refreshing &&
-                "motion-safe:animate-spin motion-safe:[animation-duration:700ms]",
-            )}
+            className="size-7"
             aria-hidden
           >
             <circle
@@ -291,7 +289,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
               r="9"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="1.75"
               className="text-muted-foreground/25"
             />
             <circle
@@ -300,11 +298,10 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
               r="9"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="1.75"
               strokeLinecap="round"
               pathLength="100"
-              strokeDasharray={`${refreshing ? 75 : Math.max(4, Math.min(90, (distance / THRESHOLD) * 90))} 100`}
-              className="motion-safe:transition-[stroke-dasharray] motion-safe:duration-75 motion-safe:ease-linear"
+              strokeDasharray={`${refreshing ? 100 : progress * 100} 100`}
               style={{
                 transformOrigin: "center",
                 transform: `rotate(${refreshing ? -90 : distance * 3 - 90}deg)`,
@@ -312,21 +309,20 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
             />
             {!ready && (
               <path
-                d="M12 7v10m-4-4 4 4 4-4"
+                d="M12 6v12m-5-5 5 5 5-5"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="1.75"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="motion-safe:transition-transform motion-safe:duration-100"
-                style={{ transform: `rotate(${progress * 180}deg)` }}
+                className="opacity-90"
               />
             )}
             {ready && (
               <path
                 d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z"
                 fill="currentColor"
-                className="origin-center scale-90 motion-safe:animate-pulse"
+                className="origin-center motion-safe:animate-clinic-success-pop"
               />
             )}
           </svg>
