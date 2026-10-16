@@ -1,8 +1,8 @@
 'use client';
 
 import { useLanguage } from '@/providers/language-provider';
-import { Button } from '@/components/ui';
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -11,8 +11,31 @@ import {
 import { IconLanguage, IconCheck } from '@/constants/icons';
 import { SoftTip } from '@/components/primitives';
 
-export function LanguageSwitcher() {
+export function LanguageOptions() {
   const { language, setLanguage, t } = useLanguage();
+
+  return (
+    <>
+      <DropdownMenuItem
+        onClick={() => setLanguage('en')}
+        className="flex items-center justify-between"
+      >
+        {t.layout.english}
+        {language === 'en' && <IconCheck className="size-4 ms-2" />}
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={() => setLanguage('ar')}
+        className="flex items-center justify-between"
+      >
+        {t.layout.arabic}
+        {language === 'ar' && <IconCheck className="size-4 ms-2" />}
+      </DropdownMenuItem>
+    </>
+  );
+}
+
+export function LanguageSwitcher() {
+  const { t } = useLanguage();
 
   return (
     <DropdownMenu>
@@ -28,20 +51,7 @@ export function LanguageSwitcher() {
         </DropdownMenuTrigger>
       </SoftTip>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          onClick={() => setLanguage('en')}
-          className="flex items-center justify-between"
-        >
-          {t.layout.english}
-          {language === 'en' && <IconCheck className="size-4 ms-2" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => setLanguage('ar')}
-          className="flex items-center justify-between"
-        >
-          {t.layout.arabic}
-          {language === 'ar' && <IconCheck className="size-4 ms-2" />}
-        </DropdownMenuItem>
+        <LanguageOptions />
       </DropdownMenuContent>
     </DropdownMenu>
   );
