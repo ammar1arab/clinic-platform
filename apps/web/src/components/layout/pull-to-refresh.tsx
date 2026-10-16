@@ -203,7 +203,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
           const next = new URL(window.location.href);
           next.searchParams.set(REFRESH_PARAM, String(Date.now()));
           window.location.replace(next.href);
-        }, 180);
+        }, 560);
       };
       const end = (event: TouchEvent) => {
         if (pulled > 8 && event.cancelable) event.preventDefault();
@@ -249,7 +249,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       : t.common.pullToRefresh;
 
   return (
-    <div ref={bind} className="h-full w-full">
+    <div ref={bind} className="contents">
       {children}
       <div
         role="status"
@@ -260,37 +260,40 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       >
         <div
           className={cn(
-            "grid size-9 place-items-center rounded-full border border-primary/10 bg-card text-primary/70 shadow-sm motion-safe:transition-[opacity,box-shadow,color] motion-safe:duration-200",
-            ready && "text-primary ring-4 ring-primary/5 shadow-primary/15",
+            "flex items-center gap-2 rounded-full border border-border/80 bg-card/95 px-3 py-2 text-primary shadow-lg backdrop-blur-sm motion-safe:transition-[opacity,box-shadow,color] motion-safe:duration-200",
+            ready &&
+              "border-primary/30 text-primary ring-4 ring-primary/5 shadow-primary/15",
             (!visible || refreshing) &&
               "motion-safe:transition-[transform,opacity,box-shadow,color] motion-safe:duration-300 motion-safe:ease-out",
             !visible && "opacity-0",
           )}
           style={{
-            transform: `translateY(${visible ? Math.max(0, ((refreshing ? HOLD_DISTANCE : distance) - 36) / 2) : -36}px) scale(${visible ? (refreshing ? 1 : 0.76 + progress * 0.3) : 0.65})`,
+            transform: `translateY(${visible ? Math.max(0, ((refreshing ? HOLD_DISTANCE : distance) - 40) / 2) : -40}px) scale(${visible ? (refreshing ? 1 : 0.82 + progress * 0.18) : 0.92})`,
             opacity: visible
-              ? Math.min(1, (refreshing ? HOLD_DISTANCE : distance) / 36)
+              ? Math.min(1, (refreshing ? HOLD_DISTANCE : distance) / 32)
               : 0,
           }}
         >
           <svg
             viewBox="0 0 24 24"
             className={cn(
-              "size-6",
+              "size-5",
               refreshing &&
                 "motion-safe:animate-spin motion-safe:[animation-duration:700ms]",
             )}
             aria-hidden
           >
-            <circle
-              cx="12"
-              cy="12"
-              r="9"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="opacity-10"
-            />
+            {!refreshing && (
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="opacity-10"
+              />
+            )}
             <circle
               cx="12"
               cy="12"
@@ -306,8 +309,24 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
                 transform: `rotate(${refreshing ? -90 : distance * 3 - 90}deg)`,
               }}
             />
+            {!refreshing && (
+              <path
+                d="M12 7v10m-4-4 4 4 4-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={cn(
+                  "transition-transform duration-200",
+                  ready && "translate-y-0.5",
+                )}
+              />
+            )}
           </svg>
-          <span className="sr-only">{visible ? label : ""}</span>
+          <span className="text-xs font-medium leading-none">
+            {visible ? label : ""}
+          </span>
         </div>
       </div>
     </div>

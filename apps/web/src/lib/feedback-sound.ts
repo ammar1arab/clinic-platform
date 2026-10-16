@@ -85,8 +85,8 @@ export function playRefreshSound() {
   if (!ctx) return;
   const play = () => {
     if (ctx.state !== 'running') return;
-    tone(ctx, ctx.destination, 660, ctx.currentTime, 0.09, 'sine', 0.08);
-    tone(ctx, ctx.destination, 880, ctx.currentTime + 0.06, 0.1, 'sine', 0.06);
+    tone(ctx, ctx.destination, 587.33, ctx.currentTime, 0.16, 'sine', 0.16);
+    tone(ctx, ctx.destination, 783.99, ctx.currentTime + 0.09, 0.22, 'sine', 0.13);
   };
   if (ctx.state === 'running') play();
   else void ctx.resume().then(play).catch(() => {});

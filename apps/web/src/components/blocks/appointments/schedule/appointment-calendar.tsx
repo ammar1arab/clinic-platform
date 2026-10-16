@@ -114,6 +114,52 @@ export function AppointmentCalendar({
     useState<AppointmentPopoverState | null>(null);
   const [dayPopover, setDayPopover] =
     useState<DayAppointmentsPopoverState | null>(null);
+  const scrollPositionsRef = useRef<
+    Array<{ element: HTMLElement; top: number; left: number }>
+  >([]);
+
+  const captureScrollPositions = useCallback((target: EventTarget | null) => {
+    if (!(target instanceof Element)) return;
+    const positions: typeof scrollPositionsRef.current = [];
+    for (let node: Element | null = target; node; node = node.parentElement) {
+      if (
+        node instanceof HTMLElement &&
+        (node.scrollHeight > node.clientHeight ||
+          node.scrollWidth > node.clientWidth)
+      ) {
+        positions.push({
+          element: node,
+          top: node.scrollTop,
+          left: node.scrollLeft,
+        });
+      }
+    }
+    const pageScroller = document.querySelector<HTMLElement>(
+      "[data-page-scroll]",
+    );
+    if (
+      pageScroller &&
+      !positions.some(({ element }) => element === pageScroller)
+    ) {
+      positions.push({
+        element: pageScroller,
+        top: pageScroller.scrollTop,
+        left: pageScroller.scrollLeft,
+      });
+    }
+    scrollPositionsRef.current = positions;
+  }, []);
+
+  const restoreScrollPositions = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      for (const { element, top, left } of scrollPositionsRef.current) {
+        if (!element.isConnected) continue;
+        element.scrollTop = top;
+        element.scrollLeft = left;
+      }
+      scrollPositionsRef.current = [];
+    });
+  }, []);
 
   const { events, appointmentsByDay } = useMemo(() => {
     const byDay = new Map<string, Appointment[]>();
@@ -157,12 +203,16 @@ export function AppointmentCalendar({
     if (!appt) return;
     arg.jsEvent.preventDefault();
     arg.jsEvent.stopPropagation();
+    if (!scrollPositionsRef.current.length) {
+      captureScrollPositions(arg.el);
+    }
     const anchor = popoverAnchorFromElement(arg.el);
     window.setTimeout(() => {
       setDayPopover(null);
       setAppointmentPopover({ appointment: appt, anchor });
+      restoreScrollPositions();
     }, 0);
-  }, []);
+  }, [captureScrollPositions, restoreScrollPositions]);
 
   const handleDateClick = useCallback(
     (arg: DateClickArg) => {
@@ -310,19 +360,21 @@ export function AppointmentCalendar({
           appointments: appointmentsByDay.get(rawDate) ?? [],
           anchor,
         });
+        restoreScrollPositions();
       }, 0);
     },
-    [appointmentsByDay],
+    [appointmentsByDay, restoreScrollPositions],
   );
 
   const openMoreLink = useCallback(
     (link: Element) => {
+      if (!scrollPositionsRef.current.length) captureScrollPositions(link);
       const dayElement = link.closest<HTMLElement>("[data-date]");
       const rawDate = dayElement?.getAttribute("data-date");
       const date = rawDate ? new Date(`${rawDate}T00:00:00`) : new Date();
       openDayPopover(link, date);
     },
-    [openDayPopover],
+    [captureScrollPositions, openDayPopover],
   );
 
   const handleCalendarClickCapture = useCallback(
@@ -428,9 +480,14 @@ export function AppointmentCalendar({
         ref={sizeHostRef}
         onClickCapture={handleCalendarClickCapture}
         onKeyDownCapture={handleMoreLinkKeyDown}
-        onPointerDown={(event) => {
+        onPointerDownCapture={(event) => {
           if (!(event.target instanceof Element)) return;
           if (event.target.closest("[data-calendar-popover]")) return;
+          if (event.target.closest(".fc-event, .fc-more-link")) {
+            captureScrollPositions(event.target);
+          } else {
+            scrollPositionsRef.current = [];
+          }
           if (event.target.closest(".fc-event, .fc-more-link")) return;
           setAppointmentPopover(null);
           setDayPopover(null);
