@@ -132,7 +132,7 @@ export function ScheduleToolbar({
               size="sm"
               onClick={onNewPatient}
               aria-label={t.appointments.addPatient}
-              className="size-8 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
+              className="size-9 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-9 sm:w-auto sm:gap-1.5 sm:px-2.5"
             >
               <IconNewPatient className="size-3.5 shrink-0 text-muted-foreground" />
               <span className="hidden font-semibold sm:inline">{t.appointments.patient}</span>
@@ -143,7 +143,7 @@ export function ScheduleToolbar({
               size="sm"
               onClick={onNewAppointment}
               aria-label={t.appointments.addAppointment}
-              className="size-8 shrink-0 px-0 active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
+              className="size-9 shrink-0 px-0 active:scale-95 sm:h-9 sm:w-auto sm:gap-1.5 sm:px-2.5"
             >
               <IconAdd className="size-3.5 shrink-0" />
               <span className="hidden font-semibold sm:inline">{t.appointments.appointment}</span>
