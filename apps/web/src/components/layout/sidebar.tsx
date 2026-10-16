@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { ROLE, type Role } from '@clinic/types';
 import type { Translations } from '@/i18n';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,7 @@ import {
   IconReports,
   IconMail,
   IconSchedule,
+  IconTimer,
   IconSettings,
   IconSidebarCollapse,
   type LucideIcon,
@@ -87,7 +88,9 @@ function getNavItems(t: Translations, role?: Role | null): NavItem[] {
   }
   const items: NavItem[] = [
     { label: t.layout.sidebar.dashboard, href: ROUTES.DASHBOARD, icon: IconDashboard, accent: 'default' },
-    { label: t.layout.sidebar.schedule, href: schedulePath('month'), icon: IconSchedule, accent: 'teal' },
+    { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'teal' },
+    { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconPractitioner, accent: 'default' },
+    { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer, accent: 'warning' },
     { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
     { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner, accent: 'default' },
     { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'warning' },
@@ -97,9 +100,13 @@ function getNavItems(t: Translations, role?: Role | null): NavItem[] {
   return items.filter((item) => canSeeNavHref(item.href, role));
 }
 
-function isActivePath(pathname: string, href: string) {
+function isActivePath(pathname: string, href: string, scheduleView: string | null) {
   if (href.startsWith(ROUTES.SCHEDULE)) {
-    return pathname === ROUTES.SCHEDULE || pathname.startsWith(`${ROUTES.SCHEDULE}/`);
+    if (pathname !== ROUTES.SCHEDULE && !pathname.startsWith(`${ROUTES.SCHEDULE}/`)) return false;
+    const targetView = new URLSearchParams(href.split('?')[1]).get('view');
+    const currentView = scheduleView ?? 'month';
+    if (targetView === 'month') return ['month', 'week', 'day'].includes(currentView);
+    return targetView === currentView;
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -203,6 +210,8 @@ function MobileNavLink({
 
 export function SidebarBlock() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const scheduleView = searchParams.get('view');
   const { isCollapsed, toggleSidebar, mobileOpen, setMobileOpen } = useSidebar();
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -273,7 +282,7 @@ export function SidebarBlock() {
                 label={label}
                 icon={icon}
                 accent={accent}
-                active={isActivePath(pathname, href)}
+                active={isActivePath(pathname, href, scheduleView)}
                 open={mobileOpen}
                 index={index}
                 onClick={closeMobile}
@@ -342,7 +351,7 @@ export function SidebarBlock() {
               href={href}
               label={label}
               icon={icon}
-              active={isActivePath(pathname, href)}
+              active={isActivePath(pathname, href, scheduleView)}
               collapsed={isCollapsed}
             />
           ))}
