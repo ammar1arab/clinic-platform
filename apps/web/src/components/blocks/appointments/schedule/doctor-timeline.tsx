@@ -313,7 +313,7 @@ export function DoctorTimeline({
       }
       el.scrollTop = (9 - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT;
     },
-    [isToday, selectedDate],
+    [isToday],
   );
 
   const shiftDate = useCallback((delta: number) => {

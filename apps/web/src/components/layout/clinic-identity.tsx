@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ROLE } from '@clinic/types';
 import { ROUTES } from '@/constants/routes';
 import { EntityAvatar, SoftTip } from '@/components/primitives';
@@ -46,10 +47,13 @@ export function ClinicLockup() {
   if (!logoUrl) return <BrandMark size="sm" />;
 
   return (
-    <img
+    <Image
       key={logoUrl}
       src={logoUrl}
       alt=""
+      width={32}
+      height={32}
+      unoptimized
       className="size-8 shrink-0 bg-transparent object-contain"
       onLoad={() => {
         if (!clinicId) return;

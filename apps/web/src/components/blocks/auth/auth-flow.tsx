@@ -64,7 +64,7 @@ export function AuthFlow() {
   const complete = useCallback(() => {
     if (completing.current) return;
     completing.current = true;
-    setSuccess(false);
+    window.location.replace(destRef.current);
   }, []);
 
   if (isAuthenticated && isLoading && !success) {

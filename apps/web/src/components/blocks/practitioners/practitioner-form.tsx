@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import {
@@ -70,7 +70,6 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
     control,
     register,
     handleSubmit,
-    watch,
     setValue,
     setError,
     formState: { errors },
@@ -81,10 +80,11 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
       : emptyPractitionerValues(),
   });
 
-  const departmentId = watch('departmentId');
-  const imageUrl = watch('imageUrl');
-  const name = watch('name');
-  const employmentType = watch('employmentType');
+  const departmentId = useWatch({ control, name: 'departmentId' });
+  const imageUrl = useWatch({ control, name: 'imageUrl' });
+  const name = useWatch({ control, name: 'name' });
+  const nameAr = useWatch({ control, name: 'nameAr' });
+  const employmentType = useWatch({ control, name: 'employmentType' });
   const needsCommission = employmentType === 'commission' || employmentType === 'mixed';
 
   const roomOptions = useMemo(() => {
@@ -159,8 +159,8 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
 
           <BilingualNameFields
             className="sm:col-span-2"
-            name={watch('name')}
-            nameAr={watch('nameAr') ?? ''}
+            name={name}
+            nameAr={nameAr ?? ''}
             onNameChange={(v) => setValue('name', v, { shouldValidate: true })}
             onNameArChange={(v) => setValue('nameAr', v, { shouldValidate: true })}
             englishError={errors.name?.message}

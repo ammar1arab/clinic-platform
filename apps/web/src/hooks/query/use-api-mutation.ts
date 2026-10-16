@@ -105,7 +105,10 @@ export function useApiMutation<
       const message =
         resolveMessage(errorMessage, error, variables) ?? errorText(error);
       if (errorMessage) toast.error(message);
-      if (axios.isAxiosError(error)) log.warn('failed', { message });
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) log.debug('failed', { message });
+        else log.warn('failed', { message });
+      }
       else log.error('failed', error instanceof Error ? error : { message });
       onError?.(error, variables, context);
     },

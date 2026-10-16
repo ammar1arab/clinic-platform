@@ -27,7 +27,7 @@ import { securityError } from "@/security/security-error";
 type Account = AuthAccount;
 export type AuthSessionReady = AuthReady & { accessToken: string };
 
-const GUEST_EMAIL = "owner@clinic.com";
+const GUEST_EMAIL = "guest@clinic.invalid";
 const dummyHashReady = bcrypt.hash(randomUUID(), 10);
 function compareDummy(password: string) {
   return dummyHashReady.then((hash) => bcrypt.compare(password, hash));
@@ -386,8 +386,11 @@ export class AuthService {
   }
 
   async guest(): Promise<AuthSessionReady> {
-    const user = await this.repo.openGuest(GUEST_EMAIL);
-    if (!user) securityError("invalidCredentials", 401);
+    const user = await this.repo.openGuest(
+      GUEST_EMAIL,
+      await bcrypt.hash(randomUUID(), 10),
+    );
+    if (!user) securityError("guestUnavailable", 503);
     return this.ready(user);
   }
 

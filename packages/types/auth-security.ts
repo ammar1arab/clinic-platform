@@ -27,7 +27,7 @@ export type AuthVerifyInput = { token: string; code: string };
 export type AuthPasswordInput = { token: string; password: string };
 export type AuthTokenInput = { token: string };
 export type AuthForgotInput = { email: string };
-export type AuthErrorCode = 'invalidCredentials' | 'invalidToken' | 'invalidOtp' | 'rateLimited' | 'weakPassword' | 'emailUnavailable' | 'clinicUnavailable' | 'invalidRequest' | 'noPendingOtp' | 'emailInUse';
+export type AuthErrorCode = 'invalidCredentials' | 'invalidToken' | 'invalidOtp' | 'rateLimited' | 'weakPassword' | 'emailUnavailable' | 'clinicUnavailable' | 'guestUnavailable' | 'invalidRequest' | 'noPendingOtp' | 'emailInUse';
 
 export interface OwnerResetPasswordInput { password: string; }
 

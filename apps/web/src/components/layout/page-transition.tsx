@@ -7,7 +7,10 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const setScroller = useCallback(
     (node: HTMLDivElement | null) => {
-      if (node) node.scrollTop = 0;
+      if (node && node.dataset.pathname !== pathname) {
+        node.scrollTop = 0;
+        node.dataset.pathname = pathname;
+      }
     },
     [pathname],
   );
@@ -16,6 +19,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     <div
       ref={setScroller}
       data-page-scroll
+      data-pathname={pathname}
       className="page-scroll"
     >
       {children}

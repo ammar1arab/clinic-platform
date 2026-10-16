@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Card,
@@ -127,12 +127,16 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
     handleSubmit,
     control,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<PatientFormData>({
     resolver: zodResolver(patientSchema),
     defaultValues: patient ? toFormValues(patient) : emptyPatientValues(),
   });
+  const imageUrl = useWatch({ control, name: 'imageUrl' });
+  const firstNameEn = useWatch({ control, name: 'firstNameEn' });
+  const firstNameAr = useWatch({ control, name: 'firstNameAr' });
+  const lastNameEn = useWatch({ control, name: 'lastNameEn' });
+  const lastNameAr = useWatch({ control, name: 'lastNameAr' });
 
   const onSubmit = (data: PatientFormData) => {
     const payload = toPayload(data);
@@ -158,11 +162,11 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField error={errors.imageUrl?.message} className="sm:col-span-2">
             <AvatarUpload
-              value={watch('imageUrl')}
+              value={imageUrl}
               onChange={(url) =>
                 setValue('imageUrl', url, { shouldValidate: true, shouldDirty: true })
               }
-              fallbackLabel={`${watch('firstNameEn') || watch('firstNameAr') || 'P'}${watch('lastNameEn') || watch('lastNameAr') || ''}`}
+              fallbackLabel={`${firstNameEn || firstNameAr || 'P'}${lastNameEn || lastNameAr || ''}`}
               disabled={isPending}
             />
           </FormField>

@@ -489,6 +489,7 @@ export const en = {
         "We could not send the email. Please try again later or contact your clinic.",
       clinicUnavailable:
         "Your account needs one active clinic. Please contact your clinic administrator.",
+      guestUnavailable: "Guest access is unavailable in this environment.",
     },
     login: "Log in",
     logout: "Log out",

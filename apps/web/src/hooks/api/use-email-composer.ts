@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
   EmailContent,
@@ -97,7 +97,11 @@ export function useEmailComposer(
       excludedEmails: "",
     },
   });
-  const values = form.watch();
+  useWatch({
+    control: form.control,
+    defaultValue: form.getValues(),
+  });
+  const values = form.getValues();
   const sendMutation = useSendEmail();
   const testMutation = useTestEmail();
   const [error, setError] = useState("");

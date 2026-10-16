@@ -73,7 +73,7 @@ export function EmailComposer() {
   const { form, values } = state;
   const variables = useEmailVariables(clinicId);
   const { errors } = form.formState;
-  const excluded = values.excludedEmails
+  const excluded = (values.excludedEmails ?? "")
     .split(/\r?\n/)
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);

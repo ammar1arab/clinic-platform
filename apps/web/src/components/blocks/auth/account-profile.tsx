@@ -3,7 +3,7 @@
 import { toast } from "sonner";
 import { compressImageToJpeg } from "@/lib/upload-local";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   Card,
   CardContent,
@@ -30,6 +30,8 @@ import { ROLE } from "@clinic/types";
 import { AccountPasswordReset } from "./account-password-reset";
 import { AccountVerificationDialog } from "./account-verification-dialog";
 
+const cooldownDeadline = (seconds: number) => Date.now() + seconds * 1000;
+
 export function AccountProfile() {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
@@ -44,7 +46,7 @@ export function AccountProfile() {
   const [otpError, setOtpError] = useState("");
   const {
     register,
-    watch,
+    control,
     setValue,
     handleSubmit,
     formState: { isSubmitting, errors },
@@ -57,6 +59,8 @@ export function AccountProfile() {
       phone: user?.phone ?? "",
     },
   });
+  const imageUrl = useWatch({ control, name: "imageUrl" });
+  const name = useWatch({ control, name: "name" });
   if (!user || user.role !== ROLE.OWNER) return null;
   return (
     <div className="space-y-4">
@@ -101,7 +105,7 @@ export function AccountProfile() {
                 setEmailOtp({
                   token: pending.token,
                   email: pending.email,
-                  resendAt: Date.now() + pending.cooldownSeconds * 1000,
+                  resendAt: cooldownDeadline(pending.cooldownSeconds),
                 });
               }
             }
@@ -119,9 +123,9 @@ export function AccountProfile() {
             <CardContent className="space-y-4">
               <div className="flex min-w-0 flex-col items-center gap-6">
                 <AvatarUpload
-                  value={watch("imageUrl")}
+                  value={imageUrl}
                   onChange={(value) => setValue("imageUrl", value)}
-                  fallbackLabel={watch("name")}
+                  fallbackLabel={name}
                   showPreviewNotice={false}
                 />
                 <div className="w-full min-w-0 space-y-4">

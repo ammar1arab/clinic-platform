@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useRef, useState } from 'react';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -95,7 +96,15 @@ export function AvatarUpload({
     >
       {value ? (
         plain ? (
-          <img key={value} src={value} alt="" className="size-full object-contain" />
+          <Image
+            key={value}
+            src={value}
+            alt=""
+            width={112}
+            height={112}
+            unoptimized
+            className="size-full object-contain"
+          />
         ) : (
           <AvatarImage
             src={value}

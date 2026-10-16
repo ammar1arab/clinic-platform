@@ -11,6 +11,8 @@ const include = {
   },
 } as const;
 
+const GUEST_CLINIC_NAME = "Cureva Demo Clinic";
+
 export type AuthAccount = Prisma.UserGetPayload<{ include: typeof include }>;
 
 @Injectable()
@@ -138,18 +140,51 @@ export class AuthRepository {
       data: { emailVerifiedAt: new Date() },
     });
   }
-  async openGuest(email: string) {
-    const user = await this.byEmail(email);
-    if (!user || (user.emailVerifiedAt && !user.mustChangePassword))
-      return user;
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        mustChangePassword: false,
-        emailVerifiedAt: user.emailVerifiedAt ?? new Date(),
-      },
-    });
-    return this.byId(user.id);
+  async openGuest(email: string, passwordHash: string) {
+    const existing = await this.byEmail(email);
+    if (existing) return this.isGuestAccount(existing) ? existing : null;
+
+    try {
+      return await this.prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          emailVerifiedAt: new Date(),
+          clinicUsers: {
+            create: {
+              role: "owner",
+              name: "Demo Guest",
+              clinic: {
+                create: {
+                  name: GUEST_CLINIC_NAME,
+                  nameAr: "عيادة كيريفا التجريبية",
+                  timezone: "Asia/Amman",
+                },
+              },
+            },
+          },
+        },
+        include,
+      });
+    } catch (error) {
+      if (
+        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+        error.code !== "P2002"
+      ) {
+        throw error;
+      }
+
+      const concurrent = await this.byEmail(email);
+      return concurrent && this.isGuestAccount(concurrent) ? concurrent : null;
+    }
+  }
+
+  private isGuestAccount(user: AuthAccount) {
+    return (
+      user.clinicUsers.length === 1 &&
+      user.clinicUsers[0]?.role === "owner" &&
+      user.clinicUsers[0].clinic.name === GUEST_CLINIC_NAME
+    );
   }
   async changePassword(
     id: string,
