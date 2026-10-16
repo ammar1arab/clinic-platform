@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback, useState, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useLanguage } from "@/providers/language-provider";
 import { prepareFeedbackSound, playRefreshSound } from "@/lib/feedback-sound";
+import { queryClient } from "@/lib/query-client";
 import { cn } from "@/lib/utils";
 
 const THRESHOLD = 64;
@@ -16,7 +16,6 @@ const REFRESH_PARAM = "_cureva_refresh";
 export function PullToRefresh({ children }: { children: ReactNode }) {
   const { t } = useLanguage();
   const confirm = useConfirm();
-  const pathname = usePathname();
   const [distance, setDistance] = useState(0);
   const [origin, setOrigin] = useState({ top: 0, left: 0, width: 0 });
   const [refreshing, setRefreshing] = useState(false);
@@ -162,6 +161,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
           locked = false;
           return;
         }
+        queryClient.clear();
         clearTimeout(settleTimer);
         if (!surface) {
           surface = root.querySelector<HTMLElement>("main");
@@ -223,7 +223,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         root.removeEventListener("touchcancel", reset, true);
       };
     },
-    [confirm, pathname, t],
+    [confirm, t],
   );
   const visible = distance > 0 || refreshing;
   const dragging = distance > 0 && !refreshing;
