@@ -20,7 +20,6 @@ import {
   TimePicker,
   FormField,
   FormPageSkeleton,
-  PageBack,
   ButtonSpinner,
   ErrorState,
   AvatarUpload,
@@ -32,7 +31,7 @@ import { useDepartments } from '@/hooks/api/use-departments';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useLanguage } from '@/providers';
 import { FORM_NONE } from '@/constants/form';
-import { ROUTES } from '@/constants/routes';
+import { SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
 import { readClinicLogo, stripSolidBackdrop, writeClinicLogo } from '@/lib/clinic-logo';
 import type { Clinic } from '@/services/clinics.service';
 
@@ -346,7 +345,7 @@ export default function ClinicSettingsPage() {
 
   return (
     <div className="page-stack space-y-4">
-      <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
+      <SettingsPageBack section="clinic" />
       <ClinicSettingsForm key={clinic.id} clinic={clinic} clinicId={clinicId} />
     </div>
   );
