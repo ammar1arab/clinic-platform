@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { redirect, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import type { AuthLoginResponse, AuthRecovery, AuthReset } from "@clinic/types";
 import { Card, CardContent, Button } from "@/components/ui";
 import { useAuth, useLanguage } from "@/providers";
@@ -39,7 +39,6 @@ export function AuthFlow() {
   const [success, setSuccess] = useState(false);
   const completing = useRef(false);
   const destRef = useRef<string>(ROUTES.DASHBOARD);
-  const router = useRouter();
   const { login, user, isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
   const mutation = useAuthMutation();
@@ -66,8 +65,7 @@ export function AuthFlow() {
     if (completing.current) return;
     completing.current = true;
     setSuccess(false);
-    router.replace(destRef.current);
-  }, [router]);
+  }, []);
 
   if (isAuthenticated && isLoading && !success) {
     return <LoadingState variant="page" text={t.auth.signingIn} />;
