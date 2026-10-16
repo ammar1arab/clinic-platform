@@ -27,7 +27,6 @@ import {
   Pagination,
   BilingualNameFields,
   optionalArabicName,
-  PageBack,
   TableFrame,
   EntityMetaStat,
   EntityMobileCard,
@@ -39,7 +38,7 @@ import {
   IconDepartment,
   IconEdit,
 } from '@/constants/icons';
-import { ROUTES } from '@/constants/routes';
+import { SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
 import {
   useDepartments,
   useCreateDepartment,
@@ -137,7 +136,7 @@ export default function DepartmentsPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <PageBack backHref={ROUTES.SETTINGS} backLabel={t.settings.title} />
+      <SettingsPageBack section="departments" />
 
       <div className="flex items-center gap-2">
         <SearchInput
