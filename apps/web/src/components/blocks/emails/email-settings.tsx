@@ -92,7 +92,6 @@ function EmailSettingsForm({
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <FormField
               label={t.emails.replyTo}
-              hint={t.common.replyToHint}
               htmlFor="replyTo"
               error={errors.replyTo?.message}
               className="sm:col-span-2"
