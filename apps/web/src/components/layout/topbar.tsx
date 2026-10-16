@@ -3,10 +3,9 @@
 import { ROUTES } from '@/constants/routes';
 import { useCallback, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useAuth, useConfirm, useLanguage } from '@/providers';
+import { useAuth, useLanguage } from '@/providers';
 import type { Translations } from '@/i18n';
 import { useSidebar } from '@/providers/sidebar-provider';
-import { toast } from 'sonner';
 import {
   Button,
   AlertDialog,
@@ -18,20 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
 } from '@/components/ui';
-import { ThemeOptions, ThemeToggle } from '@/components/primitives/display/theme-toggle';
-import { LanguageOptions, LanguageSwitcher } from '@/components/primitives/display/language-switcher';
+import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
+import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
 import { SoftTip } from '@/components/primitives';
-import { IconLanguage, IconLogout, IconMenu, IconMore, IconRotateCcw, IconSun } from '@/constants/icons';
-import { playRefreshSound } from '@/lib/feedback-sound';
-import { queryClient } from '@/lib/query-client';
+import { IconLogout, IconMenu } from '@/constants/icons';
+import { MobileActionsMenu } from '@/components/layout/mobile-actions-menu';
+import { MobileClinicIdentity } from '@/components/layout/clinic-identity';
 
 const REFRESH_PARAM = '_cureva_refresh';
 
@@ -78,10 +70,8 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { logout } = useAuth();
-  const confirm = useConfirm();
-  const { setMobileOpen } = useSidebar();
+  const { setMobileOpen, mobileOpen } = useSidebar();
   const [signOutOpen, setSignOutOpen] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const { t } = useLanguage();
   const title = resolveTitle(pathname, searchParams.get('view'), t);
 
@@ -92,33 +82,6 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
     url.searchParams.delete(REFRESH_PARAM);
     window.history.replaceState(window.history.state, '', url);
   }, []);
-
-  const refreshApp = async () => {
-    if (refreshing) return;
-    if (document.querySelector('main form, main [contenteditable="true"]')) {
-      const accepted = await confirm({
-        title: t.common.reloadPage,
-        description: t.common.refreshUnsaved,
-        confirmLabel: t.common.reloadPage,
-      });
-      if (!accepted) return;
-    }
-    if (!navigator.onLine) {
-      toast.error(t.common.refreshOffline);
-      return;
-    }
-    queryClient.clear();
-    setRefreshing(true);
-    playRefreshSound();
-    try {
-      navigator.vibrate?.([12, 35, 12]);
-    } catch {}
-    window.setTimeout(() => {
-      const next = new URL(window.location.href);
-      next.searchParams.set(REFRESH_PARAM, String(Date.now()));
-      window.location.replace(next.href);
-    }, 420);
-  };
 
   const handleSignOut = () => {
     logout();
@@ -135,13 +98,17 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
             <SoftTip label={t.layout.sidebar.openMenu}>
               <button
                 aria-label={t.layout.sidebar.openMenu}
-                className="grid size-8 shrink-0 place-items-center rounded-lg border border-border/80 bg-card/80 text-foreground shadow-sm transition-colors hover:bg-muted md:hidden"
+                aria-expanded={mobileOpen}
+                aria-controls="mobile-navigation"
+                className="grid size-8 shrink-0 place-items-center rounded-lg border border-border/80 bg-card/80 text-foreground shadow-sm transition-[transform,color,background-color] duration-200 hover:bg-muted active:scale-90 active:rotate-6 motion-reduce:transition-none md:hidden"
                 onClick={() => setMobileOpen(true)}
               >
-                <IconMenu className="size-4" />
+                <IconMenu className="size-4 transition-transform duration-200 motion-reduce:transition-none" />
               </button>
             </SoftTip>
           ) : null}
+
+          {showNav ? <div className="md:hidden"><MobileClinicIdentity /></div> : null}
 
           <h1 className="truncate font-heading text-[0.9375rem] font-semibold tracking-tight text-foreground md:text-base">
             {title}
@@ -164,56 +131,7 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
             </Button>
           </SoftTip>
         </div>
-        <DropdownMenu>
-          <SoftTip label={t.common.moreOptions}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                aria-label={t.common.moreOptions}
-              >
-                {refreshing ? (
-                  <IconRotateCcw className="size-4 animate-spin" />
-                ) : (
-                  <IconMore className="size-5" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-          </SoftTip>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem disabled={refreshing} onSelect={() => void refreshApp()}>
-              <IconRotateCcw className={refreshing ? 'animate-spin' : ''} />
-              {t.emails.refresh}
-            </DropdownMenuItem>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <IconLanguage />
-                {t.layout.languageSwitcher}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <LanguageOptions />
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <IconSun />
-                {t.layout.themeToggle}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                <ThemeOptions />
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => setSignOutOpen(true)}
-            >
-              <IconLogout />
-              {t.auth.logout}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="md:hidden"><MobileActionsMenu /></div>
       </header>
 
       <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
