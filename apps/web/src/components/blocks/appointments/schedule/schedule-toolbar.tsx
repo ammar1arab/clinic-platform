@@ -118,7 +118,12 @@ export function ScheduleToolbar({
       className="card-aura flex flex-col gap-2 rounded-xl border bg-card/90 p-2 shadow-xs backdrop-blur-md sm:rounded-2xl sm:p-2.5"
     >
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <div className="min-w-0 flex-1" aria-hidden="true" />
+        <SearchInput
+          value={search}
+          onChange={onSearchChange}
+          placeholder={searchPlaceholder}
+          className="min-w-0 flex-1"
+        />
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           <SoftTip label={t.appointments.addPatient}>
@@ -147,14 +152,8 @@ export function ScheduleToolbar({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 border-t border-border/40 pt-2 sm:flex-row sm:items-center sm:gap-2">
-        <SearchInput
-          value={search}
-          onChange={onSearchChange}
-          placeholder={searchPlaceholder}
-          className="min-w-0 w-full flex-1"
-        />
-        <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex items-center gap-1.5 border-t border-border/40 pt-2 sm:gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
           <SearchablePicker
             size="sm"
             options={(departments ?? []).map((dept) => ({
@@ -168,14 +167,12 @@ export function ScheduleToolbar({
             searchPlaceholder={t.appointments.searchPlaceholder}
             className="h-9 min-w-0 flex-1 bg-background/50 sm:w-52 sm:max-w-56 sm:flex-none"
           />
-
-          <StatusFilterDropdown
-            active={statusFilters}
-            onToggle={onToggleStatus}
-            onClear={onClearStatuses}
-          />
-
         </div>
+        <StatusFilterDropdown
+          active={statusFilters}
+          onToggle={onToggleStatus}
+          onClear={onClearStatuses}
+        />
       </div>
     </div>
   );
