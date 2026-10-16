@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -17,8 +17,6 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
   const { t } = useLanguage();
   const confirm = useConfirm();
   const pathname = usePathname();
-  const confirmRef = useRef(confirm);
-  confirmRef.current = confirm;
   const [distance, setDistance] = useState(0);
   const [origin, setOrigin] = useState({ top: 0, left: 0, width: 0 });
   const [refreshing, setRefreshing] = useState(false);
@@ -32,7 +30,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         url.searchParams.delete(REFRESH_PARAM);
         window.history.replaceState(window.history.state, "", url);
       }
-      let start: { x: number; y: number; target: Element } | null = null;
+      let start: { x: number; y: number } | null = null;
       let surface: HTMLElement | null = null;
       let originalTranslate = "";
       let originalTransition = "";
@@ -60,17 +58,6 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       let armed = false;
       let disposed = false;
       let timer: ReturnType<typeof setTimeout> | undefined;
-      const atTop = (target: Element) => {
-        for (
-          let node: Element | null = target;
-          node;
-          node = node.parentElement
-        ) {
-          if (node.scrollTop > 1) return false;
-          if (node === root) break;
-        }
-        return (document.scrollingElement?.scrollTop ?? 0) <= 1;
-      };
       const reset = () => {
         moveSurface(0, true);
         clearTimeout(settleTimer);
@@ -98,17 +85,13 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         if (!target || !root.contains(target)) return;
         const header = target.closest("[data-app-topbar]");
         if (
-          (!header && !target.closest("main")) ||
-          (header && target.closest('button, a, [role="button"]')) ||
+          !header ||
           target.closest(
             'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="slider"], [draggable="true"], .fc-event',
-          ) ||
-          !atTop(target)
+          )
         )
           return;
-        surface = header
-          ? root.querySelector<HTMLElement>("main")
-          : target.closest<HTMLElement>("main");
+        surface = root.querySelector<HTMLElement>("main");
         if (!surface) return;
         prepareFeedbackSound();
         originalTranslate = surface.style.translate;
@@ -118,12 +101,11 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         start = {
           x: event.touches[0].clientX,
           y: event.touches[0].clientY,
-          target,
         };
       };
       const move = (event: TouchEvent) => {
         if (!start || locked) return;
-        if (event.touches.length !== 1 || !atTop(start.target)) {
+        if (event.touches.length !== 1) {
           reset();
           return;
         }
@@ -164,7 +146,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         locked = true;
         prepareFeedbackSound();
         if (root.querySelector('main form, main [contenteditable="true"]')) {
-          const accepted = await confirmRef.current({
+          const accepted = await confirm({
             title: t.common.reloadPage,
             description: t.common.refreshUnsaved,
             confirmLabel: t.common.reloadPage,
@@ -241,7 +223,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
         root.removeEventListener("touchcancel", reset, true);
       };
     },
-    [pathname, t],
+    [confirm, pathname, t],
   );
   const visible = distance > 0 || refreshing;
   const dragging = distance > 0 && !refreshing;
