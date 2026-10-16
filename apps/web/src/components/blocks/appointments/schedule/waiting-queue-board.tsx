@@ -221,7 +221,6 @@ export function WaitingQueueBoard({
       <div
         className={cn(
           'grid min-h-0 flex-1 grid-cols-1 gap-2.5 overflow-y-auto overscroll-y-contain p-2.5',
-          stageTab === 'all' && 'grid-cols-2 grid-rows-2 overflow-hidden sm:grid-cols-1 sm:grid-rows-none sm:overflow-y-auto',
           focused && 'h-0',
           'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
           stageTab === 'all' ? 'lg:grid-cols-4' : 'lg:grid-cols-1',
@@ -230,7 +229,7 @@ export function WaitingQueueBoard({
       >
         {isVisible('waiting') && (
           <StageColumn
-            compact={stageTab === 'all'}
+            roomy={stageTab === 'all'}
             title={t.queue.waiting}
             count={waitingList.length}
             accentClass="bg-warning"
@@ -280,7 +279,7 @@ export function WaitingQueueBoard({
 
         {isVisible('in_progress') && (
           <StageColumn
-            compact={stageTab === 'all'}
+            roomy={stageTab === 'all'}
             title={t.queue.inSession}
             count={inProgressList.length}
             accentClass="bg-primary"
@@ -331,7 +330,7 @@ export function WaitingQueueBoard({
 
         {isVisible('upcoming') && (
           <StageColumn
-            compact={stageTab === 'all'}
+            roomy={stageTab === 'all'}
             title={t.queue.upcomingToday}
             count={upcomingList.length}
             accentClass="bg-muted-foreground"
@@ -372,7 +371,7 @@ export function WaitingQueueBoard({
 
         {isVisible('completed') && (
           <StageColumn
-            compact={stageTab === 'all'}
+            roomy={stageTab === 'all'}
             title={t.queue.completed}
             count={completedList.length}
             accentClass="bg-success"
@@ -451,7 +450,7 @@ export function WaitingQueueBoard({
 }
 
 function StageColumn({
-  compact,
+  roomy,
   title,
   count,
   accentClass,
@@ -459,7 +458,7 @@ function StageColumn({
   icon,
   children,
 }: {
-  compact: boolean;
+  roomy: boolean;
   title: string;
   count: number;
   accentClass: string;
@@ -468,7 +467,7 @@ function StageColumn({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn('card-aura flex max-h-(--app-queue-col-max) min-h-0 flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs sm:rounded-2xl lg:h-full lg:max-h-none', compact && 'h-full max-h-none')}>
+    <div className={cn('card-aura flex max-h-(--app-queue-col-max) min-h-0 flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs sm:rounded-2xl lg:h-full lg:max-h-none', roomy && 'h-[min(78dvh,38rem)] max-h-none sm:h-auto sm:max-h-(--app-queue-col-max)')}>
       <div className="flex shrink-0 items-center justify-between border-b bg-muted/25 p-2.5 sm:p-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className={cn('size-2 rounded-full ring-2 ring-background', accentClass)} />
