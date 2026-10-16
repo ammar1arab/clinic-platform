@@ -761,7 +761,7 @@ export const en = {
     patient: "Patient",
     addPatient: "Add patient",
     waitingRoom: "Waiting Room",
-    doctorTimeline: "Doctor Timeline",
+    doctorTimeline: "Doctor Schedule",
     calendar: "Calendar",
     status: "Status",
     departments: "Departments",
