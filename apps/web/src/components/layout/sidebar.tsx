@@ -12,14 +12,12 @@ import { schedulePath } from '@/components/blocks/appointments/schedule/schedule
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
 import { IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
-import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
-import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
 import { useAuth, useLanguage } from '@/providers';
 import { ClinicLockup, MobileClinicIdentity, ProfileLink } from '@/components/layout/clinic-identity';
 import { MobileActionsMenu } from '@/components/layout/mobile-actions-menu';
+import { MobileMenuToggle } from '@/components/layout/mobile-menu-toggle';
 import {
   IconChevronRight,
-  IconClose,
   IconDashboard,
   IconPatients,
   IconPractitioner,
@@ -219,22 +217,11 @@ export function SidebarBlock() {
             mobileOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0',
           )}
         >
-          <MobileClinicIdentity onProfileClick={closeMobile} />
-          <div className="flex shrink-0 items-center gap-1">
-            <MobileActionsMenu />
-            <LanguageSwitcher />
-            <ThemeToggle />
-            <SoftTip label={t.layout.sidebar.closeMenu}>
-              <button
-                type="button"
-                aria-label={t.layout.sidebar.closeMenu}
-                onClick={closeMobile}
-                className="grid size-10 place-items-center rounded-full text-muted-foreground transition-colors duration-200 hover:bg-muted hover:text-foreground"
-              >
-                <IconClose className="size-4" />
-              </button>
-            </SoftTip>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <MobileMenuToggle open={mobileOpen} onClick={closeMobile} />
+            <MobileClinicIdentity onProfileClick={closeMobile} />
           </div>
+          <MobileActionsMenu />
         </div>
 
         <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 pt-2">
