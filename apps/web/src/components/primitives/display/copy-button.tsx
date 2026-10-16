@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { IconCheck, IconCopy } from "@/constants/icons";
 import { useLanguage } from "@/providers";
 import { Button } from "@/components/ui";
+import { playCopySound } from "@/lib/feedback-sound";
 
 export function CopyButton({
   value,
@@ -21,6 +22,7 @@ export function CopyButton({
     setPending(true);
     try {
       await navigator.clipboard.writeText(value);
+      playCopySound();
       if (variant === "action") {
         setCopied(true);
         window.setTimeout(() => setCopied(false), 2000);
