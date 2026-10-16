@@ -603,28 +603,56 @@ th, td {
   }
 
   
-  .empty-state-float {
-    animation: empty-state-float 6s ease-in-out infinite;
+  .empty-state-enter {
+    animation: emptyStateEnter 360ms var(--overlay-ease) both;
   }
 
-  .empty-state-halo {
-    animation: empty-state-halo 6s ease-in-out infinite;
+  @keyframes emptyStateEnter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
-  @keyframes empty-state-float {
-    0%, 100% { transform: translateY(2px); }
-    50% { transform: translateY(-4px); }
+  .empty-state-sheet {
+    animation: emptyStateSheet 5s ease-in-out infinite;
   }
 
-  @keyframes empty-state-halo {
-    0%, 100% { opacity: 0.6; transform: scale(0.94); }
-    50% { opacity: 1; transform: scale(1); }
+  .empty-state-shadow {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: emptyStateShadow 5s ease-in-out infinite;
+  }
+
+  .empty-state-spark {
+    animation: emptyStateSpark 5s ease-in-out infinite;
+  }
+
+  @keyframes emptyStateSheet {
+    0%, 100% { transform: translateY(2px) rotate(-6deg); }
+    50% { transform: translateY(-5px) rotate(-2deg); }
+  }
+
+  @keyframes emptyStateShadow {
+    0%, 100% { transform: scaleX(1); opacity: 0.8; }
+    50% { transform: scaleX(0.8); opacity: 0.45; }
+  }
+
+  @keyframes emptyStateSpark {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 1; }
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .empty-state-sheet { transform: rotate(-6deg); }
     .empty-state-enter,
-    .empty-state-float,
-    .empty-state-halo {
+    .empty-state-sheet,
+    .empty-state-shadow,
+    .empty-state-spark {
       animation: none;
     }
   }
@@ -913,21 +941,6 @@ th, td {
   .dark .card-aura:hover,
   .dark .table-frame:hover {
     box-shadow: 0 8px 24px -10px color-mix(in oklch, black 55%, transparent);
-  }
-
-  .empty-state-enter {
-    animation: emptyStateEnter 360ms var(--overlay-ease) both;
-  }
-
-  @keyframes emptyStateEnter {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
   }
 
   @keyframes auraSpin {
