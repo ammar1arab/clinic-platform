@@ -1,100 +1,24 @@
 'use client';
 
 import { AccountPasswordReset } from '@/components/blocks/auth/account-password-reset';
-import { ROUTES } from '@/constants/routes';
-import {
-  IconCard,
-  type IconWellAccent,
-} from '@/components/primitives';
-import {
-  IconChevronLeft,
-  IconChevronRight,
-  IconDepartment,
-  IconDiscount,
-  IconPackage,
-  IconPayment,
-  IconRoom,
-  IconService,
-  IconTime,
-  IconMail,
-} from '@/constants/icons';
+onstants/routes';/d
+import { IconCard } from '@/components/primitives';
+import { IconChevronLeft, IconChevronRight } from '@/constants/icons';
+import { getSettingsSections } from '@/components/blocks/settings/settings-navigation';
 import { useLanguage } from '@/providers';
 
 export default function SettingsPage() {
   const { t, dir } = useLanguage();
   const ChevronIcon = dir === 'rtl' ? IconChevronLeft : IconChevronRight;
 
-  const settingsLinks: {
-    href: string;
-    title: string;
-    description: string;
-    icon: typeof IconTime;
-    accent: IconWellAccent;
-  }[] = [
-    {
-      href: ROUTES.SETTINGS_CLINIC,
-      title: t.common.clinicProfile,
-      description: t.settings.clinicDefaultsDesc,
-      icon: IconTime,
-      accent: 'default',
-    },
-    {
-      href: ROUTES.SETTINGS_DEPARTMENTS,
-      title: t.settings.departments,
-      description: t.settings.departmentsDesc,
-      icon: IconDepartment,
-      accent: 'teal',
-    },
-    {
-      href: ROUTES.SETTINGS_ROOMS,
-      title: t.settings.rooms,
-      description: t.settings.roomsDesc,
-      icon: IconRoom,
-      accent: 'muted',
-    },
-    {
-      href: ROUTES.SETTINGS_SERVICES,
-      title: t.settings.services,
-      description: t.settings.servicesDesc,
-      icon: IconService,
-      accent: 'success',
-    },
-    {
-      href: ROUTES.SETTINGS_PAYMENT_METHODS,
-      title: t.settings.paymentMethods,
-      description: t.settings.paymentMethodsDesc,
-      icon: IconPayment,
-      accent: 'warning',
-    },
-    {
-      href: ROUTES.SETTINGS_PACKAGES,
-      title: t.settings.packages,
-      description: t.settings.packagesDesc,
-      icon: IconPackage,
-      accent: 'error',
-    },
-    {
-      href: ROUTES.SETTINGS_DISCOUNT_CODES,
-      title: t.settings.promocodes,
-      description: t.settings.promocodesDesc,
-      icon: IconDiscount,
-      accent: 'teal',
-    },
-    {
-      href: ROUTES.EMAIL_SETTINGS,
-      title: t.emails.settings,
-      description: t.emails.settingsDesc,
-      icon: IconMail,
-      accent: 'teal',
-    },
-  ];
+  const settingsLinks = getSettingsSections(t);
 
   return (
     <div className="w-full min-w-0 space-y-4">
       <div className="flex flex-col gap-2.5">
-        {settingsLinks.map(({ href, title, description, icon: Icon, accent }) => (
+        {settingsLinks.map(({ key, href, title, description, icon: Icon, accent }) => (
           <IconCard
-            key={href}
+            key={key}
             href={href}
             title={title}
             description={description}
