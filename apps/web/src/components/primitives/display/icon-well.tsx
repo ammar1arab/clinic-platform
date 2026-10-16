@@ -7,7 +7,12 @@ export type IconWellAccent =
   | 'success'
   | 'warning'
   | 'error'
-  | 'muted';
+  | 'muted'
+  | 'indigo'
+  | 'violet'
+  | 'pink'
+  | 'orange'
+  | 'cyan';
 
 type IconWellSize = 'sm' | 'md' | 'lg';
 
@@ -28,6 +33,11 @@ const accentMap: Record<IconWellAccent, string> = {
   warning: 'bg-warning/15 text-warning ring-1 ring-inset ring-warning/20',
   error: 'bg-error/12 text-error ring-1 ring-inset ring-error/15',
   muted: 'bg-muted text-foreground ring-1 ring-inset ring-border/60',
+  indigo: 'bg-indigo-500/10 text-indigo-600 ring-1 ring-inset ring-indigo-500/15 dark:text-indigo-400',
+  violet: 'bg-violet-500/10 text-violet-600 ring-1 ring-inset ring-violet-500/15 dark:text-violet-400',
+  pink: 'bg-pink-500/10 text-pink-600 ring-1 ring-inset ring-pink-500/15 dark:text-pink-400',
+  orange: 'bg-orange-500/10 text-orange-600 ring-1 ring-inset ring-orange-500/15 dark:text-orange-400',
+  cyan: 'bg-cyan-500/10 text-cyan-700 ring-1 ring-inset ring-cyan-500/15 dark:text-cyan-400',
 };
 
 interface Props {
