@@ -1,5 +1,6 @@
 'use client';
 
+import type { Language } from '@/i18n';
 import { Toaster, TooltipProvider } from '@/components/ui';
 import { ErrorBoundary } from '@/components/layout/error-boundary';
 import { LoadingChrome } from '@/components/layout/loading-chrome';
@@ -23,9 +24,9 @@ export { useAuth } from './auth-provider';
 export { useConfirm } from './confirm-provider';
 export { useLanguage } from './language-provider';
 
-export function AppProviders({ children }: { children: React.ReactNode }) {
+export function AppProviders({ children, initialLanguage }: { children: React.ReactNode; initialLanguage?: Language }) {
   return (
-    <LanguageProvider>
+    <LanguageProvider initialLanguage={initialLanguage}>
       <ErrorBoundary>
         <ThemeProvider>
           <QueryProvider>

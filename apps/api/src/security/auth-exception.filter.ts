@@ -16,6 +16,7 @@ export class AuthExceptionFilter implements ExceptionFilter {
         ? (value as Record<string, unknown>)
         : { message: value };
     const response = host.switchToHttp().getResponse<Response>();
+    response.setHeader("Cache-Control", "no-store");
     if (status === 429 && typeof body.retryAfterSeconds === "number")
       response.setHeader("Retry-After", body.retryAfterSeconds);
     response

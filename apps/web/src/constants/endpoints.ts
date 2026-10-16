@@ -19,6 +19,7 @@ export const ENDPOINTS = {
     RELEASE_PACKAGE: (id: string) => `/appointments/${id}/release-package`,
   },
   AUTH: {
+    SESSION: "/auth/session",
     PROFILE: "/auth/profile",
     PROFILE_EMAIL: "/auth/profile/email",
     PROFILE_EMAIL_CONFIRM: "/auth/profile/email/confirm",

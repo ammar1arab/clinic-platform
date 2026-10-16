@@ -9,9 +9,8 @@ import {
   useCallback,
 } from 'react';
 import { Direction } from 'radix-ui';
-import { translations, getLanguage } from '@/i18n';
+import { translations, getLanguage, type Language } from '@/i18n';
 
-type Language = 'en' | 'ar';
 
 interface LanguageContextType {
   language: Language;
@@ -32,12 +31,9 @@ function languageDir(language: Language): 'ltr' | 'rtl' {
 function applyLanguageToDocument(language: Language) {
   const root = document.documentElement;
   const dir = languageDir(language);
+  document.cookie = `language=${language}; path=/; max-age=31536000; samesite=lax`;
   if (root.lang !== language) root.lang = language;
   if (root.dir !== dir) root.dir = dir;
-}
-
-function getServerLanguageSnapshot(): Language {
-  return 'en';
 }
 
 function subscribeToLanguage(onChange: () => void) {
@@ -54,15 +50,15 @@ function subscribeToLanguage(onChange: () => void) {
   };
 }
 
-export const LanguageProvider = ({ children }: { children: ReactNode }) => {
+export const LanguageProvider = ({ children, initialLanguage = 'en' }: { children: ReactNode; initialLanguage?: Language }) => {
   const language = useSyncExternalStore(
     subscribeToLanguage,
     getLanguage,
-    getServerLanguageSnapshot,
+    () => initialLanguage,
   );
 
   const setLanguage = useCallback((lang: Language) => {
-    localStorage.setItem('language', lang);
+    try { localStorage.setItem('language', lang); } catch {}
     applyLanguageToDocument(lang);
     window.dispatchEvent(new Event('languagechange'));
   }, []);

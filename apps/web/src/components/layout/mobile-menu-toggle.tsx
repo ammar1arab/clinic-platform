@@ -10,14 +10,14 @@ export function MobileMenuToggle({
   onClick: () => void;
 }) {
   const { t } = useLanguage();
-  const label = open ? t.layout.sidebar.closeMenu : t.layout.sidebar.openMenu;
+  const label = open ? t.layout.sideMenu.close : t.layout.sideMenu.open;
 
   return (
     <button
       type="button"
       aria-label={label}
       aria-expanded={open}
-      aria-controls="mobile-navigation"
+      aria-controls="mobile-side-menu"
       onClick={onClick}
       className="grid size-8 shrink-0 place-items-center rounded-lg border border-border/80 bg-card/80 text-foreground shadow-sm transition-transform duration-200 active:scale-90 motion-reduce:transition-none md:hover:bg-muted"
     >

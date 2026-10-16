@@ -8,6 +8,7 @@ import {
   publishAuthSessionChange,
   subscribeToAuthSession,
 } from '@/lib/auth-session';
+import { getTranslations } from '@/i18n';
 import { createLogger } from '@/lib/logger';
 import { useFetchData } from '@/hooks/query/use-fetch-data';
 import { useMounted } from '@/hooks/shared/use-mounted';
@@ -23,6 +24,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   isHydrated: boolean;
+  isSessionError: boolean;
+  retrySession: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -36,18 +39,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading } = useFetchData<MeResponse | null>({
+  const { data: user, isLoading, isError, refetch } = useFetchData<MeResponse | null>({
     queryKey: ['auth', 'me', sessionRevision.revision],
-    request: () => authService.getMe(),
+    request: () => authService.getSession(),
     options: {
       enabled: isHydrated && sessionRevision.enabled,
       staleTime: 300_000,
     },
   });
 
+  const retrySession = useCallback(() => { void refetch(); }, [refetch]);
+
   const login = useCallback(async (me?: MeResponse) => {
     getSocket().disconnect();
-    const profile = me ?? (await authService.getMe());
+    const profile = await authService.getSession();
+    if (!profile || (me && (profile.userId !== me.userId || profile.clinicUserId !== me.clinicUserId))) {
+      throw new Error(getTranslations().auth.errors.invalidToken);
+    }
     const revision = publishAuthSessionChange(true);
     queryClient.removeQueries({
       predicate: (query) => query.queryKey[0] !== 'auth',
@@ -73,7 +81,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated: !!user,
     isLoading: isLoading && !user,
     isHydrated,
-  }), [user, login, logout, isLoading, isHydrated]);
+    isSessionError: isError,
+    retrySession,
+  }), [user, login, logout, isLoading, isHydrated, isError, retrySession]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -29,14 +29,14 @@ import {
 import { Role } from "@prisma/client";
 import { RolesGuard } from "./guards";
 import { Roles } from "./decorators";
-import { JwtAuthGuard } from "./guards";
+import { JwtAuthGuard, OptionalJwtAuthGuard } from "./guards";
 import { CurrentUser } from "./decorators";
 import type { AuthUser } from "./types";
 import type { AuthRequest } from "./strategies/jwt.strategy";
 import { AuthRateLimitGuard } from "@/security/guards/auth-rate-limit.guard";
 import { AuthExceptionFilter } from "@/security/auth-exception.filter";
 import { clearAuthCookie, setAuthCookie } from "@/security/auth-cookie";
-import type { AuthLoginResponse, AuthVerifyResponse } from "@clinic/types";
+import type { AuthSessionResponse, AuthLoginResponse, AuthVerifyResponse } from "@clinic/types";
 
 @Controller("auth")
 @UseFilters(AuthExceptionFilter)
@@ -228,9 +228,17 @@ export class AuthController {
     return { success: true as const };
   }
 
+  @Get("session")
+  @Header("Cache-Control", "no-store")
+  @UseGuards(OptionalJwtAuthGuard)
+  async getSession(@CurrentUser() user: AuthUser | undefined, @Req() req: AuthRequest): Promise<AuthSessionResponse> {
+    return { user: user ? await this.authService.getMe(user.userId, user.clinicUserId, req.authAccount) : null };
+  }
+
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get("me")
+  @Header("Cache-Control", "no-store")
   getMe(@CurrentUser() user: AuthUser, @Req() req: AuthRequest) {
     return this.authService.getMe(
       user.userId,

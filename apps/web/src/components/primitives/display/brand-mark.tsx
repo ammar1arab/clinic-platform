@@ -64,7 +64,7 @@ export function BrandMark({
         alt=""
         width={px}
         height={px}
-        priority
+        loading="eager"
         className={cn(
           'relative size-full object-contain',
           spinning && 'animate-clinic-breathe',

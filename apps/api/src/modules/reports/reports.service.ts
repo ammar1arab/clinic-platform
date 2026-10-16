@@ -173,7 +173,6 @@ export class ReportsService {
     const practitioners = await this.practitionersService.findAll(
       query.clinicId,
       {
-        clinicId: query.clinicId,
         search: query.search,
         status: query.status,
         departmentId: query.departmentId,

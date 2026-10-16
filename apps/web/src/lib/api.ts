@@ -6,9 +6,10 @@ import { ROUTES } from '@/constants/routes';
 import { ENDPOINTS } from '@/constants/endpoints';
 import type { AuthErrorCode } from '@clinic/types';
 import { createLogger } from './logger';
-import { publishAuthSessionChange } from './auth-session';
+import { getAuthSessionRevision, publishAuthSessionChange } from './auth-session';
 
 const log = createLogger('api');
+const requestSessions = new WeakMap<object, number>();
 
 export const api = axios.create({
   baseURL: env.NEXT_PUBLIC_API_URL,
@@ -17,6 +18,7 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  requestSessions.set(config, getAuthSessionRevision().revision);
   config.headers['Accept-Language'] = getLanguage();
 
   return config;
@@ -107,9 +109,11 @@ api.interceptors.response.use(
       code: error.code ?? null,
     };
 
-    if (isAuthFlowRequest(error.config?.url)) return Promise.reject(error);
+    if (isAuthFlowRequest(error.config?.url) || (url === ENDPOINTS.AUTH.ME || url === ENDPOINTS.AUTH.SESSION)) return Promise.reject(error);
 
     if (status === 401) {
+      const revision = error.config && requestSessions.get(error.config);
+      if (revision !== undefined && revision !== getAuthSessionRevision().revision) return Promise.reject(error);
       log.debug('unauthorized', meta);
       if (typeof window !== 'undefined') {
         publishAuthSessionChange(false);

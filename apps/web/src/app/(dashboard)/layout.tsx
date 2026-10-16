@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback } from 'react';
 import { redirect, usePathname } from 'next/navigation';
+import { ErrorState } from '@/components/primitives';
 import { useAuth } from '@/providers';
 import {
   SidebarBlock,
@@ -34,7 +35,7 @@ function brandChannels(hex: string) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, isLoading, isHydrated } = useAuth();
+  const { user, isAuthenticated, isLoading, isHydrated, isSessionError, retrySession } = useAuth();
   const pathname = usePathname();
   const clinicId = useClinicId();
   const { data: clinic } = useClinic(clinicId);
@@ -80,6 +81,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return <DashboardShellFallback />;
   }
 
+  if (isSessionError) return <ErrorState onRetry={retrySession} />;
+
   if (!isAuthenticated || !user) {
     redirect(ROUTES.LOGIN);
   }
@@ -97,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           fallback={
             <div
               aria-hidden
-              className="hidden shrink-0 md:block md:w-56 lg:w-64"
+              className="hidden shrink-0 md:block md:w-56 lg:w-64 [[data-sidebar=collapsed]_&]:md:w-18 [[data-sidebar=collapsed]_&]:lg:w-18"
             />
           }
         >

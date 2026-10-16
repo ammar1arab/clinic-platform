@@ -181,7 +181,7 @@ export class PractitionersService {
     return mapPractitioner(row);
   }
 
-  async replaceServices(id: string, dto: AssignServicesDto, clinicId?: string) {
+  async replaceServices(id: string, dto: AssignServicesDto, clinicId: string) {
     const existing = await this.findOne(id, clinicId);
     await this.assertRefs(existing.clinicId, { serviceIds: dto.serviceIds });
     return mapPractitioner(await this.repo.replaceServices(id, dto.serviceIds));
@@ -190,7 +190,7 @@ export class PractitionersService {
   async replaceAvailability(
     id: string,
     dto: ReplaceAvailabilityDto,
-    clinicId?: string,
+    clinicId: string,
   ) {
     this.assertAvailabilityRules(dto);
     await this.findOne(id, clinicId);
@@ -199,22 +199,22 @@ export class PractitionersService {
     );
   }
 
-  async replaceTimeOff(id: string, dto: ReplaceTimeOffDto, clinicId?: string) {
+  async replaceTimeOff(id: string, dto: ReplaceTimeOffDto, clinicId: string) {
     await this.findOne(id, clinicId);
     return mapPractitioner(await this.repo.replaceTimeOff(id, dto.timeOffs));
   }
 
-  async deactivate(id: string, clinicId?: string) {
+  async deactivate(id: string, clinicId: string) {
     await this.findOne(id, clinicId);
     return mapPractitioner(await this.repo.deactivate(id));
   }
 
-  async reactivate(id: string, clinicId?: string) {
+  async reactivate(id: string, clinicId: string) {
     await this.findOne(id, clinicId);
     return mapPractitioner(await this.repo.reactivate(id));
   }
 
-  async remove(id: string, clinicId?: string) {
+  async remove(id: string, clinicId: string) {
     await this.findOne(id, clinicId);
     await this.repo.hardDelete(id);
   }

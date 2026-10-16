@@ -361,6 +361,7 @@ export const en = {
     clinicProfile: "Clinic profile",
     emailChangeHint: "A code is sent to the new address. The sign-in email changes only when that code is correct.",
     accountArabicName: "Name in Arabic",
+    account: "Account",
     accountProfile: "My account",
     signInEmail: "Sign-in email",
     signInEmailHint: "Use this email to sign in. Passwords are hidden; use reset password below to set a new one.",
@@ -411,6 +412,7 @@ export const en = {
     exitFocus: "Exit focus",
     english: "English",
     arabic: "Arabic",
+    sideMenu: { menu: "Side menu", open: "Open side menu", close: "Close side menu" },
     sidebar: {
       dashboard: "Dashboard",
       schedule: "Schedule",
@@ -420,9 +422,6 @@ export const en = {
       settings: "Settings",
       collapse: "Collapse",
       expand: "Expand",
-      menu: "Menu",
-      closeMenu: "Close menu",
-      openMenu: "Open menu",
     },
     titles: {
       dashboard: "Dashboard",

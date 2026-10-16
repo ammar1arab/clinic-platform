@@ -23,7 +23,7 @@ export function DashboardShellFallback() {
         className="hidden w-56 shrink-0 flex-col border-e border-border/80 bg-card/95 md:flex lg:w-64 [[data-sidebar=collapsed]_&]:w-18 [[data-sidebar=collapsed]_&]:lg:w-18"
         aria-hidden
       >
-        <div className="flex h-14 items-center px-4 [[data-sidebar=collapsed]_&]:justify-center [[data-sidebar=collapsed]_&]:px-2">
+        <div className="flex h-app-header items-center px-4 [[data-sidebar=collapsed]_&]:justify-center [[data-sidebar=collapsed]_&]:px-2">
           <Skeleton className="size-8 shrink-0" />
         </div>
         <div className="flex flex-1 flex-col gap-2 px-2.5 py-3 [[data-sidebar=collapsed]_&]:px-2">
@@ -39,7 +39,7 @@ export function DashboardShellFallback() {
         </div>
       </aside>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
-        <div className="h-14 shrink-0 border-b border-border/70" aria-hidden />
+        <div className="h-app-header shrink-0 border-b border-border/70" aria-hidden />
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-app-main-pad py-app-main-pad-y">
           <div data-page-scroll className="page-scroll">
             <DashboardMainFallback />

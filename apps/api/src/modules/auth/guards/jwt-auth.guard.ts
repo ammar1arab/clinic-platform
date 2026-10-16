@@ -55,3 +55,15 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
     return true;
   }
 }
+
+@Injectable()
+export class OptionalJwtAuthGuard extends JwtAuthGuard {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    try {
+      return await super.canActivate(context);
+    } catch (error) {
+      if (error instanceof HttpException && error.getStatus() === 401) return true;
+      throw error;
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Alexandria } from "next/font/google";
 import "./globals.css";
@@ -30,14 +31,16 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const language = (await cookies()).get("language")?.value === "ar" ? "ar" : "en";
   return (
     <html
-      lang="en"
+      lang={language}
+      dir={language === "ar" ? "rtl" : "ltr"}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
       className={`${jakarta.variable} ${alexandria.variable}`}
@@ -46,12 +49,12 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(localStorage.getItem('sidebar-collapsed')==='true')document.documentElement.setAttribute('data-sidebar','collapsed')}catch(e){}",
+              "try{var l=localStorage.getItem('language');if(l==='ar'||l==='en'){document.documentElement.lang=l;document.documentElement.dir=l==='ar'?'rtl':'ltr';document.cookie='language='+l+';path=/;max-age=31536000;samesite=lax'}if(localStorage.getItem('sidebar-collapsed')==='true')document.documentElement.setAttribute('data-sidebar','collapsed')}catch(e){}",
           }}
         />
       </head>
       <body className="font-sans antialiased">
-        <AppProviders>{children}</AppProviders>
+        <AppProviders initialLanguage={language}>{children}</AppProviders>
       </body>
     </html>
   );

@@ -8,7 +8,11 @@ export type Language = keyof typeof translations;
 
 export function getLanguage(): Language {
   if (typeof window === 'undefined') return 'en';
-  return localStorage.getItem('language') === 'ar' ? 'ar' : 'en';
+  try {
+    const stored = localStorage.getItem('language');
+    if (stored === 'ar' || stored === 'en') return stored;
+  } catch {}
+  return document.documentElement.lang === 'ar' ? 'ar' : 'en';
 }
 
 export function getTranslations(

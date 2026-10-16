@@ -12,7 +12,7 @@ import {
   SUCCESS_OVERLAY_MS,
 } from "@/components/primitives/states/feedback-overlay";
 import { BrandMark } from "@/components/primitives/display/brand-mark";
-import { LoadingState } from "@/components/primitives";
+import { LoadingState, ErrorState } from "@/components/primitives";
 import { prepareFeedbackSound } from "@/lib/feedback-sound";
 import { postLoginPath } from "@/constants/nav-access";
 import { ROUTES } from "@/constants/routes";
@@ -39,7 +39,7 @@ export function AuthFlow() {
   const [success, setSuccess] = useState(false);
   const completing = useRef(false);
   const destRef = useRef<string>(ROUTES.DASHBOARD);
-  const { login, user, isAuthenticated, isLoading } = useAuth();
+  const { login, user, isAuthenticated, isLoading, isHydrated, isSessionError, retrySession } = useAuth();
   const { t } = useLanguage();
   const mutation = useAuthMutation();
   const pending = mutation.isPending || success;
@@ -67,9 +67,11 @@ export function AuthFlow() {
     window.location.replace(destRef.current);
   }, []);
 
-  if (isAuthenticated && isLoading && !success) {
+  if ((!isHydrated || isLoading) && !success) {
     return <LoadingState variant="page" text={t.auth.signingIn} />;
   }
+
+  if (isSessionError && !success) return <ErrorState onRetry={retrySession} />;
 
   if (isAuthenticated && user && !success) {
     redirect(postLoginPath(user.role, readReturnPath()));

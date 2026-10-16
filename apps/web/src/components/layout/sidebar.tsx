@@ -46,8 +46,8 @@ function getNavItems(t: Translations, role?: Role | null): NavItem[] {
   const items: NavItem[] = [
     { label: t.layout.sidebar.dashboard, href: ROUTES.DASHBOARD, icon: IconDashboard, accent: 'default' },
     { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'teal' },
-    { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer, accent: 'warning' },
-    { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconService, accent: 'violet' },
+      { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer, accent: 'warning' },
+      { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconService, accent: 'violet' },
     { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
     { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner, accent: 'indigo' },
     { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'orange' },
@@ -72,14 +72,12 @@ function NavLink({
   href,
   label,
   icon: Icon,
-  accent,
   active,
   collapsed,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
-  accent: IconWellAccent;
   active: boolean;
   collapsed?: boolean;
 }) {
@@ -89,18 +87,13 @@ function NavLink({
       aria-label={collapsed ? label : undefined}
       className={cn(
         'flex w-full items-center rounded-xl text-sm font-medium transition-all duration-200',
-        collapsed ? 'size-10 justify-center px-0' : 'gap-2.5 px-3 py-1.5',
+        collapsed ? 'size-10 justify-center px-0' : 'gap-3 px-3 py-2.5',
         active
           ? 'bg-primary text-primary-foreground shadow-[0_8px_20px_-10px_color-mix(in_oklch,var(--primary)_65%,transparent)]'
           : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
       )}
     >
-      <IconWell
-        icon={Icon}
-        size="sm"
-        accent={accent}
-        className="size-7 rounded-md [&_svg]:size-3.5"
-      />
+      <Icon className={cn('shrink-0', collapsed ? 'size-5' : 'size-4')} />
       {collapsed ? null : <span className="whitespace-nowrap">{label}</span>}
     </Link>
   );
@@ -114,7 +107,7 @@ function NavLink({
   );
 }
 
-function MobileNavLink({
+function SideMenuLink({
   href,
   label,
   icon,
@@ -187,11 +180,11 @@ export function SidebarBlock() {
       <div
         role={mobileOpen ? 'dialog' : undefined}
         aria-modal={mobileOpen ? false : undefined}
-        aria-label="Navigation"
+        aria-label={t.layout.sideMenu.menu}
         aria-hidden={!mobileOpen}
         inert={!mobileOpen}
-        id="mobile-navigation"
-        data-app-sidebar=""
+        id="mobile-side-menu"
+        data-app-side-menu=""
         className={cn(
           'fixed inset-x-0 bottom-0 top-[var(--app-header-height)] z-20 flex flex-col border-t border-border/80 bg-background md:hidden',
           'pb-[max(1rem,env(safe-area-inset-bottom))]',
@@ -204,7 +197,7 @@ export function SidebarBlock() {
         <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 pt-3">
           <div className="flex flex-col gap-2.5">
             {navItems.map(({ label, href, icon, accent }, index) => (
-              <MobileNavLink
+              <SideMenuLink
                 key={href}
                 href={href}
                 label={label}
@@ -272,19 +265,18 @@ export function SidebarBlock() {
             isCollapsed ? 'px-2' : 'px-2.5',
           )}
         >
-          {navItems.map(({ label, href, icon, accent }) => (
+          {navItems.map(({ label, href, icon }) => (
             <NavLink
               key={href}
               href={href}
               label={label}
               icon={icon}
-              accent={accent}
               active={isActivePath(pathname, href, scheduleView)}
               collapsed={isCollapsed}
             />
           ))}
         </nav>
-        <ProfileLink />
+        <ProfileLink collapsed={isCollapsed} />
       </aside>
     </>
   );

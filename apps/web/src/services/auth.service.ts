@@ -1,8 +1,8 @@
 import { getTranslations } from "@/i18n";
-import { api } from "@/lib/api";
+import { api, isHttpStatus } from "@/lib/api";
 import { ENDPOINTS } from "@/constants/endpoints";
 import type {
-  AccountProfileInput, OwnerOtpResponse, AuthMe, AuthLoginInput, AuthLoginResponse, AuthTokenInput, AuthOtp, AuthEmailChange, AuthPasswordChange, AuthPasswordConfirmInput,
+  AuthSessionResponse, AccountProfileInput, OwnerOtpResponse, AuthMe, AuthLoginInput, AuthLoginResponse, AuthTokenInput, AuthOtp, AuthEmailChange, AuthPasswordChange, AuthPasswordConfirmInput,
   AuthVerifyInput, AuthVerifyResponse, AuthForgotInput, AuthRecovery,
   AuthPasswordInput, AuthReady,
 } from "@clinic/types";
@@ -34,7 +34,15 @@ export const authService = {
     api.post<AuthPasswordChange>(ENDPOINTS.AUTH.OWNER_RESET_PASSWORD(id)).then(r => r.data),
   confirmOwnerPasswordChange: (id: string, input: AuthPasswordConfirmInput) =>
     api.post<{ success: true }>(ENDPOINTS.AUTH.OWNER_RESET_PASSWORD_CONFIRM(id), input).then(r => r.data),
-  getMe: () => api.get<AuthMe>(ENDPOINTS.AUTH.ME).then(r => r.data),
+  getSession: async (): Promise<AuthMe | null> => {
+    try {
+      const { data } = await api.get<AuthSessionResponse>(ENDPOINTS.AUTH.SESSION, { headers: { 'Cache-Control': 'no-cache' } });
+      return data.user;
+    } catch (error) {
+      if (isHttpStatus(error, 401)) return null;
+      throw error;
+    }
+  },
   logout: () => api.post<{ success: true }>(ENDPOINTS.AUTH.LOGOUT).then(r => r.data),
   login: (body: AuthLoginInput) => api.post<AuthLoginResponse>(ENDPOINTS.AUTH.LOGIN, body).then(r => r.data),
   guest: () => api.post<AuthReady>(ENDPOINTS.AUTH.GUEST).then(r => r.data),
