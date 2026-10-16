@@ -761,7 +761,7 @@ export const ar: Translations = {
     patient: "مريض",
     addPatient: "إضافة مريض",
     waitingRoom: "غرفة الانتظار",
-    doctorTimeline: "الجدول الزمني للأطباء",
+    doctorTimeline: "جدول الأطباء",
     calendar: "التقويم",
     status: "الحالة",
     departments: "الأقسام",
