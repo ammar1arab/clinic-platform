@@ -1,7 +1,7 @@
 'use client';
 
 import { useLanguage } from './language-provider';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,12 +33,12 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     null,
   );
 
-  const confirm: ConfirmFn = (options) => {
+  const confirm = useCallback<ConfirmFn>((options) => {
     setState(options);
     return new Promise<boolean>((resolve) => {
       setResolver(() => resolve);
     });
-  };
+  }, []);
 
   const handle = (result: boolean) => {
     resolver?.(result);
