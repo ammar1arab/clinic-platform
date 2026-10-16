@@ -11,14 +11,12 @@ import { ROUTES } from '@/constants/routes';
 import { schedulePath } from '@/components/blocks/appointments/schedule/schedule-nav';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
-import { IconWell, SoftTip, EntityAvatar, type IconWellAccent } from '@/components/primitives';
-import { BrandMark } from '@/components/primitives/display/brand-mark';
-import { useClinicLogo } from '@/hooks/api/use-clinic';
-import { useClinicId } from '@/hooks/shared/use-clinic-id';
-import { stripSolidBackdrop, writeClinicLogo } from '@/lib/clinic-logo';
+import { IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
 import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
 import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
 import { useAuth, useLanguage } from '@/providers';
+import { ClinicLockup, MobileClinicIdentity, ProfileLink } from '@/components/layout/clinic-identity';
+import { MobileActionsMenu } from '@/components/layout/mobile-actions-menu';
 import {
   IconChevronRight,
   IconClose,
@@ -34,43 +32,6 @@ import {
   IconSidebarCollapse,
   type LucideIcon,
 } from '@/constants/icons';
-
-function ProfileLink({ onClick, mobile = false }: { onClick?: () => void; mobile?: boolean }) {
-  const { user } = useAuth();
-  const { t } = useLanguage();
-  if (user?.role !== ROLE.OWNER) return null;
-  return <div className={cn('flex shrink-0', mobile ? 'items-center' : 'justify-center px-2 py-3')}>
-    <SoftTip label={t.practitioner.profile}>
-      <Link href={ROUTES.PROFILE} onClick={onClick} aria-label={t.practitioner.profile}
-        className={cn('grid place-items-center overflow-hidden rounded-full bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring', mobile ? 'size-8' : 'size-10')}>
-        <EntityAvatar src={user.imageUrl} seed={user.clinicUserId} size={mobile ? 'default' : 'lg'} className="bg-transparent ring-0" />
-      </Link>
-    </SoftTip>
-  </div>;
-}
-
-function ClinicLockup() {
-  const clinicId = useClinicId();
-  const logoUrl = useClinicLogo();
-
-  if (!logoUrl) return <BrandMark size="sm" />;
-
-  return (
-    <img
-      key={logoUrl}
-      src={logoUrl}
-      alt=""
-      className="size-8 shrink-0 object-contain bg-transparent"
-      onLoad={() => {
-        if (!clinicId) return;
-        void stripSolidBackdrop(logoUrl).then((next) => {
-          if (!next || next === logoUrl) return;
-          writeClinicLogo(clinicId, next);
-        });
-      }}
-    />
-  );
-}
 
 type NavItem = {
   label: string;
@@ -240,6 +201,7 @@ export function SidebarBlock() {
         aria-label="Navigation"
         aria-hidden={!mobileOpen}
         inert={!mobileOpen}
+        id="mobile-navigation"
         data-app-sidebar=""
         className={cn(
           'fixed inset-0 z-50 flex flex-col bg-background md:hidden',
@@ -257,11 +219,9 @@ export function SidebarBlock() {
             mobileOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0',
           )}
         >
-          <div className="flex min-w-0 items-center gap-2.5">
-            <ProfileLink onClick={closeMobile} mobile />
-            <ClinicLockup />
-          </div>
+          <MobileClinicIdentity onProfileClick={closeMobile} />
           <div className="flex shrink-0 items-center gap-1">
+            <MobileActionsMenu />
             <LanguageSwitcher />
             <ThemeToggle />
             <SoftTip label={t.layout.sidebar.closeMenu}>
