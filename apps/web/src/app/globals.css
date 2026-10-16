@@ -603,6 +603,28 @@ th, td {
   }
 
   
+  .empty-state-float {
+    animation: empty-state-float 6s ease-in-out infinite;
+  }
+
+  .empty-state-halo {
+    animation: empty-state-halo 6s ease-in-out infinite;
+  }
+
+  @keyframes empty-state-float {
+    0%, 100% { transform: translateY(2px); }
+    50% { transform: translateY(-4px); }
+  }
+
+  @keyframes empty-state-halo {
+    0%, 100% { opacity: 0.6; transform: scale(0.94); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .empty-state-float, .empty-state-halo { animation: none; }
+  }
+
   .animate-clinic-dot {
     animation: clinicDot 0.72s ease-in-out infinite;
   }
