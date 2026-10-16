@@ -138,7 +138,7 @@ function SideMenuLink({
         href={href}
         onClick={onClick}
         aria-current={active ? 'page' : undefined}
-        className="group flex w-full items-center gap-4 rounded-xl border border-border/70 bg-card px-4 py-3.5 transition-colors duration-200 hover:border-primary/30 hover:bg-muted/30"
+        className="card-aura group flex w-full items-center gap-4 rounded-xl border-0 bg-card px-4 py-3.5 transition-colors duration-200 md:border md:hover:border-primary/40"
       >
         <IconWell icon={icon} size="lg" accent={accent} />
         <span
