@@ -21,9 +21,9 @@ import {
 import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
 import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
 import { SoftTip } from '@/components/primitives';
-import { IconLogout, IconMenu } from '@/constants/icons';
+import { IconLogout } from '@/constants/icons';
 import { MobileActionsMenu } from '@/components/layout/mobile-actions-menu';
-import { MobileClinicIdentity } from '@/components/layout/clinic-identity';
+import { MobileMenuToggle } from '@/components/layout/mobile-menu-toggle';
 
 const REFRESH_PARAM = '_cureva_refresh';
 
@@ -96,19 +96,11 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
         <div className="flex min-w-0 items-center gap-2.5">
           {showNav ? (
             <SoftTip label={t.layout.sidebar.openMenu}>
-              <button
-                aria-label={t.layout.sidebar.openMenu}
-                aria-expanded={mobileOpen}
-                aria-controls="mobile-navigation"
-                className="grid size-8 shrink-0 place-items-center rounded-lg border border-border/80 bg-card/80 text-foreground shadow-sm transition-[transform,color,background-color] duration-200 hover:bg-muted active:scale-90 active:rotate-6 motion-reduce:transition-none md:hidden"
-                onClick={() => setMobileOpen(true)}
-              >
-                <IconMenu className="size-4 transition-transform duration-200 motion-reduce:transition-none" />
-              </button>
+              <span className="md:hidden">
+                <MobileMenuToggle open={mobileOpen} onClick={() => setMobileOpen(true)} />
+              </span>
             </SoftTip>
           ) : null}
-
-          {showNav ? <div className="md:hidden"><MobileClinicIdentity /></div> : null}
 
           <h1 className="truncate font-heading text-[0.9375rem] font-semibold tracking-tight text-foreground md:text-base">
             {title}
