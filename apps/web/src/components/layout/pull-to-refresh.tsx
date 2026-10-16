@@ -242,6 +242,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
     [pathname, t],
   );
   const visible = distance > 0 || refreshing;
+  const dragging = distance > 0 && !refreshing;
   const progress = Math.min(1, distance / THRESHOLD);
   const ready = distance >= THRESHOLD || refreshing;
   const label = refreshing
@@ -262,9 +263,10 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       >
         <div
           className={cn(
-            "grid size-11 place-items-center rounded-full border border-border bg-card text-primary motion-safe:transition-[transform,opacity] motion-safe:duration-200",
-            (!visible || refreshing) &&
-              "motion-safe:transition-[transform,opacity] motion-safe:duration-300 motion-safe:ease-out",
+            "grid size-11 place-items-center rounded-full border border-border bg-card text-primary",
+            dragging
+              ? "transition-none"
+              : "motion-safe:transition-[transform,opacity] motion-safe:duration-300 motion-safe:ease-out",
             !visible && "opacity-0",
           )}
           style={{
@@ -283,17 +285,15 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
             )}
             aria-hidden
           >
-            {!refreshing && (
-              <circle
-                cx="12"
-                cy="12"
-                r="9"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-muted-foreground/25"
-              />
-            )}
+            <circle
+              cx="12"
+              cy="12"
+              r="9"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-muted-foreground/25"
+            />
             <circle
               cx="12"
               cy="12"
@@ -304,12 +304,13 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
               strokeLinecap="round"
               pathLength="100"
               strokeDasharray={`${refreshing ? 75 : Math.max(4, Math.min(90, (distance / THRESHOLD) * 90))} 100`}
+              className="motion-safe:transition-[stroke-dasharray] motion-safe:duration-75 motion-safe:ease-linear"
               style={{
                 transformOrigin: "center",
                 transform: `rotate(${refreshing ? -90 : distance * 3 - 90}deg)`,
               }}
             />
-            {!refreshing && (
+            {!ready && (
               <path
                 d="M12 7v10m-4-4 4 4 4-4"
                 fill="none"
@@ -317,10 +318,15 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={cn(
-                  "motion-safe:transition-transform motion-safe:duration-300",
-                  ready && "rotate-180",
-                )}
+                className="motion-safe:transition-transform motion-safe:duration-100"
+                style={{ transform: `rotate(${progress * 180}deg)` }}
+              />
+            )}
+            {ready && (
+              <path
+                d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z"
+                fill="currentColor"
+                className="origin-center scale-90 motion-safe:animate-pulse"
               />
             )}
           </svg>
