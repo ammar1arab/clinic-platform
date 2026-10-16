@@ -9,6 +9,7 @@ import { prepareFeedbackSound, playRefreshSound } from "@/lib/feedback-sound";
 import { cn } from "@/lib/utils";
 
 const THRESHOLD = 64;
+const PULL_START_DISTANCE = 10;
 const HOLD_DISTANCE = 60;
 const SETTLE_MS = 280;
 const REFRESH_PARAM = "_cureva_refresh";
@@ -139,6 +140,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
           setDistance(0);
           return;
         }
+        if (dy <= PULL_START_DISTANCE) return;
         if (!event.cancelable) {
           reset();
           return;
@@ -260,24 +262,22 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       >
         <div
           className={cn(
-            "flex items-center gap-2 rounded-full border border-border/80 bg-card/95 px-3 py-2 text-primary shadow-lg backdrop-blur-sm motion-safe:transition-[opacity,box-shadow,color] motion-safe:duration-200",
-            ready &&
-              "border-primary/30 text-primary ring-4 ring-primary/5 shadow-primary/15",
+            "grid size-11 place-items-center rounded-full border border-border bg-card text-primary motion-safe:transition-[transform,opacity] motion-safe:duration-200",
             (!visible || refreshing) &&
-              "motion-safe:transition-[transform,opacity,box-shadow,color] motion-safe:duration-300 motion-safe:ease-out",
+              "motion-safe:transition-[transform,opacity] motion-safe:duration-300 motion-safe:ease-out",
             !visible && "opacity-0",
           )}
           style={{
-            transform: `translateY(${visible ? Math.max(0, ((refreshing ? HOLD_DISTANCE : distance) - 40) / 2) : -40}px) scale(${visible ? (refreshing ? 1 : 0.82 + progress * 0.18) : 0.92})`,
+            transform: `translateY(${visible ? Math.max(0, ((refreshing ? HOLD_DISTANCE : distance) - 44) / 2) : -44}px) scale(${visible ? (refreshing ? 1 : 0.84 + progress * 0.16) : 0.9})`,
             opacity: visible
-              ? Math.min(1, (refreshing ? HOLD_DISTANCE : distance) / 32)
+              ? Math.min(1, (refreshing ? HOLD_DISTANCE : distance) / 36)
               : 0,
           }}
         >
           <svg
             viewBox="0 0 24 24"
             className={cn(
-              "size-5",
+              "size-6",
               refreshing &&
                 "motion-safe:animate-spin motion-safe:[animation-duration:700ms]",
             )}
@@ -291,7 +291,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
-                className="opacity-10"
+                className="text-muted-foreground/25"
               />
             )}
             <circle
@@ -318,15 +318,13 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 className={cn(
-                  "transition-transform duration-200",
-                  ready && "translate-y-0.5",
+                  "motion-safe:transition-transform motion-safe:duration-300",
+                  ready && "rotate-180",
                 )}
               />
             )}
           </svg>
-          <span className="text-xs font-medium leading-none">
-            {visible ? label : ""}
-          </span>
+          <span className="sr-only">{visible ? label : ""}</span>
         </div>
       </div>
     </div>

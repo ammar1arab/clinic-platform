@@ -13,7 +13,12 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div ref={setScroller} data-page-scroll className="page-scroll">
+    <div
+      ref={setScroller}
+      data-page-scroll
+      className="page-scroll"
+      style={{ WebkitOverflowScrolling: "touch" }}
+    >
       {children}
     </div>
   );

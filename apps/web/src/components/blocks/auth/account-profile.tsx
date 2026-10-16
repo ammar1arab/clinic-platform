@@ -163,7 +163,6 @@ export function AccountProfile() {
                   <FormField
                     label={t.common.signInEmail}
                     htmlFor="account-email"
-                    hint={t.common.emailChangeHint}
                   >
                     <Input
                       id="account-email"
