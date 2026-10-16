@@ -35,15 +35,15 @@ import {
   type LucideIcon,
 } from '@/constants/icons';
 
-function ProfileLink({ onClick }: { onClick?: () => void }) {
+function ProfileLink({ onClick, mobile = false }: { onClick?: () => void; mobile?: boolean }) {
   const { user } = useAuth();
   const { t } = useLanguage();
   if (user?.role !== ROLE.OWNER) return null;
-  return <div className="flex shrink-0 justify-center px-2 py-3">
+  return <div className={cn('flex shrink-0', mobile ? 'items-center' : 'justify-center px-2 py-3')}>
     <SoftTip label={t.practitioner.profile}>
       <Link href={ROUTES.PROFILE} onClick={onClick} aria-label={t.practitioner.profile}
-        className="grid size-10 place-items-center overflow-hidden rounded-full bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <EntityAvatar src={user.imageUrl} seed={user.clinicUserId} size="lg" className="bg-transparent ring-0" />
+        className={cn('grid place-items-center overflow-hidden rounded-full bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring', mobile ? 'size-8' : 'size-10')}>
+        <EntityAvatar src={user.imageUrl} seed={user.clinicUserId} size={mobile ? 'default' : 'lg'} className="bg-transparent ring-0" />
       </Link>
     </SoftTip>
   </div>;
@@ -258,6 +258,7 @@ export function SidebarBlock() {
           )}
         >
           <div className="flex min-w-0 items-center gap-2.5">
+            <ProfileLink onClick={closeMobile} mobile />
             <ClinicLockup />
           </div>
           <div className="flex shrink-0 items-center gap-1">
@@ -293,7 +294,6 @@ export function SidebarBlock() {
             ))}
           </div>
         </nav>
-        <ProfileLink onClick={closeMobile} />
       </div>
 
       <aside
