@@ -19,7 +19,7 @@ import {
 import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { CardGridSkeleton, SoftTip } from '@/components/primitives';
+import { CardGridSkeleton, EmptyState, SoftTip } from '@/components/primitives';
 import { ViewFocusToggle } from './view-focus';
 import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
 import { IconActivate, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
@@ -237,7 +237,13 @@ export function WaitingQueueBoard({
             icon={<IconTimer className="size-4 text-warning" />}
           >
             {waitingList.length === 0 ? (
-              <EmptyStageMessage icon={<IconTimer className="size-6 text-warning/40" />} text={t.queue.noPatientsWaiting} />
+              <EmptyState
+                icon={IconTimer}
+                title={t.queue.noPatientsWaiting}
+                size="compact"
+                className="h-36 rounded-xl border border-dashed bg-muted/10 px-3 [&>p]:text-xs"
+                iconContainerClassName="mb-1 size-10 rounded-xl border-warning/20 bg-warning/10 text-warning/70"
+              />
             ) : (
               waitingList.map((appt) => {
                 const waitMins = elapsedMinutesSince(
@@ -287,7 +293,13 @@ export function WaitingQueueBoard({
             icon={<IconService className="size-4 text-primary" />}
           >
             {inProgressList.length === 0 ? (
-              <EmptyStageMessage icon={<IconService className="size-6 text-primary/40" />} text={t.queue.noConsultationsInSession} />
+              <EmptyState
+                icon={IconService}
+                title={t.queue.noConsultationsInSession}
+                size="compact"
+                className="h-36 rounded-xl border border-dashed bg-muted/10 px-3 [&>p]:text-xs"
+                iconContainerClassName="mb-1 size-10 rounded-xl border-primary/20 bg-primary/10 text-primary/70"
+              />
             ) : (
               inProgressList.map((appt) => {
                 const sessionMins = elapsedMinutesSince(
@@ -338,7 +350,13 @@ export function WaitingQueueBoard({
             icon={<IconCalendarClock className="size-4 text-muted-foreground" />}
           >
             {upcomingList.length === 0 ? (
-              <EmptyStageMessage icon={<IconCalendarClock className="size-6 text-muted-foreground/40" />} text={t.queue.noUpcomingVisitsToday} />
+              <EmptyState
+                icon={IconCalendarClock}
+                title={t.queue.noUpcomingVisitsToday}
+                size="compact"
+                className="h-36 rounded-xl border border-dashed bg-muted/10 px-3 [&>p]:text-xs"
+                iconContainerClassName="mb-1 size-10 rounded-xl border-border/70 bg-muted/60 text-muted-foreground"
+              />
             ) : (
               upcomingList.map((appt) => (
                 <QueueCard key={appt.id} appointment={appt} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
@@ -379,7 +397,13 @@ export function WaitingQueueBoard({
             icon={<IconCheckCircle className="size-4 text-success" />}
           >
             {completedList.length === 0 ? (
-              <EmptyStageMessage icon={<IconCheckCircle className="size-6 text-success/40" />} text={t.queue.noCompletedVisitsToday} />
+              <EmptyState
+                icon={IconCheckCircle}
+                title={t.queue.noCompletedVisitsToday}
+                size="compact"
+                className="h-36 rounded-xl border border-dashed bg-muted/10 px-3 [&>p]:text-xs"
+                iconContainerClassName="mb-1 size-10 rounded-xl border-success/20 bg-success/10 text-success/70"
+              />
             ) : (
               completedList.map((appt) => (
                 <QueueCard key={appt.id} appointment={appt} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
@@ -544,15 +568,6 @@ function QueueCard({
       </div>
 
       {children}
-    </div>
-  );
-}
-
-function EmptyStageMessage({ icon, text }: { icon: React.ReactNode; text: string }) {
-  return (
-    <div className="flex h-36 flex-col items-center justify-center rounded-xl border border-dashed p-4 text-center text-xs text-muted-foreground bg-muted/10">
-      <div className="mb-2 opacity-60">{icon}</div>
-      <p className="font-medium">{text}</p>
     </div>
   );
 }

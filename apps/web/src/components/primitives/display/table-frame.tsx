@@ -17,7 +17,7 @@ export function TableFrame({
       <div className="relative z-0 flex min-h-0 w-full min-w-0 flex-1 flex-col">
         {children}
       </div>
-      <div aria-hidden className="card-aura table-aura" />
+      <div aria-hidden className="table-aura" />
     </div>
   );
 }

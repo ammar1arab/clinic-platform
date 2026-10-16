@@ -8,7 +8,7 @@ import {
   PopoverArrow,
   PopoverContent,
 } from "@/components/ui";
-import { SoftTip } from "@/components/primitives";
+import { EmptyState, SoftTip } from "@/components/primitives";
 import {
   IconCalendar,
   IconClose,
@@ -279,9 +279,12 @@ export function DayAppointmentsPopover({
             );
           })
         ) : (
-          <p className="px-3 py-6 text-center text-xs text-muted-foreground">
-            {t.appointments.noAppointmentsFound}
-          </p>
+          <EmptyState
+            icon={IconCalendar}
+            title={t.appointments.noAppointmentsFound}
+            size="compact"
+            className="px-3 py-4 [&>p]:text-xs"
+          />
         )}
       </div>
     </SchedulePopover>

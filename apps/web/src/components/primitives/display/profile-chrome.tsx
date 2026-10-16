@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui';
 import { PageBack, TruncatedText } from '@/components/primitives';
+import { EmptyState } from '../states/empty';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/providers/language-provider';
 
@@ -256,5 +257,11 @@ export function ProfileSoftRow({
 }
 
 export function ProfileEmpty({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-muted-foreground">{children}</p>;
+  return (
+    <EmptyState
+      icon={null}
+      title={children}
+      className="items-start gap-0 py-0 text-start [&>p]:font-normal [&>p]:text-muted-foreground"
+    />
+  );
 }

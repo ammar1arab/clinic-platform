@@ -622,7 +622,11 @@ th, td {
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .empty-state-float, .empty-state-halo { animation: none; }
+    .empty-state-enter,
+    .empty-state-float,
+    .empty-state-halo {
+      animation: none;
+    }
   }
 
   .animate-clinic-dot {
@@ -811,7 +815,8 @@ th, td {
     initial-value: 0deg;
   }
 
-  .card-aura {
+  .card-aura,
+  .table-aura {
     --aura-pad: 1px;
     position: relative;
     isolation: isolate;
@@ -819,7 +824,8 @@ th, td {
     transition: box-shadow 0.2s ease;
   }
 
-  .card-aura::before {
+  .card-aura::before,
+  .table-aura::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -880,35 +886,27 @@ th, td {
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .card-aura:hover {
+    :is(.card-aura:hover, .table-frame:hover > .table-aura) {
       --aura-pad: 2px;
-      box-shadow: 0 6px 20px -8px color-mix(in oklch, var(--foreground) 16%, transparent);
     }
 
-    .card-aura:hover::before {
+    :is(.card-aura:hover, .table-frame:hover > .table-aura)::before {
       opacity: 0.95;
       animation-duration: 6.5s;
     }
 
+    .card-aura:hover,
     .table-frame:hover {
       box-shadow: 0 6px 20px -8px color-mix(in oklch, var(--foreground) 16%, transparent);
     }
-
-    .table-frame:hover > .table-aura {
-      --aura-pad: 2px;
-    }
-
-    .table-frame:hover > .table-aura::before {
-      opacity: 0.95;
-      animation-duration: 6.5s;
-    }
   }
 
-  .dark .card-aura::before {
+  .dark .card-aura::before,
+  .dark .table-aura::before {
     opacity: 0.62;
   }
 
-  .dark .card-aura:hover::before {
+  .dark :is(.card-aura:hover, .table-frame:hover > .table-aura)::before {
     opacity: 1;
   }
 
@@ -917,8 +915,19 @@ th, td {
     box-shadow: 0 8px 24px -10px color-mix(in oklch, black 55%, transparent);
   }
 
-  .dark .table-frame:hover > .table-aura::before {
-    opacity: 1;
+  .empty-state-enter {
+    animation: emptyStateEnter 360ms var(--overlay-ease) both;
+  }
+
+  @keyframes emptyStateEnter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes auraSpin {

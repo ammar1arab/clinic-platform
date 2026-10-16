@@ -37,6 +37,7 @@ import {
 import {
   SoftTip,
   TimelineSkeleton,
+  EmptyState,
 } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { useNow } from '@/hooks/shared/use-now';
@@ -362,19 +363,22 @@ export function DoctorTimeline({
 
   if (allDoctors.length === 0) {
     return (
-      <div className="card-aura flex flex-col items-center justify-center rounded-2xl border bg-card p-10 text-center shadow-xs">
-        <div className="grid size-12 place-items-center rounded-2xl bg-muted/60">
-          <IconPatients className="size-6 text-muted-foreground" />
-        </div>
-        <h3 className="mt-3 text-sm font-bold">{t.appointments.noDoctorsFound}</h3>
-        <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-          {t.appointments.noDoctorsDesc}
-        </p>
-        <Button size="sm" className="mt-4" onClick={() => {
-          const s = new Date(selectedDate); s.setHours(9, 0, 0, 0); onSelectSlot(s);
-        }}>
-          <IconAdd className="me-1.5 size-3.5" /> {t.appointments.bookAppointment}
-        </Button>
+      <div className="flex min-h-64 items-center justify-center rounded-2xl border bg-card shadow-xs">
+        <EmptyState
+          icon={IconPatients}
+          title={t.appointments.noDoctorsFound}
+          description={t.appointments.noDoctorsDesc}
+          className="flex-1 px-5 py-10"
+          action={(
+            <Button size="sm" onClick={() => {
+              const slot = new Date(selectedDate);
+              slot.setHours(9, 0, 0, 0);
+              onSelectSlot(slot);
+            }}>
+              <IconAdd className="me-1.5 size-3.5" /> {t.appointments.bookAppointment}
+            </Button>
+          )}
+        />
       </div>
     );
   }
