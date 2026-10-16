@@ -21,11 +21,10 @@ import {
 import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
 import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
 import { SoftTip } from '@/components/primitives';
-import { IconLogout } from '@/constants/icons';
+import { IconLogout, IconRotateCcw } from '@/constants/icons';
 import { MobileActionsMenu } from '@/components/layout/mobile-actions-menu';
 import { MobileMenuToggle } from '@/components/layout/mobile-menu-toggle';
-
-const REFRESH_PARAM = '_cureva_refresh';
+import { REFRESH_PARAM, useAppRefresh } from '@/hooks/shared/use-app-refresh';
 
 function resolveTitle(pathname: string, scheduleView: string | null, t: Translations): string {
   if (pathname === ROUTES.EMAIL_NEW) return t.emails.compose;
@@ -72,6 +71,7 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   const { logout } = useAuth();
   const { setMobileOpen, mobileOpen } = useSidebar();
   const [signOutOpen, setSignOutOpen] = useState(false);
+  const { refreshing: desktopRefreshing, refreshApp: refreshDesktop } = useAppRefresh();
   const { t } = useLanguage();
   const title = resolveTitle(pathname, searchParams.get('view'), t);
 
@@ -95,7 +95,7 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
       >
         <div className="flex min-w-0 items-center gap-2.5">
           {showNav ? (
-            <SoftTip label={t.layout.sidebar.openMenu}>
+            <SoftTip label={mobileOpen ? t.layout.sidebar.closeMenu : t.layout.sidebar.openMenu}>
               <span className="md:hidden">
                 <MobileMenuToggle open={mobileOpen} onClick={() => setMobileOpen(true)} />
               </span>
@@ -108,6 +108,18 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
         </div>
 
         <div className="hidden shrink-0 items-center gap-1 md:flex">
+          <SoftTip label={t.emails.refresh}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t.emails.refresh}
+              disabled={desktopRefreshing}
+              onClick={() => void refreshDesktop()}
+            >
+              <IconRotateCcw className="size-4" />
+            </Button>
+          </SoftTip>
           <LanguageSwitcher />
           <ThemeToggle />
           <SoftTip label={t.auth.logout}>
