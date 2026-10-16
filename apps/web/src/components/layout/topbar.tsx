@@ -24,6 +24,7 @@ import { SoftTip } from '@/components/primitives';
 import { IconLogout, IconRotateCcw } from '@/constants/icons';
 import { MobileActionsMenu } from '@/components/layout/mobile-actions-menu';
 import { MobileMenuToggle } from '@/components/layout/mobile-menu-toggle';
+import { MobileHeaderIdentity } from '@/components/layout/clinic-identity';
 import { REFRESH_PARAM, useAppRefresh } from '@/hooks/shared/use-app-refresh';
 
 function resolveTitle(pathname: string, scheduleView: string | null, t: Translations): string {
@@ -100,6 +101,12 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
                 <MobileMenuToggle open={mobileOpen} onClick={() => setMobileOpen(true)} />
               </span>
             </SoftTip>
+          ) : null}
+
+          {showNav ? (
+            <div className="md:hidden">
+              <MobileHeaderIdentity open={mobileOpen} onProfileClick={() => setMobileOpen(false)} />
+            </div>
           ) : null}
 
           <h1 className="truncate font-heading text-[0.9375rem] font-semibold tracking-tight text-foreground md:text-base">
