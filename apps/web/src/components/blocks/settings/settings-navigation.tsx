@@ -14,7 +14,6 @@ import {
 import type { IconWellAccent } from '@/components/primitives';
 import { PageBack } from '@/components/primitives';
 import type { Translations } from '@/i18n';
-import { useLanguage } from '@/providers';
 
 const SETTINGS_SECTIONS = {
   clinic: {
@@ -81,9 +80,7 @@ const SETTINGS_SECTIONS = {
   description: (t: Translations) => string;
 }>;
 
-export type SettingsSectionKey = keyof typeof SETTINGS_SECTIONS;
-
-const SECTION_ORDER: SettingsSectionKey[] = [
+const SECTION_ORDER: (keyof typeof SETTINGS_SECTIONS)[] = [
   'clinic',
   'departments',
   'rooms',
@@ -109,21 +106,9 @@ export function getSettingsSections(t: Translations) {
 }
 
 export function SettingsPageBack({
-  section,
   backHref = ROUTES.SETTINGS,
 }: {
-  section: SettingsSectionKey;
   backHref?: string;
 }) {
-  const { t } = useLanguage();
-  const item = SETTINGS_SECTIONS[section];
-
-  return (
-    <PageBack
-      backHref={backHref}
-      icon={item.icon}
-      accent={item.accent}
-      title={item.title(t)}
-    />
-  );
+  return <PageBack backHref={backHref} />;
 }
