@@ -62,11 +62,46 @@ export function ClinicLockup() {
   );
 }
 
-export function MobileClinicIdentity({ onProfileClick }: { onProfileClick?: () => void }) {
+export function MobileHeaderIdentity({
+  open,
+  onProfileClick,
+}: {
+  open: boolean;
+  onProfileClick?: () => void;
+}) {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const showProfile = open && user?.role === ROLE.OWNER;
+
   return (
-    <div className="flex shrink-0 items-center gap-1.5">
-      <ProfileLink onClick={onProfileClick} mobile />
-      <ClinicLockup />
+    <div className="relative size-8 shrink-0" aria-live="polite">
+      <span
+        aria-hidden="true"
+        className={`absolute inset-0 grid place-items-center transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none ${
+          showProfile ? 'scale-90 opacity-0' : 'scale-100 opacity-100'
+        }`}
+      >
+        <ClinicLockup />
+      </span>
+      {user?.role === ROLE.OWNER ? (
+        <Link
+          href={ROUTES.PROFILE}
+          onClick={onProfileClick}
+          aria-label={t.practitioner.profile}
+          aria-hidden={!showProfile}
+          tabIndex={showProfile ? 0 : -1}
+          className={`absolute inset-0 grid place-items-center overflow-hidden rounded-full transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            showProfile ? 'pointer-events-auto scale-100 opacity-100' : 'pointer-events-none scale-90 opacity-0'
+          }`}
+        >
+          <EntityAvatar
+            src={user.imageUrl}
+            seed={user.clinicUserId}
+            size="default"
+            className="bg-transparent ring-0"
+          />
+        </Link>
+      ) : null}
     </div>
   );
 }
