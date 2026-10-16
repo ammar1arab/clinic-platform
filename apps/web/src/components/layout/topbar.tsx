@@ -2,7 +2,7 @@
 
 import { ROUTES } from '@/constants/routes';
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
 import type { Translations } from '@/i18n';
 import { useSidebar } from '@/providers/sidebar-provider';
@@ -23,7 +23,7 @@ import { LanguageSwitcher } from '@/components/primitives/display/language-switc
 import { SoftTip } from '@/components/primitives';
 import { IconLogout, IconMenu } from '@/constants/icons';
 
-function resolveTitle(pathname: string, t: Translations): string {
+function resolveTitle(pathname: string, scheduleView: string | null, t: Translations): string {
   if (pathname === ROUTES.EMAIL_NEW) return t.emails.compose;
   if (pathname === ROUTES.EMAIL_SETTINGS) return t.emails.settings;
   if (pathname === ROUTES.EMAILS) return t.emails.title;
@@ -33,7 +33,11 @@ function resolveTitle(pathname: string, t: Translations): string {
   if (pathname === ROUTES.PROFILE) return t.common.accountProfile;
   if (pathname === ROUTES.HOME) return t.layout.titles.home;
   if (pathname === ROUTES.DASHBOARD) return t.layout.titles.dashboard;
-  if (pathname === ROUTES.SCHEDULE) return t.layout.titles.schedule;
+  if (pathname === ROUTES.SCHEDULE) {
+    if (scheduleView === 'doctors') return t.appointments.doctorTimeline;
+    if (scheduleView === 'queue') return t.queue.waitingQueue;
+    return t.appointments.calendar;
+  }
   if (pathname === ROUTES.SCHEDULE_NEW) return t.layout.titles.newAppointment;
   if (pathname === ROUTES.PATIENTS) return t.layout.titles.patients;
   if (pathname === ROUTES.PATIENT_NEW) return t.layout.titles.newPatient;
@@ -60,11 +64,12 @@ function resolveTitle(pathname: string, t: Translations): string {
 
 export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { logout } = useAuth();
   const { setMobileOpen } = useSidebar();
   const [signOutOpen, setSignOutOpen] = useState(false);
   const { t } = useLanguage();
-  const title = resolveTitle(pathname, t);
+  const title = resolveTitle(pathname, searchParams.get('view'), t);
 
   const handleSignOut = () => {
     logout();
