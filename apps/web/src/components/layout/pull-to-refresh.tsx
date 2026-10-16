@@ -292,21 +292,26 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
               strokeWidth="1.75"
               className="text-muted-foreground/25"
             />
-            <circle
-              cx="12"
-              cy="12"
-              r="9"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              pathLength="100"
-              strokeDasharray={`${refreshing ? 100 : progress * 100} 100`}
-              style={{
-                transformOrigin: "center",
-                transform: `rotate(${refreshing ? -90 : distance * 3 - 90}deg)`,
-              }}
-            />
+            <g
+              className={cn(
+                "origin-center",
+                refreshing && "motion-safe:animate-spin motion-safe:[animation-duration:900ms]",
+              )}
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                pathLength="100"
+                strokeDasharray={`${refreshing ? 78 : progress * 100} 100`}
+                transform="rotate(-90 12 12)"
+                className="motion-safe:transition-[stroke-dasharray] motion-safe:duration-100 motion-safe:ease-out"
+              />
+            </g>
             {!ready && (
               <path
                 d="M12 6v12m-5-5 5 5 5-5"
@@ -315,7 +320,8 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
                 strokeWidth="1.75"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="opacity-90"
+                className="opacity-90 motion-safe:transition-transform motion-safe:duration-100 motion-safe:ease-out"
+                style={{ transform: `translateY(${progress * 1.5}px)` }}
               />
             )}
             {ready && (
