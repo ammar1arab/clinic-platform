@@ -76,7 +76,7 @@ export function formatDoctorLabel(
 ) {
   const prefix = getTranslations(opts?.lang).appointments.doctorPrefix;
   const label = opts?.short ? doctorShortName(doctor, opts?.lang) : doctorDisplayName(doctor, opts?.lang);
-  return `${prefix} ${label}`;
+  return prefix ? `${prefix} ${label}` : label;
 }
 
 export function staffRoleLabel(role: string | null | undefined, lang?: string) {
