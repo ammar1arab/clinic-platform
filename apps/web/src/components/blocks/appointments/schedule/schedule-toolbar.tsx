@@ -211,9 +211,9 @@ export function ScheduleToolbar({
           value={search}
           onChange={onSearchChange}
           placeholder={t.appointments.searchPlaceholder}
-          className="min-w-0 w-full flex-none sm:max-w-64 lg:max-w-72"
+          className="min-w-0 w-full flex-1"
         />
-        <div className="flex min-w-0 items-center gap-1.5 sm:ms-auto">
+        <div className="flex shrink-0 items-center gap-1.5">
           <SearchablePicker
             size="sm"
             options={(departments ?? []).map((dept) => ({

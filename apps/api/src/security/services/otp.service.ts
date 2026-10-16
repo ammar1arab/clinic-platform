@@ -14,6 +14,8 @@ import { AUTH_POLICY } from "../security.constants";
 import { RateLimitService } from "./rate-limit.service";
 import { securityError } from "../security-error";
 
+const UNTIL_USED = new Date("9999-12-31T00:00:00.000Z");
+
 @Injectable()
 export class OtpService {
   constructor(
@@ -127,7 +129,7 @@ export class OtpService {
     userId: string,
     email: string,
     passwordChangedAt: Date | null,
-    clinicId: string,
+    _clinicId: string,
   ) {
     await this.limits.consume("owner-otp-target", userId, 5, 3600);
     const challenge = await this.prisma.authOtpChallenge.findFirst({
@@ -146,7 +148,6 @@ export class OtpService {
       const code = randomInt(0, 1_000_000)
         .toString()
         .padStart(AUTH_POLICY.otpDigits, "0");
-      const expiresAt = new Date(Date.now() + AUTH_POLICY.otpExpiresSeconds * 1000);
       await this.prisma.authOtpChallenge.create({
         data: {
           id,
@@ -154,10 +155,10 @@ export class OtpService {
           userId,
           purpose: AuthOtpPurpose.EMAIL_VERIFY,
           codeHash: this.hash(id, code),
-          expiresAt,
+          expiresAt: UNTIL_USED,
         },
       });
-      return { code, expiresAt: expiresAt.toISOString() };
+      return { code, expiresAt: UNTIL_USED.toISOString() };
     }
     const code = randomInt(0, 1_000_000)
       .toString()
@@ -165,22 +166,27 @@ export class OtpService {
     const updated = await this.prisma.authOtpChallenge.updateMany({
       where: {
         id: challenge.id,
-        codeHash: challenge.codeHash,
-        attempts: challenge.attempts,
         usedAt: null,
         expiresAt: { gt: new Date() },
-        user: {
-          passwordChangedAt,
-          clinicUsers: {
-            some: { clinicId, isActive: true, clinic: { isActive: true } },
-            every: { clinicId },
-          },
-        },
       },
-      data: { codeHash: this.hash(challenge.id, code) },
+      data: { codeHash: this.hash(challenge.id, code), expiresAt: UNTIL_USED },
     });
-    if (!updated.count) securityError("noPendingOtp", 409);
-    return { code, expiresAt: challenge.expiresAt.toISOString() };
+    if (updated.count) return { code, expiresAt: UNTIL_USED.toISOString() };
+    const id = randomUUID();
+    const fresh = randomInt(0, 1_000_000)
+      .toString()
+      .padStart(AUTH_POLICY.otpDigits, "0");
+    await this.prisma.authOtpChallenge.create({
+      data: {
+        id,
+        email,
+        userId,
+        purpose: AuthOtpPurpose.EMAIL_VERIFY,
+        codeHash: this.hash(id, fresh),
+        expiresAt: UNTIL_USED,
+      },
+    });
+    return { code: fresh, expiresAt: UNTIL_USED.toISOString() };
   }
 
   async consume(

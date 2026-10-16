@@ -88,7 +88,7 @@ export function PractitionerFiltersBlock({
     <DirectoryToolbar
       search={values.search}
       onSearchChange={(search) => onChange({ search })}
-      searchPlaceholder={t?.common?.search || "Search practitioners…"}
+      searchPlaceholder={t.common.search}
       searchLoading={searchLoading}
       actions={
         <>

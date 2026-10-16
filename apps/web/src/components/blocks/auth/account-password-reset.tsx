@@ -89,7 +89,7 @@ export function AccountPasswordReset({ id }: { id?: string }) {
             label: `${getStaffName(member, lang)}${member.email ? ` - ${member.email}` : ""}`,
           }))}
           placeholder={t.common.chooseAccount}
-          searchPlaceholder={t.common.chooseAccount}
+          searchPlaceholder={t.common.search}
           onChange={(value) => {
             if (mutation.isPending) return;
             setSelectedId(value);

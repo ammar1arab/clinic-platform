@@ -264,12 +264,20 @@ th, td {
     user-select: text;
   }
 
-  input:is(:autofill, :-webkit-autofill),
+  input:is(:autofill, :-webkit-autofill):not([data-otp]),
   textarea:is(:autofill, :-webkit-autofill),
   select:is(:autofill, :-webkit-autofill) {
     -webkit-text-fill-color: var(--color-foreground);
     caret-color: var(--color-foreground);
     box-shadow: inset 0 0 0 1000px var(--color-background) !important;
+  }
+
+  input[data-otp] {
+    color: transparent !important;
+    -webkit-text-fill-color: transparent !important;
+    caret-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
   }
 
   .font-heading {

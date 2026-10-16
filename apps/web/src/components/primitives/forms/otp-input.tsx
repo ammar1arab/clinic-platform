@@ -1,7 +1,6 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { Input } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 function normalizeCode(value: string, length: number) {
@@ -37,8 +36,9 @@ export function OtpInput({
   return (
     <div className="space-y-2">
       <div className="relative" dir="ltr">
-        <Input
+        <input
           id={id}
+          data-otp=""
           type="text"
           name="one-time-code"
           inputMode="numeric"
@@ -63,7 +63,7 @@ export function OtpInput({
             if (readOnly) return;
             onChange(normalizeCode(event.clipboardData.getData('text'), length));
           }}
-          className="absolute inset-0 z-10 size-full cursor-text appearance-none border-0 bg-transparent p-0 opacity-0 shadow-none outline-none ring-0"
+          className="absolute inset-0 z-10 size-full cursor-text border-0 bg-transparent p-0 text-transparent opacity-0 shadow-none outline-none"
         />
         <div aria-hidden className="pointer-events-none mx-auto grid w-full max-w-[20.5rem] grid-cols-6 gap-2">
           {Array.from({ length }, (_, index) => (

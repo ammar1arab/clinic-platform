@@ -100,7 +100,7 @@ export function SearchablePicker({
           aria-expanded={open}
           size={size === 'sm' ? 'sm' : 'default'}
           className={cn(
-            'min-w-0 justify-between gap-1.5 overflow-hidden font-normal',
+            'w-full min-w-0 justify-between gap-1.5 overflow-hidden font-normal',
             size === 'sm' ? 'h-9 text-xs' : 'h-9 text-sm',
             className,
           )}
@@ -125,7 +125,7 @@ export function SearchablePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="picker-scroll w-[min(100vw-1.5rem,var(--radix-popover-trigger-width))] max-h-[min(20rem,var(--radix-popover-content-available-height))] max-w-[calc(100vw-1.5rem)] p-0"
+        className="picker-scroll w-(--radix-popover-trigger-width) min-w-[min(18rem,calc(100vw-1.5rem))] max-h-[min(20rem,var(--radix-popover-content-available-height))] max-w-[calc(100vw-1.5rem)] p-0"
         align="start"
         onOpenAutoFocus={(event) => event.preventDefault()}
         onWheel={(event) => event.stopPropagation()}
@@ -154,7 +154,7 @@ export function SearchablePicker({
                   option.value === value && 'bg-muted',
                 )}
               >
-                <span className="min-w-0 flex-1 break-words whitespace-normal">
+                <span className="min-w-0 flex-1 text-start leading-snug wrap-break-word">
                   {option.label}
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5">
