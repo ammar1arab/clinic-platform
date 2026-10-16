@@ -534,10 +534,10 @@ export function AppointmentCalendar({
           allDaySlot={false}
           selectable
           selectMirror
-          longPressDelay={300}
-          selectLongPressDelay={300}
+          longPressDelay={500}
+          selectLongPressDelay={500}
           eventLongPressDelay={300}
-          selectMinDistance={0}
+          selectMinDistance={12}
           selectAllow={() => view !== "month"}
           editable
           eventDurationEditable
