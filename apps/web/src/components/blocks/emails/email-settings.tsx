@@ -18,7 +18,6 @@ import {
   ErrorState,
   FormField,
   FormPageSkeleton,
-  PageBack,
 } from "@/components/primitives";
 import { useEmailSettings, useSaveEmailSettings } from "@/hooks/api/use-emails";
 import { useClinic } from "@/hooks/api/use-clinic";
@@ -31,6 +30,7 @@ import {
 import { extractErrorMessage } from "@/lib/api";
 import { httpsUrl } from "@/lib/contact";
 import { ROUTES } from "@/constants/routes";
+import { SettingsPageBack } from "@/components/blocks/settings/settings-navigation";
 
 function EmailSettingsForm({
   settings,
@@ -192,7 +192,7 @@ export function EmailSettings() {
   const settings = useEmailSettings(clinicId);
   return (
     <div className="w-full min-w-0 space-y-4">
-      <PageBack backHref={ROUTES.EMAILS} backLabel={t.emails.history} />
+      <SettingsPageBack section="email" backHref={ROUTES.EMAILS} />
       {settings.isLoading && <FormPageSkeleton />}
       {settings.isError && (
         <ErrorState onRetry={() => void settings.refetch()} />
