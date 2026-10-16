@@ -13,7 +13,7 @@ import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
 import { IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
 import { useAuth, useLanguage } from '@/providers';
-import { ClinicLockup, MobileClinicIdentity, ProfileLink } from '@/components/layout/clinic-identity';
+import { ClinicLockup, ProfileLink } from '@/components/layout/clinic-identity';
 import {
   IconChevronRight,
   IconDashboard,
@@ -209,9 +209,6 @@ export function SidebarBlock() {
         )}
       >
         <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 pt-3">
-          <div className="mb-3 border-b border-border/70 px-1 pb-3">
-            <MobileClinicIdentity onProfileClick={closeMobile} />
-          </div>
           <div className="flex flex-col gap-2.5">
             {navItems.map(({ label, href, icon, accent }, index) => (
               <MobileNavLink
