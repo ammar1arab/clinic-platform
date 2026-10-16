@@ -1,7 +1,6 @@
 'use client';
 
 import { AccountPasswordReset } from '@/components/blocks/auth/account-password-reset';
-onstants/routes';/d
 import { IconCard } from '@/components/primitives';
 import { IconChevronLeft, IconChevronRight } from '@/constants/icons';
 import { getSettingsSections } from '@/components/blocks/settings/settings-navigation';
