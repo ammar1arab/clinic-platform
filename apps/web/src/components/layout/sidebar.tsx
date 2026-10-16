@@ -29,6 +29,7 @@ import {
   IconMail,
   IconSchedule,
   IconTimer,
+  IconService,
   IconSettings,
   IconSidebarCollapse,
   type LucideIcon,
@@ -90,12 +91,12 @@ function getNavItems(t: Translations, role?: Role | null): NavItem[] {
     { label: t.layout.sidebar.dashboard, href: ROUTES.DASHBOARD, icon: IconDashboard, accent: 'default' },
     { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'teal' },
     { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer, accent: 'warning' },
-    { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconPractitioner, accent: 'default' },
+    { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconService, accent: 'violet' },
     { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
-    { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner, accent: 'default' },
-    { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'warning' },
-    { label: t.emails.title, href: ROUTES.EMAILS, icon: IconMail, accent: 'teal' },
-    { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings, accent: 'muted' },
+    { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner, accent: 'indigo' },
+    { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'orange' },
+    { label: t.emails.title, href: ROUTES.EMAILS, icon: IconMail, accent: 'pink' },
+    { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings, accent: 'cyan' },
   ];
   return items.filter((item) => canSeeNavHref(item.href, role));
 }
@@ -115,12 +116,14 @@ function NavLink({
   href,
   label,
   icon: Icon,
+  accent,
   active,
   collapsed,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
+  accent: IconWellAccent;
   active: boolean;
   collapsed?: boolean;
 }) {
@@ -130,17 +133,17 @@ function NavLink({
       aria-label={collapsed ? label : undefined}
       className={cn(
         'flex w-full items-center rounded-xl text-sm font-medium transition-all duration-200',
-        collapsed ? 'size-10 justify-center px-0' : 'gap-3 px-3 py-2.5',
+        collapsed ? 'size-10 justify-center px-0' : 'gap-2.5 px-3 py-1.5',
         active
           ? 'bg-primary text-primary-foreground shadow-[0_8px_20px_-10px_color-mix(in_oklch,var(--primary)_65%,transparent)]'
           : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
       )}
     >
-      <Icon
-        className={cn(
-          'shrink-0 transition-all duration-200',
-          collapsed ? 'size-5' : 'size-4',
-        )}
+      <IconWell
+        icon={Icon}
+        size="sm"
+        accent={accent}
+        className="size-7 rounded-md [&_svg]:size-3.5"
       />
       {collapsed ? null : <span className="whitespace-nowrap">{label}</span>}
     </Link>
@@ -188,7 +191,7 @@ function MobileNavLink({
         aria-current={active ? 'page' : undefined}
         className="card-aura group flex w-full items-center gap-4 rounded-xl bg-card px-4 py-3.5"
       >
-        <IconWell icon={icon} size="lg" accent={active ? 'default' : accent} />
+        <IconWell icon={icon} size="lg" accent={accent} />
         <span
           className={cn(
             'min-w-0 flex-1 text-sm font-semibold tracking-tight',
@@ -345,12 +348,13 @@ export function SidebarBlock() {
             isCollapsed ? 'px-2' : 'px-2.5',
           )}
         >
-          {navItems.map(({ label, href, icon }) => (
+          {navItems.map(({ label, href, icon, accent }) => (
             <NavLink
               key={href}
               href={href}
               label={label}
               icon={icon}
+              accent={accent}
               active={isActivePath(pathname, href, scheduleView)}
               collapsed={isCollapsed}
             />
