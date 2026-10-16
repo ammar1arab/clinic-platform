@@ -67,7 +67,7 @@ function SchedulePageInner() {
     "",
   );
 
-  const [prevParam, setPrevParam] = useState(viewParam);
+  const [prevParam, setPrevParam] = useState<string | null>(null);
   if (viewParam !== prevParam) {
     setPrevParam(viewParam);
     if (viewParam) setCurrentView(parseScheduleView(viewParam));
@@ -157,7 +157,6 @@ function SchedulePageInner() {
       <div className="shrink-0">
       <ScheduleToolbar
         view={view}
-        onViewChange={setView}
         search={search}
         onSearchChange={setSearch}
         departmentId={departmentId}
