@@ -82,14 +82,22 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
               ? touched.parentElement
               : null;
         if (!target || !root.contains(target)) return;
-        const header = target.closest("[data-app-topbar]");
         if (
-          !header ||
           target.closest(
             'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="slider"], [draggable="true"], .fc-event',
           )
         )
           return;
+        let ancestor: HTMLElement | null = target as HTMLElement;
+        while (ancestor && ancestor !== root) {
+          const overflowY = window.getComputedStyle(ancestor).overflowY;
+          const canScroll =
+            (overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+            ancestor.scrollHeight > ancestor.clientHeight;
+          if (canScroll && ancestor.scrollTop > 0) return;
+          ancestor = ancestor.parentElement;
+        }
+        if (window.scrollY > 0) return;
         surface = root.querySelector<HTMLElement>("main");
         if (!surface) return;
         prepareFeedbackSound();
