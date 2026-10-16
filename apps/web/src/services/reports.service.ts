@@ -1,6 +1,5 @@
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/constants/endpoints";
-import { getToken } from "@/lib/auth-token";
 import { env } from "@/lib/env";
 
 import type { ReportFormat } from "@clinic/types";
@@ -30,10 +29,8 @@ function filenameFromDisposition(header: string | undefined, fallback: string) {
 }
 
 async function downloadReport(path: string, fallbackName: string) {
-  const token = getToken();
   const res = await api.get(path, {
     responseType: "blob",
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
 
   const type =

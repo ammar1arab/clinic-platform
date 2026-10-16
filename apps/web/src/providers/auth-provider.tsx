@@ -2,7 +2,12 @@
 
 import { createContext, useContext, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { authService, MeResponse } from '@/services/auth.service';
-import { getToken, setToken, clearToken, subscribeToToken, getServerTokenSnapshot } from '@/lib/auth-token';
+import {
+  getAuthSessionRevision,
+  getServerAuthSessionRevision,
+  publishAuthSessionChange,
+  subscribeToAuthSession,
+} from '@/lib/auth-session';
 import { createLogger } from '@/lib/logger';
 import { useFetchData } from '@/hooks/query/use-fetch-data';
 import { useMounted } from '@/hooks/shared/use-mounted';
@@ -13,8 +18,7 @@ const log = createLogger('auth');
 
 interface AuthContextType {
   user: MeResponse | null;
-  token: string | null;
-  login: (token: string, me?: MeResponse) => Promise<MeResponse>;
+  login: (me?: MeResponse) => Promise<MeResponse>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -25,46 +29,51 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isHydrated = useMounted();
-  const token = useSyncExternalStore(subscribeToToken, getToken, getServerTokenSnapshot);
+  const sessionRevision = useSyncExternalStore(
+    subscribeToAuthSession,
+    getAuthSessionRevision,
+    getServerAuthSessionRevision,
+  );
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading } = useFetchData<MeResponse>({
-    queryKey: ['auth', 'me', token],
+  const { data: user, isLoading } = useFetchData<MeResponse | null>({
+    queryKey: ['auth', 'me', sessionRevision.revision],
     request: () => authService.getMe(),
     options: {
-      enabled: isHydrated && !!token,
+      enabled: isHydrated && sessionRevision.enabled,
       staleTime: 300_000,
     },
   });
 
-  const login = useCallback(async (newToken: string, me?: MeResponse) => {
+  const login = useCallback(async (me?: MeResponse) => {
     getSocket().disconnect();
-    setToken(newToken);
     const profile = me ?? (await authService.getMe());
-    queryClient.setQueryData(['auth', 'me', newToken], profile);
+    const revision = publishAuthSessionChange(true);
     queryClient.removeQueries({
       predicate: (query) => query.queryKey[0] !== 'auth',
     });
+    queryClient.setQueryData(['auth', 'me', revision], profile);
     log.info('login');
     return profile;
   }, [queryClient]);
 
   const logout = useCallback(() => {
     getSocket().disconnect();
-    clearToken();
     queryClient.clear();
+    const revision = publishAuthSessionChange(false);
+    queryClient.setQueryData(['auth', 'me', revision], null);
+    void authService.logout().catch(() => undefined);
     log.info('logout');
   }, [queryClient]);
 
   const value = useMemo<AuthContextType>(() => ({
     user: user ?? null,
-    token,
     login,
     logout,
-    isAuthenticated: !!token && !!user,
-    isLoading: !!token && isLoading && !user,
+    isAuthenticated: !!user,
+    isLoading: isLoading && !user,
     isHydrated,
-  }), [user, token, login, logout, isLoading, isHydrated]);
+  }), [user, login, logout, isLoading, isHydrated]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -25,6 +25,7 @@ import { AUTH_POLICY } from "@/security/security.constants";
 import { securityError } from "@/security/security-error";
 
 type Account = AuthAccount;
+export type AuthSessionReady = AuthReady & { accessToken: string };
 
 const GUEST_EMAIL = "owner@clinic.com";
 const dummyHashReady = bcrypt.hash(randomUUID(), 10);
@@ -120,14 +121,112 @@ export class AuthService {
   async ownerGenerateOtp(actor: AuthUser, id: string) {
     if (actor.role !== Role.owner) securityError("clinicUnavailable", 403);
     await this.limits.consume("owner-otp", actor.userId, 10, 3600);
-    const account = await this.repo.otpAccount(id, actor.clinicId);
-    if (!account) securityError("invalidRequest", 404);
-    return this.otp.issue(
-      account.id,
-      account.email,
-      account.passwordChangedAt,
+    const owner = await this.repo.clinicOwner(actor.clinicId);
+    if (!owner || owner.id !== actor.userId)
+      securityError("clinicUnavailable", 403);
+    const challenge = await this.createOwnerPasswordChallenge(
       actor.clinicId,
+      id,
+      true,
     );
+    if (!challenge.code) securityError("invalidToken", 401);
+    return { code: challenge.code, expiresAt: challenge.expiresAt };
+  }
+
+  private async createOwnerPasswordChallenge(
+    clinicId: string,
+    id: string,
+    forceNewCode = false,
+  ) {
+    const target = await this.repo.otpAccount(id, clinicId);
+    if (!target) securityError("invalidRequest", 404);
+    const owner = await this.repo.clinicOwner(clinicId);
+    const ownerName = owner?.clinicUsers[0]?.name || owner?.email;
+    if (!owner || !ownerName) securityError("clinicUnavailable", 403);
+    const pending = forceNewCode
+      ? null
+      : await this.otp.findPendingPasswordReset(
+          target.id,
+          target.passwordChangedAt,
+        );
+    const challenge = pending
+      ? {
+          id: pending.id,
+          expiresAt: pending.expiresAt.toISOString(),
+          code: undefined,
+        }
+      : await this.otp.issuePasswordReset(
+          target.id,
+          owner.email,
+          clinicId,
+          ownerName,
+          target.passwordChangedAt,
+        );
+    const token = this.tokens.sign({
+      sub: target.id,
+      passwordVersion: target.passwordChangedAt?.getTime() ?? 0,
+      purpose: "password_change",
+      challengeId: challenge.id,
+      email: owner.email,
+      clinicUserId: id,
+      clinicId,
+    });
+    return { ...challenge, token, email: owner.email };
+  }
+
+  async requestOwnerPasswordChange(actor: AuthUser, id: string) {
+    if (actor.role !== Role.owner) securityError("clinicUnavailable", 403);
+    const owner = await this.repo.clinicOwner(actor.clinicId);
+    if (!owner || owner.id !== actor.userId)
+      securityError("clinicUnavailable", 403);
+    await this.limits.consume("account-password-reset", actor.userId, 10, 3600);
+    const challenge = await this.createOwnerPasswordChallenge(
+      actor.clinicId,
+      id,
+    );
+    return {
+      next: "otp" as const,
+      token: challenge.token,
+      email: challenge.email,
+      cooldownSeconds: AUTH_POLICY.resendSeconds,
+    };
+  }
+
+  async confirmOwnerPasswordChange(
+    actor: AuthUser,
+    id: string,
+    token: string,
+    code: string,
+    password: string,
+  ) {
+    if (actor.role !== Role.owner) securityError("clinicUnavailable", 403);
+    const payload = this.tokens.verify(token, ["password_change"]);
+    if (
+      payload.clinicId !== actor.clinicId ||
+      payload.clinicUserId !== id ||
+      !payload.challengeId
+    ) securityError("invalidToken", 401);
+    const target = await this.repo.otpAccount(id, actor.clinicId);
+    if (!target || target.id !== payload.sub) securityError("invalidToken", 401);
+    const owner = await this.repo.clinicOwner(actor.clinicId);
+    if (!owner || owner.id !== actor.userId || owner.email !== payload.email)
+      securityError("invalidToken", 401);
+    const account = await this.account(payload);
+    const challenge = await this.otp.consume(
+      payload.challengeId,
+      account.id,
+      AuthOtpPurpose.FORGOT_PASSWORD,
+      code,
+    );
+    if (challenge.email !== owner.email) securityError("invalidOtp");
+    const changed = await this.repo.changePassword(
+      account.id,
+      account.passwordChangedAt,
+      await this.passwords.hash(password),
+      true,
+    );
+    if (!changed) securityError("invalidToken", 401);
+    return { success: true as const };
   }
 
   private async passwordChangeChallenge(user: Account) {
@@ -139,6 +238,7 @@ export class AuthService {
     return {
       next: "otp" as const,
       cooldownSeconds: AUTH_POLICY.resendSeconds,
+      email: user.email,
       token: this.tokens.sign({
         ...this.payload(user),
         purpose: "password_change",
@@ -176,15 +276,6 @@ export class AuthService {
     const hash = await this.passwords.hash(password);
     if (!(await this.repo.changePassword(user.id, user.passwordChangedAt, hash)))
       securityError("invalidToken", 401);
-    return { success: true as const };
-  }
-
-  async ownerResetPassword(actor: AuthUser, id: string, password: string) {
-    if (actor.role !== Role.owner) securityError("clinicUnavailable", 403);
-    await this.limits.consume("account-password-reset", actor.userId, 10, 3600);
-    const hash = await this.passwords.hash(password);
-    if (!(await this.repo.resetPassword(id, actor.clinicId, hash)))
-      securityError("invalidRequest", 409);
     return { success: true as const };
   }
 
@@ -234,7 +325,7 @@ export class AuthService {
     };
   }
 
-  private ready(user: Account): AuthReady {
+  private ready(user: Account): AuthSessionReady {
     if (!user.emailVerifiedAt || user.mustChangePassword)
       securityError("invalidToken", 401);
     const member = this.membership(user);
@@ -258,7 +349,9 @@ export class AuthService {
     };
   }
 
-  async login(dto: LoginDto): Promise<AuthLoginResponse> {
+  async login(
+    dto: LoginDto,
+  ): Promise<AuthLoginResponse | AuthSessionReady> {
     const email = dto.email.trim().toLowerCase();
     const [, user] = await Promise.all([
       this.limits.consume("login-email", email, 10, 900),
@@ -292,10 +385,7 @@ export class AuthService {
     return user.mustChangePassword ? this.setup(user) : this.ready(user);
   }
 
-  async guest(): Promise<AuthReady> {
-    if (process.env.NODE_ENV === "production") {
-      securityError("invalidCredentials", 401);
-    }
+  async guest(): Promise<AuthSessionReady> {
     const user = await this.repo.openGuest(GUEST_EMAIL);
     if (!user) securityError("invalidCredentials", 401);
     return this.ready(user);
@@ -312,23 +402,51 @@ export class AuthService {
     return user;
   }
 
-  async forgot(email: string): Promise<AuthRecovery> {
+  async forgot(email: string, forceNewCode = false): Promise<AuthRecovery> {
     const user = await this.repo.byEmail(email);
     const eligible = user?.clinicUsers.length === 1 ? user : null;
-    const challengeId = await this.otp.send(
-      email,
-      eligible?.id ?? null,
-      AuthOtpPurpose.FORGOT_PASSWORD,
+    if (!eligible) {
+      const challengeId = await this.otp.send(
+        email,
+        null,
+        AuthOtpPurpose.FORGOT_PASSWORD,
+      );
+      return {
+        next: "otp",
+        email,
+        cooldownSeconds: AUTH_POLICY.resendSeconds,
+        recoveryToken: this.tokens.sign({
+          sub: challengeId,
+          passwordVersion: 0,
+          purpose: "recovery",
+          challengeId,
+          email,
+        }),
+      };
+    }
+    const member = this.membership(eligible);
+    const owner = await this.repo.clinicOwner(member.clinicId);
+    if (!owner) securityError("emailUnavailable", 503);
+    const pending = await this.otp.findPendingPasswordReset(
+      eligible.id,
+      eligible.passwordChangedAt,
     );
+    const challenge = pending && !forceNewCode
+      ? { id: pending.id, email: owner.email }
+      : await this.createOwnerPasswordChallenge(
+          member.clinicId,
+          member.id,
+          forceNewCode,
+        );
     return {
       next: "otp",
-      email,
+      email: challenge.email,
       cooldownSeconds: AUTH_POLICY.resendSeconds,
       recoveryToken: this.tokens.sign({
-        sub: challengeId,
-        passwordVersion: 0,
+        sub: eligible.id,
+        passwordVersion: eligible.passwordChangedAt?.getTime() ?? 0,
         purpose: "recovery",
-        challengeId,
+        challengeId: challenge.id,
         email,
       }),
     };
@@ -339,6 +457,30 @@ export class AuthService {
     if (!payload.challengeId || !payload.email)
       securityError("invalidToken", 401);
     if (payload.purpose === "password_change") {
+      if (payload.clinicId && payload.clinicUserId) {
+        const target = await this.repo.otpAccount(
+          payload.clinicUserId,
+          payload.clinicId,
+        );
+        const owner = await this.repo.clinicOwner(payload.clinicId);
+        if (
+          !target ||
+          target.id !== payload.sub ||
+          !owner ||
+          owner.email !== payload.email
+        ) securityError("invalidToken", 401);
+        const challenge = await this.createOwnerPasswordChallenge(
+          payload.clinicId,
+          payload.clinicUserId,
+          true,
+        );
+        return {
+          next: "otp" as const,
+          token: challenge.token,
+          email: challenge.email,
+          cooldownSeconds: AUTH_POLICY.resendSeconds,
+        };
+      }
       const user = await this.account(payload);
       return this.passwordChangeChallenge(user);
     }
@@ -352,7 +494,7 @@ export class AuthService {
       if (await this.repo.byEmail(payload.email)) securityError("emailInUse", 409);
       return this.emailChangeChallenge(user, payload.email);
     }
-    if (payload.purpose === "recovery") return this.forgot(payload.email);
+    if (payload.purpose === "recovery") return this.forgot(payload.email, true);
     const user = await this.account(payload);
     if (user.emailVerifiedAt) securityError("invalidToken", 401);
     const challengeId = await this.otp.send(
@@ -373,12 +515,20 @@ export class AuthService {
     };
   }
 
-  async verify(dto: VerifyOtpDto): Promise<AuthVerifyResponse> {
+  async verify(
+    dto: VerifyOtpDto,
+  ): Promise<AuthVerifyResponse | AuthSessionReady> {
     const payload = this.tokens.verify(dto.token, ["setup", "recovery"]);
     if (!payload.challengeId) securityError("invalidToken", 401);
+    const expectedUserId =
+      payload.purpose === "setup"
+        ? payload.sub
+        : payload.sub === payload.challengeId
+          ? undefined
+          : payload.sub;
     const challenge = await this.otp.consume(
       payload.challengeId,
-      payload.purpose === "setup" ? payload.sub : undefined,
+      expectedUserId,
       payload.purpose === "setup"
         ? AuthOtpPurpose.EMAIL_VERIFY
         : AuthOtpPurpose.FORGOT_PASSWORD,
@@ -393,6 +543,8 @@ export class AuthService {
       securityError("invalidToken", 401);
     this.membership(user);
     if (payload.purpose === "recovery") {
+      const owner = await this.repo.clinicOwner(user.clinicUsers[0].clinicId);
+      if (owner && challenge.email !== owner.email) securityError("invalidOtp");
       return {
         next: "reset_password",
         resetToken: this.tokens.sign({
@@ -409,7 +561,10 @@ export class AuthService {
       : this.ready(verified);
   }
 
-  async setPassword(dto: AuthPasswordDto, reset = false): Promise<AuthReady> {
+  async setPassword(
+    dto: AuthPasswordDto,
+    reset = false,
+  ): Promise<AuthSessionReady> {
     const payload = this.tokens.verify(dto.token, [
       reset ? "password_reset" : "setup",
     ]);

@@ -34,7 +34,7 @@ function brandChannels(hex: string) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, token, isLoading, isHydrated } = useAuth();
+  const { user, isAuthenticated, isLoading, isHydrated } = useAuth();
   const pathname = usePathname();
   const clinicId = useClinicId();
   const { data: clinic } = useClinic(clinicId);
@@ -76,11 +76,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
   }, [brand, branded, logoUrl]);
 
-  if (!isHydrated || (token && isLoading)) {
+  if (!isHydrated || isLoading) {
     return <DashboardShellFallback />;
   }
 
-  if (!token || !user) {
+  if (!isAuthenticated || !user) {
     redirect(ROUTES.LOGIN);
   }
 

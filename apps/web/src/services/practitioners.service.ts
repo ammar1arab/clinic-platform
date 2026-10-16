@@ -25,17 +25,20 @@ export type {
 };
 
 export const practitionersService = {
-  getAll: (clinicId: string) =>
+  getAll: () =>
     api
       .get<
         Practitioner[]
-      >(ENDPOINTS.PRACTITIONERS.BASE, { params: { clinicId } })
+      >(ENDPOINTS.PRACTITIONERS.BASE)
       .then((r) => r.data),
 
-  getDirectory: (filters: PractitionerFilters) =>
-    api
-      .get<Practitioner[]>(ENDPOINTS.PRACTITIONERS.BASE, { params: filters })
-      .then((r) => r.data),
+  getDirectory: (filters: PractitionerFilters) => {
+    const { clinicId, ...query } = filters;
+    void clinicId;
+    return api
+      .get<Practitioner[]>(ENDPOINTS.PRACTITIONERS.BASE, { params: query })
+      .then((r) => r.data);
+  },
 
   getOne: (id: string) =>
     api

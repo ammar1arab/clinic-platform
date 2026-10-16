@@ -2,7 +2,7 @@ import { getTranslations } from "@/i18n";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/constants/endpoints";
 import type {
-  AccountProfileInput, OwnerOtpResponse, OwnerResetPasswordInput, AuthMe, AuthLoginInput, AuthLoginResponse, AuthTokenInput, AuthOtp, AuthEmailChange, AuthPasswordChange, AuthPasswordConfirmInput,
+  AccountProfileInput, OwnerOtpResponse, AuthMe, AuthLoginInput, AuthLoginResponse, AuthTokenInput, AuthOtp, AuthEmailChange, AuthPasswordChange, AuthPasswordConfirmInput,
   AuthVerifyInput, AuthVerifyResponse, AuthForgotInput, AuthRecovery,
   AuthPasswordInput, AuthReady,
 } from "@clinic/types";
@@ -30,9 +30,12 @@ export const authService = {
     return data;
   },
   ownerGenerateOtp: (id: string) => api.post<OwnerOtpResponse>(ENDPOINTS.AUTH.OWNER_OTP(id)).then(r => r.data),
-  ownerResetPassword: (id: string, input: OwnerResetPasswordInput) =>
-    api.post<{ success: true }>(ENDPOINTS.AUTH.OWNER_RESET_PASSWORD(id), input).then(r => r.data),
+  requestOwnerPasswordChange: (id: string) =>
+    api.post<AuthPasswordChange>(ENDPOINTS.AUTH.OWNER_RESET_PASSWORD(id)).then(r => r.data),
+  confirmOwnerPasswordChange: (id: string, input: AuthPasswordConfirmInput) =>
+    api.post<{ success: true }>(ENDPOINTS.AUTH.OWNER_RESET_PASSWORD_CONFIRM(id), input).then(r => r.data),
   getMe: () => api.get<AuthMe>(ENDPOINTS.AUTH.ME).then(r => r.data),
+  logout: () => api.post<{ success: true }>(ENDPOINTS.AUTH.LOGOUT).then(r => r.data),
   login: (body: AuthLoginInput) => api.post<AuthLoginResponse>(ENDPOINTS.AUTH.LOGIN, body).then(r => r.data),
   guest: () => api.post<AuthReady>(ENDPOINTS.AUTH.GUEST).then(r => r.data),
   sendOtp: (body: AuthTokenInput) => api.post<AuthOtp | AuthRecovery>(ENDPOINTS.AUTH.SEND_OTP, body).then(r => r.data),

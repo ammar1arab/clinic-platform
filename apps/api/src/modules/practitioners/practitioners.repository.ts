@@ -68,12 +68,12 @@ export class PractitionersRepository {
     });
   }
 
-  findById(id: string, clinicId?: string) {
+  findById(id: string, clinicId: string) {
     return this.prisma.clinicUser.findFirst({
       where: {
         id,
         role: Role.practitioner,
-        ...(clinicId ? { clinicId } : {}),
+        clinicId,
       },
       include,
     });

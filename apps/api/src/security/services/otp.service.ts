@@ -125,6 +125,91 @@ export class OtpService {
       .then((challenge) => challenge?.id ?? null);
   }
 
+  findPendingPasswordReset(userId: string, passwordChangedAt: Date | null) {
+    return this.prisma.authOtpChallenge.findFirst({
+      where: {
+        userId,
+        purpose: AuthOtpPurpose.FORGOT_PASSWORD,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+        attempts: { lt: AUTH_POLICY.maxOtpAttempts },
+        ...(passwordChangedAt && { createdAt: { gt: passwordChangedAt } }),
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, email: true, expiresAt: true },
+    });
+  }
+
+  async issuePasswordReset(
+    userId: string,
+    recipientEmail: string,
+    clinicId: string,
+    recipientName: string,
+    passwordChangedAt: Date | null,
+  ) {
+    await this.limits.consume("owner-otp-target", userId, 5, 3600);
+    await this.limits.consume(
+      "otp-send-hour",
+      recipientEmail,
+      AUTH_POLICY.maxSendsPerHour,
+      3600,
+    );
+    await this.limits.consume(
+      "otp-send-cooldown",
+      recipientEmail,
+      1,
+      AUTH_POLICY.resendSeconds,
+    );
+
+    const id = randomUUID();
+    const code = randomInt(0, 1_000_000)
+      .toString()
+      .padStart(AUTH_POLICY.otpDigits, "0");
+    const expiresAt = new Date(
+      Date.now() + AUTH_POLICY.otpExpiresSeconds * 1000,
+    );
+    await this.prisma.$transaction(async (tx) => {
+      await tx.authOtpChallenge.updateMany({
+        where: {
+          userId,
+          purpose: AuthOtpPurpose.FORGOT_PASSWORD,
+          usedAt: null,
+        },
+        data: { usedAt: new Date() },
+      });
+      await tx.authOtpChallenge.create({
+        data: {
+          id,
+          email: recipientEmail,
+          userId,
+          purpose: AuthOtpPurpose.FORGOT_PASSWORD,
+          codeHash: this.hash(id, code),
+          createdAt: new Date(),
+          expiresAt,
+        },
+      });
+    });
+
+    try {
+      const brand = await loadEmailBrand(this.prisma, clinicId);
+      if (!brand || !this.email.isEnabled)
+        securityError("emailUnavailable", 503);
+      const result = await this.email.send({
+        to: recipientEmail,
+        ...otpEmail(code, brand, recipientName),
+      });
+      if (result.skipped) throw new Error("Email unavailable");
+    } catch {
+      await this.prisma.authOtpChallenge.update({
+        where: { id },
+        data: { usedAt: new Date() },
+      });
+      securityError("emailUnavailable", 503);
+    }
+
+    return { id, code, expiresAt: expiresAt.toISOString() };
+  }
+
   async issue(
     userId: string,
     email: string,

@@ -9,6 +9,7 @@ export function AccountVerificationDialog({
   pending,
   resendAt,
   error,
+  email,
   onClose,
   onVerify,
   onResend,
@@ -17,6 +18,7 @@ export function AccountVerificationDialog({
   pending: boolean;
   resendAt: number;
   error: string;
+  email?: string;
   onClose: () => void;
   onVerify: (code: string) => Promise<void>;
   onResend: () => Promise<void>;
@@ -34,6 +36,11 @@ export function AccountVerificationDialog({
         <DialogTitle>{t.auth.verifyEmail}</DialogTitle>
         {open && (
           <>
+            {email ? (
+              <p className="text-center text-sm text-muted-foreground">
+                {t.auth.codeSent} <bdi className="font-medium text-foreground">{email}</bdi>
+              </p>
+            ) : null}
             {error ? (
               <p role="alert" className="text-sm text-destructive">
                 {error}

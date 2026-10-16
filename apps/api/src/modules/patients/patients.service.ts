@@ -33,8 +33,12 @@ export class PatientsService {
     return patient;
   }
 
-  async findAll(filters: PatientFiltersDto) {
-    const patients = await this.patientsRepository.findAllByClinic(filters);
+  async findAll(clinicId: string, filters: PatientFiltersDto) {
+    if (!clinicId) securityError("clinicUnavailable", 403);
+    const patients = await this.patientsRepository.findAllByClinic(
+      clinicId,
+      filters,
+    );
 
     return patients.map((patient) => {
       const completedAppointments = patient.appointments;
@@ -78,7 +82,8 @@ export class PatientsService {
     });
   }
 
-  async findOne(id: string, clinicId?: string) {
+  async findOne(id: string, clinicId: string) {
+    if (!clinicId) securityError("clinicUnavailable", 403);
     const patient = await this.patientsRepository.findById(id, clinicId);
     if (!patient) {
       throw new NotFoundException("Patient not found");
@@ -104,7 +109,7 @@ export class PatientsService {
     };
   }
 
-  async update(id: string, dto: UpdatePatientDto, clinicId?: string) {
+  async update(id: string, dto: UpdatePatientDto, clinicId: string) {
     const existing = await this.findOne(id, clinicId);
     if (
       !(await this.patientsRepository.referencesInClinic(
@@ -132,17 +137,17 @@ export class PatientsService {
     return patient;
   }
 
-  async deactivate(id: string, clinicId?: string) {
+  async deactivate(id: string, clinicId: string) {
     await this.findOne(id, clinicId);
     return this.patientsRepository.setActive(id, false);
   }
 
-  async reactivate(id: string, clinicId?: string) {
+  async reactivate(id: string, clinicId: string) {
     await this.findOne(id, clinicId);
     return this.patientsRepository.setActive(id, true);
   }
 
-  async remove(id: string, clinicId?: string) {
+  async remove(id: string, clinicId: string) {
     await this.findOne(id, clinicId);
     return this.patientsRepository.hardDelete(id);
   }

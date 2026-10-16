@@ -5,6 +5,7 @@ import type { Request } from "express";
 import { AUTH_AUDIENCE, AUTH_ISSUER } from "@/security/security.constants";
 import type { SecurityPayload } from "@/security/services/token.service";
 import { securityError } from "@/security/security-error";
+import { readAuthCookie } from "@/security/auth-cookie";
 import { AuthRepository, type AuthAccount } from "../auth.repository";
 import type { AuthUser } from "../types";
 
@@ -14,7 +15,10 @@ export type AuthRequest = Request & { authAccount?: AuthAccount };
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly repo: AuthRepository) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (request: Request) => readAuthCookie(request.headers.cookie),
+      ]),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET as string,
       issuer: AUTH_ISSUER,

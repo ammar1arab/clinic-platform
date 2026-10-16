@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { useConfirm, useLanguage } from '@/providers';
 import { playRefreshSound } from '@/lib/feedback-sound';
 import { queryClient } from '@/lib/query-client';
 
@@ -46,10 +44,13 @@ function RefreshAnimation({ progress, complete, visible }: { progress: number; c
           }`}
         />
         <path
-          d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z"
-          fill="currentColor"
-          className={`origin-center transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none ${
-            visible && complete ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
+          d="M12 8v8M8 12h8"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.15"
+          strokeLinecap="round"
+          className={`origin-center transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+            visible && complete ? 'rotate-0 scale-100 opacity-100' : 'rotate-90 scale-50 opacity-0'
           }`}
         />
       </svg>
@@ -58,27 +59,12 @@ function RefreshAnimation({ progress, complete, visible }: { progress: number; c
 }
 
 export function useAppRefresh({ animate = false }: { animate?: boolean } = {}) {
-  const { t } = useLanguage();
-  const confirm = useConfirm();
   const [refreshing, setRefreshing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [complete, setComplete] = useState(false);
 
   const refreshApp = async () => {
     if (refreshing) return;
-    if (document.querySelector('main form, main [contenteditable="true"]')) {
-      const accepted = await confirm({
-        title: t.common.reloadPage,
-        description: t.common.refreshUnsaved,
-        confirmLabel: t.common.reloadPage,
-      });
-      if (!accepted) return;
-    }
-    if (!navigator.onLine) {
-      toast.error(t.common.refreshOffline);
-      return;
-    }
-
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const surface = animate ? document.querySelector<HTMLElement>('main') : null;
     if (surface && !reduceMotion) {

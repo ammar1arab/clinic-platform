@@ -1,9 +1,6 @@
 import { IsOptional, IsString } from "class-validator";
 
 export class PractitionerFiltersDto {
-  @IsString()
-  clinicId: string;
-
   @IsOptional()
   @IsString()
   search?: string;

@@ -15,7 +15,6 @@ import type {
   AuthTokenInput,
   AuthVerifyInput,
   OwnerOtpResponse,
-  OwnerResetPasswordInput,
 } from '@clinic/types';
 import { authService } from '@/services/auth.service';
 import { useApiMutation } from '@/hooks/query/use-api-mutation';
@@ -45,9 +44,16 @@ export function useAuthMutation() {
 }
 
 export function useOwnerResetPassword(id: string) {
+  return useApiMutation<AuthPasswordChange, Error, void>({
+    request: () => authService.requestOwnerPasswordChange(id),
+    errorMessage: (error) => extractErrorMessage(error),
+  });
+}
+
+export function useConfirmOwnerPasswordChange(id: string) {
   const { t } = useLanguage();
-  return useApiMutation<{ success: true }, Error, OwnerResetPasswordInput>({
-    request: (input) => authService.ownerResetPassword(id, input),
+  return useApiMutation<{ success: true }, Error, AuthPasswordConfirmInput>({
+    request: (input) => authService.confirmOwnerPasswordChange(id, input),
     successMessage: t.common.accountPasswordReset,
   });
 }

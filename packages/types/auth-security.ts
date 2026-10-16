@@ -12,11 +12,11 @@ export function passwordRequirements(password: string) {
   return { present: password.length > 0 };
 }
 
-export type AuthReady = { next: 'ready'; accessToken: string; user: AuthMe };
+export type AuthReady = { next: 'ready'; user: AuthMe };
 export type AuthSetup = { next: 'set_password'; setupToken: string; email: string };
 export type AuthOtp = { next: 'otp'; setupToken: string; email: string; cooldownSeconds: number };
 export type AuthEmailChange = { next: 'otp'; token: string; email: string; cooldownSeconds: number } | { next: 'unchanged' };
-export type AuthPasswordChange = { next: 'otp'; token: string; cooldownSeconds: number };
+export type AuthPasswordChange = { next: 'otp'; token: string; email: string; cooldownSeconds: number };
 export type AuthPasswordConfirmInput = { token: string; code: string; password: string };
 export type AuthLoginResponse = AuthReady | AuthSetup | AuthOtp;
 export type AuthRecovery = { next: 'otp'; recoveryToken: string; email: string; cooldownSeconds: number };

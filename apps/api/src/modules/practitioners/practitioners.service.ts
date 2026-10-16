@@ -45,9 +45,26 @@ export class PractitionersService {
     private prisma: PrismaService,
   ) {}
 
-  async resetPassword(id: string, actor: AuthUser, password: string) {
+  async resetPassword(id: string, actor: AuthUser) {
     await this.findOne(id, actor.clinicId);
-    return this.auth.ownerResetPassword(actor, id, password);
+    return this.auth.requestOwnerPasswordChange(actor, id);
+  }
+
+  async confirmPasswordReset(
+    id: string,
+    actor: AuthUser,
+    token: string,
+    code: string,
+    password: string,
+  ) {
+    await this.findOne(id, actor.clinicId);
+    return this.auth.confirmOwnerPasswordChange(
+      actor,
+      id,
+      token,
+      code,
+      password,
+    );
   }
 
   async create(dto: CreatePractitionerDto) {
@@ -90,13 +107,14 @@ export class PractitionersService {
     return filterPractitioners(rows, filters);
   }
 
-  async findOne(id: string, clinicId?: string) {
+  async findOne(id: string, clinicId: string) {
+    if (!clinicId) throw new BadRequestException("clinicId is required");
     const row = await this.repo.findById(id, clinicId);
     if (!row) throw new NotFoundException("Practitioner not found");
     return mapPractitioner(row);
   }
 
-  async update(id: string, dto: UpdatePractitionerDto, clinicId?: string) {
+  async update(id: string, dto: UpdatePractitionerDto, clinicId: string) {
     this.assertAvailabilityRules(dto);
     const existing = await this.findOne(id, clinicId);
     await this.assertRefs(existing.clinicId, {

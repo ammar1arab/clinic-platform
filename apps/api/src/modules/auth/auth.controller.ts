@@ -10,9 +10,11 @@ import {
   Req,
   UseGuards,
   UseFilters,
+  Res,
 } from "@nestjs/common";
+import type { Response } from "express";
 import { ApiBearerAuth } from "@nestjs/swagger";
-import { AuthService } from "./auth.service";
+import { AuthService, type AuthSessionReady } from "./auth.service";
 import { LoginDto, RegisterDto } from "./dto";
 import {
   AccountProfileDto,
@@ -20,7 +22,6 @@ import {
   ConfirmPasswordChangeDto,
   EmailChangeDto,
   AuthPasswordDto,
-  OwnerResetPasswordDto,
   AuthTokenDto,
   ForgotPasswordDto,
   VerifyOtpDto,
@@ -34,11 +35,23 @@ import type { AuthUser } from "./types";
 import type { AuthRequest } from "./strategies/jwt.strategy";
 import { AuthRateLimitGuard } from "@/security/guards/auth-rate-limit.guard";
 import { AuthExceptionFilter } from "@/security/auth-exception.filter";
+import { clearAuthCookie, setAuthCookie } from "@/security/auth-cookie";
+import type { AuthLoginResponse, AuthVerifyResponse } from "@clinic/types";
 
 @Controller("auth")
 @UseFilters(AuthExceptionFilter)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  private completeSession(
+    result: AuthLoginResponse | AuthVerifyResponse | AuthSessionReady,
+    response: Response,
+  ) {
+    if (result.next !== "ready") return result;
+    const { accessToken, ...body } = result as AuthSessionReady;
+    setAuthCookie(response, accessToken);
+    return body;
+  }
 
   @Patch("profile")
   @ApiBearerAuth()
@@ -110,15 +123,34 @@ export class AuthController {
   }
 
   @Post("accounts/:id/reset-password")
+  @Header("Cache-Control", "no-store")
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.owner)
-  ownerResetPassword(
+  requestOwnerPasswordChange(
     @CurrentUser() actor: AuthUser,
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() dto: OwnerResetPasswordDto,
   ) {
-    return this.authService.ownerResetPassword(actor, id, dto.password);
+    return this.authService.requestOwnerPasswordChange(actor, id);
+  }
+
+  @Post("accounts/:id/reset-password/confirm")
+  @Header("Cache-Control", "no-store")
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.owner)
+  confirmOwnerPasswordChange(
+    @CurrentUser() actor: AuthUser,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: ConfirmPasswordChangeDto,
+  ) {
+    return this.authService.confirmOwnerPasswordChange(
+      actor,
+      id,
+      dto.token,
+      dto.code,
+      dto.password,
+    );
   }
 
   @Post("register")
@@ -129,45 +161,71 @@ export class AuthController {
   }
 
   @Post("login")
+  @Header("Cache-Control", "no-store")
   @UseGuards(AuthRateLimitGuard)
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    return this.completeSession(await this.authService.login(dto), res);
   }
 
   @Post("guest")
+  @Header("Cache-Control", "no-store")
   @UseGuards(AuthRateLimitGuard)
-  guest() {
-    return this.authService.guest();
+  async guest(@Res({ passthrough: true }) res: Response) {
+    return this.completeSession(await this.authService.guest(), res);
   }
 
   @Post("send-otp")
+  @Header("Cache-Control", "no-store")
   @UseGuards(AuthRateLimitGuard)
   resend(@Body() dto: AuthTokenDto) {
     return this.authService.resend(dto.token);
   }
 
   @Post("verify-otp")
+  @Header("Cache-Control", "no-store")
   @UseGuards(AuthRateLimitGuard)
-  verify(@Body() dto: VerifyOtpDto) {
-    return this.authService.verify(dto);
+  async verify(
+    @Body() dto: VerifyOtpDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.completeSession(await this.authService.verify(dto), res);
   }
 
   @Post("forgot-password")
+  @Header("Cache-Control", "no-store")
   @UseGuards(AuthRateLimitGuard)
   forgot(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgot(dto.email);
   }
 
   @Post("set-password")
+  @Header("Cache-Control", "no-store")
   @UseGuards(AuthRateLimitGuard)
-  setPassword(@Body() dto: AuthPasswordDto) {
-    return this.authService.setPassword(dto);
+  async setPassword(
+    @Body() dto: AuthPasswordDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.completeSession(await this.authService.setPassword(dto), res);
   }
 
   @Post("reset-password")
+  @Header("Cache-Control", "no-store")
   @UseGuards(AuthRateLimitGuard)
-  resetPassword(@Body() dto: AuthPasswordDto) {
-    return this.authService.setPassword(dto, true);
+  async resetPassword(
+    @Body() dto: AuthPasswordDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.completeSession(
+      await this.authService.setPassword(dto, true),
+      res,
+    );
+  }
+
+  @Post("logout")
+  @Header("Cache-Control", "no-store")
+  logout(@Res({ passthrough: true }) res: Response) {
+    clearAuthCookie(res);
+    return { success: true as const };
   }
 
   @ApiBearerAuth()

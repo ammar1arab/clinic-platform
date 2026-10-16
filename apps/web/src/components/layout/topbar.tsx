@@ -98,7 +98,7 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
           {showNav ? (
             <SoftTip label={mobileOpen ? t.layout.sidebar.closeMenu : t.layout.sidebar.openMenu}>
               <span className="md:hidden">
-                <MobileMenuToggle open={mobileOpen} onClick={() => setMobileOpen(true)} />
+                <MobileMenuToggle open={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)} />
               </span>
             </SoftTip>
           ) : null}
@@ -110,7 +110,7 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
           ) : null}
 
           <h1 className="truncate font-heading text-[0.9375rem] font-semibold tracking-tight text-foreground md:text-base">
-            {title}
+            {mobileOpen ? t.layout.sidebar.menu : title}
           </h1>
         </div>
 

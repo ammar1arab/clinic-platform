@@ -1,4 +1,5 @@
 
-export const AUTH_COOKIE_NAME = 'token';
-
-export const AUTH_TOKEN_MAX_AGE = 60 * 60;
+export const AUTH_COOKIE_NAME =
+  process.env.NODE_ENV === 'production'
+    ? '__Secure-cureva_session'
+    : 'cureva_session';

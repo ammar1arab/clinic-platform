@@ -41,7 +41,7 @@ export function AuthFlow() {
   const completing = useRef(false);
   const destRef = useRef<string>(ROUTES.DASHBOARD);
   const router = useRouter();
-  const { login, user, token: sessionToken, isLoading } = useAuth();
+  const { login, user, isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
   const mutation = useAuthMutation();
   const pending = mutation.isPending || success;
@@ -70,11 +70,11 @@ export function AuthFlow() {
     router.replace(destRef.current);
   }, [router]);
 
-  if (sessionToken && isLoading && !success && !celebrating.current) {
+  if (isAuthenticated && isLoading && !success && !celebrating.current) {
     return <LoadingState variant="page" text={t.auth.signingIn} />;
   }
 
-  if (sessionToken && user && !success && !celebrating.current) {
+  if (isAuthenticated && user && !success && !celebrating.current) {
     redirect(postLoginPath(user.role, readReturnPath()));
   }
 
@@ -87,7 +87,7 @@ export function AuthFlow() {
       if (response.next === "ready") {
         celebrating.current = true;
         setSuccess(true);
-        const me = await login(response.accessToken, response.user);
+        const me = await login(response.user);
         destRef.current = postLoginPath(me.role, readReturnPath());
         return;
       }

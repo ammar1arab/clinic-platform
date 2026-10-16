@@ -53,11 +53,6 @@ export interface AuthMe {
   clinic: ClinicSummary;
 }
 
-export interface AuthTokenResponse {
-  accessToken: string;
-}
-
-
 export interface ClinicStaffMember {
   email?: string;
   id: string;

@@ -23,9 +23,8 @@ import {
 } from "@/components/ui";
 import { useAuth, useLanguage } from "@/providers";
 import {
-  useConfirmPasswordChange,
+  useConfirmOwnerPasswordChange,
   useOwnerResetPassword,
-  useRequestPasswordChange,
 } from "@/hooks/api/use-auth-mutations";
 import { extractErrorMessage } from "@/lib/api";
 import { authService } from "@/services/auth.service";
@@ -42,12 +41,12 @@ export function AccountPasswordReset({ id }: { id?: string }) {
   const [open, setOpen] = useState(false);
   const targetId = id ?? selectedId;
   const mutation = useOwnerResetPassword(targetId);
-  const requestPassword = useRequestPasswordChange();
-  const confirmPassword = useConfirmPasswordChange();
+  const confirmPassword = useConfirmOwnerPasswordChange(targetId);
   const [revision, setRevision] = useState(0);
   const [otpError, setOtpError] = useState("");
   const [challenge, setChallenge] = useState<{
     token: string;
+    email: string;
     resendAt: number;
     password: string;
   } | null>(null);
@@ -55,30 +54,21 @@ export function AccountPasswordReset({ id }: { id?: string }) {
 
   const save = async (password: string) => {
     if (!targetId) return;
-    if (id) {
-      try {
-        const pending = await requestPassword.mutateAsync();
-        setOtpError("");
-        setChallenge({
-          token: pending.token,
-          resendAt: Date.now() + pending.cooldownSeconds * 1000,
-          password,
-        });
-      } catch {}
-      return;
-    }
     try {
-      await mutation.mutateAsync({ password });
-      setRevision((value) => value + 1);
-      setSelectedId("");
-      setOpen(false);
-      if (targetId === user.clinicUserId) logout();
+      const pending = await mutation.mutateAsync();
+      setOtpError("");
+      setChallenge({
+        token: pending.token,
+        email: pending.email,
+        resendAt: Date.now() + pending.cooldownSeconds * 1000,
+        password,
+      });
     } catch {}
   };
 
   const picker = !id ? (
     <fieldset
-      disabled={mutation.isPending || staff.isLoading}
+      disabled={mutation.isPending || staff.isLoading || !!challenge}
       className="min-w-0"
     >
       <FormField>
@@ -109,7 +99,7 @@ export function AccountPasswordReset({ id }: { id?: string }) {
       <PasswordForm
         key={`${targetId}-${revision}`}
         autoFocus={false}
-        pending={mutation.isPending || requestPassword.isPending}
+        pending={mutation.isPending || confirmPassword.isPending}
         disabled={!targetId || !!challenge}
         onSubmit={save}
       />
@@ -161,6 +151,7 @@ export function AccountPasswordReset({ id }: { id?: string }) {
       <AccountVerificationDialog
         open={!!challenge}
         pending={confirmPassword.isPending}
+        email={challenge?.email}
         resendAt={challenge?.resendAt ?? 0}
         error={otpError}
         onClose={() => setChallenge(null)}
@@ -175,7 +166,9 @@ export function AccountPasswordReset({ id }: { id?: string }) {
             });
             setChallenge(null);
             setRevision((value) => value + 1);
-            logout();
+            setSelectedId("");
+            setOpen(false);
+            if (targetId === user.clinicUserId) logout();
           } catch (cause) {
             setOtpError(
               extractErrorMessage(
@@ -194,6 +187,7 @@ export function AccountPasswordReset({ id }: { id?: string }) {
             setChallenge({
               ...challenge,
               token: pending.token,
+              email: pending.email,
               resendAt: Date.now() + pending.cooldownSeconds * 1000,
             });
           } catch (cause) {

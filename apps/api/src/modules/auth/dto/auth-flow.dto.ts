@@ -8,7 +8,6 @@ import {
   MinLength,
 } from "class-validator";
 import type {
-  OwnerResetPasswordInput,
   AuthForgotInput,
   AuthPasswordInput,
   AuthTokenInput,
@@ -34,12 +33,6 @@ export class VerifyOtpDto extends AuthTokenDto implements AuthVerifyInput {
   code: string;
 }
 export class AuthPasswordDto extends AuthTokenDto implements AuthPasswordInput {
-  @IsString()
-  @MinLength(1)
-  password: string;
-}
-
-export class OwnerResetPasswordDto implements OwnerResetPasswordInput {
   @IsString()
   @MinLength(1)
   password: string;

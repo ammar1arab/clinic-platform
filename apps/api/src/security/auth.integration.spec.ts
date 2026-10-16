@@ -30,11 +30,17 @@ integration("Auth HTTP and database invariants", () => {
   let failDelivery = false;
   const password = "InitialPass123";
   let ownerId: string;
-  let ownerToken: string;
+  let staffClinicUserId: string;
+  let ownerCookie: string;
   let setupToken: string;
   let resetToken: string;
   let api: ReturnType<typeof request.agent>;
   const body = (response: Response) => response.body as Record<string, string>;
+  const sessionCookie = (response: Response) => {
+    const cookie = response.headers["set-cookie"]?.[0]?.split(";")[0];
+    expect(cookie).toMatch(/^(?:__Secure-)?cureva_session=/);
+    return cookie!;
+  };
 
   const code = (email: string) => sent.get(email)!.match(/<p>(\d{6})<\/p>/)![1];
   async function clearSends(email: string) {
@@ -92,6 +98,12 @@ integration("Auth HTTP and database invariants", () => {
       });
       if (role === "owner") ownerId = user.id;
     }
+    staffClinicUserId = (
+      await prisma.clinicUser.findFirstOrThrow({
+        where: { clinicId, user: { email: staffEmail } },
+        select: { id: true },
+      })
+    ).id;
   }, 60_000);
 
   afterAll(async () => {
@@ -161,14 +173,20 @@ integration("Auth HTTP and database invariants", () => {
       ),
     );
     expect(results.map((result) => result.status).sort()).toEqual([201, 400]);
-    ownerToken = body(
-      results.find((result) => result.status === 201)!,
-    ).accessToken;
+    const verified = results.find((result) => result.status === 201)!;
+    expect(body(verified).accessToken).toBeUndefined();
+    ownerCookie = sessionCookie(verified);
     const me = await api
       .get("/auth/me")
-      .set("Authorization", "Bearer " + ownerToken)
+      .set("Cookie", ownerCookie)
       .expect(200);
     expect(body(me).role).toBe("owner");
+    await api
+      .post("/auth/profile/email")
+      .set("Cookie", ownerCookie)
+      .set("Origin", "https://attacker.invalid")
+      .send({ email: "attacker@example.invalid" })
+      .expect(403);
   });
 
   it("requires practitioner password setup after OTP and enforces password criteria", async () => {
@@ -200,6 +218,39 @@ integration("Auth HTTP and database invariants", () => {
       .send({ email: staffEmail, password: "Practitioner123" })
       .expect(201);
     expect(body(loginAgain).next).toBe("ready");
+  });
+
+  it("lets a clinic-owner generated OTP complete practitioner password recovery", async () => {
+    await clearSends(ownerEmail);
+    const generated = await api
+      .post(`/auth/accounts/${staffClinicUserId}/otp`)
+      .set("Cookie", ownerCookie)
+      .set("Origin", "https://cureva.clinic")
+      .expect(201);
+    const generatedCode = body(generated).code;
+    expect(generatedCode).toMatch(/^\d{6}$/);
+
+    const recovery = await api
+      .post("/auth/forgot-password")
+      .send({ email: staffEmail })
+      .expect(201);
+    expect(body(recovery).email).toBe(ownerEmail);
+
+    const verified = await api
+      .post("/auth/verify-otp")
+      .send({ token: body(recovery).recoveryToken, code: generatedCode })
+      .expect(201);
+    expect(body(verified).next).toBe("reset_password");
+
+    const reset = await api
+      .post("/auth/reset-password")
+      .send({
+        token: body(verified).resetToken,
+        password: "RecoveredPractitioner123",
+      })
+      .expect(201);
+    expect(body(reset).next).toBe("ready");
+    expect(body(reset).accessToken).toBeUndefined();
   });
 
   it("returns the same recovery contract for known and unknown addresses", async () => {
@@ -245,10 +296,7 @@ integration("Auth HTTP and database invariants", () => {
       ),
     );
     expect(results.map((result) => result.status).sort()).toEqual([201, 401]);
-    await api
-      .get("/auth/me")
-      .set("Authorization", "Bearer " + ownerToken)
-      .expect(401);
+    await api.get("/auth/me").set("Cookie", ownerCookie).expect(401);
     await api
       .post("/auth/login")
       .send({ email: ownerEmail, password })
@@ -258,7 +306,8 @@ integration("Auth HTTP and database invariants", () => {
       .send({ email: ownerEmail, password: "ResetPassword123" })
       .expect(201);
     expect(body(login).next).toBe("ready");
-    ownerToken = body(login).accessToken;
+    expect(body(login).accessToken).toBeUndefined();
+    ownerCookie = sessionCookie(login);
   });
 
   it("rejects inactive clinic memberships even with a previously valid token", async () => {
@@ -268,7 +317,7 @@ integration("Auth HTTP and database invariants", () => {
     });
     await api
       .get("/auth/me")
-      .set("Authorization", "Bearer " + ownerToken)
+      .set("Cookie", ownerCookie)
       .expect(401);
     await api
       .post("/auth/login")

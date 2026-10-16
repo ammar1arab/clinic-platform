@@ -30,7 +30,6 @@ export class PatientsController {
   }
 
   @Get()
-  @ApiQuery({ name: "clinicId", required: true, type: String })
   @ApiQuery({ name: "search", required: false, type: String })
   @ApiQuery({
     name: "isActive",
@@ -82,10 +81,7 @@ export class PatientsController {
   @ApiQuery({ name: "page", required: false, type: Number })
   @ApiQuery({ name: "limit", required: false, type: Number })
   findAll(@CurrentUser() user: AuthUser, @Query() filters: PatientFiltersDto) {
-    return this.patientsService.findAll({
-      ...filters,
-      clinicId: user.clinicId,
-    });
+    return this.patientsService.findAll(user.clinicId, filters);
   }
 
   @Get(":id")

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   Patch,
   Post,
@@ -10,7 +11,7 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
-import { ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
+import { ApiBearerAuth } from "@nestjs/swagger";
 import { Role } from "@prisma/client";
 import { JwtAuthGuard, RolesGuard } from "@/modules/auth/guards";
 import { CurrentUser, Roles, type AuthUser } from "@/modules/auth/decorators";
@@ -22,8 +23,8 @@ import {
   ReplaceAvailabilityDto,
   ReplaceTimeOffDto,
   UpdatePractitionerDto,
-  ResetPractitionerPasswordDto,
 } from "./dto";
+import { ConfirmPasswordChangeDto } from "@/modules/auth/dto/auth-flow.dto";
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -32,14 +33,32 @@ export class PractitionersController {
   constructor(private practitionersService: PractitionersService) {}
 
   @Post(":id/reset-password")
+  @Header("Cache-Control", "no-store")
   @UseGuards(RolesGuard)
   @Roles(Role.owner)
   resetPassword(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string,
-    @Body() dto: ResetPractitionerPasswordDto,
   ) {
-    return this.practitionersService.resetPassword(id, user, dto.password);
+    return this.practitionersService.resetPassword(id, user);
+  }
+
+  @Post(":id/reset-password/confirm")
+  @Header("Cache-Control", "no-store")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner)
+  confirmPasswordReset(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: ConfirmPasswordChangeDto,
+  ) {
+    return this.practitionersService.confirmPasswordReset(
+      id,
+      user,
+      dto.token,
+      dto.code,
+      dto.password,
+    );
   }
 
   @Post()
@@ -53,7 +72,6 @@ export class PractitionersController {
   }
 
   @Get()
-  @ApiQuery({ name: "clinicId", required: true, type: String })
   findAll(
     @CurrentUser() user: AuthUser,
     @Query() filters: PractitionerFiltersDto,

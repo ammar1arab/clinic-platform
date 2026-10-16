@@ -55,9 +55,8 @@ export class PatientsRepository {
     return this.prisma.patient.create({ data });
   }
 
-  findAllByClinic(filters: PatientFiltersDto) {
+  findAllByClinic(clinicId: string, filters: PatientFiltersDto) {
     const {
-      clinicId,
       search,
       isActive,
       gender,
@@ -178,9 +177,9 @@ export class PatientsRepository {
     });
   }
 
-  findById(id: string, clinicId?: string) {
+  findById(id: string, clinicId: string) {
     return this.prisma.patient.findFirst({
-      where: clinicId ? { id, clinicId } : { id },
+      where: { id, clinicId },
       include: {
         package: {
           select: {

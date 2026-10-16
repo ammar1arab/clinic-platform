@@ -23,9 +23,6 @@ export enum SortOrder {
 }
 
 export class PatientFiltersDto {
-  @IsString()
-  clinicId: string;
-
   @IsOptional()
   @IsString()
   search?: string;

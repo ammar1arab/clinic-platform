@@ -26,6 +26,7 @@ export const ENDPOINTS = {
     PROFILE_PASSWORD_CONFIRM: "/auth/profile/password/confirm",
     OWNER_OTP: (id: string) => `/auth/accounts/${id}/otp`,
     OWNER_RESET_PASSWORD: (id: string) => `/auth/accounts/${id}/reset-password`,
+    OWNER_RESET_PASSWORD_CONFIRM: (id: string) => `/auth/accounts/${id}/reset-password/confirm`,
     ME: "/auth/me",
     LOGIN: "/auth/login",
     GUEST: "/auth/guest",
@@ -34,6 +35,7 @@ export const ENDPOINTS = {
     SET_PASSWORD: "/auth/set-password",
     FORGOT_PASSWORD: "/auth/forgot-password",
     RESET_PASSWORD: "/auth/reset-password",
+    LOGOUT: "/auth/logout",
   },
   CLINICS: {
     BY_ID: (id: string) => `/clinics/${id}`,

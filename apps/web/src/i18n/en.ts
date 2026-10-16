@@ -420,6 +420,7 @@ export const en = {
       settings: "Settings",
       collapse: "Collapse",
       expand: "Expand",
+      menu: "Menu",
       closeMenu: "Close menu",
       openMenu: "Open menu",
     },

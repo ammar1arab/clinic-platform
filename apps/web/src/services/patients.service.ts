@@ -26,8 +26,10 @@ export type {
 
 export const patientsService = {
   getAll: (filters: PatientFilters) => {
+    const { clinicId, ...query } = filters;
+    void clinicId;
     const params: Record<string, string | number | boolean | undefined> = {
-      ...filters,
+      ...query,
     };
     Object.keys(params).forEach((key) => {
       if (params[key] === undefined || params[key] === "") {

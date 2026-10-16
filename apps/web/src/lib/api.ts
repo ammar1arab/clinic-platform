@@ -5,20 +5,18 @@ import { env } from './env';
 import { ROUTES } from '@/constants/routes';
 import { ENDPOINTS } from '@/constants/endpoints';
 import type { AuthErrorCode } from '@clinic/types';
-import { bearerFromConfig, clearToken, getToken } from './auth-token';
 import { createLogger } from './logger';
+import { publishAuthSessionChange } from './auth-session';
 
 const log = createLogger('api');
 
 export const api = axios.create({
   baseURL: env.NEXT_PUBLIC_API_URL,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
-  const token = getToken();
-  if (token && !isAuthFlowRequest(config.url)) config.headers.Authorization = `Bearer ${token}`;
-
   config.headers['Accept-Language'] = getLanguage();
 
   return config;
@@ -113,13 +111,8 @@ api.interceptors.response.use(
 
     if (status === 401) {
       log.debug('unauthorized', meta);
-      const sent = bearerFromConfig(error.config?.headers);
-      const current = getToken();
-      if (current && sent && sent !== current) {
-        return Promise.reject(error);
-      }
       if (typeof window !== 'undefined') {
-        clearToken();
+        publishAuthSessionChange(false);
         if (!window.location.pathname.startsWith(ROUTES.LOGIN)) {
           window.location.replace(ROUTES.LOGIN);
         }
@@ -168,6 +161,9 @@ function isAuthFlowRequest(url?: string): boolean {
     ENDPOINTS.AUTH.SET_PASSWORD,
     ENDPOINTS.AUTH.FORGOT_PASSWORD,
     ENDPOINTS.AUTH.RESET_PASSWORD,
+    ENDPOINTS.AUTH.LOGOUT,
+    ENDPOINTS.AUTH.PROFILE_EMAIL_CONFIRM,
+    ENDPOINTS.AUTH.PROFILE_PASSWORD_CONFIRM,
   ].some(endpoint => endpoint === url);
 }
 

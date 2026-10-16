@@ -140,8 +140,7 @@ export class ReportsService {
         : query.status === "active" || !query.status
           ? true
           : undefined;
-    const patients = await this.patientsService.findAll({
-      clinicId: query.clinicId,
+    const patients = await this.patientsService.findAll(query.clinicId, {
       search: query.search,
       isActive,
       gender: query.gender,

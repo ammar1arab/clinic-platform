@@ -166,5 +166,3 @@ export class ReplaceAvailabilityOverridesDto {
   @Type(() => AvailabilityOverrideEntryDto)
   availabilityOverrides: AvailabilityOverrideEntryDto[];
 }
-
-export { OwnerResetPasswordDto as ResetPractitionerPasswordDto } from "@/modules/auth/dto/auth-flow.dto";

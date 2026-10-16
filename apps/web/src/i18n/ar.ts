@@ -427,6 +427,7 @@ export const ar: Translations = {
       settings: "الإعدادات",
       collapse: "طي",
       expand: "توسيع",
+      menu: "القائمة",
       closeMenu: "إغلاق القائمة",
       openMenu: "فتح القائمة",
     },

@@ -10,6 +10,7 @@ import { Server, Socket } from "socket.io";
 import { corsOrigin, createLogger } from "@/infrastructure";
 import { JwtStrategy } from "@/modules/auth/strategies/jwt.strategy";
 import { TokenService } from "@/security/services/token.service";
+import { readAuthCookie } from "@/security/auth-cookie";
 
 @Injectable()
 @WebSocketGateway({
@@ -39,8 +40,8 @@ export class DashboardGateway {
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      const token: unknown = client.handshake.auth.token;
-      if (typeof token !== "string") throw new Error("invalidToken");
+      const token = readAuthCookie(client.handshake.headers.cookie);
+      if (!token) throw new Error("invalidToken");
       const payload = this.tokens.verify(token, ["access"]);
       const user = await this.strategy.validate(null, payload);
       if (clinicId !== user.clinicId) throw new Error("clinicUnavailable");

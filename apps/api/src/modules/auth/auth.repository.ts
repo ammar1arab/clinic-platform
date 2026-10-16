@@ -53,34 +53,27 @@ export class AuthRepository {
     });
   }
 
-  resetPassword(id: string, clinicId: string, passwordHash: string) {
-    return this.prisma.$transaction(async (tx) => {
-      const member = await tx.clinicUser.findFirst({
-        where: { id, clinicId },
-        select: { user: { select: { id: true, passwordChangedAt: true } } },
-      });
-      if (!member) return false;
-      const previous = member.user.passwordChangedAt;
-      const changed = await tx.user.updateMany({
-        where: {
-          id: member.user.id,
-          passwordChangedAt: previous,
-          clinicUsers: { some: { id, clinicId }, every: { clinicId } },
+  clinicOwner(clinicId: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        clinicUsers: {
+          some: {
+            clinicId,
+            role: "owner",
+            isActive: true,
+            clinic: { isActive: true },
+          },
         },
-        data: {
-          passwordHash,
-          mustChangePassword: true,
-          passwordChangedAt: new Date(
-            Math.max(Date.now(), (previous?.getTime() ?? 0) + 1),
-          ),
+      },
+      select: {
+        id: true,
+        email: true,
+        clinicUsers: {
+          where: { clinicId, role: "owner", isActive: true },
+          select: { name: true },
+          take: 1,
         },
-      });
-      if (!changed.count) return false;
-      await tx.authOtpChallenge.updateMany({
-        where: { userId: member.user.id, usedAt: null },
-        data: { usedAt: new Date() },
-      });
-      return true;
+      },
     });
   }
 
@@ -162,13 +155,14 @@ export class AuthRepository {
     id: string,
     previous: Date | null,
     passwordHash: string,
+    mustChangePassword = false,
   ) {
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const changed = await tx.user.updateMany({
         where: { id, passwordChangedAt: previous },
         data: {
           passwordHash,
-          mustChangePassword: false,
+          mustChangePassword,
           emailVerifiedAt: new Date(),
           passwordChangedAt: new Date(
             Math.max(Date.now(), (previous?.getTime() ?? 0) + 1),
