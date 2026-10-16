@@ -11,25 +11,49 @@ import {
 import { IconLanguage, IconCheck } from '@/constants/icons';
 import { SoftTip } from '@/components/primitives';
 
-export function LanguageOptions() {
+export function LanguageOptions({
+  presentation = 'menu',
+  onSelect,
+}: {
+  presentation?: 'menu' | 'button';
+  onSelect?: () => void;
+}) {
   const { language, setLanguage, t } = useLanguage();
+  const options = [
+    { value: 'en' as const, label: t.layout.english },
+    { value: 'ar' as const, label: t.layout.arabic },
+  ];
 
   return (
     <>
-      <DropdownMenuItem
-        onClick={() => setLanguage('en')}
-        className="flex items-center justify-between"
-      >
-        {t.layout.english}
-        {language === 'en' && <IconCheck className="size-4 ms-2" />}
-      </DropdownMenuItem>
-      <DropdownMenuItem
-        onClick={() => setLanguage('ar')}
-        className="flex items-center justify-between"
-      >
-        {t.layout.arabic}
-        {language === 'ar' && <IconCheck className="size-4 ms-2" />}
-      </DropdownMenuItem>
+      {options.map(({ value, label }) =>
+        presentation === 'button' ? (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={language === value}
+            onClick={() => {
+              setLanguage(value);
+              onSelect?.();
+            }}
+            className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              language === value ? 'bg-accent/60 text-accent-foreground' : 'text-foreground'
+            }`}
+          >
+            {label}
+            {language === value && <IconCheck className="size-4 ms-2" />}
+          </button>
+        ) : (
+          <DropdownMenuItem
+            key={value}
+            onClick={() => setLanguage(value)}
+            className="flex items-center justify-between"
+          >
+            {label}
+            {language === value && <IconCheck className="size-4 ms-2" />}
+          </DropdownMenuItem>
+        ),
+      )}
     </>
   );
 }

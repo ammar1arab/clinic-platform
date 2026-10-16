@@ -10,7 +10,7 @@ import {
 } from '@/components/ui';
 import { useMounted } from '@/hooks/shared/use-mounted';
 import { SoftTip } from '@/components/primitives';
-import { IconMoon, IconSun, IconSystem } from '@/constants/icons';
+import { IconCheck, IconMoon, IconSun, IconSystem } from '@/constants/icons';
 import { useLanguage } from '@/providers/language-provider';
 
 const OPTIONS = [
@@ -19,29 +19,55 @@ const OPTIONS = [
   { value: 'system', icon: IconSystem },
 ] as const;
 
-export function ThemeOptions() {
+export function ThemeOptions({
+  presentation = 'menu',
+  onSelect,
+}: {
+  presentation?: 'menu' | 'button';
+  onSelect?: () => void;
+}) {
   const { theme, setTheme } = useTheme();
   const mounted = useMounted();
   const { t } = useLanguage();
 
-  return OPTIONS.map(({ value, icon: Icon }) => (
-    <DropdownMenuItem
-      key={value}
-      onClick={() => setTheme(value)}
-      className="cursor-pointer"
-      data-active={mounted && theme === value}
-    >
-      <Icon className="size-4 me-2" />
-      {value === 'light'
-        ? t.layout.light
-        : value === 'dark'
-          ? t.layout.dark
-          : t.layout.system}
-      {mounted && theme === value && (
-        <span className="ms-auto size-1.5 rounded-full bg-primary" />
-      )}
-    </DropdownMenuItem>
-  ));
+  return OPTIONS.map(({ value, icon: Icon }) => {
+    const label = value === 'light'
+      ? t.layout.light
+      : value === 'dark'
+        ? t.layout.dark
+        : t.layout.system;
+    const active = mounted && theme === value;
+
+    return presentation === 'button' ? (
+      <button
+        key={value}
+        type="button"
+        aria-pressed={active}
+        onClick={() => {
+          setTheme(value);
+          onSelect?.();
+        }}
+        className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+          active ? 'bg-accent/60 text-accent-foreground' : 'text-foreground'
+        }`}
+      >
+        <Icon className="size-4" />
+        <span className="flex-1 text-start">{label}</span>
+        {active && <IconCheck className="ms-auto size-4" />}
+      </button>
+    ) : (
+      <DropdownMenuItem
+        key={value}
+        onClick={() => setTheme(value)}
+        className="cursor-pointer"
+        data-active={active}
+      >
+        <Icon className="size-4 me-2" />
+        {label}
+        {active && <span className="ms-auto size-1.5 rounded-full bg-primary" />}
+      </DropdownMenuItem>
+    );
+  });
 }
 
 export function ThemeToggle() {
