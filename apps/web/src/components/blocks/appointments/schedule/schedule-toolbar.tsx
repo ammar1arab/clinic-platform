@@ -12,7 +12,6 @@ import {
   SearchInput,
   SearchablePicker,
   SoftTip,
-  Spinner,
 } from '@/components/primitives';
 import type { Department } from '@/services/departments.service';
 import type { AppointmentStatus } from '@/services/appointments.service';
@@ -33,8 +32,6 @@ interface Props {
   statusFilters: Set<AppointmentStatus>;
   onToggleStatus: (status: AppointmentStatus) => void;
   onClearStatuses: () => void;
-  count: number;
-  isLoading: boolean;
   onNewPatient: () => void;
   onNewAppointment: () => void;
 }
@@ -104,18 +101,11 @@ export function ScheduleToolbar({
   statusFilters,
   onToggleStatus,
   onClearStatuses,
-  count,
-  isLoading,
   onNewPatient,
   onNewAppointment,
 }: Props) {
   const { t, lang } = useLanguage();
 
-  const title = view === 'doctors'
-    ? t.appointments.doctorTimeline
-    : view === 'queue'
-      ? t.queue.waitingQueue
-      : t.appointments.calendar;
   const searchPlaceholder = view === 'doctors'
     ? t.appointments.searchDoctors
     : view === 'queue'
@@ -128,10 +118,7 @@ export function ScheduleToolbar({
       className="card-aura flex flex-col gap-2 rounded-xl border bg-card/90 p-2 shadow-xs backdrop-blur-md sm:rounded-2xl sm:p-2.5"
     >
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <div className="min-w-0 flex-1 px-1">
-          <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">{title}</h1>
-          <p className="text-xs text-muted-foreground">{count} {t.appointments.appts}</p>
-        </div>
+        <div className="min-w-0 flex-1" aria-hidden="true" />
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           <SoftTip label={t.appointments.addPatient}>
@@ -188,23 +175,6 @@ export function ScheduleToolbar({
             onClear={onClearStatuses}
           />
 
-          {isLoading ? (
-            <Badge
-              variant="muted"
-              className="size-9 justify-center rounded-full p-0"
-            >
-              <Spinner size="sm" className="text-primary" />
-            </Badge>
-          ) : (
-            <SoftTip label={`${count} ${t.appointments.appts}`}>
-              <Badge
-                variant="default"
-                className="h-9 min-w-9 justify-center rounded-full px-2 tabular-nums"
-              >
-                {count}
-              </Badge>
-            </SoftTip>
-          )}
         </div>
       </div>
     </div>
