@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ROLE, type Role } from '@clinic/types';
+import { ROLE, type AuthMe } from '@clinic/types';
 import type { Translations } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { canSeeNavHref } from '@/constants/nav-access';
@@ -10,9 +10,9 @@ import { ROUTES } from '@/constants/routes';
 import { schedulePath } from '@/components/blocks/appointments/schedule/schedule-nav';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
-import { IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
+import { EntityAvatar, IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
 import { useAuth, useLanguage } from '@/providers';
-import { ClinicLockup, ProfileLink } from '@/components/layout/clinic-identity';
+import { ClinicLockup } from '@/components/layout/clinic-identity';
 import {
   IconChevronRight,
   IconDashboard,
@@ -31,19 +31,29 @@ import {
 type NavItem = {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  avatar?: { src?: string | null; seed: string };
   accent: IconWellAccent;
 };
 
-function getNavItems(t: Translations, role?: Role | null): NavItem[] {
+function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 'clinicUserId'> | null): NavItem[] {
+  const role = user?.role;
+  const profile = {
+    label: role === ROLE.PRACTITIONER ? t.practitioner.profile : t.common.account,
+    href: ROUTES.PROFILE,
+    avatar: { src: user?.imageUrl, seed: user?.clinicUserId ?? 'profile' },
+    accent: 'success' as const,
+  };
   if (role === ROLE.PRACTITIONER) {
     return [
+      profile,
       { label: t.layout.titles.home, href: ROUTES.HOME, icon: IconDashboard, accent: 'default' },
       { label: t.queue.waitingQueue, href: ROUTES.HOME_QUEUE, icon: IconPatients, accent: 'teal' },
-      { label: t.practitioner.profile, href: ROUTES.HOME_PROFILE, icon: IconPractitioner, accent: 'success' },
+      { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'violet' },
     ];
   }
   const items: NavItem[] = [
+    profile,
     { label: t.layout.sidebar.dashboard, href: ROUTES.DASHBOARD, icon: IconDashboard, accent: 'default' },
     { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'teal' },
       { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer, accent: 'warning' },
@@ -72,12 +82,14 @@ function NavLink({
   href,
   label,
   icon: Icon,
+  avatar,
   active,
   collapsed,
 }: {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  avatar?: { src?: string | null; seed: string };
   active: boolean;
   collapsed?: boolean;
 }) {
@@ -93,7 +105,11 @@ function NavLink({
           : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
       )}
     >
-      <Icon className={cn('shrink-0', collapsed ? 'size-5' : 'size-4')} />
+      {avatar ? (
+        <EntityAvatar src={avatar.src} seed={avatar.seed} size={collapsed ? 'default' : 'sm'} className="bg-transparent ring-0" />
+      ) : Icon ? (
+        <Icon className={cn('shrink-0', collapsed ? 'size-5' : 'size-4')} />
+      ) : null}
       {collapsed ? null : <span className="whitespace-nowrap">{label}</span>}
     </Link>
   );
@@ -111,6 +127,7 @@ function SideMenuLink({
   href,
   label,
   icon,
+  avatar,
   accent,
   active,
   open,
@@ -119,7 +136,8 @@ function SideMenuLink({
 }: {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
+  avatar?: { src?: string | null; seed: string };
   accent: IconWellAccent;
   active: boolean;
   open: boolean;
@@ -140,7 +158,11 @@ function SideMenuLink({
         aria-current={active ? 'page' : undefined}
         className="card-aura group flex w-full items-center gap-4 rounded-xl border-0 bg-card px-4 py-3.5 transition-colors duration-200 md:border md:hover:border-primary/40"
       >
-        <IconWell icon={icon} size="lg" accent={accent} />
+        {avatar ? (
+          <EntityAvatar src={avatar.src} seed={avatar.seed} size="lg" className="bg-transparent ring-0" />
+        ) : icon ? (
+          <IconWell icon={icon} size="lg" accent={accent} />
+        ) : null}
         <span
           className={cn(
             'min-w-0 flex-1 text-sm font-semibold tracking-tight',
@@ -167,7 +189,7 @@ export function SidebarBlock() {
   const { isCollapsed, toggleSidebar, mobileOpen, setMobileOpen } = useSidebar();
   const { t } = useLanguage();
   const { user } = useAuth();
-  const navItems = getNavItems(t, user?.role);
+  const navItems = getNavItems(t, user);
 
   const closeMobile = () => setMobileOpen(false);
   useKeyboardShortcut('escape', closeMobile, {
@@ -196,12 +218,13 @@ export function SidebarBlock() {
       >
         <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 pt-3">
           <div className="flex flex-col gap-2.5">
-            {navItems.map(({ label, href, icon, accent }, index) => (
+            {navItems.map(({ label, href, icon, avatar, accent }, index) => (
               <SideMenuLink
                 key={href}
                 href={href}
                 label={label}
                 icon={icon}
+                avatar={avatar}
                 accent={accent}
                 active={isActivePath(pathname, href, scheduleView)}
                 open={mobileOpen}
@@ -265,18 +288,18 @@ export function SidebarBlock() {
             isCollapsed ? 'px-2' : 'px-2.5',
           )}
         >
-          {navItems.map(({ label, href, icon }) => (
+          {navItems.map(({ label, href, icon, avatar }) => (
             <NavLink
               key={href}
               href={href}
               label={label}
               icon={icon}
+              avatar={avatar}
               active={isActivePath(pathname, href, scheduleView)}
               collapsed={isCollapsed}
             />
           ))}
         </nav>
-        <ProfileLink collapsed={isCollapsed} />
       </aside>
     </>
   );

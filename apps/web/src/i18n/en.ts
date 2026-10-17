@@ -1061,6 +1061,8 @@ export const en = {
   },
   dashboard: {
     welcome: "Welcome back",
+    homeEmptyTitle: "Your workspace is ready",
+    homeEmptyDesc: "Use your profile, waiting queue, or calendar to get started.",
     overview: "Clinic Overview",
     todaySchedule: "Today's Schedule",
     roomUtilization: "Room Utilization",

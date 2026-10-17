@@ -4,6 +4,7 @@ import { ROUTES } from '@/constants/routes';
 import { useCallback, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
+import { ROLE, type Role } from '@clinic/types';
 import type { Translations } from '@/i18n';
 import { useSidebar } from '@/providers/sidebar-provider';
 import {
@@ -27,14 +28,15 @@ import { MobileMenuToggle } from '@/components/layout/mobile-menu-toggle';
 import { MobileHeaderIdentity } from '@/components/layout/clinic-identity';
 import { REFRESH_PARAM, useAppRefresh } from '@/hooks/shared/use-app-refresh';
 
-function resolveTitle(pathname: string, scheduleView: string | null, t: Translations): string {
+function resolveTitle(pathname: string, scheduleView: string | null, t: Translations, role?: Role | null): string {
   if (pathname === ROUTES.EMAIL_NEW) return t.emails.compose;
   if (pathname === ROUTES.EMAIL_SETTINGS) return t.emails.settings;
   if (pathname === ROUTES.EMAILS) return t.emails.title;
   if (pathname.startsWith(`${ROUTES.EMAILS}/`)) return t.emails.detail;
   if (pathname === ROUTES.HOME_QUEUE) return t.queue.waitingQueue;
-  if (pathname === ROUTES.HOME_PROFILE) return t.practitioner.profile;
-  if (pathname === ROUTES.PROFILE) return t.common.accountProfile;
+  if (pathname === ROUTES.HOME_PROFILE || pathname === ROUTES.PROFILE) {
+    return role === ROLE.PRACTITIONER ? t.practitioner.profile : t.common.accountProfile;
+  }
   if (pathname === ROUTES.HOME) return t.layout.titles.home;
   if (pathname === ROUTES.DASHBOARD) return t.layout.titles.dashboard;
   if (pathname === ROUTES.SCHEDULE) {
@@ -69,12 +71,12 @@ function resolveTitle(pathname: string, scheduleView: string | null, t: Translat
 export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { setMobileOpen, mobileOpen } = useSidebar();
   const [signOutOpen, setSignOutOpen] = useState(false);
   const { refreshing: desktopRefreshing, refreshApp: refreshDesktop } = useAppRefresh();
   const { t } = useLanguage();
-  const title = resolveTitle(pathname, searchParams.get('view'), t);
+  const title = resolveTitle(pathname, searchParams.get('view'), t, user?.role);
 
   const cleanRefreshParam = useCallback((header: HTMLElement | null) => {
     if (!header) return;

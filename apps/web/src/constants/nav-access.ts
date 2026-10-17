@@ -18,11 +18,11 @@ const SIDEBAR_PREFIXES = [
 ] as const;
 
 export const NAV_ACCESS: { prefix: string; roles?: Role[] }[] = [
-  { prefix: ROUTES.PROFILE, roles: [ROLE.OWNER] },
+  { prefix: ROUTES.PROFILE, roles: [ROLE.OWNER, ROLE.PRACTITIONER] },
   { prefix: ROUTES.EMAILS, roles: STAFF },
   { prefix: ROUTES.HOME, roles: PRACTITIONER },
   { prefix: ROUTES.DASHBOARD, roles: OPS },
-  { prefix: ROUTES.SCHEDULE, roles: STAFF },
+  { prefix: ROUTES.SCHEDULE, roles: [...STAFF, ROLE.PRACTITIONER] },
   { prefix: ROUTES.PATIENTS, roles: STAFF },
   { prefix: ROUTES.PRACTITIONERS, roles: STAFF },
   { prefix: ROUTES.REPORTS, roles: FINANCE },

@@ -1052,6 +1052,8 @@ export const ar: Translations = {
   },
   dashboard: {
     welcome: "مرحباً بعودتك",
+    homeEmptyTitle: "مساحتك جاهزة",
+    homeEmptyDesc: "استخدم ملفك الشخصي أو قائمة الانتظار أو التقويم للبدء.",
     overview: "نظرة عامة على العيادة",
     todaySchedule: "جدول اليوم",
     roomUtilization: "إشغال الغرف",

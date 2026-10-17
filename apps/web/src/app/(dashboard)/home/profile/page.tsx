@@ -1,24 +1,6 @@
-'use client';
-
-import { PractitionerSelfProfile } from '@/components/blocks/practitioners/practitioner-self-profile';
-import { EmptyState, FormPageSkeleton } from '@/components/primitives';
-import { IconPractitioner } from '@/constants/icons';
-import { usePractitioner } from '@/hooks/api/use-practitioners';
-import { useAuth, useLanguage } from '@/providers';
+import { redirect } from 'next/navigation';
+import { ROUTES } from '@/constants/routes';
 
 export default function PractitionerProfilePage() {
-  const { user } = useAuth();
-  const { t } = useLanguage();
-  const practitioner = usePractitioner(user?.clinicUserId ?? '');
-  if (practitioner.isLoading) return <FormPageSkeleton />;
-  if (!practitioner.data || !user) {
-    return (
-      <EmptyState
-        icon={IconPractitioner}
-        title={t.practitioner.notFound}
-        description={t.practitioner.notFoundDesc}
-      />
-    );
-  }
-  return <PractitionerSelfProfile practitioner={practitioner.data} />;
+  redirect(ROUTES.PROFILE);
 }
