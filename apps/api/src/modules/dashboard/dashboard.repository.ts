@@ -5,7 +5,7 @@ import { PrismaService } from "@/prisma/prisma.service";
 export class DashboardRepository {
   constructor(private prisma: PrismaService) {}
 
-  findTodayAppointments(clinicId: string) {
+  findTodayAppointments(clinicId: string, practitionerId?: string) {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
@@ -15,6 +15,7 @@ export class DashboardRepository {
     return this.prisma.appointment.findMany({
       where: {
         clinicId,
+        ...(practitionerId ? { doctorId: practitionerId } : {}),
         scheduledAt: { gte: startOfDay, lte: endOfDay },
       },
       include: { room: true },

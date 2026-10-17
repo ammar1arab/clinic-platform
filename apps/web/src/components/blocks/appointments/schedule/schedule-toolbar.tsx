@@ -32,8 +32,8 @@ interface Props {
   statusFilters: Set<AppointmentStatus>;
   onToggleStatus: (status: AppointmentStatus) => void;
   onClearStatuses: () => void;
-  onNewPatient: () => void;
-  onNewAppointment: () => void;
+  onNewPatient?: () => void;
+  onNewAppointment?: () => void;
 }
 
 function StatusFilterDropdown({
@@ -126,29 +126,33 @@ export function ScheduleToolbar({
         />
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
-          <SoftTip label={t.appointments.addPatient}>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onNewPatient}
-              aria-label={t.appointments.addPatient}
-              className="size-9 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-9 sm:w-auto sm:gap-1.5 sm:px-2.5"
-            >
-              <IconNewPatient className="size-3.5 shrink-0 text-muted-foreground" />
-              <span className="hidden font-semibold sm:inline">{t.appointments.patient}</span>
-            </Button>
-          </SoftTip>
-          <SoftTip label={t.appointments.addAppointment}>
-            <Button
-              size="sm"
-              onClick={onNewAppointment}
-              aria-label={t.appointments.addAppointment}
-              className="size-9 shrink-0 px-0 active:scale-95 sm:h-9 sm:w-auto sm:gap-1.5 sm:px-2.5"
-            >
-              <IconAdd className="size-3.5 shrink-0" />
-              <span className="hidden font-semibold sm:inline">{t.appointments.appointment}</span>
-            </Button>
-          </SoftTip>
+          {onNewPatient && (
+            <SoftTip label={t.appointments.addPatient}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onNewPatient}
+                aria-label={t.appointments.addPatient}
+                className="size-9 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-9 sm:w-auto sm:gap-1.5 sm:px-2.5"
+              >
+                <IconNewPatient className="size-3.5 shrink-0 text-muted-foreground" />
+                <span className="hidden font-semibold sm:inline">{t.appointments.patient}</span>
+              </Button>
+            </SoftTip>
+          )}
+          {onNewAppointment && (
+            <SoftTip label={t.appointments.addAppointment}>
+              <Button
+                size="sm"
+                onClick={onNewAppointment}
+                aria-label={t.appointments.addAppointment}
+                className="size-9 shrink-0 px-0 active:scale-95 sm:h-9 sm:w-auto sm:gap-1.5 sm:px-2.5"
+              >
+                <IconAdd className="size-3.5 shrink-0" />
+                <span className="hidden font-semibold sm:inline">{t.appointments.appointment}</span>
+              </Button>
+            </SoftTip>
+          )}
         </div>
       </div>
 

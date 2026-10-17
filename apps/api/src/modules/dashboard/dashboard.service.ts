@@ -5,9 +5,9 @@ import { DashboardRepository } from "./dashboard.repository";
 export class DashboardService {
   constructor(private dashboardRepository: DashboardRepository) {}
 
-  async getKpis(clinicId: string) {
+  async getKpis(clinicId: string, practitionerId?: string) {
     const [appointments, roomCount] = await Promise.all([
-      this.dashboardRepository.findTodayAppointments(clinicId),
+      this.dashboardRepository.findTodayAppointments(clinicId, practitionerId),
       this.dashboardRepository.countActiveRooms(clinicId),
     ]);
 
@@ -44,9 +44,9 @@ export class DashboardService {
     };
   }
 
-  async getRoomUtilization(clinicId: string) {
+  async getRoomUtilization(clinicId: string, practitionerId?: string) {
     const [appointments, clinic, rooms] = await Promise.all([
-      this.dashboardRepository.findTodayAppointments(clinicId),
+      this.dashboardRepository.findTodayAppointments(clinicId, practitionerId),
       this.dashboardRepository.findClinicWorkingHours(clinicId),
       this.dashboardRepository.findActiveRooms(clinicId),
     ]);

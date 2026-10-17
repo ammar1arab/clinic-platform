@@ -65,8 +65,8 @@ export const QUERY_KEYS = {
   },
   dashboard: {
     kpisAll: ['dashboard-kpis'] as const,
-    kpis: (clinicId: string) => ['dashboard-kpis', clinicId] as const,
+    kpis: (clinicId: string, practitionerId?: string) => ['dashboard-kpis', clinicId, practitionerId ?? null] as const,
     roomUtilizationAll: ['room-utilization'] as const,
-    roomUtilization: (clinicId: string) => ['room-utilization', clinicId] as const,
+    roomUtilization: (clinicId: string, practitionerId?: string) => ['room-utilization', clinicId, practitionerId ?? null] as const,
   },
 } as const;

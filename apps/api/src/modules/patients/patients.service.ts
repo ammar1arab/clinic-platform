@@ -33,11 +33,11 @@ export class PatientsService {
     return patient;
   }
 
-  async findAll(clinicId: string, filters: PatientFiltersDto) {
+  async findAll(clinicId: string, filters: PatientFiltersDto, practitionerId?: string) {
     if (!clinicId) securityError("clinicUnavailable", 403);
     const patients = await this.patientsRepository.findAllByClinic(
       clinicId,
-      filters,
+      practitionerId ? { ...filters, primaryDoctorId: practitionerId } : filters,
     );
 
     return patients.map((patient) => {

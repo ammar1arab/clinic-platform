@@ -29,7 +29,10 @@ import {
   matchesAppointmentSearch,
 } from "@/components/blocks/appointments";
 import { toDateParam, toTimeParam } from "@/lib/datetime";
-import { useLanguage } from "@/providers";
+import { useAuth, useLanguage } from "@/providers";
+import { ROLE } from "@clinic/types";
+import { EmptyState, ErrorState } from "@/components/primitives";
+import { IconCalendar } from "@/constants/icons";
 
 const AppointmentCalendar = dynamic(
   () =>
@@ -42,6 +45,9 @@ const AppointmentCalendar = dynamic(
 function SchedulePageInner() {
   const clinicId = useClinicId();
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const isPractitioner = user?.role === ROLE.PRACTITIONER;
+  const practitionerId = isPractitioner ? user.clinicUserId : undefined;
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -83,13 +89,16 @@ function SchedulePageInner() {
     data: appointments,
     isLoading,
     isFetching,
+    isError,
+    refetch,
   } = useAppointments(
     {
       startDate: range.startDate,
       endDate: range.endDate,
       departmentId: departmentId || undefined,
+      doctorId: practitionerId,
     },
-    !!clinicId,
+    !!clinicId && !!user,
   );
 
   const setView = useCallback(
@@ -165,16 +174,26 @@ function SchedulePageInner() {
         statusFilters={statusFilters}
         onToggleStatus={toggleStatus}
         onClearStatuses={clearStatuses}
-        onNewPatient={() =>
-          router.push(
-            `${ROUTES.PATIENT_NEW}?returnTo=${encodeURIComponent(returnTo)}`,
-          )
-        }
-        onNewAppointment={() => goNewAppointment()}
+        {...(!isPractitioner && {
+          onNewPatient: () =>
+            router.push(
+              `${ROUTES.PATIENT_NEW}?returnTo=${encodeURIComponent(returnTo)}`,
+            ),
+          onNewAppointment: () => goNewAppointment(),
+        })}
       />
       </div>
 
-      {view === "doctors" ? (
+      {isError && !appointments ? (
+        <ErrorState onRetry={() => void refetch()} className="page-fill" />
+      ) : !isLoading && filteredAppointments?.length === 0 ? (
+        <EmptyState
+          icon={IconCalendar}
+          title={t.appointments.noAppointments}
+          description={t.appointments.noAppointmentsDesc}
+          className="page-fill"
+        />
+      ) : view === "doctors" ? (
         <ViewFocus label={t.appointments.doctorTimeline}>
           {(focused) => (
             <DoctorTimeline

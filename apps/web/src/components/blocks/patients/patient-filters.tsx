@@ -56,6 +56,7 @@ type Props = {
   exportDisabled?: boolean;
   onExport?: (format: ReportFormat) => void;
   searchLoading?: boolean;
+  canManage?: boolean;
 };
 
 export function PatientFiltersBlock({
@@ -67,6 +68,7 @@ export function PatientFiltersBlock({
   exportDisabled,
   onExport,
   searchLoading,
+  canManage = true,
 }: Props) {
   const { t } = useLanguage();
   const activeCount =
@@ -160,17 +162,19 @@ export function PatientFiltersBlock({
                 </Select>
               </FormField>
 
-              <FilterSelect
-                label={t?.patient?.practitioner ?? t?.practitioner?.practitioner}
-                value={values.primaryDoctorId}
-                onChange={(primaryDoctorId) => onChange({ primaryDoctorId })}
-              >
-                {staff?.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </FilterSelect>
+              {canManage && (
+                <FilterSelect
+                  label={t?.patient?.practitioner ?? t?.practitioner?.practitioner}
+                  value={values.primaryDoctorId}
+                  onChange={(primaryDoctorId) => onChange({ primaryDoctorId })}
+                >
+                  {staff?.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </FilterSelect>
+              )}
 
               <FilterSelect
                 label={t?.practitioner?.department}
@@ -250,7 +254,7 @@ export function PatientFiltersBlock({
             </PopoverContent>
           </Popover>
 
-          {onExport ? (
+          {canManage && onExport ? (
             <ExportFormatButton
               compact
               className="shrink-0"
@@ -259,14 +263,16 @@ export function PatientFiltersBlock({
             />
           ) : null}
 
-          <SoftTip label={t?.patient?.addPatient}>
-            <Button asChild size="sm" className={DIRECTORY_ACTION_CLASS}>
-              <Link href={ROUTES.PATIENT_NEW} aria-label={t?.patient?.addPatient}>
-                <IconNewPatient className="size-3.5 shrink-0" />
-                <span className="hidden font-semibold sm:inline">{t?.patient?.patient}</span>
-              </Link>
-            </Button>
-          </SoftTip>
+          {canManage && (
+            <SoftTip label={t?.patient?.addPatient}>
+              <Button asChild size="sm" className={DIRECTORY_ACTION_CLASS}>
+                <Link href={ROUTES.PATIENT_NEW} aria-label={t?.patient?.addPatient}>
+                  <IconNewPatient className="size-3.5 shrink-0" />
+                  <span className="hidden font-semibold sm:inline">{t?.patient?.patient}</span>
+                </Link>
+              </Button>
+            </SoftTip>
+          )}
         </>
       }
     />

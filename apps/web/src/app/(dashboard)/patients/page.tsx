@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui';
+import { EmptyState, ErrorState } from '@/components/primitives';
 import { usePatients } from '@/hooks/api/use-patients';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useClinicStaff } from '@/hooks/api/use-clinic-staff';
@@ -17,6 +18,9 @@ import { useDownloadPatientsDirectory } from '@/hooks/api/use-reports';
 import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import { toast } from 'sonner';
 import type { ReportFormat } from '@/services/reports.service';
+import { ROLE } from '@clinic/types';
+import { useAuth, useLanguage } from '@/providers';
+import { IconPatients } from '@/constants/icons';
 
 const INITIAL_FILTERS: PatientFilterState = {
   search: '',
@@ -34,6 +38,10 @@ const INITIAL_FILTERS: PatientFilterState = {
 
 export default function PatientsPage() {
   const clinicId = useClinicId();
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const isPractitioner = user?.role === ROLE.PRACTITIONER;
+  const practitionerId = isPractitioner ? user.clinicUserId : undefined;
   const [filters, setFilters] = useSessionStorageState<PatientFilterState>(
     `patients-filters:${clinicId || 'none'}`,
     INITIAL_FILTERS,
@@ -43,13 +51,13 @@ export default function PatientsPage() {
   const { data: departments } = useDepartments(clinicId);
   const { data: staff } = useClinicStaff(clinicId);
 
-  const { data: patients, isLoading, isPlaceholderData } = usePatients({
+  const { data: patients, isLoading, isPlaceholderData, isError, refetch } = usePatients({
     clinicId,
     search: filters.search || undefined,
     isActive: filters.status === 'all' ? undefined : filters.status === 'active',
     gender: filters.gender || undefined,
     bloodType: filters.bloodType || undefined,
-    primaryDoctorId: filters.primaryDoctorId || undefined,
+    primaryDoctorId: practitionerId ?? (filters.primaryDoctorId || undefined),
     departmentId: filters.departmentId || undefined,
     visitFrom: filters.visitFrom || undefined,
     visitTo: filters.visitTo || undefined,
@@ -57,7 +65,7 @@ export default function PatientsPage() {
     dobTo: filters.dobTo || undefined,
     sortBy,
     sortOrder,
-  });
+  }, { enabled: !!user });
   const downloadDirectory = useDownloadPatientsDirectory(clinicId);
 
   const patchFilters = (patch: Partial<PatientFilterState>) =>
@@ -119,19 +127,33 @@ export default function PatientsPage() {
           exportDisabled={searchLoading || downloadDirectory.isPending || !patients?.length}
           onExport={handleExport}
           searchLoading={searchLoading}
+          canManage={!isPractitioner}
         />
       </div>
 
-      <PatientsList
-        patients={patients}
-        isLoading={searchLoading}
-        hasActiveFilters={hasActiveFilters}
-        emptyAction={
-          <Button asChild>
-            <Link href={ROUTES.PATIENT_NEW}>Create patient</Link>
-          </Button>
-        }
-      />
+      {isError && !patients ? (
+        <ErrorState onRetry={() => void refetch()} className="page-fill" />
+      ) : !searchLoading && patients?.length === 0 ? (
+        <EmptyState
+          icon={IconPatients}
+          title={hasActiveFilters ? t.patient.noMatches : t.patient.noPatients}
+          description={hasActiveFilters ? t.patient.noMatchesDesc : t.patient.noPatientsDesc}
+          className="page-fill"
+          action={!isPractitioner ? <Button asChild><Link href={ROUTES.PATIENT_NEW}>Create patient</Link></Button> : undefined}
+        />
+      ) : (
+        <PatientsList
+          patients={patients}
+          isLoading={searchLoading}
+          hasActiveFilters={hasActiveFilters}
+          canManage={!isPractitioner}
+          emptyAction={
+            <Button asChild>
+              <Link href={ROUTES.PATIENT_NEW}>Create patient</Link>
+            </Button>
+          }
+        />
+      )}
     </div>
   );
 }

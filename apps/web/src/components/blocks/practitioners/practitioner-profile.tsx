@@ -52,9 +52,11 @@ function employmentLabel(type: string | null | undefined, t: Translations) {
 export function PractitionerProfile({
   practitioner,
   clinicId,
+  canManage = true,
 }: {
   practitioner: PractitionerDetail;
   clinicId: string;
+  canManage?: boolean;
 }) {
   const router = useRouter();
   const deactivate = useDeactivatePractitioner(clinicId);
@@ -94,7 +96,7 @@ export function PractitionerProfile({
     <ProfileShell
       backHref={ROUTES.PRACTITIONERS}
       backLabel={t.practitioner.backToPractitioners}
-      actions={
+      actions={canManage ? (
         <RowActionsMenu
           items={[
             {
@@ -136,7 +138,7 @@ export function PractitionerProfile({
             },
           ]}
         />
-      }
+      ) : undefined}
     >
       <ProfileHero
         avatar={
@@ -374,9 +376,9 @@ export function PractitionerProfile({
         </ProfileSection>
       </div>
 
-      <AccountOtpDialog code={otp.data} onClose={otp.reset} />
+      {canManage && <AccountOtpDialog code={otp.data} onClose={otp.reset} />}
 
-      <TwoStepDeleteDialogs
+      {canManage && <TwoStepDeleteDialogs
         step1={del.step1}
         step2={del.step2}
         onStep1OpenChange={(open) => !open && del.cancelStep1()}
@@ -395,7 +397,7 @@ export function PractitionerProfile({
         warning={t.practitioner.deleteWarning1}
         finalWarning={t.practitioner.deleteWarning2}
         confirmLabel={t.practitioner.deleteConfirm}
-      />
+      />}
     </ProfileShell>
   );
 }

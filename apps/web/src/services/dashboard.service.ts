@@ -5,15 +5,15 @@ import type { DashboardKpis, RoomUtilization } from "@clinic/types";
 export type { DashboardKpis, RoomUtilization };
 
 export const dashboardService = {
-  getKpis: (clinicId: string) =>
+  getKpis: (clinicId: string, practitionerId?: string) =>
     api
-      .get<DashboardKpis>(ENDPOINTS.DASHBOARD.KPIS, { params: { clinicId } })
+      .get<DashboardKpis>(ENDPOINTS.DASHBOARD.KPIS, { params: { clinicId, practitionerId } })
       .then((r) => r.data),
 
-  getRoomUtilization: (clinicId: string) =>
+  getRoomUtilization: (clinicId: string, practitionerId?: string) =>
     api
       .get<
         RoomUtilization[]
-      >(ENDPOINTS.DASHBOARD.ROOM_UTILIZATION, { params: { clinicId } })
+      >(ENDPOINTS.DASHBOARD.ROOM_UTILIZATION, { params: { clinicId, practitionerId } })
       .then((r) => r.data),
 };

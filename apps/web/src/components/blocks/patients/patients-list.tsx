@@ -50,6 +50,7 @@ interface Props {
   isLoading: boolean;
   hasActiveFilters?: boolean;
   emptyAction?: React.ReactNode;
+  canManage?: boolean;
 }
 
 export function PatientsList({
@@ -57,6 +58,7 @@ export function PatientsList({
   isLoading,
   hasActiveFilters = false,
   emptyAction,
+  canManage = true,
 }: Props) {
   const { t, lang } = useLanguage();
   const { go, prefetch } = useRouteNav();
@@ -92,24 +94,28 @@ export function PatientsList({
           icon: IconView,
           href: ROUTES.PATIENT_DETAIL(p.id),
         },
-        {
-          label: t.common.edit,
-          icon: IconEdit,
-          href: ROUTES.PATIENT_EDIT(p.id),
-        },
-        {
-          label: p.isActive ? t.common.deactivate : t.common.reactivate,
-          icon: p.isActive ? IconDeactivate : IconActivate,
-          disabled: toggleStatus.isPending,
-          onSelect: () =>
-            toggleStatus.mutate({ id: p.id, isActive: !p.isActive }),
-        },
-        {
-          label: t.common.delete,
-          icon: IconDelete,
-          variant: "destructive",
-          onSelect: () => del.ask({ id: p.id, name: fullName }),
-        },
+        ...(canManage
+          ? [
+              {
+                label: t.common.edit,
+                icon: IconEdit,
+                href: ROUTES.PATIENT_EDIT(p.id),
+              },
+              {
+                label: p.isActive ? t.common.deactivate : t.common.reactivate,
+                icon: p.isActive ? IconDeactivate : IconActivate,
+                disabled: toggleStatus.isPending,
+                onSelect: () =>
+                  toggleStatus.mutate({ id: p.id, isActive: !p.isActive }),
+              },
+              {
+                label: t.common.delete,
+                icon: IconDelete,
+                variant: "destructive" as const,
+                onSelect: () => del.ask({ id: p.id, name: fullName }),
+              },
+            ]
+          : []),
       ]}
     />
   );
@@ -134,7 +140,9 @@ export function PatientsList({
       "-"
     );
   };
-  const controls = (patient: Patient) => (
+  const controls = (patient: Patient) => {
+    if (!canManage) return null;
+    return (
     <DirectoryActions
       name={nameFor(patient)}
       active={patient.isActive}
@@ -143,7 +151,8 @@ export function PatientsList({
     >
       {rowMenu(patient, nameFor(patient))}
     </DirectoryActions>
-  );
+    );
+  };
   const columns: DirectoryColumn<Patient>[] = [
     {
       id: "patient",
@@ -207,12 +216,14 @@ export function PatientsList({
       cellClassName: "text-muted-foreground tabular-nums",
       render: (p) => <TruncatedText>{p.nationalId ?? "-"}</TruncatedText>,
     },
-    {
-      id: "actions",
-      label: t.common.active,
-      className: "w-[10%]",
-      render: controls,
-    },
+    ...(canManage
+      ? [{
+          id: "actions",
+          label: t.common.active,
+          className: "w-[10%]",
+          render: controls,
+        }]
+      : []),
   ];
 
   if (isLoading) {
@@ -237,7 +248,7 @@ export function PatientsList({
               ? t.patient.noMatchesDesc
               : t.patient.noPatientsDesc
           }
-          action={hasActiveFilters ? undefined : emptyAction}
+          action={canManage && !hasActiveFilters ? emptyAction : undefined}
         />
       </TableFrame>
     );
@@ -283,7 +294,7 @@ export function PatientsList({
                   className="text-xs text-muted-foreground"
                 />
               }
-              actions={controls(p)}
+              actions={canManage ? controls(p) : undefined}
               active={p.isActive}
               onClick={() => openPatient(p.id)}
               onMouseEnter={() => prefetchPatient(p.id)}
@@ -308,7 +319,7 @@ export function PatientsList({
         onPageChange={setPage}
       />
 
-      <TwoStepDeleteDialogs
+      {canManage && <TwoStepDeleteDialogs
         step1={del.step1}
         step2={del.step2}
         onStep1OpenChange={(open) => !open && del.cancelStep1()}
@@ -322,7 +333,7 @@ export function PatientsList({
         warning={t.patient.deleteWarning1}
         finalWarning={t.patient.deleteWarning2}
         confirmLabel={t.patient.deleteConfirm}
-      />
+      />}
     </div>
   );
 }

@@ -14,13 +14,18 @@ import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { formatWaitingMins } from '@/lib/waiting-time';
 import { IconCheckCircle, IconHourglass, IconRoom, IconTime, IconTimer, IconTodaysAppointments } from '@/constants/icons';
 import { useLanguage } from '@/providers';
+import { useAuth } from '@/providers';
+import { ROLE } from '@clinic/types';
+import { EmptyState, ErrorState } from '@/components/primitives';
 
 export default function DashboardPage() {
   const clinicId = useClinicId();
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const practitionerId = user?.role === ROLE.PRACTITIONER ? user.clinicUserId : undefined;
 
-  const { data: kpis, isLoading: kpisLoading } = useDashboardKpis(clinicId);
-  const { data: rooms, isLoading: roomsLoading } = useRoomUtilization(clinicId);
+  const { data: kpis, isLoading: kpisLoading, isError: kpisError, refetch: refetchKpis } = useDashboardKpis(clinicId, practitionerId, !!user);
+  const { data: rooms, isLoading: roomsLoading, isError: roomsError, refetch: refetchRooms } = useRoomUtilization(clinicId, practitionerId, !!user);
 
   useDashboardRealtime(clinicId, {
     notifyOnAppointmentChange: true,
@@ -76,7 +81,16 @@ export default function DashboardPage() {
         />
       </div>
 
-      <ViewFocus label={t.dashboard.roomUtilizationToday}>
+      {kpisError || roomsError ? (
+        <ErrorState onRetry={() => { void refetchKpis(); void refetchRooms(); }} className="page-fill" />
+      ) : !kpisLoading && !roomsLoading && kpis?.total === 0 && rooms?.length === 0 ? (
+        <EmptyState
+          icon={IconTodaysAppointments}
+          title={t.appointments.noAppointments}
+          description={t.appointments.noAppointmentsDesc}
+          className="page-fill"
+        />
+      ) : <ViewFocus label={t.dashboard.roomUtilizationToday}>
         {(focused) => (
           <RoomUtilizationCardBlock
             rooms={rooms}
@@ -84,7 +98,7 @@ export default function DashboardPage() {
             focused={focused}
           />
         )}
-      </ViewFocus>
+      </ViewFocus>}
     </div>
   );
 }

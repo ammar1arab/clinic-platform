@@ -81,7 +81,11 @@ export class PatientsController {
   @ApiQuery({ name: "page", required: false, type: Number })
   @ApiQuery({ name: "limit", required: false, type: Number })
   findAll(@CurrentUser() user: AuthUser, @Query() filters: PatientFiltersDto) {
-    return this.patientsService.findAll(user.clinicId, filters);
+    return this.patientsService.findAll(
+      user.clinicId,
+      filters,
+      user.role === Role.practitioner ? user.clinicUserId : undefined,
+    );
   }
 
   @Get(":id")
