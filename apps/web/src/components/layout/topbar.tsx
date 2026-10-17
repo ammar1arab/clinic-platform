@@ -25,7 +25,7 @@ import { SoftTip } from '@/components/primitives';
 import { IconLogout, IconRotateCcw } from '@/constants/icons';
 import { MobileActionsMenu } from '@/components/layout/mobile-actions-menu';
 import { MobileMenuToggle } from '@/components/layout/mobile-menu-toggle';
-import { MobileHeaderIdentity } from '@/components/layout/clinic-identity';
+import { ClinicLockup } from '@/components/layout/clinic-identity';
 import { REFRESH_PARAM, useAppRefresh } from '@/hooks/shared/use-app-refresh';
 
 function resolveTitle(pathname: string, scheduleView: string | null, t: Translations, role?: Role | null): string {
@@ -75,8 +75,11 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   const { setMobileOpen, mobileOpen } = useSidebar();
   const [signOutOpen, setSignOutOpen] = useState(false);
   const { refreshing: desktopRefreshing, refreshApp: refreshDesktop } = useAppRefresh();
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const title = resolveTitle(pathname, searchParams.get('view'), t, user?.role);
+
+  // Internationalized Menu label ("Menu" / "القائمة")
+  const menuLabel = t.common?.menu ?? (isRtl ? 'القائمة' : 'Menu');
 
   const cleanRefreshParam = useCallback((header: HTMLElement | null) => {
     if (!header) return;
@@ -105,16 +108,14 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
             </SoftTip>
           ) : null}
 
-          {/* Render identity component ONLY when mobile menu is closed */}
-          {showNav && !mobileOpen ? (
-            <div className="md:hidden">
-              <MobileHeaderIdentity open={mobileOpen} onProfileClick={() => setMobileOpen(false)} />
-            </div>
-          ) : null}
+          {/* Always-visible Clinic Logo */}
+          <div className="flex items-center">
+            <ClinicLockup />
+          </div>
 
-          {/* Render "Menu" label when open, or standard page title when closed */}
+          {/* Header Title: Displays localized "Menu" / "القائمة" when side menu is open */}
           <h1 className="truncate font-heading text-[0.9375rem] font-semibold tracking-tight text-foreground md:text-base">
-            {mobileOpen ? t.layout.sideMenu.menu : title}
+            {mobileOpen ? menuLabel : title}
           </h1>
         </div>
 
