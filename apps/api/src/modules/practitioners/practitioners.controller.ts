@@ -23,6 +23,7 @@ import {
   ReplaceAvailabilityDto,
   ReplaceTimeOffDto,
   UpdatePractitionerDto,
+  SelfProfileDto,
 } from "./dto";
 import { ConfirmPasswordChangeDto } from "@/modules/auth/dto/auth-flow.dto";
 
@@ -114,6 +115,17 @@ export class PractitionersController {
     @Body() dto: UpdatePractitionerDto,
   ) {
     return this.practitionersService.update(id, dto, user.clinicId);
+  }
+
+  @Patch(":id/self-profile")
+  @UseGuards(RolesGuard)
+  @Roles(Role.practitioner)
+  updateSelfProfile(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: SelfProfileDto,
+  ) {
+    return this.practitionersService.updateSelfProfile(id, dto, user);
   }
 
   @Put(":id/services")

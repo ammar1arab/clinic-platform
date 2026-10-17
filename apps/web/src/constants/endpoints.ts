@@ -84,6 +84,7 @@ export const ENDPOINTS = {
     RESET_PASSWORD: (id: string) => `/practitioners/${id}/reset-password`,
     BASE: "/practitioners",
     BY_ID: (id: string) => `/practitioners/${id}`,
+    SELF_PROFILE: (id: string) => `/practitioners/${id}/self-profile`,
     DEACTIVATE: (id: string) => `/practitioners/${id}/deactivate`,
     REACTIVATE: (id: string) => `/practitioners/${id}/reactivate`,
     REPLACE_SERVICES: (id: string) => `/practitioners/${id}/services`,

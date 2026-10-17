@@ -7,8 +7,10 @@ import type {
   PractitionerDetail,
   PractitionerFilters,
   UpdatePractitionerInput,
+  PractitionerSelfProfileInput,
 } from '@/services/practitioners.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
+import { useLanguage } from '@/providers';
 import {
   createCrudHooks,
   LIVE_LIST_OPTIONS,
@@ -60,6 +62,20 @@ export function usePractitioner(id: string) {
     queryKey: QUERY_KEYS.practitioners.detail(id),
     request: () => practitionersService.getOne(id),
     options: { enabled: !!id },
+  });
+}
+
+export function useUpdatePractitionerSelfProfile(clinicId: string, id: string) {
+  const { t } = useLanguage();
+  return useApiMutation<PractitionerDetail, Error, PractitionerSelfProfileInput>({
+    request: (data) => practitionersService.updateSelfProfile(id, data),
+    invalidateQueries: [
+      QUERY_KEYS.practitioners.detail(id),
+      QUERY_KEYS.practitioners.all,
+      QUERY_KEYS.practitioners.list(clinicId),
+      QUERY_KEYS.clinics.staff(clinicId),
+    ],
+    successMessage: t.common.clinicSettingsSaved,
   });
 }
 

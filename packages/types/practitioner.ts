@@ -139,6 +139,15 @@ export interface UpdatePractitionerInput {
   availabilityOverrides?: DoctorAvailabilityOverrideEntry[];
 }
 
+export interface PractitionerSelfProfileInput {
+  name: string;
+  nameAr?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  bio?: string | null;
+  bioAr?: string | null;
+}
+
 export interface CreatePractitionerResult {
   practitioner: PractitionerDetail;
   welcomeEmailSent: boolean;

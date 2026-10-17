@@ -10,6 +10,7 @@ import type {
   ReplaceAvailabilityInput,
   ReplaceTimeOffInput,
   UpdatePractitionerInput,
+  PractitionerSelfProfileInput,
 } from "@clinic/types";
 
 export type {
@@ -22,6 +23,7 @@ export type {
   ReplaceAvailabilityInput,
   ReplaceTimeOffInput,
   UpdatePractitionerInput,
+  PractitionerSelfProfileInput,
 };
 
 export const practitionersService = {
@@ -53,6 +55,11 @@ export const practitionersService = {
   update: (id: string, data: UpdatePractitionerInput) =>
     api
       .patch<PractitionerDetail>(ENDPOINTS.PRACTITIONERS.BY_ID(id), data)
+      .then((r) => r.data),
+
+  updateSelfProfile: (id: string, data: PractitionerSelfProfileInput) =>
+    api
+      .patch<PractitionerDetail>(ENDPOINTS.PRACTITIONERS.SELF_PROFILE(id), data)
       .then((r) => r.data),
 
   deactivate: (id: string) =>

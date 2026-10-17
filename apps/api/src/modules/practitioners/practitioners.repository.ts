@@ -7,7 +7,9 @@ import {
   CreatePractitionerDto,
   TimeOffEntryDto,
   UpdatePractitionerDto,
+  SelfProfileDto,
 } from "./dto";
+import { initialsFromName } from "./practitioners.mapper";
 
 const NON_BILLABLE: AppointmentStatus[] = [
   AppointmentStatus.cancelled,
@@ -146,6 +148,22 @@ export class PractitionersRepository {
       await tx.clinicUser.update({ where: { id }, data });
       await this.syncChildren(tx, id, dto);
       return tx.clinicUser.findFirstOrThrow({ where: { id }, include });
+    });
+  }
+
+  updateSelfProfile(id: string, dto: SelfProfileDto) {
+    return this.prisma.clinicUser.update({
+      where: { id },
+      data: {
+        name: dto.name.trim(),
+        nameAr: dto.nameAr?.trim() || null,
+        phone: dto.phone?.trim() || null,
+        whatsapp: dto.whatsapp?.trim() || null,
+        bio: dto.bio?.trim() || null,
+        bioAr: dto.bioAr?.trim() || null,
+        initials: dto.name ? initialsFromName(dto.name) : undefined,
+      },
+      include,
     });
   }
 

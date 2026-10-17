@@ -24,6 +24,7 @@ import {
   ReplaceAvailabilityDto,
   ReplaceTimeOffDto,
   UpdatePractitionerDto,
+  SelfProfileDto,
 } from "./dto";
 import { hasSameDayOverlap } from "./availability-rules";
 import { filterPractitioners } from "./practitioner-directory";
@@ -179,6 +180,14 @@ export class PractitionersService {
       bufferMins: dto.bufferMins,
     });
     return mapPractitioner(row);
+  }
+
+  async updateSelfProfile(id: string, dto: SelfProfileDto, actor: AuthUser) {
+    if (actor.clinicUserId !== id) {
+      throw new BadRequestException("Practitioners can only update their own profile");
+    }
+    await this.findOne(id, actor.clinicId);
+    return mapPractitioner(await this.repo.updateSelfProfile(id, dto));
   }
 
   async replaceServices(id: string, dto: AssignServicesDto, clinicId: string) {
