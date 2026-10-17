@@ -105,12 +105,14 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
             </SoftTip>
           ) : null}
 
-          {showNav ? (
+          {/* Render identity component ONLY when mobile menu is closed */}
+          {showNav && !mobileOpen ? (
             <div className="md:hidden">
               <MobileHeaderIdentity open={mobileOpen} onProfileClick={() => setMobileOpen(false)} />
             </div>
           ) : null}
 
+          {/* Render "Menu" label when open, or standard page title when closed */}
           <h1 className="truncate font-heading text-[0.9375rem] font-semibold tracking-tight text-foreground md:text-base">
             {mobileOpen ? t.layout.sideMenu.menu : title}
           </h1>
