@@ -111,7 +111,7 @@ export function BaseReportModal({
         ) : isError ? (
           <ErrorState title={t?.common?.somethingWentWrong} />
         ) : isEmpty && emptyIcon && emptyTitle ? (
-          <EmptyState icon={emptyIcon} title={emptyTitle} />
+          <EmptyState icon={emptyIcon} title={emptyTitle} size="compact" />
         ) : (
           <div className="flex flex-col gap-6 py-2">
             {filters?.dates && onFromChange && onToChange ? (

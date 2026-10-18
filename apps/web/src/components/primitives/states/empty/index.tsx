@@ -18,16 +18,18 @@ export function EmptyState({
   className?: string;
   iconClassName?: string;
   iconContainerClassName?: string;
-  size?: 'default' | 'compact';
+  size?: 'inline' | 'compact' | 'default';
 }) {
   const compact = size === 'compact';
+  const inline = size === 'inline';
 
   return (
     <div
       role="status"
       className={cn(
-        'empty-state-enter flex min-w-0 flex-col items-center justify-center gap-2 px-4 py-12 text-center',
-        compact && 'gap-1 py-3',
+        'empty-state-enter flex min-w-0 flex-col items-center justify-center gap-2 px-4 py-10 text-center',
+        compact && 'gap-1 px-3 py-4',
+        inline && 'flex-row justify-start gap-3 px-3 py-3 text-start',
         className,
       )}
     >
@@ -35,9 +37,17 @@ export function EmptyState({
         <div
           aria-hidden="true"
           dir="ltr"
-          className={cn('relative mb-4 h-32 w-44 shrink-0', compact && 'mb-2 h-16 w-22')}
+          className={cn(
+            'relative mb-3 h-28 w-40 shrink-0',
+            compact && 'mb-1 h-16 w-22',
+            inline && 'mb-0 size-10',
+          )}
         >
-          <div className={cn('absolute left-0 top-0 h-32 w-44 origin-top-left', compact && 'scale-50')}>
+          {inline ? (
+            <span className={cn('empty-state-icon grid size-10 place-items-center rounded-xl border border-primary/10 bg-primary/8 text-primary', iconContainerClassName)}>
+              <Icon className={cn('size-5', iconClassName)} strokeWidth={1.5} />
+            </span>
+          ) : <div className={cn('absolute left-0 top-0 h-32 w-44 origin-top-left', compact ? 'scale-50' : 'scale-[.9]')}>
             <svg viewBox="0 0 176 128" className="absolute inset-0 size-full fill-none">
               <ellipse className="empty-state-shadow fill-primary/8" cx="88" cy="113" rx="47" ry="5" />
               <path className="stroke-border" d="M14 114h14m120 0h14" strokeLinecap="round" />
@@ -64,18 +74,20 @@ export function EmptyState({
               <circle className="fill-primary/25" cx="31" cy="47" r="2" />
               <circle className="empty-state-spark fill-accent-teal/35" cx="149" cy="61" r="2" />
             </svg>
-          </div>
+          </div>}
         </div>
       )}
-      <p className={cn('text-base font-semibold tracking-tight text-foreground', compact && 'text-sm')}>
-        {title}
-      </p>
-      {description && (
-        <p className="max-w-xs text-pretty text-sm leading-relaxed text-muted-foreground">
-          {description}
+      <div className={cn('min-w-0', !inline && 'contents')}>
+        <p className={cn('text-base font-semibold tracking-tight text-foreground', (compact || inline) && 'text-sm')}>
+          {title}
         </p>
-      )}
-      {action && <div className={cn('mt-4', compact && 'mt-2')}>{action}</div>}
+        {description && (
+          <p className={cn('max-w-xs text-pretty text-sm leading-relaxed text-muted-foreground', inline && 'mt-0.5 text-xs')}>
+            {description}
+          </p>
+        )}
+        {action && <div className={cn('mt-4', (compact || inline) && 'mt-2')}>{action}</div>}
+      </div>
     </div>
   );
 }

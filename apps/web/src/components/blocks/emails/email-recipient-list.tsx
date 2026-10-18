@@ -164,7 +164,7 @@ export function EmailRecipientList({
   ];
 
   if (!recipients.length || !visible.length) {
-    return <EmptyState icon={IconMail} title={t.emails.noRecipients} />;
+    return <EmptyState icon={IconMail} title={t.emails.noRecipients} size="compact" />;
   }
 
   return (

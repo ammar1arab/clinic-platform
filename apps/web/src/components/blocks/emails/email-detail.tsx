@@ -165,7 +165,7 @@ export function EmailDetail({ id }: { id: string }) {
             dir={dir}
           >
             {!message.recipients.length ? (
-              <EmptyState icon={IconMail} title={t.emails.noRecipients} />
+              <EmptyState icon={IconMail} title={t.emails.noRecipients} size="compact" />
             ) : (
               <div
                 className={cn(

@@ -632,6 +632,10 @@ th, td {
     animation: emptyStateSpark 5s ease-in-out infinite;
   }
 
+  .empty-state-icon {
+    animation: emptyStateIcon 3.6s ease-in-out infinite;
+  }
+
   @keyframes emptyStateSheet {
     0%, 100% { transform: translateY(2px) rotate(-6deg); }
     50% { transform: translateY(-5px) rotate(-2deg); }
@@ -640,6 +644,11 @@ th, td {
   @keyframes emptyStateShadow {
     0%, 100% { transform: scaleX(1); opacity: 0.8; }
     50% { transform: scaleX(0.8); opacity: 0.45; }
+  }
+
+  @keyframes emptyStateIcon {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-2px) rotate(-2deg); }
   }
 
   @keyframes emptyStateSpark {
@@ -655,6 +664,7 @@ th, td {
     .empty-state-spark {
       animation: none;
     }
+    .empty-state-icon { animation: none; }
   }
 
   .animate-clinic-dot {

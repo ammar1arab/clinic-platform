@@ -157,7 +157,7 @@ export function MultiSelect({
             <EmptyState
               icon={IconSearch}
               title={emptyText ?? t.ui.noOptions}
-              className="gap-1 py-5"
+              size="inline"
             />
           ) : (
             filtered.map((option) => {

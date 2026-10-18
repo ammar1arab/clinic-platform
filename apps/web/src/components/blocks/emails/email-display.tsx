@@ -177,7 +177,7 @@ export function EmailPreviewPane({
           <EmptyState
             icon={IconMail}
             title={emptyTitle ?? t.emails.previewEmpty}
-            className="py-10"
+            size="compact"
           />
         </Card>
       ) : error ? (

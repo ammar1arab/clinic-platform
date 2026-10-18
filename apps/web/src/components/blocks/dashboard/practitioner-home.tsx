@@ -59,6 +59,10 @@ export function PractitionerHome() {
     return <ErrorState onRetry={() => void appointments.refetch()} className="page-fill" />;
   }
 
+  if ((appointments.isLoading && !appointments.data) || (profile.isLoading && !profile.data)) {
+    return <PractitionerHomeSkeleton />;
+  }
+
   const practitioner = profile.data;
   const specialty = practitioner
     ? getBilingualName(practitioner.specialty, practitioner.specialtyAr, lang)
@@ -68,7 +72,7 @@ export function PractitionerHome() {
     : '';
 
   return (
-    <div className="page-stack gap-6 pb-6 lg:gap-8">
+    <div className="page-stack flex flex-col gap-6 pb-6 lg:gap-8">
       <Card className="card-aura overflow-hidden ring-0">
         <CardContent className="flex items-start gap-4 p-5 sm:items-center sm:gap-5 sm:p-7 lg:p-8">
           {profile.isLoading ? (
@@ -93,7 +97,7 @@ export function PractitionerHome() {
       </div>
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(19rem,.65fr)] xl:gap-8">
-        <Card className="card-aura ring-0">
+        <Card className="card-aura self-start ring-0">
           <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 p-5 sm:p-6">
             <div className="flex min-w-0 items-center gap-3">
               <IconWell icon={IconCalendarClock} accent="violet" />
@@ -123,14 +127,14 @@ export function PractitionerHome() {
                 ))}
               </div>
             ) : (
-              <div className="py-4 sm:py-8">
+              <div className="py-2 sm:py-4">
                 <EmptyState size="compact" icon={IconCalendarClock} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} />
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="card-aura ring-0">
+        <Card className="card-aura self-start ring-0">
           <CardHeader className="flex flex-row items-center gap-3 space-y-0 p-5 sm:p-6">
             <IconWell icon={IconService} accent="teal" />
             <CardTitle className="text-base">{t.practitioner.overview}</CardTitle>
@@ -142,6 +146,82 @@ export function PractitionerHome() {
             <Button asChild variant="outline" className="mt-1 w-full">
               <Link href={ROUTES.HOME_QUEUE}><IconTimer className="size-4" />{t.queue.waitingQueue}</Link>
             </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function PractitionerHomeSkeleton() {
+  return (
+    <div className="page-stack flex flex-col gap-6 pb-6 lg:gap-8" aria-hidden>
+      <Card className="overflow-hidden ring-0">
+        <CardContent className="flex items-start gap-4 p-5 sm:items-center sm:gap-5 sm:p-7 lg:p-8">
+          <Skeleton className="size-14 shrink-0 rounded-full" />
+          <div className="min-w-0 flex-1 space-y-2.5">
+            <Skeleton className="h-3 w-28" />
+            <Skeleton className="h-7 w-full max-w-sm" />
+            <Skeleton className="h-4 w-56 max-w-full" />
+          </div>
+          <Skeleton className="hidden size-12 shrink-0 rounded-xl sm:block" />
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
+        {[0, 1, 2, 3].map((item) => (
+          <div key={item} className="flex min-h-[6.5rem] items-center gap-4 rounded-xl border border-border bg-card px-4 py-3.5">
+            <Skeleton className="size-12 shrink-0 rounded-xl sm:size-14" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-7 w-10" />
+              <Skeleton className="h-3 w-full max-w-24" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(19rem,.65fr)] xl:gap-8">
+        <Card className="self-start ring-0">
+          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 p-5 sm:p-6">
+            <div className="flex items-center gap-3">
+              <Skeleton className="size-12 shrink-0 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+            <Skeleton className="h-8 w-20 rounded-lg" />
+          </CardHeader>
+          <CardContent className="space-y-3 px-5 pb-5 sm:px-6 sm:pb-6">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="flex h-[4.5rem] items-center gap-3 rounded-xl border border-border/70 p-3">
+                <Skeleton className="h-10 w-14 shrink-0 rounded-lg" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3.5 w-36 max-w-full" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="self-start ring-0">
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0 p-5 sm:p-6">
+            <Skeleton className="size-12 shrink-0 rounded-xl" />
+            <Skeleton className="h-5 w-24" />
+          </CardHeader>
+          <CardContent className="space-y-4 px-5 pb-5 sm:px-6 sm:pb-6">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="flex items-center gap-3 rounded-xl border border-border/70 p-3.5">
+                <Skeleton className="size-9 shrink-0 rounded-lg" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-4 w-32 max-w-full" />
+                </div>
+              </div>
+            ))}
+            <Skeleton className="h-9 w-full rounded-lg" />
           </CardContent>
         </Card>
       </div>

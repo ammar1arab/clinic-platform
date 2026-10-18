@@ -8,15 +8,18 @@ import { useClinicLogo } from '@/hooks/api/use-clinic';
 
 function ClinicLoadingLogo({ size }: { size: 'md' | 'lg' }) {
   const logoUrl = useClinicLogo();
-  const box = size === 'lg' ? 'size-16' : 'size-12';
+  const box = size === 'lg' ? 'size-20' : 'size-14';
   const px = size === 'lg' ? 64 : 48;
 
   if (!logoUrl) return <Spinner size="lg" />;
 
   return (
     <span className={cn('relative grid place-items-center', box)}>
-      <span className="absolute inset-0 rounded-2xl border border-border animate-clinic-ripple" aria-hidden />
-      <Image src={logoUrl} alt="" width={px} height={px} unoptimized className="relative size-full animate-clinic-breathe object-contain" priority />
+      <span className="absolute inset-0 rounded-[1.4rem] border border-primary/15 bg-primary/5 animate-clinic-ripple" aria-hidden />
+      <span className="absolute inset-1 rounded-[1.15rem] border border-border/70 bg-card" aria-hidden />
+      <span className="relative grid size-[calc(100%-0.75rem)] place-items-center overflow-hidden rounded-2xl p-1.5 animate-clinic-breathe">
+        <Image src={logoUrl} alt="" width={px} height={px} unoptimized className="max-h-full max-w-full object-contain" priority />
+      </span>
     </span>
   );
 }

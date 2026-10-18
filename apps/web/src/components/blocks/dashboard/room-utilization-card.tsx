@@ -106,7 +106,7 @@ export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: 
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
 
         {!isLoading && rooms?.length === 0 && (
-          <EmptyState icon={IconRoom} title={t.settings.noRooms} className="py-6" />
+          <EmptyState icon={IconRoom} title={t.settings.noRooms} size="compact" />
         )}
 
         {groups.map((group) => {
