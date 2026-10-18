@@ -1,58 +1,48 @@
 "use client";
 
 import { toast } from "sonner";
-import { compressImageToJpeg } from "@/lib/upload-local";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Input,
-  Button,
-} from "@/components/ui";
+import { compressImageToJpeg } from "@/lib/upload-local";
+import { Badge, Button, Card, CardContent, Input } from "@/components/ui";
 import {
   AvatarUpload,
   FormField,
-  ButtonSpinner,
+  FormActions,
+  ProfileInfoField,
+  ProfileInfoGrid,
+  ProfileSection,
+  ProfileShell,
 } from "@/components/primitives";
-import {
-  useConfirmEmailChange,
-  useRequestEmailChange,
-  useUpdateAccountProfile,
-} from "@/hooks/api/use-auth-mutations";
-import { authService } from "@/services/auth.service";
-import { extractErrorMessage } from "@/lib/api";
+import { IconEdit, IconLock } from "@/constants/icons";
+import { useUpdateAccountProfile } from "@/hooks/api/use-auth-mutations";
 import { useAuth, useLanguage } from "@/providers";
 import type { AccountProfileInput } from "@clinic/types";
 import { ROLE } from "@clinic/types";
+import { ROUTES } from "@/constants/routes";
 import { AccountPasswordReset } from "./account-password-reset";
-import { AccountVerificationDialog } from "./account-verification-dialog";
 
-const cooldownDeadline = (seconds: number) => Date.now() + seconds * 1000;
+function LockedField({ label, value, readOnlyLabel }: { label: string; value: string; readOnlyLabel: string }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-muted/30 px-3.5 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <span title={readOnlyLabel} aria-label={readOnlyLabel} className="grid size-6 place-items-center rounded-full bg-background text-muted-foreground shadow-sm ring-1 ring-border/70">
+          <IconLock className="size-3" aria-hidden />
+        </span>
+      </div>
+      <p className="mt-1.5 break-words text-sm font-medium text-foreground">{value || "—"}</p>
+    </div>
+  );
+}
 
 export function AccountProfile() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { t } = useLanguage();
+  const [editing, setEditing] = useState(false);
   const mutation = useUpdateAccountProfile();
-  const emailChange = useRequestEmailChange();
-  const confirmEmail = useConfirmEmailChange();
-  const [emailOtp, setEmailOtp] = useState<{
-    token: string;
-    email: string;
-    resendAt: number;
-  } | null>(null);
-  const [otpError, setOtpError] = useState("");
-  const {
-    register,
-    control,
-    setValue,
-    handleSubmit,
-    formState: { isSubmitting, errors },
-  } = useForm<AccountProfileInput>({
+  const { register, control, setValue, reset, handleSubmit, formState: { isSubmitting, errors } } = useForm<AccountProfileInput>({
     defaultValues: {
-      email: user?.email ?? "",
       name: user?.name ?? "",
       imageUrl: user?.imageUrl ?? "",
       nameAr: user?.nameAr ?? "",
@@ -61,181 +51,97 @@ export function AccountProfile() {
   });
   const imageUrl = useWatch({ control, name: "imageUrl" });
   const name = useWatch({ control, name: "name" });
+
   if (!user || user.role !== ROLE.OWNER) return null;
+
+  const save = async (values: AccountProfileInput) => {
+    let nextImage = values.imageUrl ?? "";
+    try {
+      if (nextImage.startsWith("blob:")) {
+        const source = await fetch(nextImage).then((response) => response.blob());
+        const blob = await compressImageToJpeg(source, { maxEdge: 256, maxBytes: 200_000 });
+        nextImage = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+      }
+      await mutation.mutateAsync({
+        ...values,
+        email: user.email,
+        name: values.name.trim(),
+        imageUrl: nextImage,
+      });
+      if (values.imageUrl?.startsWith("blob:")) URL.revokeObjectURL(values.imageUrl);
+      reset({ name: values.name.trim(), nameAr: values.nameAr ?? "", phone: values.phone ?? "", imageUrl: nextImage });
+      setEditing(false);
+    } catch {
+      toast.error(t.common.couldNotProcessImage);
+    }
+  };
+
+  const cancel = () => {
+    reset({ name: user.name ?? "", nameAr: user.nameAr ?? "", phone: user.phone ?? "", imageUrl: user.imageUrl ?? "" });
+    setEditing(false);
+  };
+
   return (
-    <div className="space-y-4">
-      <form
-        onSubmit={handleSubmit(async (values) => {
-          let imageUrl = values.imageUrl;
-          try {
-            if (imageUrl.startsWith("blob:")) {
-              const source = await fetch(imageUrl).then((response) =>
-                response.blob(),
-              );
-              const blob = await compressImageToJpeg(source, {
-                maxEdge: 256,
-                maxBytes: 200_000,
-              });
-              imageUrl = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(String(reader.result));
-                reader.onerror = () => reject(reader.error);
-                reader.readAsDataURL(blob);
-              });
-            }
-          } catch {
-            toast.error(t.common.couldNotProcessImage);
-            return;
-          }
-          const nextEmail = values.email?.trim().toLowerCase() ?? "";
-          try {
-            await mutation.mutateAsync({
-              ...values,
-              email: user.email,
-              name: values.name.trim(),
-              imageUrl,
-            });
-            if (values.imageUrl.startsWith("blob:"))
-              URL.revokeObjectURL(values.imageUrl);
-            setValue("imageUrl", imageUrl);
-            if (nextEmail && nextEmail !== user.email.trim().toLowerCase()) {
-              const pending = await emailChange.mutateAsync(nextEmail);
-              if (pending.next === "otp") {
-                setOtpError("");
-                setEmailOtp({
-                  token: pending.token,
-                  email: pending.email,
-                  resendAt: cooldownDeadline(pending.cooldownSeconds),
-                });
-              }
-            }
-          } catch {}
-        })}
-      >
-        <fieldset
-          disabled={mutation.isPending || isSubmitting}
-          className="min-w-0"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>{t.common.accountProfile}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex min-w-0 flex-col items-center gap-6">
-                <AvatarUpload
-                  value={imageUrl}
-                  onChange={(value) => setValue("imageUrl", value)}
-                  fallbackLabel={name}
-                  showPreviewNotice={false}
-                />
-                <div className="w-full min-w-0 space-y-4">
-                  <FormField
-                    label={t.common.name}
-                    htmlFor="account-name"
-                    required
-                    error={errors.name?.message}
-                  >
-                    <Input
-                      id="account-name"
-                      required
-                      maxLength={120}
-                      {...register("name", {
-                        validate: (value) => !!value.trim() || t.common.name,
-                      })}
-                    />
-                  </FormField>
-                  <FormField
-                    label={t.common.accountArabicName}
-                    htmlFor="account-name-ar"
-                  >
-                    <Input
-                      id="account-name-ar"
-                      dir="rtl"
-                      maxLength={120}
-                      {...register("nameAr")}
-                    />
-                  </FormField>
-                  <FormField label={t.exports.phone} htmlFor="account-phone">
-                    <Input
-                      id="account-phone"
-                      dir="ltr"
-                      type="tel"
-                      maxLength={40}
-                      {...register("phone")}
-                    />
-                  </FormField>
-                  <FormField
-                    label={t.common.signInEmail}
-                    htmlFor="account-email"
-                  >
-                    <Input
-                      id="account-email"
-                      type="email"
-                      required
-                      maxLength={254}
-                      {...register("email", { required: true })}
-                      dir="ltr"
-                    />
-                  </FormField>
-                </div>
+    <ProfileShell
+      backHref={ROUTES.DASHBOARD}
+      backLabel={t.layout.sidebar.dashboard}
+      actions={!editing ? (
+        <Button type="button" variant="outline" onClick={() => setEditing(true)}>
+          <IconEdit className="size-3.5" />{t.common.edit}
+        </Button>
+      ) : undefined}
+    >
+      <Card className="card-aura overflow-hidden ring-0">
+        <CardContent className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
+          <AvatarUpload value={editing ? imageUrl : user.imageUrl} onChange={(value) => setValue("imageUrl", value)} fallbackLabel={editing ? name : user.name} showPreviewNotice={false} disabled={!editing} />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-heading text-2xl font-semibold tracking-tight">{user.name}</h1>
+              <Badge variant="success">{t.common.active}</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">{t.common.accountProfile}</p>
+            <p className="break-words text-sm text-muted-foreground">{user.email}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {editing ? (
+        <form onSubmit={handleSubmit(save)}>
+          <fieldset disabled={mutation.isPending || isSubmitting} className="min-w-0">
+            <ProfileSection title={t.common.accountProfile} description={t.common.signInEmailHint}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField label={t.common.name} htmlFor="account-name" required error={errors.name?.message}>
+                  <Input id="account-name" maxLength={120} {...register("name", { required: t.validation.required })} />
+                </FormField>
+                <FormField label={t.common.accountArabicName} htmlFor="account-name-ar">
+                  <Input id="account-name-ar" dir="rtl" maxLength={120} {...register("nameAr")} />
+                </FormField>
+                <FormField label={t.exports.phone} htmlFor="account-phone">
+                  <Input id="account-phone" dir="ltr" type="tel" maxLength={40} {...register("phone")} />
+                </FormField>
+                <LockedField label={t.common.signInEmail} value={user.email} readOnlyLabel={t.common.readOnly} />
               </div>
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={mutation.isPending || isSubmitting}
-                >
-                  {(mutation.isPending || isSubmitting) && <ButtonSpinner />}
-                  {t.common.save}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </fieldset>
-      </form>
-      <AccountVerificationDialog
-        open={!!emailOtp}
-        pending={confirmEmail.isPending}
-        resendAt={emailOtp?.resendAt ?? 0}
-        error={otpError}
-        onClose={() => {
-          setEmailOtp(null);
-          setValue("email", user.email);
-        }}
-        onVerify={async (code) => {
-          if (!emailOtp) return;
-          setOtpError("");
-          try {
-            await confirmEmail.mutateAsync({ token: emailOtp.token, code });
-            logout();
-          } catch (cause) {
-            setOtpError(
-              extractErrorMessage(
-                cause as Parameters<typeof extractErrorMessage>[0],
-              ),
-            );
-          }
-        }}
-        onResend={async () => {
-          if (!emailOtp) return;
-          setOtpError("");
-          try {
-            const pending = await authService.resendEmailChange(emailOtp.token);
-            if (pending.next !== "otp") return;
-            setEmailOtp({
-              token: pending.token,
-              email: pending.email,
-              resendAt: Date.now() + pending.cooldownSeconds * 1000,
-            });
-          } catch (cause) {
-            setOtpError(
-              extractErrorMessage(
-                cause as Parameters<typeof extractErrorMessage>[0],
-              ),
-            );
-          }
-        }}
-      />
+              <FormActions className="mt-5" onCancel={cancel} submitLabel={t.common.save} pending={mutation.isPending || isSubmitting} />
+            </ProfileSection>
+          </fieldset>
+        </form>
+      ) : (
+        <ProfileSection title={t.common.accountProfile}>
+          <ProfileInfoGrid className="lg:grid-cols-3">
+            <ProfileInfoField label={t.common.name} value={user.name} />
+            <ProfileInfoField label={t.common.accountArabicName} value={user.nameAr} dir="rtl" />
+            <ProfileInfoField label={t.exports.phone} value={user.phone} dir="ltr" />
+            <ProfileInfoField label={t.common.signInEmail} value={user.email} />
+          </ProfileInfoGrid>
+        </ProfileSection>
+      )}
+
       <AccountPasswordReset id={user.clinicUserId} />
-    </div>
+    </ProfileShell>
   );
 }

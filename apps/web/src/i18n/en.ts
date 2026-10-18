@@ -363,6 +363,7 @@ export const en = {
     accountArabicName: "Name in Arabic",
     account: "Account",
     accountProfile: "My account",
+    readOnly: "Read-only",
     signInEmail: "Sign-in email",
     signInEmailHint: "Use this email to sign in. Passwords are hidden; use reset password below to set a new one.",
     clinicContactEmail: "Clinic contact email",

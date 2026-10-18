@@ -370,6 +370,7 @@ export const ar: Translations = {
     accountArabicName: "الاسم بالعربية",
     account: "الحساب",
     accountProfile: "حسابي",
+    readOnly: "للقراءة فقط",
     signInEmail: "بريد تسجيل الدخول",
     signInEmailHint: "استخدم هذا البريد لتسجيل الدخول. كلمات المرور مخفية؛ استخدم إعادة تعيين كلمة المرور أدناه لتعيين كلمة جديدة.",
     clinicContactEmail: "بريد التواصل للعيادة",
