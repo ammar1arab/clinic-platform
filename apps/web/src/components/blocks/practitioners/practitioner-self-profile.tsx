@@ -93,13 +93,8 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
             <FormActions className="mt-5" onCancel={() => { reset(); setEditing(false); }} submitLabel={t.common.save} pending={mutation.isPending} />
           </ProfileSection>
           <ProfileSection
-            title={t.common.readOnly}
-            action={
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
-                <IconLock className="size-3.5" aria-hidden />
-                {t.common.readOnly}
-              </span>
-            }
+            title={t.practitioner.professionalInfo}
+            action={<LockedSectionBadge label={t.common.readOnly} />}
           >
             <ProfileInfoGrid className="lg:grid-cols-3">
               <ProfileInfoField label={t.practitioner.email} value={practitioner.email} />
@@ -130,19 +125,31 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ProfileSection title={t.practitioner.services}>
+        <ProfileSection title={t.practitioner.services} action={editing ? <LockedSectionBadge label={t.common.readOnly} /> : undefined}>
           {practitioner.services.length ? <div className="flex flex-wrap gap-2">{practitioner.services.map((service) => <Badge key={service.id} variant="secondary">{getBilingualName(service.name, service.nameAr, lang)}</Badge>)}</div> : <EmptyState size="compact" icon={IconService} title={t.practitioner.noServicesAssigned} />}
         </ProfileSection>
-        <ProfileSection title={t.practitioner.weeklyAvailability}>
+        <ProfileSection title={t.practitioner.weeklyAvailability} action={editing ? <LockedSectionBadge label={t.common.readOnly} /> : undefined}>
           {practitioner.availabilities.length ? <div className="space-y-2">{practitioner.availabilities.map((slot) => <div key={slot.id ?? `${slot.dayOfWeek}-${slot.startTime}`} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{t.constants.weekdays[WEEKDAY_KEYS[slot.dayOfWeek]]}</span><span className="font-medium">{slot.startTime} - {slot.endTime}</span></div>)}</div> : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noWeeklyPatterns} />}
         </ProfileSection>
-        <ProfileSection title={t.practitioner.extraAvailability}>
+        <ProfileSection title={t.practitioner.extraAvailability} action={editing ? <LockedSectionBadge label={t.common.readOnly} /> : undefined}>
           {practitioner.availabilityOverrides.length ? practitioner.availabilityOverrides.map((entry) => <div key={entry.id ?? entry.startAt} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.extraAvailability}</span><span className="font-medium">{entry.startAt.slice(0, 10)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noExtraAvailability} />}
         </ProfileSection>
-        <ProfileSection title={t.practitioner.leave}>
+        <ProfileSection title={t.practitioner.leave} action={editing ? <LockedSectionBadge label={t.common.readOnly} /> : undefined}>
           {practitioner.timeOffs.length ? practitioner.timeOffs.map((entry) => <div key={entry.id ?? entry.startDate} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.leave}</span><span className="font-medium">{entry.startDate.slice(0, 10)} - {entry.endDate.slice(0, 10)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noLeaveBlocks} />}
         </ProfileSection>
       </div>
     </ProfileShell>
+  );
+}
+
+function LockedSectionBadge({ label }: { label: string }) {
+  return (
+    <span
+      title={label}
+      aria-label={label}
+      className="grid size-8 shrink-0 place-items-center rounded-full border border-primary/15 bg-primary/5 text-primary"
+    >
+      <IconLock className="size-3.5" aria-hidden />
+    </span>
   );
 }

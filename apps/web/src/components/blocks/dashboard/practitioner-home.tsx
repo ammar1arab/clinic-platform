@@ -68,45 +68,45 @@ export function PractitionerHome() {
     : '';
 
   return (
-    <div className="page-stack gap-5">
+    <div className="page-stack gap-6 pb-6 lg:gap-8">
       <Card className="card-aura overflow-hidden ring-0">
-        <CardContent className="flex items-center gap-4 p-5 sm:p-6">
+        <CardContent className="flex items-start gap-4 p-5 sm:items-center sm:gap-5 sm:p-7 lg:p-8">
           {profile.isLoading ? (
             <Skeleton className="size-14 shrink-0 rounded-full" />
           ) : (
             <PreviewableAvatar src={practitioner?.imageUrl ?? user?.imageUrl} seed={user?.clinicUserId ?? 'practitioner'} size="lg" priority />
           )}
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 pt-0.5 sm:pt-0">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{formatDate(today, undefined, lang)}</p>
-            <h1 className="mt-1 truncate font-heading text-xl font-semibold tracking-tight sm:text-2xl">{t.dashboard.welcome}, {getBilingualName(user?.name, user?.nameAr, lang)}</h1>
-            <p className="mt-1 truncate text-sm text-muted-foreground">{[specialty, room].filter(Boolean).join(' · ')}</p>
+            <h1 className="mt-1 font-heading text-xl font-semibold leading-tight tracking-tight sm:text-2xl lg:text-3xl">{t.dashboard.welcome}, {getBilingualName(user?.name, user?.nameAr, lang)}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{[specialty, room].filter(Boolean).join(' · ')}</p>
           </div>
           <IconWell icon={IconTodaysAppointments} accent="default" className="hidden sm:grid" />
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
         <KpiCardBlock label={t.dashboard.todaysAppointments} value={appointments.data?.length} icon={IconTodaysAppointments} accent="default" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.dashboard.waiting} value={waiting} icon={IconTimer} accent="warning" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.dashboard.completed} value={completed} icon={IconCheckCircle} accent="success" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.queue.upcomingToday} value={nextVisit ? formatTime(nextVisit.scheduledAt, undefined, lang) : '—'} icon={IconTime} accent="teal" isLoading={appointments.isLoading} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(19rem,.55fr)]">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(19rem,.65fr)] xl:gap-8">
         <Card className="card-aura ring-0">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 p-5 sm:p-6">
             <div className="flex min-w-0 items-center gap-3">
               <IconWell icon={IconCalendarClock} accent="violet" />
               <div>
                 <CardTitle className="text-base">{t.dashboard.todaySchedule}</CardTitle>
-                <p className="mt-0.5 text-xs text-muted-foreground">{ordered.length} {t.dashboard.todaysAppointments.toLowerCase()}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{nextVisit ? `${t.queue.upcomingToday}: ${formatTime(nextVisit.scheduledAt, undefined, lang)}` : t.appointments.noAppointments}</p>
               </div>
             </div>
             <Button asChild variant="ghost" size="sm">
               <Link href={schedulePath('month')}>{t.appointments.calendar}</Link>
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-5 pb-5 sm:px-6 sm:pb-6">
             {appointments.isLoading ? (
               <div className="space-y-3">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-[4.5rem] w-full rounded-xl" />)}</div>
             ) : ordered.length ? (
@@ -123,21 +123,23 @@ export function PractitionerHome() {
                 ))}
               </div>
             ) : (
-              <EmptyState size="compact" icon={IconCalendarClock} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} />
+              <div className="py-4 sm:py-8">
+                <EmptyState size="compact" icon={IconCalendarClock} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} />
+              </div>
             )}
           </CardContent>
         </Card>
 
         <Card className="card-aura ring-0">
-          <CardHeader className="flex flex-row items-center gap-3 space-y-0">
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0 p-5 sm:p-6">
             <IconWell icon={IconService} accent="teal" />
             <CardTitle className="text-base">{t.practitioner.overview}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4 px-5 pb-5 sm:px-6 sm:pb-6">
             <HomeDetail icon={IconRoom} label={t.practitioner.defaultRoom} value={room} loading={profile.isLoading} />
             <HomeDetail icon={IconService} label={t.practitioner.services} value={practitioner?.services.map((service) => getBilingualName(service.name, service.nameAr, lang)).join(', ')} loading={profile.isLoading} />
             <HomeDetail icon={IconCalendarClock} label={t.practitioner.workingDays} value={practitioner ? String(new Set(practitioner.availabilities.map((slot) => slot.dayOfWeek)).size) : ''} loading={profile.isLoading} />
-            <Button asChild variant="outline" className="mt-2 w-full">
+            <Button asChild variant="outline" className="mt-1 w-full">
               <Link href={ROUTES.HOME_QUEUE}><IconTimer className="size-4" />{t.queue.waitingQueue}</Link>
             </Button>
           </CardContent>
@@ -149,7 +151,7 @@ export function PractitionerHome() {
 
 function HomeDetail({ icon, label, value, loading }: { icon: typeof IconRoom; label: string; value?: string | null; loading: boolean }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-border/70 p-3">
+    <div className="flex items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3.5">
       <IconWell icon={icon} size="sm" accent="muted" />
       <div className="min-w-0 flex-1">
         <p className="text-xs text-muted-foreground">{label}</p>
