@@ -5,6 +5,7 @@ import {
   Query,
   Res,
   StreamableFile,
+  ForbiddenException,
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiProduces, ApiQuery, ApiTags } from "@nestjs/swagger";
@@ -47,7 +48,16 @@ function sendExport(res: Response, exported: ExportedReport) {
 export class ReportsController {
   constructor(private reportsService: ReportsService) {}
 
+  private practitionerScope(user: AuthUser, practitionerId: string) {
+    if (user.role === Role.practitioner && user.clinicUserId !== practitionerId) {
+      throw new ForbiddenException("Practitioners can only export their own reports");
+    }
+    return practitionerId;
+  }
+
   @Get("patients/:patientId")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial)
   @ApiProduces(...PRODUCES)
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
@@ -68,6 +78,8 @@ export class ReportsController {
   }
 
   @Get("patients-directory")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial)
   @ApiProduces(...PRODUCES)
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
@@ -86,6 +98,8 @@ export class ReportsController {
   }
 
   @Get("practitioners-directory")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial)
   @ApiProduces(...PRODUCES)
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
@@ -104,6 +118,8 @@ export class ReportsController {
   }
 
   @Get("practitioners/:practitionerId/appointments")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial, Role.practitioner)
   @ApiProduces(...PRODUCES)
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
@@ -117,7 +133,7 @@ export class ReportsController {
       res,
       await this.reportsService.exportPractitionerAppointments({
         clinicId: user.clinicId,
-        practitionerId,
+        practitionerId: this.practitionerScope(user, practitionerId),
         format: query.format ?? ReportFormatDto.pdf,
         from: query.from,
         to: query.to,
@@ -126,6 +142,8 @@ export class ReportsController {
   }
 
   @Get("practitioners/:practitionerId/hours")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial, Role.practitioner)
   @ApiProduces(...PRODUCES)
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
@@ -139,13 +157,15 @@ export class ReportsController {
       res,
       await this.reportsService.exportPractitionerHours(
         user.clinicId,
-        practitionerId,
+        this.practitionerScope(user, practitionerId),
         query.format ?? ReportFormatDto.pdf,
       ),
     );
   }
 
   @Get("practitioners/:practitionerId/exceptions")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial, Role.practitioner)
   @ApiProduces(...PRODUCES)
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
@@ -159,13 +179,15 @@ export class ReportsController {
       res,
       await this.reportsService.exportPractitionerExceptions(
         user.clinicId,
-        practitionerId,
+        this.practitionerScope(user, practitionerId),
         query.format ?? ReportFormatDto.pdf,
       ),
     );
   }
 
   @Get("practitioners/:practitionerId")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial, Role.practitioner)
   @ApiProduces(...PRODUCES)
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
@@ -179,13 +201,15 @@ export class ReportsController {
       res,
       await this.reportsService.exportPractitionerProfile(
         user.clinicId,
-        practitionerId,
+        this.practitionerScope(user, practitionerId),
         query.format ?? ReportFormatDto.pdf,
       ),
     );
   }
 
   @Get("appointments")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial)
   @ApiProduces(...PRODUCES)
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
@@ -207,6 +231,8 @@ export class ReportsController {
   }
 
   @Get("referrals")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial)
   @ApiProduces(...PRODUCES)
   @ApiQuery({ name: "clinicId", required: true })
   @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })

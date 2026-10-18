@@ -3,6 +3,7 @@ import { ROUTES } from './routes';
 
 const STAFF: Role[] = [ROLE.OWNER, ROLE.ADMIN];
 const FINANCE: Role[] = [ROLE.OWNER, ROLE.ADMIN, ROLE.FINANCIAL];
+const REPORTS: Role[] = [...FINANCE, ROLE.PRACTITIONER];
 const OPS: Role[] = [ROLE.OWNER, ROLE.ADMIN, ROLE.FINANCIAL];
 const PRACTITIONER: Role[] = [ROLE.PRACTITIONER];
 
@@ -25,7 +26,7 @@ export const NAV_ACCESS: { prefix: string; roles?: Role[] }[] = [
   { prefix: ROUTES.SCHEDULE, roles: [...STAFF, ROLE.PRACTITIONER] },
   { prefix: ROUTES.PATIENTS, roles: STAFF },
   { prefix: ROUTES.PRACTITIONERS, roles: STAFF },
-  { prefix: ROUTES.REPORTS, roles: FINANCE },
+  { prefix: ROUTES.REPORTS, roles: REPORTS },
   { prefix: ROUTES.SETTINGS, roles: STAFF },
 ];
 

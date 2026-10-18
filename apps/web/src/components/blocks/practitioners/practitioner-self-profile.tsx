@@ -18,6 +18,22 @@ const WEEKDAY_KEYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'F
 
 const display = (value: string | null | undefined) => value?.trim() || null;
 
+function LockedProfileField({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-muted/30 px-3.5 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <span className="grid size-6 place-items-center rounded-full bg-background text-muted-foreground shadow-sm ring-1 ring-border/70" title={tReadOnly}>
+          <IconKey className="size-3" aria-hidden />
+        </span>
+      </div>
+      <p className="mt-1.5 break-words text-sm font-medium text-foreground">{value || '—'}</p>
+    </div>
+  );
+}
+
+const tReadOnly = 'Read-only';
+
 export function PractitionerSelfProfile({ practitioner }: { practitioner: PractitionerDetail }) {
   const { lang, t } = useLanguage();
   const [editing, setEditing] = useState(false);
@@ -90,6 +106,17 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
               <FormField label={t.practitioner.bioAr} htmlFor="self-bio-ar"><Textarea id="self-bio-ar" dir="rtl" rows={4} {...register('bioAr')} /></FormField>
             </div>
             <FormActions className="mt-5" onCancel={() => { reset(); setEditing(false); }} submitLabel={t.common.save} pending={mutation.isPending} />
+          </ProfileSection>
+          <ProfileSection title={t.common.readOnly} description={t.practitioner.weeklyAvailability}>
+            <ProfileInfoGrid className="lg:grid-cols-3">
+              <LockedProfileField label={t.practitioner.email} value={practitioner.email} />
+              <LockedProfileField label={t.practitioner.specialty} value={specialty} />
+              <LockedProfileField label={t.practitioner.department} value={department} />
+              <LockedProfileField label={t.practitioner.defaultRoom} value={room} />
+              <LockedProfileField label={t.practitioner.employment} value={practitioner.employmentType} />
+              <LockedProfileField label={t.practitioner.licenseNumber} value={display(practitioner.licenseNumber)} />
+              <LockedProfileField label={t.practitioner.licenseExpiry} value={display(practitioner.licenseExpiry)} />
+            </ProfileInfoGrid>
           </ProfileSection>
         </form>
       ) : (

@@ -2,10 +2,10 @@ import { clinicsService, ClinicStaffMember } from '@/services/clinics.service';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { useFetchData, clinicListOptions } from '../query';
 
-export function useClinicStaff(clinicId: string) {
+export function useClinicStaff(clinicId: string, enabled = true) {
   return useFetchData<ClinicStaffMember[]>({
     queryKey: QUERY_KEYS.clinics.staff(clinicId),
     request: () => clinicsService.getStaff(clinicId),
-    options: clinicListOptions(clinicId),
+    options: { ...clinicListOptions(clinicId), enabled: enabled && !!clinicId },
   });
 }

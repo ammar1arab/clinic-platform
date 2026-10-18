@@ -66,6 +66,7 @@ export default function ReportsPage() {
     user?.role === 'owner' ||
     user?.role === 'admin' ||
     user?.role === 'financial';
+  const isPractitioner = user?.role === 'practitioner';
   const month = useMemo(() => currentMonthRange(), []);
 
   const [activeKey, setActiveKey] = useState<ReportKey | null>(null);
@@ -77,17 +78,21 @@ export default function ReportsPage() {
   const [fromDate, setFromDate] = useSessionStorageState('reports-from', month.from);
   const [toDate, setToDate] = useSessionStorageState('reports-to', month.to);
   const [status, setStatus] = useSessionStorageState('reports-status', '');
+  const scopedPractitionerId = isPractitioner
+    ? user?.clinicUserId ?? ''
+    : practitionerId;
 
   const needsPatients =
     activeKey === 'patientMedical' ||
     activeKey === 'referrals' ||
     activeKey === 'patientsDirectory';
   const needsPractitioners =
-    activeKey === 'practitionerProfile' ||
-    activeKey === 'practitionerAppointments' ||
-    activeKey === 'practitionerHours' ||
-    activeKey === 'practitionerExceptions' ||
-    activeKey === 'practitionersDirectory';
+    !isPractitioner &&
+    (activeKey === 'practitionerProfile' ||
+      activeKey === 'practitionerAppointments' ||
+      activeKey === 'practitionerHours' ||
+      activeKey === 'practitionerExceptions' ||
+      activeKey === 'practitionersDirectory');
 
   const { data: patients, isLoading: patientsLoading, isError: patientsError } = usePatients(
     {
@@ -115,7 +120,7 @@ export default function ReportsPage() {
   const downloadReferrals = useDownloadReferralsReport(clinicId);
   const downloadFinance = useDownloadFinanceReport(clinicId);
 
-  const catalog: { title: string; items: ReportDef[] }[] = [
+  const ownerCatalog: { title: string; items: ReportDef[] }[] = [
     {
       title: t.reports.groupPatients,
       items: [
@@ -217,6 +222,45 @@ export default function ReportsPage() {
     },
   ];
 
+  const catalog: { title: string; items: ReportDef[] }[] = isPractitioner
+    ? [
+        {
+          title: t.reports.groupPractitioners,
+          items: [
+            {
+              key: 'practitionerAppointments',
+              icon: IconSchedule,
+              accent: 'warning',
+              title: t.reports.practitionerAppointments,
+              description: t.reports.practitionerAppointmentsDesc,
+              filters: { dates: true },
+            },
+            {
+              key: 'practitionerHours',
+              icon: IconTime,
+              accent: 'default',
+              title: t.reports.practitionerHours,
+              description: t.reports.practitionerHoursDesc,
+            },
+            {
+              key: 'practitionerExceptions',
+              icon: IconCalendarClock,
+              accent: 'teal',
+              title: t.reports.practitionerExceptions,
+              description: t.reports.practitionerExceptionsDesc,
+            },
+            {
+              key: 'practitionerProfile',
+              icon: IconPerson,
+              accent: 'default',
+              title: t.reports.practitionerProfile,
+              description: t.reports.practitionerProfileDesc,
+            },
+          ],
+        },
+      ]
+    : ownerCatalog;
+
   const active = catalog
     .flatMap((group) => group.items)
     .find((item) => item.key === activeKey);
@@ -259,17 +303,17 @@ export default function ReportsPage() {
         downloadPractitionersDirectory.mutate({ format });
         break;
       case 'practitionerProfile':
-        downloadPractitionerProfile.mutate({ practitionerId, format });
+        downloadPractitionerProfile.mutate({ practitionerId: scopedPractitionerId, format });
         break;
       case 'practitionerHours':
-        downloadPractitionerHours.mutate({ practitionerId, format });
+        downloadPractitionerHours.mutate({ practitionerId: scopedPractitionerId, format });
         break;
       case 'practitionerExceptions':
-        downloadPractitionerExceptions.mutate({ practitionerId, format });
+        downloadPractitionerExceptions.mutate({ practitionerId: scopedPractitionerId, format });
         break;
       case 'practitionerAppointments':
         downloadPractitionerAppointments.mutate({
-          practitionerId,
+          practitionerId: scopedPractitionerId,
           format,
           from: fromDate || undefined,
           to: toDate || undefined,
@@ -359,8 +403,8 @@ export default function ReportsPage() {
           practitioners={practitioners}
           patientId={patientId}
           onPatientChange={setPatientId}
-          practitionerId={practitionerId}
-          onPractitionerChange={setPractitionerId}
+          practitionerId={scopedPractitionerId}
+          onPractitionerChange={isPractitioner ? undefined : setPractitionerId}
           fromDate={fromDate}
           toDate={toDate}
           onFromChange={setFromDate}

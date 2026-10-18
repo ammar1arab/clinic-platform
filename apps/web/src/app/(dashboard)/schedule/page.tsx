@@ -52,7 +52,7 @@ function SchedulePageInner() {
   const searchParams = useSearchParams();
 
   const { data: clinic } = useClinic(clinicId);
-  const { data: staff } = useClinicStaff(clinicId);
+  const { data: staff } = useClinicStaff(clinicId, !isPractitioner);
   const practitioners = useMemo(
     () => staff?.filter((member) => member.role === "practitioner"),
     [staff],
@@ -82,6 +82,7 @@ function SchedulePageInner() {
   const [statusFilters, setStatusFilters] = useState<Set<AppointmentStatus>>(
     () => new Set(),
   );
+  const activeView = isPractitioner && view === "doctors" ? "month" : view;
   useClinicRealtime(clinicId);
 
   const { data: departments } = useDepartments(clinicId);
@@ -139,11 +140,11 @@ function SchedulePageInner() {
     );
   }, [appointments, search, statusFilters]);
 
-  const returnTo = schedulePath(view);
+  const returnTo = schedulePath(activeView);
 
   const goNewAppointment = useCallback(
     (date?: Date, doctorId?: string) => {
-      const params = new URLSearchParams({ view });
+      const params = new URLSearchParams({ view: activeView });
       if (date) {
         params.set("date", toDateParam(date));
         params.set("time", toTimeParam(date));
@@ -151,21 +152,21 @@ function SchedulePageInner() {
       if (doctorId) params.set("doctorId", doctorId);
       router.push(`${ROUTES.SCHEDULE_NEW}?${params.toString()}`);
     },
-    [router, view],
+    [activeView, router],
   );
 
   const handleEventClick = useCallback(
     (appt: Appointment) => {
-      router.push(`${ROUTES.SCHEDULE_EDIT(appt.id)}?view=${view}`);
+      router.push(`${ROUTES.SCHEDULE_EDIT(appt.id)}?view=${activeView}`);
     },
-    [router, view],
+    [activeView, router],
   );
 
   return (
     <div className="page-fill gap-2">
       <div className="shrink-0">
       <ScheduleToolbar
-        view={view}
+        view={activeView}
         search={search}
         onSearchChange={setSearch}
         departmentId={departmentId}
@@ -193,7 +194,7 @@ function SchedulePageInner() {
           description={t.appointments.noAppointmentsDesc}
           className="page-fill"
         />
-      ) : view === "doctors" ? (
+      ) : activeView === "doctors" ? (
         <ViewFocus label={t.appointments.doctorTimeline}>
           {(focused) => (
             <DoctorTimeline
@@ -206,7 +207,7 @@ function SchedulePageInner() {
             />
           )}
         </ViewFocus>
-      ) : view === "queue" ? (
+      ) : activeView === "queue" ? (
         <ViewFocus label={t.queue.waitingQueue}>
           {(focused) => (
             <WaitingQueueBoard
@@ -224,7 +225,7 @@ function SchedulePageInner() {
               appointments={filteredAppointments}
               isLoading={isLoading}
               isFetching={isFetching}
-              view={view}
+              view={activeView}
               focused={focused}
               onViewChange={setView}
               onVisibleRangeChange={handleVisibleRangeChange}
