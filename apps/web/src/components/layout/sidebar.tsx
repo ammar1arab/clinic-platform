@@ -76,6 +76,7 @@ function isActivePath(pathname: string, href: string, scheduleView: string | nul
     if (targetView === 'month') return ['month', 'week', 'day'].includes(currentView);
     return targetView === currentView;
   }
+  if (href === ROUTES.HOME) return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

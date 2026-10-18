@@ -76,34 +76,41 @@ export function PractitionerHome() {
   const room = practitioner
     ? getBilingualName(practitioner.defaultRoomName, practitioner.defaultRoomNameAr, lang)
     : '';
+  const department = practitioner
+    ? getBilingualName(practitioner.departmentName, practitioner.departmentNameAr, lang)
+    : '';
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-5 pb-6 lg:gap-6">
-      <Card className="card-aura overflow-hidden ring-0">
-        <CardContent className="flex items-start gap-4 p-5 sm:items-center sm:gap-5 sm:p-7 lg:p-8">
+    <div className="flex w-full min-w-0 flex-col gap-4 pb-6 xl:page-fill xl:pb-0">
+      <Card className="card-aura shrink-0 overflow-hidden ring-0">
+        <CardContent className="flex items-center gap-4 p-4 sm:gap-5 sm:p-5">
           {profile.isLoading ? (
-            <Skeleton className="size-14 shrink-0 rounded-full" />
+            <Skeleton className="size-20 shrink-0 rounded-full sm:size-24" />
           ) : (
-            <PreviewableAvatar src={practitioner?.imageUrl ?? user?.imageUrl} seed={user?.clinicUserId ?? 'practitioner'} size="lg" priority />
+            <PreviewableAvatar src={practitioner?.imageUrl ?? user?.imageUrl} seed={user?.clinicUserId ?? 'practitioner'} size="xl" priority className="size-20 ring-2 ring-primary/15 sm:size-24" />
           )}
-          <div className="min-w-0 flex-1 pt-0.5 sm:pt-0">
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{formatDate(today, undefined, lang)}</p>
             <h1 className="mt-1 font-heading text-xl font-semibold leading-tight tracking-tight sm:text-2xl lg:text-3xl">{t.dashboard.welcome}, {getBilingualName(user?.name, user?.nameAr, lang)}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{[specialty, room].filter(Boolean).join(' · ')}</p>
+            <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
+              {specialty ? <WelcomeFact label={t.exports.specialty} value={specialty} /> : null}
+              {department ? <WelcomeFact label={t.exports.department} value={department} /> : null}
+              {room ? <WelcomeFact label={t.exports.room} value={room} /> : null}
+              {practitioner?.experienceYears != null ? <WelcomeFact label={t.exports.experience} value={`${practitioner.experienceYears} ${t.common.years}`} /> : null}
+            </div>
           </div>
-          <IconWell icon={IconTodaysAppointments} accent="default" className="hidden sm:grid" />
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
+      <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
         <KpiCardBlock label={t.dashboard.todaysAppointments} value={ordered.length} icon={IconTodaysAppointments} accent="default" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.dashboard.waiting} value={waiting} icon={IconTimer} accent="warning" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.dashboard.completed} value={completed} icon={IconCheckCircle} accent="success" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.queue.upcomingToday} value={nextVisit ? formatTime(nextVisit.scheduledAt, undefined, lang) : '—'} icon={IconTime} accent="teal" isLoading={appointments.isLoading} />
       </div>
 
-      <div className="grid min-w-0 items-stretch gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)] lg:gap-6">
-        <Card className="card-aura flex min-w-0 flex-col ring-0">
+      <div className="grid min-w-0 items-stretch gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)]">
+        <Card className="card-aura flex min-w-0 flex-col ring-0 xl:min-h-0 xl:overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 p-5 sm:p-6">
             <div className="flex min-w-0 items-center gap-3">
               <IconWell icon={IconCalendarClock} accent="violet" />
@@ -113,11 +120,11 @@ export function PractitionerHome() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="flex flex-1 flex-col px-5 pb-5 sm:px-6 sm:pb-6">
+          <CardContent className="flex flex-col px-5 pb-5 sm:px-6 sm:pb-6 xl:min-h-0 xl:flex-1">
             {appointments.isLoading ? (
               <div className="space-y-3">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-[4.5rem] w-full rounded-xl" />)}</div>
             ) : ordered.length ? (
-              <div className="space-y-2">
+              <div className="space-y-2 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
                 {ordered.map((appointment) => (
                   <button key={appointment.id} type="button" onClick={() => router.push(`${ROUTES.SCHEDULE_EDIT(appointment.id)}?view=month`)} className="group flex w-full items-center gap-3 rounded-xl border border-border/70 px-3 py-3 text-start transition-colors hover:border-primary/25 hover:bg-muted/45">
                     <span className="grid min-w-14 shrink-0 place-items-center rounded-lg bg-muted px-2 py-2 text-sm font-semibold tabular-nums text-foreground">{formatTime(appointment.scheduledAt, undefined, lang)}</span>
@@ -134,7 +141,7 @@ export function PractitionerHome() {
                 <EmptyState size="compact" icon={IconCalendarClock} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} />
               </div>
             )}
-            <div className="mt-auto pt-4">
+            <div className="mt-auto shrink-0 pt-4">
               <Button asChild variant="outline" className="w-full gap-2">
                 <Link href={schedulePath('month')}><IconCalendarClock className="size-4" />{t.appointments.calendar}</Link>
               </Button>
@@ -142,19 +149,19 @@ export function PractitionerHome() {
           </CardContent>
         </Card>
 
-        <Card className="card-aura flex min-w-0 flex-col ring-0">
+        <Card className="card-aura flex min-w-0 flex-col ring-0 xl:min-h-0 xl:overflow-hidden">
           <CardHeader className="flex flex-row items-center gap-3 space-y-0 p-5 sm:p-6">
             <IconWell icon={IconTime} accent="teal" />
             <CardTitle className="text-base">{t.dashboard.nextVisits}</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-1 flex-col gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
-            {upcoming.length ? upcoming.map((appointment) => (
+          <CardContent className="flex flex-col gap-3 px-5 pb-5 sm:px-6 sm:pb-6 xl:min-h-0 xl:flex-1">
+            {upcoming.length ? <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">{upcoming.map((appointment) => (
               <Link key={appointment.id} href={`${ROUTES.SCHEDULE_EDIT(appointment.id)}?view=month`} className="flex min-w-0 flex-col gap-1 rounded-xl border border-border/70 p-3.5 text-sm transition-colors hover:bg-muted/45 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <span className="min-w-0 truncate font-medium">{getPersonName(appointment.patient, lang)}</span>
                 <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatDate(appointment.scheduledAt, undefined, lang)} · {formatTime(appointment.scheduledAt, undefined, lang)}</span>
               </Link>
-            )) : <EmptyState size="compact" icon={IconCalendarClock} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} />}
-            <div className="mt-auto border-t border-border/70 pt-4">
+            ))}</div> : <EmptyState size="compact" icon={IconCalendarClock} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} className="xl:min-h-0 xl:flex-1" />}
+            <div className="mt-auto shrink-0 border-t border-border/70 pt-4">
               <p className="mb-3 text-sm text-muted-foreground">{t.dashboard.waiting}: <span className="font-semibold tabular-nums text-foreground">{waiting}</span></p>
               <Button asChild variant="outline" className="w-full gap-2">
                 <Link href={ROUTES.HOME_QUEUE}><IconTimer className="size-4" />{t.queue.waitingQueue}</Link>
@@ -167,22 +174,32 @@ export function PractitionerHome() {
   );
 }
 
+function WelcomeFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 bg-card px-3 py-2">
+      <p className="truncate text-xs text-muted-foreground">{label}</p>
+      <p className="truncate text-sm font-medium text-foreground">{value}</p>
+    </div>
+  );
+}
+
 function PractitionerHomeSkeleton() {
   return (
-    <div className="flex w-full min-w-0 flex-col gap-5 pb-6 lg:gap-6" aria-hidden>
+    <div className="flex w-full min-w-0 flex-col gap-4 pb-6 xl:page-fill xl:pb-0" aria-hidden>
       <Card className="overflow-hidden ring-0">
-        <CardContent className="flex items-start gap-4 p-5 sm:items-center sm:gap-5 sm:p-7 lg:p-8">
-          <Skeleton className="size-14 shrink-0 rounded-full" />
+        <CardContent className="flex items-center gap-5 p-5 sm:gap-6 sm:p-7 lg:p-8">
+          <Skeleton className="size-20 shrink-0 rounded-full sm:size-24" />
           <div className="min-w-0 flex-1 space-y-2.5">
             <Skeleton className="h-3 w-28" />
             <Skeleton className="h-7 w-full max-w-sm" />
-            <Skeleton className="h-4 w-56 max-w-full" />
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg sm:grid-cols-4">
+              {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="h-12 w-full rounded-none" />)}
+            </div>
           </div>
-          <Skeleton className="hidden size-12 shrink-0 rounded-xl sm:block" />
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
+      <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
         {[0, 1, 2, 3].map((item) => (
           <div key={item} className="flex min-h-[6.5rem] items-center gap-4 rounded-xl border border-border bg-card px-4 py-3.5">
             <Skeleton className="size-12 shrink-0 rounded-xl sm:size-14" />
@@ -194,7 +211,7 @@ function PractitionerHomeSkeleton() {
         ))}
       </div>
 
-      <div className="grid min-w-0 items-stretch gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)] lg:gap-6">
+      <div className="grid min-w-0 items-stretch gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)]">
         <Card className="flex min-w-0 flex-col ring-0">
           <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 p-5 sm:p-6">
             <div className="flex items-center gap-3">

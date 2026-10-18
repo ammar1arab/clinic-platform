@@ -242,9 +242,7 @@ export function WaitingQueueBoard({
               <EmptyState
                 icon={IconTimer}
                 title={t.queue.noPatientsWaiting}
-                size="compact"
-                className="h-36 rounded-xl border border-dashed bg-muted/10 px-3 [&>p]:text-xs"
-                iconContainerClassName="mb-1 size-10 rounded-xl border-warning/20 bg-warning/10 text-warning/70"
+                className="min-h-72 px-3 py-8"
               />
             ) : (
               waitingList.map((appt) => {
@@ -298,9 +296,7 @@ export function WaitingQueueBoard({
               <EmptyState
                 icon={IconService}
                 title={t.queue.noConsultationsInSession}
-                size="compact"
-                className="h-36 rounded-xl border border-dashed bg-muted/10 px-3 [&>p]:text-xs"
-                iconContainerClassName="mb-1 size-10 rounded-xl border-primary/20 bg-primary/10 text-primary/70"
+                className="min-h-72 px-3 py-8"
               />
             ) : (
               inProgressList.map((appt) => {
@@ -355,9 +351,7 @@ export function WaitingQueueBoard({
               <EmptyState
                 icon={IconCalendarClock}
                 title={t.queue.noUpcomingVisitsToday}
-                size="compact"
-                className="h-36 rounded-xl border border-dashed bg-muted/10 px-3 [&>p]:text-xs"
-                iconContainerClassName="mb-1 size-10 rounded-xl border-border/70 bg-muted/60 text-muted-foreground"
+                className="min-h-72 px-3 py-8"
               />
             ) : (
               upcomingList.map((appt) => (
@@ -402,9 +396,7 @@ export function WaitingQueueBoard({
               <EmptyState
                 icon={IconCheckCircle}
                 title={t.queue.noCompletedVisitsToday}
-                size="compact"
-                className="h-36 rounded-xl border border-dashed bg-muted/10 px-3 [&>p]:text-xs"
-                iconContainerClassName="mb-1 size-10 rounded-xl border-success/20 bg-success/10 text-success/70"
+                className="min-h-72 px-3 py-8"
               />
             ) : (
               completedList.map((appt) => (
@@ -528,8 +520,8 @@ function QueueCard({
     <div
       onClick={onClick}
       data-queue-card=""
-      className="card-aura group relative flex flex-col rounded-xl border bg-card p-3 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/50 hover:ring-1 hover:ring-primary/25 active:scale-[0.985] cursor-pointer sm:p-3.5"
-      style={{ borderInlineStartWidth: '4px', borderInlineStartColor: accent }}
+      className="group relative flex flex-col rounded-xl border-2 bg-card p-3 shadow-xs transition-colors duration-200 hover:shadow-md cursor-pointer sm:p-3.5"
+      style={{ borderColor: accent }}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">

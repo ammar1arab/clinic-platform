@@ -104,7 +104,7 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
             </SoftTip>
           ) : null}
 
-          <div className="flex items-center">
+          <div className="flex items-center md:hidden">
             <ClinicLockup />
           </div>
 
