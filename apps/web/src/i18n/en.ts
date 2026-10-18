@@ -412,7 +412,7 @@ export const en = {
     exitFocus: "Exit focus",
     english: "English",
     arabic: "Arabic",
-    sideMenu: { menu: "Side menu", open: "Open side menu", close: "Close side menu" },
+    sideMenu: { menu: "Menu", open: "Open menu", close: "Close menu" },
     sidebar: {
       dashboard: "Dashboard",
       schedule: "Schedule",

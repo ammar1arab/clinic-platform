@@ -4,6 +4,7 @@ import {
   TableSkeleton,
 } from '@/components/primitives';
 import { Skeleton } from '@/components/ui';
+import { ClinicLockup } from '@/components/layout/clinic-identity';
 
 export function DashboardMainFallback() {
   return (
@@ -24,7 +25,7 @@ export function DashboardShellFallback() {
         aria-hidden
       >
         <div className="flex h-app-header items-center px-4 [[data-sidebar=collapsed]_&]:justify-center [[data-sidebar=collapsed]_&]:px-2">
-          <Skeleton className="size-8 shrink-0" />
+          <ClinicLockup />
         </div>
         <div className="flex flex-1 flex-col gap-2 px-2.5 py-3 [[data-sidebar=collapsed]_&]:px-2">
           {Array.from({ length: 7 }, (_, index) => (
@@ -39,7 +40,9 @@ export function DashboardShellFallback() {
         </div>
       </aside>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
-        <div className="h-app-header shrink-0 border-b border-border/70" aria-hidden />
+        <div className="flex h-app-header shrink-0 items-center border-b border-border/70 px-3 md:px-5" aria-hidden>
+          <ClinicLockup />
+        </div>
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-app-main-pad py-app-main-pad-y">
           <div data-page-scroll className="page-scroll">
             <DashboardMainFallback />

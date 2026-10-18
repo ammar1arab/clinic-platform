@@ -32,7 +32,7 @@ function readReturnPath() {
   return new URLSearchParams(window.location.search).get("from");
 }
 
-export function AuthFlow() {
+export function AuthFlow({ hasSession = false }: { hasSession?: boolean }) {
   const [step, setStep] = useState<Step>({ next: "login" });
   const [resendAt, setResendAt] = useState(0);
   const [error, setError] = useState("");
@@ -67,7 +67,7 @@ export function AuthFlow() {
     window.location.replace(destRef.current);
   }, []);
 
-  if ((!isHydrated || isLoading) && !success) {
+  if (hasSession && (!isHydrated || isLoading) && !success) {
     return <LoadingState variant="page" text={t.auth.signingIn} />;
   }
 

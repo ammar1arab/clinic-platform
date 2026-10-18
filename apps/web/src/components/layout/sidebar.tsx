@@ -12,7 +12,7 @@ import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
 import { EntityAvatar, IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
 import { useAuth, useLanguage } from '@/providers';
-import { ClinicLockup } from '@/components/layout/clinic-identity';
+import { ClinicLockup, ProfileLink } from '@/components/layout/clinic-identity';
 import {
   IconChevronRight,
   IconDashboard,
@@ -39,7 +39,7 @@ type NavItem = {
 function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 'clinicUserId'> | null): NavItem[] {
   const role = user?.role;
   const profile = {
-    label: role === ROLE.PRACTITIONER ? t.practitioner.profile : t.common.account,
+    label: t.common.accountProfile,
     href: ROUTES.PROFILE,
     avatar: { src: user?.imageUrl, seed: user?.clinicUserId ?? 'profile' },
     accent: 'success' as const,
@@ -288,7 +288,7 @@ export function SidebarBlock() {
             isCollapsed ? 'px-2' : 'px-2.5',
           )}
         >
-          {navItems.map(({ label, href, icon, avatar }) => (
+          {navItems.filter(({ href }) => href !== ROUTES.PROFILE).map(({ label, href, icon, avatar }) => (
             <NavLink
               key={href}
               href={href}
@@ -300,6 +300,7 @@ export function SidebarBlock() {
             />
           ))}
         </nav>
+        <ProfileLink collapsed={isCollapsed} />
       </aside>
     </>
   );

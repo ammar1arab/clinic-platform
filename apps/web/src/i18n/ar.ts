@@ -419,7 +419,7 @@ export const ar: Translations = {
     exitFocus: "تصغير العرض",
     english: "English",
     arabic: "العربية",
-    sideMenu: { menu: "القائمة الجانبية", open: "فتح القائمة الجانبية", close: "إغلاق القائمة الجانبية" },
+    sideMenu: { menu: "القائمة", open: "فتح القائمة", close: "إغلاق القائمة" },
     sidebar: {
       dashboard: "لوحة التحكم",
       schedule: "المواعيد",

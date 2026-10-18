@@ -4,7 +4,6 @@ import { ROUTES } from '@/constants/routes';
 import { useCallback, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
-import { ROLE, type Role } from '@clinic/types';
 import type { Translations } from '@/i18n';
 import { useSidebar } from '@/providers/sidebar-provider';
 import {
@@ -28,14 +27,14 @@ import { MobileMenuToggle } from '@/components/layout/mobile-menu-toggle';
 import { ClinicLockup } from '@/components/layout/clinic-identity';
 import { REFRESH_PARAM, useAppRefresh } from '@/hooks/shared/use-app-refresh';
 
-function resolveTitle(pathname: string, scheduleView: string | null, t: Translations, role?: Role | null): string {
+function resolveTitle(pathname: string, scheduleView: string | null, t: Translations): string {
   if (pathname === ROUTES.EMAIL_NEW) return t.emails.compose;
   if (pathname === ROUTES.EMAIL_SETTINGS) return t.emails.settings;
   if (pathname === ROUTES.EMAILS) return t.emails.title;
   if (pathname.startsWith(`${ROUTES.EMAILS}/`)) return t.emails.detail;
   if (pathname === ROUTES.HOME_QUEUE) return t.queue.waitingQueue;
   if (pathname === ROUTES.HOME_PROFILE || pathname === ROUTES.PROFILE) {
-    return role === ROLE.PRACTITIONER ? t.practitioner.profile : t.common.accountProfile;
+    return t.common.accountProfile;
   }
   if (pathname === ROUTES.HOME) return t.layout.titles.home;
   if (pathname === ROUTES.DASHBOARD) return t.layout.titles.dashboard;
@@ -71,15 +70,12 @@ function resolveTitle(pathname: string, scheduleView: string | null, t: Translat
 export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const { setMobileOpen, mobileOpen } = useSidebar();
   const [signOutOpen, setSignOutOpen] = useState(false);
   const { refreshing: desktopRefreshing, refreshApp: refreshDesktop } = useAppRefresh();
-  const { t, isRtl } = useLanguage();
-  const title = resolveTitle(pathname, searchParams.get('view'), t, user?.role);
-
-  // Internationalized Menu label ("Menu" / "القائمة")
-  const menuLabel = t.common?.menu ?? (isRtl ? 'القائمة' : 'Menu');
+  const { t } = useLanguage();
+  const title = resolveTitle(pathname, searchParams.get('view'), t);
 
   const cleanRefreshParam = useCallback((header: HTMLElement | null) => {
     if (!header) return;
@@ -108,14 +104,12 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
             </SoftTip>
           ) : null}
 
-          {/* Always-visible Clinic Logo */}
           <div className="flex items-center">
             <ClinicLockup />
           </div>
 
-          {/* Header Title: Displays localized "Menu" / "القائمة" when side menu is open */}
           <h1 className="truncate font-heading text-[0.9375rem] font-semibold tracking-tight text-foreground md:text-base">
-            {mobileOpen ? menuLabel : title}
+            {mobileOpen ? t.layout.sideMenu.menu : title}
           </h1>
         </div>
 
