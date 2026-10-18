@@ -19,25 +19,24 @@ export function MobileMenuToggle({
       aria-expanded={open}
       aria-controls="mobile-side-menu"
       onClick={onClick}
-      className="group relative grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-border/80 bg-card/80 text-foreground shadow-sm transition-[transform,box-shadow,border-color] duration-300 active:scale-90 motion-reduce:transition-none md:hover:border-primary/35 md:hover:shadow-[0_8px_24px_-14px_hsl(var(--primary)/.7)]"
+      className="grid size-10 shrink-0 place-items-center rounded-full bg-transparent text-foreground transition-transform duration-300 active:scale-90 motion-reduce:transition-none"
     >
-      <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-primary/10 via-transparent to-accent-teal/10 opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
-      <span aria-hidden="true" className="relative size-5">
-        <span
-          className={`absolute start-0 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-primary transition-[transform,opacity,background-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
-            open ? 'translate-x-1.5 -translate-y-[9px] scale-75 opacity-70' : 'group-hover:translate-x-0.5'
-          }`}
-        />
-        <span
-          className={`absolute start-1/2 top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-teal transition-[transform,opacity,background-color] duration-300 delay-75 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
-            open ? 'scale-125 bg-primary' : 'group-hover:scale-125'
-          }`}
-        />
-        <span
-          className={`absolute end-0 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-primary transition-[transform,opacity,background-color] duration-300 delay-150 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
-            open ? '-translate-x-1.5 translate-y-[6px] scale-75 opacity-70' : 'group-hover:-translate-x-0.5'
-          }`}
-        />
+      <span
+        aria-hidden="true"
+        className={`flex size-5 items-center justify-center gap-[3px] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${open ? 'rotate-90' : 'rotate-0'}`}
+      >
+        {[0, 1, 2].map((dot) => (
+          <span
+            key={dot}
+            className={`size-1 rounded-full bg-current transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+              open && dot === 1
+                ? 'scale-125'
+                : open
+                  ? 'translate-y-1'
+                  : ''
+            }`}
+          />
+        ))}
       </span>
     </button>
   );
