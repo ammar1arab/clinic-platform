@@ -21,22 +21,16 @@ export function MobileMenuToggle({
       onClick={onClick}
       className="grid size-10 shrink-0 place-items-center rounded-full bg-transparent text-foreground transition-transform duration-300 active:scale-90 motion-reduce:transition-none"
     >
-      <span
-        aria-hidden="true"
-        className={`flex size-5 items-center justify-center gap-[3px] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${open ? 'rotate-90' : 'rotate-0'}`}
-      >
-        {[0, 1, 2].map((dot) => (
-          <span
-            key={dot}
-            className={`size-1 rounded-full bg-current transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
-              open && dot === 1
-                ? 'scale-125'
-                : open
-                  ? 'translate-y-1'
-                  : ''
-            }`}
-          />
-        ))}
+      <span aria-hidden="true" className="relative size-5">
+        <span
+          className={`absolute start-0 top-[3px] h-[2px] rounded-full bg-current transition-[width,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${open ? 'w-3.5 translate-x-1' : 'w-5'}`}
+        />
+        <span
+          className={`absolute start-0 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-current transition-[width,transform] duration-500 delay-75 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${open ? 'w-5' : 'w-3.5'}`}
+        />
+        <span
+          className={`absolute start-0 bottom-[3px] h-[2px] rounded-full bg-current transition-[width,transform] duration-500 delay-150 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${open ? 'w-3.5 translate-x-1' : 'w-5'}`}
+        />
       </span>
     </button>
   );
