@@ -225,14 +225,14 @@ export default function ReportsPage() {
   const catalog: { title: string; items: ReportDef[] }[] = isPractitioner
     ? [
         {
-          title: t.reports.groupPractitioners,
+          title: t.reports.myReports,
           items: [
             {
               key: 'practitionerAppointments',
               icon: IconSchedule,
               accent: 'warning',
-              title: t.reports.practitionerAppointments,
-              description: t.reports.practitionerAppointmentsDesc,
+              title: t.reports.myAppointments,
+              description: t.reports.myAppointmentsDesc,
               filters: { dates: true },
             },
             {
@@ -248,13 +248,6 @@ export default function ReportsPage() {
               accent: 'teal',
               title: t.reports.practitionerExceptions,
               description: t.reports.practitionerExceptionsDesc,
-            },
-            {
-              key: 'practitionerProfile',
-              icon: IconPerson,
-              accent: 'default',
-              title: t.reports.practitionerProfile,
-              description: t.reports.practitionerProfileDesc,
             },
           ],
         },

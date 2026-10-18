@@ -20,8 +20,6 @@ import { schedulePath } from '@/components/blocks/appointments/schedule/schedule
 import {
   IconCalendarClock,
   IconCheckCircle,
-  IconRoom,
-  IconService,
   IconTime,
   IconTimer,
   IconTodaysAppointments,
@@ -57,6 +55,7 @@ export function PractitionerHome() {
   ).length;
   const completed = ordered.filter((item) => item.status === APPOINTMENT_STATUS.COMPLETED).length;
   const nextVisit = ordered.find((item) =>
+    new Date(item.scheduledAt).getTime() >= today.getTime() &&
     item.status !== APPOINTMENT_STATUS.COMPLETED &&
     item.status !== APPOINTMENT_STATUS.CANCELLED &&
     item.status !== APPOINTMENT_STATUS.NO_SHOW,
@@ -79,7 +78,7 @@ export function PractitionerHome() {
     : '';
 
   return (
-    <div className="page-stack flex flex-col gap-6 pb-6 lg:gap-8">
+    <div className="flex w-full min-w-0 flex-col gap-5 pb-6 lg:gap-6">
       <Card className="card-aura overflow-hidden ring-0">
         <CardContent className="flex items-start gap-4 p-5 sm:items-center sm:gap-5 sm:p-7 lg:p-8">
           {profile.isLoading ? (
@@ -103,8 +102,8 @@ export function PractitionerHome() {
         <KpiCardBlock label={t.queue.upcomingToday} value={nextVisit ? formatTime(nextVisit.scheduledAt, undefined, lang) : '—'} icon={IconTime} accent="teal" isLoading={appointments.isLoading} />
       </div>
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(19rem,.65fr)] xl:gap-8">
-        <Card className="card-aura self-start ring-0">
+      <div className="grid min-w-0 items-stretch gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)] lg:gap-6">
+        <Card className="card-aura flex min-w-0 flex-col ring-0">
           <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 p-5 sm:p-6">
             <div className="flex min-w-0 items-center gap-3">
               <IconWell icon={IconCalendarClock} accent="violet" />
@@ -113,11 +112,8 @@ export function PractitionerHome() {
                 <p className="mt-1 text-xs text-muted-foreground">{nextVisit ? `${t.queue.upcomingToday}: ${formatTime(nextVisit.scheduledAt, undefined, lang)}` : t.appointments.noAppointments}</p>
               </div>
             </div>
-            <Button asChild variant="outline" size="sm" className="gap-1.5">
-              <Link href={schedulePath('month')}><IconCalendarClock className="size-4" />{t.appointments.calendar}</Link>
-            </Button>
           </CardHeader>
-          <CardContent className="px-5 pb-5 sm:px-6 sm:pb-6">
+          <CardContent className="flex flex-1 flex-col px-5 pb-5 sm:px-6 sm:pb-6">
             {appointments.isLoading ? (
               <div className="space-y-3">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-[4.5rem] w-full rounded-xl" />)}</div>
             ) : ordered.length ? (
@@ -138,32 +134,32 @@ export function PractitionerHome() {
                 <EmptyState size="compact" icon={IconCalendarClock} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} />
               </div>
             )}
-            {upcoming.length > 0 && (
-              <div className="mt-4 space-y-2 border-t border-border/70 pt-4">
-                <h3 className="text-sm font-semibold">{t.dashboard.nextVisits}</h3>
-                {upcoming.map((appointment) => (
-                  <Link key={appointment.id} href={`${ROUTES.SCHEDULE_EDIT(appointment.id)}?view=month`} className="flex items-center justify-between gap-3 rounded-lg border border-border/70 px-3 py-2.5 text-sm transition-colors hover:bg-muted/45">
-                    <span className="min-w-0 truncate font-medium">{getPersonName(appointment.patient, lang)}</span>
-                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatDate(appointment.scheduledAt, undefined, lang)} · {formatTime(appointment.scheduledAt, undefined, lang)}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
+            <div className="mt-auto pt-4">
+              <Button asChild variant="outline" className="w-full gap-2">
+                <Link href={schedulePath('month')}><IconCalendarClock className="size-4" />{t.appointments.calendar}</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="card-aura self-start ring-0">
+        <Card className="card-aura flex min-w-0 flex-col ring-0">
           <CardHeader className="flex flex-row items-center gap-3 space-y-0 p-5 sm:p-6">
-            <IconWell icon={IconService} accent="teal" />
-            <CardTitle className="text-base">{t.practitioner.overview}</CardTitle>
+            <IconWell icon={IconTime} accent="teal" />
+            <CardTitle className="text-base">{t.dashboard.nextVisits}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 px-5 pb-5 sm:px-6 sm:pb-6">
-            <HomeDetail icon={IconRoom} label={t.practitioner.defaultRoom} value={room} loading={profile.isLoading} />
-            <HomeDetail icon={IconService} label={t.practitioner.services} value={practitioner?.services.map((service) => getBilingualName(service.name, service.nameAr, lang)).join(', ')} loading={profile.isLoading} />
-            <HomeDetail icon={IconCalendarClock} label={t.practitioner.workingDays} value={practitioner ? String(new Set(practitioner.availabilities.map((slot) => slot.dayOfWeek)).size) : ''} loading={profile.isLoading} />
-            <Button asChild variant="outline" className="mt-1 w-full gap-2">
-              <Link href={ROUTES.HOME_QUEUE}><IconTimer className="size-4" />{t.queue.waitingQueue}</Link>
-            </Button>
+          <CardContent className="flex flex-1 flex-col gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
+            {upcoming.length ? upcoming.map((appointment) => (
+              <Link key={appointment.id} href={`${ROUTES.SCHEDULE_EDIT(appointment.id)}?view=month`} className="flex min-w-0 flex-col gap-1 rounded-xl border border-border/70 p-3.5 text-sm transition-colors hover:bg-muted/45 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <span className="min-w-0 truncate font-medium">{getPersonName(appointment.patient, lang)}</span>
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatDate(appointment.scheduledAt, undefined, lang)} · {formatTime(appointment.scheduledAt, undefined, lang)}</span>
+              </Link>
+            )) : <EmptyState size="compact" icon={IconCalendarClock} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} />}
+            <div className="mt-auto border-t border-border/70 pt-4">
+              <p className="mb-3 text-sm text-muted-foreground">{t.dashboard.waiting}: <span className="font-semibold tabular-nums text-foreground">{waiting}</span></p>
+              <Button asChild variant="outline" className="w-full gap-2">
+                <Link href={ROUTES.HOME_QUEUE}><IconTimer className="size-4" />{t.queue.waitingQueue}</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -173,7 +169,7 @@ export function PractitionerHome() {
 
 function PractitionerHomeSkeleton() {
   return (
-    <div className="page-stack flex flex-col gap-6 pb-6 lg:gap-8" aria-hidden>
+    <div className="flex w-full min-w-0 flex-col gap-5 pb-6 lg:gap-6" aria-hidden>
       <Card className="overflow-hidden ring-0">
         <CardContent className="flex items-start gap-4 p-5 sm:items-center sm:gap-5 sm:p-7 lg:p-8">
           <Skeleton className="size-14 shrink-0 rounded-full" />
@@ -198,8 +194,8 @@ function PractitionerHomeSkeleton() {
         ))}
       </div>
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(19rem,.65fr)] xl:gap-8">
-        <Card className="self-start ring-0">
+      <div className="grid min-w-0 items-stretch gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)] lg:gap-6">
+        <Card className="flex min-w-0 flex-col ring-0">
           <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 p-5 sm:p-6">
             <div className="flex items-center gap-3">
               <Skeleton className="size-12 shrink-0 rounded-xl" />
@@ -208,9 +204,8 @@ function PractitionerHomeSkeleton() {
                 <Skeleton className="h-3 w-24" />
               </div>
             </div>
-            <Skeleton className="h-8 w-20 rounded-lg" />
           </CardHeader>
-          <CardContent className="space-y-3 px-5 pb-5 sm:px-6 sm:pb-6">
+          <CardContent className="flex flex-1 flex-col gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
             {[0, 1, 2].map((item) => (
               <div key={item} className="flex h-[4.5rem] items-center gap-3 rounded-xl border border-border/70 p-3">
                 <Skeleton className="h-10 w-14 shrink-0 rounded-lg" />
@@ -221,39 +216,25 @@ function PractitionerHomeSkeleton() {
                 <Skeleton className="h-6 w-16 rounded-full" />
               </div>
             ))}
+            <div className="mt-auto pt-4"><Skeleton className="h-9 w-full rounded-lg" /></div>
           </CardContent>
         </Card>
 
-        <Card className="self-start ring-0">
+        <Card className="flex min-w-0 flex-col ring-0">
           <CardHeader className="flex flex-row items-center gap-3 space-y-0 p-5 sm:p-6">
             <Skeleton className="size-12 shrink-0 rounded-xl" />
             <Skeleton className="h-5 w-24" />
           </CardHeader>
-          <CardContent className="space-y-4 px-5 pb-5 sm:px-6 sm:pb-6">
+          <CardContent className="flex flex-1 flex-col gap-3 px-5 pb-5 sm:px-6 sm:pb-6">
             {[0, 1, 2].map((item) => (
-              <div key={item} className="flex items-center gap-3 rounded-xl border border-border/70 p-3.5">
-                <Skeleton className="size-9 shrink-0 rounded-lg" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-4 w-32 max-w-full" />
-                </div>
+              <div key={item} className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3.5">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-24" />
               </div>
             ))}
-            <Skeleton className="h-9 w-full rounded-lg" />
+            <div className="mt-auto border-t border-border/70 pt-4"><Skeleton className="mb-3 h-4 w-20" /><Skeleton className="h-9 w-full rounded-lg" /></div>
           </CardContent>
         </Card>
-      </div>
-    </div>
-  );
-}
-
-function HomeDetail({ icon, label, value, loading }: { icon: typeof IconRoom; label: string; value?: string | null; loading: boolean }) {
-  return (
-    <div className="flex items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3.5">
-      <IconWell icon={icon} size="sm" accent="muted" />
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        {loading ? <Skeleton className="mt-1.5 h-4 w-28" /> : <p className="mt-0.5 line-clamp-2 text-sm font-medium">{value || '—'}</p>}
       </div>
     </div>
   );
