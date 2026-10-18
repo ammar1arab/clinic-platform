@@ -27,7 +27,7 @@ export interface UpdateClinicInput {
   email?: string;
   phone?: string;
   address?: string;
-  logoUrl?: string;
+  logoUrl?: string | null;
   brandColor?: string | null;
   letterheadFooter?: string;
   workingHoursStart?: string;

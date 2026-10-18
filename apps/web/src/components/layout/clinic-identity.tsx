@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { ROLE } from '@clinic/types';
 import { ROUTES } from '@/constants/routes';
 import { EntityAvatar, SoftTip } from '@/components/primitives';
-import { BrandMark } from '@/components/primitives/display/brand-mark';
 import { useClinicLogo } from '@/hooks/api/use-clinic';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { stripSolidBackdrop, writeClinicLogo } from '@/lib/clinic-logo';
@@ -40,7 +39,9 @@ export function ClinicLockup() {
   const clinicId = useClinicId();
   const logoUrl = useClinicLogo();
 
-  if (!logoUrl) return <BrandMark size="sm" />;
+  // Do not fall back to the product mark here. The clinic profile image is the
+  // single source of truth and a reserved box prevents a flash of another logo.
+  if (!logoUrl) return <span aria-hidden="true" className="size-8 shrink-0" />;
 
   return (
     <Image

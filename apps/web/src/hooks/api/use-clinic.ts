@@ -1,6 +1,6 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { useClinicId } from "../shared/use-clinic-id";
-import { readClinicLogo } from "@/lib/clinic-logo";
+import { readClinicLogo, writeClinicLogo } from "@/lib/clinic-logo";
 import {
   clinicsService,
   UpdateClinicInput,
@@ -46,5 +46,12 @@ export function useClinicLogo() {
   );
   const stored = useSyncExternalStore(subscribeToClinicLogo, read, () => null);
 
-  return stored || clinic?.logoUrl || null;
+  useEffect(() => {
+    if (!clinicId || !clinic) return;
+    writeClinicLogo(clinicId, clinic.logoUrl);
+  }, [clinicId, clinic]);
+
+  // Once the clinic request resolves, the API value wins and a removed logo
+  // cannot be resurrected by an old browser cache.
+  return clinic ? clinic.logoUrl : stored || null;
 }

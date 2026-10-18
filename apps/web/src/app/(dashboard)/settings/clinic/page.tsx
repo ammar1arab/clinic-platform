@@ -117,7 +117,7 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
       email: email.trim() || undefined,
       phone: phone.trim(),
       address: address.trim(),
-      logoUrl: logoUrl || undefined,
+      logoUrl: logoUrl || null,
       brandColor,
     });
   };

@@ -33,7 +33,7 @@ export class CreateClinicDto {
 
   @IsOptional()
   @IsString()
-  logoUrl?: string;
+  logoUrl?: string | null;
 
   @IsOptional()
   @Matches(/^#[0-9A-Fa-f]{6}$/)
