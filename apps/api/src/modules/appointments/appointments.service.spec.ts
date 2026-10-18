@@ -5,7 +5,7 @@ import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { PrismaService } from "@/prisma/prisma.service";
 import { DiscountCodesService } from "@/modules/discount-codes/discount-codes.service";
 import { PatientPackagesService } from "@/modules/patient-packages/patient-packages.service";
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, HttpException } from "@nestjs/common";
 import { AppointmentStatusDto } from "./dto";
 import { Role, type SessionType } from "@prisma/client";
 
@@ -22,6 +22,7 @@ type PrismaServiceMock = {
   doctorTimeOff: { findFirst: MockFn };
   clinic: { findUnique: MockFn };
   discountCode: { findFirst: MockFn };
+  visit: { findFirst: MockFn };
 };
 
 type AppointmentsRepositoryMock = {
@@ -60,6 +61,7 @@ describe("AppointmentsService", () => {
       doctorTimeOff: { findFirst: jest.fn() },
       clinic: { findUnique: jest.fn() },
       discountCode: { findFirst: jest.fn() },
+      visit: { findFirst: jest.fn().mockResolvedValue(null) },
     };
 
     repository = {
@@ -288,11 +290,50 @@ describe("AppointmentsService", () => {
       });
     });
 
-    it("rejects a practitioner list request without an authenticated clinic user", async () => {
-      await expect(
-        service.findAll("clinic1", {}, Role.practitioner),
-      ).rejects.toThrow("Practitioner identity is required");
+    it("rejects a practitioner list request without an authenticated clinic user", () => {
+      expect(() => service.findAll("clinic1", {}, Role.practitioner)).toThrow(
+        "Practitioner identity is required",
+      );
       expect(repository.findAllByClinic).not.toHaveBeenCalled();
+    });
+
+    it("rejects a practitioner reassigning the appointment practitioner", async () => {
+      const actor = {
+        userId: "u1",
+        clinicUserId: "own-doctor",
+        clinicId: "c1",
+        role: Role.practitioner,
+      };
+      try {
+        await service.update("c1", "u1", "app1", { doctorId: "other-doctor" }, actor);
+        throw new Error("expected the update to be rejected");
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpException);
+        expect((error as HttpException).getStatus()).toBe(403);
+        expect((error as HttpException).getResponse()).toMatchObject({
+          code: "clinicUnavailable",
+        });
+      }
+      expect(repository.findById).not.toHaveBeenCalled();
+    });
+
+    it("lets a practitioner update status without touching the assigned practitioner", async () => {
+      repository.findById.mockResolvedValue(null);
+      await expect(
+        service.update(
+          "c1",
+          "u1",
+          "app1",
+          { status: AppointmentStatusDto.confirmed },
+          {
+            userId: "u1",
+            clinicUserId: "own-doctor",
+            clinicId: "c1",
+            role: Role.practitioner,
+          },
+        ),
+      ).rejects.toThrow("Appointment not found");
+      expect(repository.findById).toHaveBeenCalled();
     });
   });
 

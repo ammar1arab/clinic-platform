@@ -69,7 +69,12 @@ export function useClinicRealtime(
         });
       };
 
+      const refreshVisits = () => {
+        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.visits.all });
+      };
+
       socket.on('appointment-changed', refreshAppointments);
+      socket.on('visit-changed', refreshVisits);
       socket.on('referral-changed', refreshReferrals);
 
       return () => {
@@ -78,6 +83,7 @@ export function useClinicRealtime(
         socket.off('disconnect', onDisconnect);
         socket.off('connect_error', onConnectError);
         socket.off('appointment-changed', refreshAppointments);
+        socket.off('visit-changed', refreshVisits);
         socket.off('referral-changed', refreshReferrals);
       };
     };

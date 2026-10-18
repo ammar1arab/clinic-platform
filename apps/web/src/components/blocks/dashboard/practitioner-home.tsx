@@ -126,7 +126,7 @@ export function PractitionerHome() {
             ) : ordered.length ? (
               <div className="space-y-2 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
                 {ordered.map((appointment) => (
-                  <button key={appointment.id} type="button" onClick={() => router.push(`${ROUTES.SCHEDULE_EDIT(appointment.id)}?view=month`)} className="group flex w-full items-center gap-3 rounded-xl border border-border/70 px-3 py-3 text-start transition-colors hover:border-primary/25 hover:bg-muted/45">
+                  <button key={appointment.id} type="button" onClick={() => router.push(ROUTES.VISIT(appointment.id))} className="group flex w-full items-center gap-3 rounded-xl border border-border/70 px-3 py-3 text-start transition-colors hover:border-primary/25 hover:bg-muted/45">
                     <span className="grid min-w-14 shrink-0 place-items-center rounded-lg bg-muted px-2 py-2 text-sm font-semibold tabular-nums text-foreground">{formatTime(appointment.scheduledAt, undefined, lang)}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold">{getPersonName(appointment.patient, lang)}</span>
@@ -156,7 +156,7 @@ export function PractitionerHome() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3 px-5 pb-5 sm:px-6 sm:pb-6 xl:min-h-0 xl:flex-1">
             {upcoming.length ? <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">{upcoming.map((appointment) => (
-              <Link key={appointment.id} href={`${ROUTES.SCHEDULE_EDIT(appointment.id)}?view=month`} className="flex min-w-0 flex-col gap-1 rounded-xl border border-border/70 p-3.5 text-sm transition-colors hover:bg-muted/45 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+              <Link key={appointment.id} href={ROUTES.VISIT(appointment.id)} className="flex min-w-0 flex-col gap-1 rounded-xl border border-border/70 p-3.5 text-sm transition-colors hover:bg-muted/45 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                 <span className="min-w-0 truncate font-medium">{getPersonName(appointment.patient, lang)}</span>
                 <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatDate(appointment.scheduledAt, undefined, lang)} · {formatTime(appointment.scheduledAt, undefined, lang)}</span>
               </Link>

@@ -56,6 +56,14 @@ export const INVALIDATE = {
     QUERY_KEYS.appointments.all,
     QUERY_KEYS.dashboard.kpisAll,
     QUERY_KEYS.dashboard.roomUtilizationAll,
+    QUERY_KEYS.visits.all,
+  ] as const satisfies readonly QueryKey[],
+
+  visitWrite: [
+    QUERY_KEYS.visits.all,
+    QUERY_KEYS.appointments.all,
+    QUERY_KEYS.dashboard.kpisAll,
+    QUERY_KEYS.dashboard.roomUtilizationAll,
   ] as const satisfies readonly QueryKey[],
 
   appointmentPayment: [QUERY_KEYS.appointments.all] as const satisfies readonly QueryKey[],

@@ -10,6 +10,7 @@ import {
   IconPayment,
   IconRoom,
   IconService,
+  IconFileText,
 } from '@/constants/icons';
 import type { IconWellAccent } from '@/components/primitives';
 import { PageBack } from '@/components/primitives';
@@ -65,6 +66,13 @@ const SETTINGS_SECTIONS = {
     title: (t: Translations) => t.settings.promocodes,
     description: (t: Translations) => t.settings.promocodesDesc,
   },
+  noteTemplates: {
+    href: ROUTES.SETTINGS_NOTE_TEMPLATES,
+    icon: IconFileText,
+    accent: 'teal',
+    title: (t: Translations) => t.settings.noteTemplates,
+    description: (t: Translations) => t.settings.noteTemplatesDesc,
+  },
   email: {
     href: ROUTES.EMAIL_SETTINGS,
     icon: IconMail,
@@ -88,6 +96,7 @@ const SECTION_ORDER: (keyof typeof SETTINGS_SECTIONS)[] = [
   'paymentMethods',
   'packages',
   'discountCodes',
+  'noteTemplates',
   'email',
 ];
 

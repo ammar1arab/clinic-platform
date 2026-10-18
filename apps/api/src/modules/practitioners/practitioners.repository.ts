@@ -1,3 +1,4 @@
+import { visitError } from "@/modules/visits/visit-errors";
 import { Injectable } from "@nestjs/common";
 import { AppointmentStatus, Prisma, Role } from "@prisma/client";
 import { PrismaService } from "@/prisma/prisma.service";
@@ -206,6 +207,7 @@ export class PractitionersRepository {
 
   hardDelete(id: string) {
     return this.prisma.$transaction(async (tx) => {
+      if (await tx.visit.count({ where: { appointment: { doctorId: id } } })) visitError("visitRecordRetained", 409);
       const appointments = await tx.appointment.findMany({
         where: { doctorId: id },
         select: {

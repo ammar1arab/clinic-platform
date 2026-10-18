@@ -9,3 +9,6 @@ export * from './dashboard';
 export * from './practitioner';
 export * from './auth-security';
 export * from './email';
+export * from './permissions';
+export * from './form';
+export * from './visit';

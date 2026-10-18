@@ -80,6 +80,10 @@ export class DashboardGateway {
     this.log.debug("emit_appointment_changed", { clinicId });
   }
 
+  emitVisitChanged(clinicId: string) {
+    this.server.to(`clinic:${clinicId}`).emit("visit-changed");
+  }
+
   emitReferralChanged(clinicId: string) {
     this.server.to(`clinic:${clinicId}`).emit("referral-changed");
     this.log.debug("emit_referral_changed", { clinicId });

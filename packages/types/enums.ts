@@ -58,6 +58,11 @@ export const EMAIL_AUDIENCE = {
 
 export type SessionType = 'in_person' | 'online';
 
+export const SESSION_TYPE = {
+  IN_PERSON: 'in_person',
+  ONLINE: 'online',
+} as const satisfies Record<string, SessionType>;
+
 export type DiscountType = 'fixed' | 'percentage';
 
 export type EmploymentType = 'salaried' | 'commission' | 'mixed';
@@ -102,3 +107,10 @@ export type PatientSortBy =
   | 'appointments';
 
 export type ServiceSessionMode = SessionType;
+
+export function isValueOf<T extends string>(
+  values: Record<string, T>,
+  value: string | null | undefined,
+): value is T {
+  return !!value && (Object.values(values) as string[]).includes(value);
+}

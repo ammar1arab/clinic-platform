@@ -54,6 +54,19 @@ export const QUERY_KEYS = {
     list: (filters: object) => ['patients', filters] as const,
     detail: (id: string) => ['patients', 'detail', id] as const,
   },
+  visits: {
+    all: ['visits'] as const,
+    list: (filters: object) => ['visits', 'list', filters] as const,
+    workspace: (appointmentId: string) => ['visits', 'workspace', appointmentId] as const,
+    history: (visitId: string) => ['visits', 'history', visitId] as const,
+  },
+  clinicalNoteTemplates: {
+    all: ['clinical-note-templates'] as const,
+    list: ['clinical-note-templates', 'list'] as const,
+    detail: (id: string) => ['clinical-note-templates', id] as const,
+    available: (appointmentId: string) => ['clinical-note-templates', 'available', appointmentId] as const,
+  },
+  notePreference: ['note-preference'] as const,
   appointments: {
     all: ['appointments'] as const,
     list: (filters: object) => ['appointments', filters] as const,

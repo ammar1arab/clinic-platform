@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { BaseReportModal, ReportCard } from '@/components/blocks/reports';
+import { IconCard } from '@/components/primitives';
+import { ROUTES } from '@/constants/routes';
 import type { ReportModalFilters } from '@/components/blocks/reports';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { usePatients } from '@/hooks/api/use-patients';
@@ -27,6 +29,7 @@ import {
   IconPerson,
   IconPractitioner,
   IconReferral,
+  IconFileText,
   IconCalendarClock,
   IconSchedule,
   IconTime,
@@ -342,6 +345,13 @@ export default function ReportsPage() {
 
   return (
     <div className="w-full min-w-0 space-y-8">
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-muted-foreground">{t.visits.title}</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <IconCard href={`${ROUTES.VISITS}?reportStatus=signed`} icon={IconFileText} accent="teal" title={t.visits.signedReports} description={t.visits.signedReportsDesc} />
+          {canFinance ? <IconCard href={`${ROUTES.VISITS}?invoiceStatus=issued`} icon={IconPayment} accent="success" title={t.visits.issuedInvoices} description={t.visits.issuedInvoicesDesc} /> : null}
+        </div>
+      </section>
       {catalog.map((group) => {
         const items = group.items.filter((item) => !item.finance || canFinance);
         if (!items.length) return null;

@@ -4,6 +4,7 @@ import { ROUTES } from './routes';
 const STAFF: Role[] = [ROLE.OWNER, ROLE.ADMIN];
 const FINANCE: Role[] = [ROLE.OWNER, ROLE.ADMIN, ROLE.FINANCIAL];
 const REPORTS: Role[] = [...FINANCE, ROLE.PRACTITIONER];
+const VISITS: Role[] = [ROLE.OWNER, ROLE.ADMIN, ROLE.PRACTITIONER, ROLE.FINANCIAL];
 const OPS: Role[] = [ROLE.OWNER, ROLE.ADMIN, ROLE.FINANCIAL];
 const PRACTITIONER: Role[] = [ROLE.PRACTITIONER];
 
@@ -14,6 +15,7 @@ const SIDEBAR_PREFIXES = [
   ROUTES.SCHEDULE,
   ROUTES.PATIENTS,
   ROUTES.PRACTITIONERS,
+  ROUTES.VISITS,
   ROUTES.REPORTS,
   ROUTES.SETTINGS,
 ] as const;
@@ -26,6 +28,7 @@ export const NAV_ACCESS: { prefix: string; roles?: Role[] }[] = [
   { prefix: ROUTES.SCHEDULE, roles: [...STAFF, ROLE.PRACTITIONER] },
   { prefix: ROUTES.PATIENTS, roles: STAFF },
   { prefix: ROUTES.PRACTITIONERS, roles: STAFF },
+  { prefix: ROUTES.VISITS, roles: VISITS },
   { prefix: ROUTES.REPORTS, roles: REPORTS },
   { prefix: ROUTES.SETTINGS, roles: STAFF },
 ];

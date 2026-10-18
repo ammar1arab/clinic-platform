@@ -1,3 +1,4 @@
+import { VisitsModule } from "./modules/visits/visits.module";
 import { Module, MiddlewareConsumer, NestModule } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
@@ -44,6 +45,7 @@ import {
     NotificationsModule,
     PractitionersModule,
     EmailsModule,
+    VisitsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

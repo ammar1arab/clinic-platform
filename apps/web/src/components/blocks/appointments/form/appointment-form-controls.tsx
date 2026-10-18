@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui';
-import { SearchablePicker, type PickerOption } from '@/components/primitives';
+import { ReadOnlyMark, SearchablePicker, type PickerOption } from '@/components/primitives';
 import { FORM_NONE, fromFormNone, toFormNone } from '@/constants/form';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/providers';
@@ -119,6 +119,31 @@ export function SegmentedToggle({
           {option.label}
         </Button>
       ))}
+    </div>
+  );
+}
+
+export function LockedValue({
+  label,
+  value,
+  marked = false,
+  className,
+}: {
+  label: string;
+  value: string;
+  marked?: boolean;
+  className?: string;
+}) {
+  const { t } = useLanguage();
+  const text = value.trim();
+
+  return (
+    <div className={cn('rounded-lg border border-border/70 bg-muted/30 px-3 py-2.5', className)}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        {marked ? <ReadOnlyMark label={t.common.readOnly} /> : null}
+      </div>
+      <p className="mt-1 break-words text-sm font-medium text-foreground">{text || '—'}</p>
     </div>
   );
 }

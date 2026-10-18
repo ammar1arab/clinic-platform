@@ -2,18 +2,20 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { can, PROFILE_PERMISSIONS } from '@clinic/types';
 import { Badge, Button, Card, CardContent, Input, Textarea } from '@/components/ui';
 import {
   EmptyState, FormActions, FormField, PreviewableAvatar, ProfileInfoField,
-  ProfileInfoGrid, ProfileSection, ProfileShell,
+  ProfileInfoGrid, ProfileSection, ProfileShell, ReadOnlyMark,
 } from '@/components/primitives';
 import { useUpdatePractitionerSelfProfile } from '@/hooks/api/use-practitioners';
-import { IconCalendarClock, IconEdit, IconLock, IconService } from '@/constants/icons';
+import { IconCalendarClock, IconEdit, IconService } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
 import { formatDate } from '@/lib/datetime';
 import type { PractitionerDetail, PractitionerSelfProfileInput } from '@/services/practitioners.service';
-import { useLanguage } from '@/providers';
+import { useAuth, useLanguage } from '@/providers';
 import { ROUTES } from '@/constants/routes';
+import { NotePreference } from '@/components/blocks/visits/note-preference';
 
 const WEEKDAY_KEYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 
@@ -21,7 +23,12 @@ const display = (value: string | null | undefined) => value?.trim() || null;
 
 export function PractitionerSelfProfile({ practitioner }: { practitioner: PractitionerDetail }) {
   const { lang, t } = useLanguage();
+  const { user } = useAuth();
   const [editing, setEditing] = useState(false);
+  const lockProfessional = !can(user?.role, PROFILE_PERMISSIONS.professional);
+  const lockServices = !can(user?.role, PROFILE_PERMISSIONS.services);
+  const lockAvailability = !can(user?.role, PROFILE_PERMISSIONS.availability);
+  const lockCredentials = !can(user?.role, PROFILE_PERMISSIONS.credentials);
   const mutation = useUpdatePractitionerSelfProfile(practitioner.clinicId, practitioner.id);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<PractitionerSelfProfileInput>({
     defaultValues: {
@@ -94,7 +101,7 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
           </ProfileSection>
           <ProfileSection
             title={t.practitioner.professionalInfo}
-            action={<LockedSectionBadge label={t.common.readOnly} />}
+            action={lockProfessional || lockCredentials ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}
           >
             <ProfileInfoGrid className="lg:grid-cols-3">
               <ProfileInfoField label={t.practitioner.email} value={practitioner.email} />
@@ -124,32 +131,22 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
         </ProfileSection>
       )}
 
+      <NotePreference />
+
       <div className="grid gap-4 lg:grid-cols-2">
-        <ProfileSection title={t.practitioner.services} action={editing ? <LockedSectionBadge label={t.common.readOnly} /> : undefined}>
+        <ProfileSection title={t.practitioner.services} action={editing && lockServices ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
           {practitioner.services.length ? <div className="flex flex-wrap gap-2">{practitioner.services.map((service) => <Badge key={service.id} variant="secondary">{getBilingualName(service.name, service.nameAr, lang)}</Badge>)}</div> : <EmptyState size="compact" icon={IconService} title={t.practitioner.noServicesAssigned} />}
         </ProfileSection>
-        <ProfileSection title={t.practitioner.weeklyAvailability} action={editing ? <LockedSectionBadge label={t.common.readOnly} /> : undefined}>
+        <ProfileSection title={t.practitioner.weeklyAvailability} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
           {practitioner.availabilities.length ? <div className="space-y-2">{practitioner.availabilities.map((slot) => <div key={slot.id ?? `${slot.dayOfWeek}-${slot.startTime}`} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{t.constants.weekdays[WEEKDAY_KEYS[slot.dayOfWeek]]}</span><span className="font-medium">{slot.startTime} - {slot.endTime}</span></div>)}</div> : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noWeeklyPatterns} />}
         </ProfileSection>
-        <ProfileSection title={t.practitioner.extraAvailability} action={editing ? <LockedSectionBadge label={t.common.readOnly} /> : undefined}>
+        <ProfileSection title={t.practitioner.extraAvailability} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
           {practitioner.availabilityOverrides.length ? practitioner.availabilityOverrides.map((entry) => <div key={entry.id ?? entry.startAt} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.extraAvailability}</span><span className="font-medium">{entry.startAt.slice(0, 10)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noExtraAvailability} />}
         </ProfileSection>
-        <ProfileSection title={t.practitioner.leave} action={editing ? <LockedSectionBadge label={t.common.readOnly} /> : undefined}>
+        <ProfileSection title={t.practitioner.leave} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
           {practitioner.timeOffs.length ? practitioner.timeOffs.map((entry) => <div key={entry.id ?? entry.startDate} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.leave}</span><span className="font-medium">{entry.startDate.slice(0, 10)} - {entry.endDate.slice(0, 10)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noLeaveBlocks} />}
         </ProfileSection>
       </div>
     </ProfileShell>
-  );
-}
-
-function LockedSectionBadge({ label }: { label: string }) {
-  return (
-    <span
-      title={label}
-      aria-label={label}
-      className="grid size-8 shrink-0 place-items-center rounded-full border border-primary/15 bg-primary/5 text-primary"
-    >
-      <IconLock className="size-3.5" aria-hidden />
-    </span>
   );
 }

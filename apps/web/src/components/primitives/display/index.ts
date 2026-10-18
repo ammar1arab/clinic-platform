@@ -10,3 +10,5 @@ export * from './directory-table';
 export * from './overflow-actions';
 
 export { CopyButton } from './copy-button';
+export { ReadOnlyMark } from './read-only-mark';
+export { VisitTimer } from './visit-timer';

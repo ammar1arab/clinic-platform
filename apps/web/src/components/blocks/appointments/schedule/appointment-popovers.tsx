@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import {
   Button,
   Popover,
@@ -33,6 +34,7 @@ import { formatClinicAmount } from "@/lib/package-balance";
 import { cn } from "@/lib/utils";
 import { formatWaitingMins, resolveWaitingMins } from "@/lib/waiting-time";
 import { useLanguage } from "@/providers";
+import { ROUTES } from "@/constants/routes";
 import {
   type Appointment,
   type AppointmentStatus,
@@ -303,6 +305,7 @@ export function AppointmentPopover({
   placement?: CalendarPopoverPlacement;
 }) {
   const { t, lang } = useLanguage();
+  const router = useRouter();
   const compact = !useMediaQuery("(min-width: 768px)");
   const now = useNow(30_000);
   const appointment = state.appointment;
@@ -483,6 +486,18 @@ export function AppointmentPopover({
             onClick={onClose}
           >
             {t.common.close}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 px-2.5 text-xs"
+            onClick={() => {
+              onClose();
+              router.push(ROUTES.VISIT(appointment.id));
+            }}
+          >
+            {t.visits.openVisit}
           </Button>
           <Button
             type="button"

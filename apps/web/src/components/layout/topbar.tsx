@@ -48,6 +48,9 @@ function resolveTitle(pathname: string, scheduleView: string | null, t: Translat
   if (pathname === ROUTES.PATIENT_NEW) return t.layout.titles.newPatient;
   if (pathname === ROUTES.PRACTITIONERS) return t.layout.titles.practitioners;
   if (pathname === ROUTES.PRACTITIONERS_NEW) return t.layout.titles.newPractitioner;
+  if (pathname === ROUTES.VISITS) return t.layout.titles.visits;
+  if (pathname.startsWith(`${ROUTES.VISITS}/`)) return t.layout.titles.visit;
+  if (pathname === ROUTES.SETTINGS_NOTE_TEMPLATES || pathname.startsWith(`${ROUTES.SETTINGS_NOTE_TEMPLATES}/`)) return t.layout.titles.noteTemplates;
   if (pathname === ROUTES.REPORTS) return t.layout.titles.reports;
   if (pathname === ROUTES.SETTINGS) return t.layout.titles.settings;
   if (pathname === ROUTES.SETTINGS_DEPARTMENTS) return t.layout.titles.departments;

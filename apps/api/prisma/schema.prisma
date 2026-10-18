@@ -6,7 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
 enum Role {
   owner
   admin
@@ -63,7 +62,6 @@ enum EmploymentType {
   commission
   mixed
 }
-
 
 model Clinic {
   id                   String       @id @default(uuid())
@@ -147,6 +145,7 @@ model AuthRateLimit {
 }
 
 model ClinicUser {
+  defaultNoteTemplateId String?
   id               String          @id @default(uuid())
   userId           String
   clinicId         String
@@ -297,6 +296,11 @@ model Patient {
 }
 
 model Appointment {
+  revision Int @default(0)
+  presenceConfirmedAt DateTime?
+  presenceConfirmedById String?
+  presenceSource String?
+  visit Visit?
   id              String            @id @default(uuid())
   clinicId        String
   patientId       String
@@ -352,6 +356,7 @@ model Appointment {
   @@index([clinicId, status])
   @@index([clinicId, departmentId, scheduledAt])
   @@index([clinicId, patientId, isPaid])
+  @@unique([id, clinicId])
 }
 
 model Referral {
@@ -446,7 +451,6 @@ model Package {
   patients    Patient[]
   enrollments PatientPackage[]
 }
-
 
 model PatientPackage {
   id            String   @id @default(uuid())
@@ -603,4 +607,179 @@ model EmailSuppression {
   clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
 
   @@unique([clinicId, email])
+}
+
+model ClinicalNoteTemplate {
+  id             String                    @id @default(uuid())
+  clinicId       String
+  name           String
+  nameAr         String?
+  status         String                    @default("draft")
+  revision       Int                       @default(0)
+  version        Int                       @default(0)
+  availableToAll Boolean                   @default(true)
+  assignments    Json
+  sections       Json
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  versions       ClinicalTemplateVersion[]
+
+  @@unique([id, clinicId])
+  @@index([clinicId, status])
+}
+
+model ClinicalTemplateVersion {
+  id         String               @id @default(uuid())
+  templateId String
+  clinicId   String
+  version    Int
+  snapshot   Json
+  createdAt  DateTime             @default(now())
+  template   ClinicalNoteTemplate @relation(fields: [templateId, clinicId], references: [id, clinicId], onDelete: Restrict)
+
+  @@unique([templateId, version])
+  @@index([clinicId])
+}
+
+model Visit {
+  id                      String              @id @default(uuid())
+  clinicId                String
+  appointmentId           String              @unique
+  revision                Int                 @default(0)
+  startedAt               DateTime
+  finishedAt              DateTime?
+  scheduledEndAt          DateTime
+  documentationDeadlineAt DateTime
+  noteStatus              String              @default("not_started")
+  reportStatus            String              @default("pending_note")
+  invoiceStatus           String              @default("preparing")
+  unlockGrantedAt         DateTime?
+  unlockGrantedById       String?
+  unlockReason            String?
+  context                 Json
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  appointment             Appointment         @relation(fields: [appointmentId, clinicId], references: [id, clinicId], onDelete: Restrict)
+  note                    ClinicalNote?
+  report                  VisitMedicalReport?
+  invoice                 VisitInvoice?
+  events                  VisitEvent[]
+  documents               VisitDocument[]
+
+  @@unique([id, clinicId])
+  @@unique([appointmentId, clinicId])
+  @@index([clinicId, startedAt])
+  @@index([clinicId, noteStatus, invoiceStatus])
+  @@index([documentationDeadlineAt, noteStatus])
+}
+
+model ClinicalNote {
+  id                String    @id @default(uuid())
+  visitId           String    @unique
+  clinicId          String
+  templateId        String
+  templateVersionId String
+  templateVersion   Int
+  sectionsSnapshot  Json
+  values            Json
+  revision          Int       @default(1)
+  authorId          String
+  savedAt           DateTime  @default(now())
+  signedAt          DateTime?
+  signedRevisionId  String?
+  visit             Visit     @relation(fields: [visitId, clinicId], references: [id, clinicId], onDelete: Restrict)
+
+  @@unique([visitId, clinicId])
+  @@index([clinicId])
+}
+
+model VisitMedicalReport {
+  id                   String    @id @default(uuid())
+  visitId              String    @unique
+  clinicId             String
+  revision             Int       @default(1)
+  sections             Json
+  sourceNoteRevisionId String
+  signedById           String?
+  signedAt             DateTime?
+  visit                Visit     @relation(fields: [visitId, clinicId], references: [id, clinicId], onDelete: Restrict)
+
+  @@unique([visitId, clinicId])
+  @@index([clinicId])
+}
+
+model VisitInvoice {
+  id              String         @id @default(uuid())
+  visitId         String         @unique
+  clinicId        String
+  revision        Int            @default(1)
+  number          String?
+  currency        String         @default("JOD")
+  lineItems       Json
+  subtotal        Decimal        @db.Decimal(12, 3)
+  discount        Decimal        @default(0) @db.Decimal(12, 3)
+  tax             Decimal        @default(0) @db.Decimal(12, 3)
+  total           Decimal        @db.Decimal(12, 3)
+  packageCoverage Decimal        @default(0) @db.Decimal(12, 3)
+  prepayment      Decimal        @default(0) @db.Decimal(12, 3)
+  issuedAt        DateTime?
+  voidedAt        DateTime?
+  visit           Visit          @relation(fields: [visitId, clinicId], references: [id, clinicId], onDelete: Restrict)
+  payments        VisitPayment[]
+
+  @@unique([clinicId, number])
+  @@unique([id, clinicId])
+  @@unique([visitId, clinicId])
+  @@index([clinicId, issuedAt])
+}
+
+model VisitPayment {
+  id          String       @id @default(uuid())
+  clinicId    String
+  invoiceId   String
+  requestId   String
+  requestHash String
+  amount      Decimal      @db.Decimal(12, 3)
+  methodId    String?
+  paymentId   String?
+  reference   String?
+  reason      String?
+  actorId     String
+  createdAt   DateTime     @default(now())
+  invoice     VisitInvoice @relation(fields: [invoiceId, clinicId], references: [id, clinicId], onDelete: Restrict)
+
+  @@unique([clinicId, requestId])
+  @@index([invoiceId])
+}
+
+model VisitEvent {
+  id        String   @id @default(uuid())
+  clinicId  String
+  visitId   String
+  actorId   String
+  kind      String
+  reason    String?
+  snapshot  Json?
+  createdAt DateTime @default(now())
+  visit     Visit    @relation(fields: [visitId, clinicId], references: [id, clinicId], onDelete: Restrict)
+
+  @@index([clinicId, visitId, createdAt])
+  @@index([visitId, kind, createdAt])
+}
+
+model VisitDocument {
+  id         String    @id @default(uuid())
+  clinicId   String
+  visitId    String
+  kind       String
+  revision   Int
+  snapshot   Json
+  pdf        Bytes
+  signedById String
+  signedAt   DateTime  @default(now())
+  releasedAt DateTime?
+  visit      Visit     @relation(fields: [visitId, clinicId], references: [id, clinicId], onDelete: Restrict)
+
+  @@unique([visitId, kind, revision])
+  @@index([clinicId, visitId])
 }

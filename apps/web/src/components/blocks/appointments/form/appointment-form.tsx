@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { appointmentAccess, canEditAppointment } from '@clinic/types';
 import { FormActions } from '@/components/primitives';
 import { useAppointmentFormResources } from '@/hooks/api/use-appointment-form';
 import { useNow } from '@/hooks/shared/use-now';
@@ -12,7 +13,7 @@ import { useClinic } from '@/hooks/api/use-clinic';
 import { extractErrorMessage, isHttpStatus } from '@/lib/api';
 import { appointmentSchema, type AppointmentFormData } from '@/lib/validations';
 import { resolveWaitingMins } from '@/lib/waiting-time';
-import { useConfirm, useLanguage } from '@/providers';
+import { useAuth, useConfirm, useLanguage } from '@/providers';
 import type { Appointment, AppointmentStatus } from '@/services/appointments.service';
 import { AppointmentBillingFields } from './appointment-form-billing';
 import {
@@ -20,6 +21,7 @@ import {
   AppointmentScheduleFields,
   AppointmentSessionFields,
   AppointmentStatusFields,
+  type AppointmentReadOnly,
 } from './appointment-form-sections';
 import { AppointmentVisitFields } from './appointment-form-visit';
 import {
@@ -34,6 +36,9 @@ import {
   toUpdateAppointmentInput,
   type AppliedDiscount,
 } from './appointment-form.mapper';
+import { formatDate, formatTime } from '@/lib/datetime';
+import { getBilingualName } from '@/i18n';
+import { formatDoctorLabel, patientDisplayName } from '../shared/appointment-display';
 
 interface Props {
   appointment?: Appointment;
@@ -55,6 +60,8 @@ export function AppointmentForm({
   onSuccess,
 }: Props) {
   const { t, lang } = useLanguage();
+  const { user } = useAuth();
+  const access = appointmentAccess(user?.role);
   const clinicId = useClinicId();
   const { data: clinic } = useClinic(clinicId);
   const confirm = useConfirm();
@@ -62,7 +69,12 @@ export function AppointmentForm({
   const now = useNow(30_000);
 
   const form = useForm<AppointmentFormData>({
-    resolver: zodResolver(appointmentSchema),
+    resolver: async (values, context, options) => {
+      if (isEdit && !canEditAppointment(user?.role, 'schedule')) {
+        return { values, errors: {} };
+      }
+      return zodResolver(appointmentSchema)(values, context, options);
+    },
     defaultValues: appointment
       ? toAppointmentFormValues(appointment)
       : emptyAppointmentValues({
@@ -138,6 +150,34 @@ export function AppointmentForm({
   );
   const fixedExceedsFee = discountExceedsFee(discount, discountType, baseFee);
   const pricingLocked = !!appointment?.patientPackageId;
+  const readOnly = useMemo<AppointmentReadOnly | undefined>(() => {
+    if (!appointment) return undefined;
+    const online = appointment.sessionType === 'online';
+    const room = getBilingualName(appointment.room?.name, appointment.room?.nameAr, lang);
+    const department = getBilingualName(
+      appointment.department?.name,
+      appointment.department?.nameAr,
+      lang,
+    );
+    const service = getBilingualName(
+      appointment.service?.name,
+      appointment.service?.nameAr,
+      lang,
+    );
+    return {
+      patient: patientDisplayName(appointment, lang),
+      doctor: formatDoctorLabel(appointment.doctor, { lang }),
+      department,
+      service,
+      date: formatDate(appointment.scheduledAt, '—', lang),
+      time: formatTime(appointment.scheduledAt, '—', lang),
+      duration: String(appointment.durationMins),
+      session: online ? t.appointments.online : t.appointments.inPerson,
+      placeLabel: online ? t.appointments.meetingLink : t.appointments.room,
+      place: online ? (appointment.meetingUrl ?? '') : room,
+      notes: appointment.notes ?? '',
+    };
+  }, [appointment, lang, t]);
 
   const applyDiscount = (applied: AppliedDiscount) => {
     setValue('discount', applied.discount);
@@ -185,7 +225,7 @@ export function AppointmentForm({
           data: toUpdateAppointmentInput(data, appliedCodeId, {
             status,
             cancelReason: status === 'cancelled' ? cancelReason.trim() : undefined,
-          }),
+          }, user?.role),
         },
         {
           onSuccess: (res) => onSuccess(res.id),
@@ -242,6 +282,7 @@ export function AppointmentForm({
           status={status}
           cancelReason={cancelReason}
           waitingMins={waitingMins}
+          canEdit={access.status}
           onStatusChange={setStatus}
           onCancelReasonChange={setCancelReason}
         />
@@ -253,6 +294,8 @@ export function AppointmentForm({
         departments={departments}
         services={services}
         currentDoctorName={currentDoctorName}
+        access={access}
+        readOnly={readOnly}
         onPatientChange={(id) => {
           const applied = billingDefaultsForPatient(
             patients?.find((patient) => patient.id === id),
@@ -272,12 +315,14 @@ export function AppointmentForm({
         }}
       />
 
-      <AppointmentScheduleFields />
+      <AppointmentScheduleFields locked={!access.schedule} values={readOnly} />
 
       <AppointmentSessionFields
         sessionType={sessionType}
         selectedService={selectedService}
         rooms={rooms}
+        locked={!access.session}
+        values={readOnly}
       />
 
       <AppointmentBillingFields
@@ -318,9 +363,10 @@ export function AppointmentForm({
         paymentMethods={activePayMethods}
         onTogglePaid={handleTogglePaid}
         paidPending={markPaidMutation.isPending || markUnpaidMutation.isPending}
+        canManage={access.billing}
       />
 
-      <AppointmentNotesFields />
+      <AppointmentNotesFields locked={!access.notes} value={readOnly?.notes} />
 
       <FormActions
         onCancel={onCancel}

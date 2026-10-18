@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useMemo, useCallback, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useNow } from '@/hooks/shared/use-now';
 import {
   Button,
   Badge,
+  type BadgeVariant,
 } from '@/components/ui';
-import { Appointment, AppointmentStatus } from '@/services/appointments.service';
-import { useUpdateAppointment, useMarkAppointmentPaid } from '@/hooks/api/use-appointments';
+import { Appointment } from '@/services/appointments.service';
 import { AppointmentStatusSelect } from '../shared/appointment-status-select';
 import { doctorDisplayName, formatApptTimeRange, patientDisplayName } from '../shared/appointment-display';
 import { STATUS_COLORS } from '../shared/status-badge';
@@ -16,8 +17,6 @@ import {
   popoverAnchorFromElement,
   type AppointmentPopoverState,
 } from './appointment-popovers';
-import { toast } from 'sonner';
-import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { CardGridSkeleton, EmptyState, SoftTip } from '@/components/primitives';
 import { ViewFocusToggle } from './view-focus';
@@ -25,10 +24,11 @@ import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
 import { IconActivate, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
-import { APPOINTMENT_STATUS } from '@clinic/types';
-
-type StageTab = 'all' | 'waiting' | 'in_progress' | 'upcoming' | 'completed';
-type Tone = 'default' | 'warning' | 'info' | 'muted' | 'success';
+import { APPOINTMENT_STATUS, PRESENCE_SOURCE, SESSION_TYPE } from '@clinic/types';
+import { QUEUE_STAGE, type QueueStage } from '@/constants/appointment';
+import { ROUTES } from '@/constants/routes';
+import { visitsService } from '@/services/visits.service';
+import { INVALIDATE, useApiMutation } from '@/hooks/query';
 
 interface Props {
   appointments: Appointment[] | undefined;
@@ -46,12 +46,19 @@ export function WaitingQueueBoard({
   onEventClick,
 }: Props) {
   const { t, lang } = useLanguage();
-  const [stageTab, setStageTab] = useState<StageTab>('all');
+  const router = useRouter();
+  const [stageTab, setStageTab] = useState<QueueStage>(QUEUE_STAGE.ALL);
   const [appointmentPopover, setAppointmentPopover] =
     useState<AppointmentPopoverState | null>(null);
   const now = useNow(10_000);
-  const updateMutation = useUpdateAppointment();
-  const markPaidMutation = useMarkAppointmentPaid();
+  const markWaiting = useApiMutation({
+    request: (appointment: Appointment) =>
+      appointment.sessionType === SESSION_TYPE.ONLINE
+        ? visitsService.checkIn(appointment.id, PRESENCE_SOURCE.ONLINE_MANUAL)
+        : visitsService.markWaiting(appointment.id),
+    invalidateQueries: [...INVALIDATE.visitWrite],
+    successMessage: t.visits.presenceSaved,
+  });
 
   const dayAppointments = useMemo(() => {
     if (!appointments) return [];
@@ -105,33 +112,8 @@ export function WaitingQueueBoard({
     [dayAppointments],
   );
 
-  const handleQuickStatus = useCallback(
-    (appt: Appointment, targetStatus: AppointmentStatus) => {
-      updateMutation.mutate(
-        { id: appt.id, data: { status: targetStatus } },
-        {
-          onSuccess: () => {
-            const name = patientDisplayName(appt, lang);
-            const msgs: Partial<Record<AppointmentStatus, string>> = {
-              [APPOINTMENT_STATUS.IN_PROGRESS]: t.appointments.statusStarted.replace('{name}', name),
-              [APPOINTMENT_STATUS.COMPLETED]: t.appointments.statusCompleted.replace('{name}', name),
-              [APPOINTMENT_STATUS.WAITING]: t.appointments.statusReturnedWaiting.replace('{name}', name),
-              [APPOINTMENT_STATUS.CHECKED_IN]: t.appointments.statusCheckedIn.replace('{name}', name),
-              [APPOINTMENT_STATUS.NO_SHOW]: t.appointments.statusNoShow.replace('{name}', name),
-            };
-            toast.success(msgs[targetStatus] || t.appointments.statusUpdated);
-          },
-          onError: (err) => {
-            toast.error(extractErrorMessage(err) || t.appointments.statusUpdateFailed);
-          },
-        },
-      );
-    },
-    [lang, t, updateMutation],
-  );
-
   const isVisible = useCallback(
-    (stage: StageTab) => stageTab === 'all' || stageTab === stage,
+    (stage: QueueStage) => stageTab === QUEUE_STAGE.ALL || stageTab === stage,
     [stageTab],
   );
 
@@ -140,36 +122,36 @@ export function WaitingQueueBoard({
   }
 
   const stageTabs: {
-    key: StageTab;
+    key: QueueStage;
     label: string;
     short: string;
     icon: React.ReactNode;
-    variant: Tone;
+    variant: BadgeVariant;
   }[] = [
-    { key: 'all', label: t.common.all, short: t.common.all, icon: null, variant: 'default' },
+    { key: QUEUE_STAGE.ALL, label: t.common.all, short: t.common.all, icon: null, variant: 'default' },
     {
-      key: 'waiting',
+      key: QUEUE_STAGE.WAITING,
       label: `${t.queue.waiting} (${waitingList.length})`,
       short: `${t.queue.waiting} (${waitingList.length})`,
       icon: <IconTimer className="size-3" />,
       variant: 'warning',
     },
     {
-      key: 'in_progress',
+      key: QUEUE_STAGE.IN_PROGRESS,
       label: `${t.queue.inSession} (${inProgressList.length})`,
       short: `${t.queue.inSession} (${inProgressList.length})`,
       icon: <IconService className="size-3" />,
       variant: 'info',
     },
     {
-      key: 'upcoming',
+      key: QUEUE_STAGE.UPCOMING,
       label: `${t.queue.upcomingToday} (${upcomingList.length})`,
       short: `${t.queue.upcomingToday} (${upcomingList.length})`,
       icon: <IconPatients className="size-3" />,
       variant: 'muted',
     },
     {
-      key: 'completed',
+      key: QUEUE_STAGE.COMPLETED,
       label: `${t.queue.completed} (${completedList.length})`,
       short: `${t.queue.completed} (${completedList.length})`,
       icon: <IconCheckCircle className="size-3" />,
@@ -225,13 +207,13 @@ export function WaitingQueueBoard({
           'grid min-h-0 flex-1 grid-cols-1 gap-2.5 overflow-y-auto overscroll-y-contain p-2.5',
           focused && 'h-0',
           'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
-          stageTab === 'all' ? 'lg:grid-cols-4' : 'lg:grid-cols-1',
+          stageTab === QUEUE_STAGE.ALL ? 'lg:grid-cols-4' : 'lg:grid-cols-1',
           'lg:grid-rows-[minmax(0,1fr)] lg:items-stretch lg:overflow-hidden',
         )}
       >
-        {isVisible('waiting') && (
+        {isVisible(QUEUE_STAGE.WAITING) && (
           <StageColumn
-            roomy={stageTab === 'all'}
+            roomy={stageTab === QUEUE_STAGE.ALL}
             title={t.queue.waiting}
             count={waitingList.length}
             accentClass="bg-warning"
@@ -269,8 +251,7 @@ export function WaitingQueueBoard({
                       <Button
                         size="sm"
                         className="w-full text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
-                        disabled={updateMutation.isPending}
-                        onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, APPOINTMENT_STATUS.IN_PROGRESS); }}
+                        onClick={(e) => { e.stopPropagation(); router.push(ROUTES.VISIT(appt.id)); }}
                       >
                         <IconPlay className="me-1.5 size-3.5 fill-current" />
                         {t.queue.startConsultation}
@@ -283,9 +264,9 @@ export function WaitingQueueBoard({
           </StageColumn>
         )}
 
-        {isVisible('in_progress') && (
+        {isVisible(QUEUE_STAGE.IN_PROGRESS) && (
           <StageColumn
-            roomy={stageTab === 'all'}
+            roomy={stageTab === QUEUE_STAGE.ALL}
             title={t.queue.inSession}
             count={inProgressList.length}
             accentClass="bg-primary"
@@ -324,8 +305,7 @@ export function WaitingQueueBoard({
                       <Button
                         size="sm"
                         className="w-full text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
-                        disabled={updateMutation.isPending}
-                        onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, APPOINTMENT_STATUS.COMPLETED); }}
+                        onClick={(e) => { e.stopPropagation(); router.push(ROUTES.VISIT(appt.id)); }}
                       >
                         <IconCheckCircle className="me-1.5 size-3.5" />
                         {t.queue.finishConsultation}
@@ -338,9 +318,9 @@ export function WaitingQueueBoard({
           </StageColumn>
         )}
 
-        {isVisible('upcoming') && (
+        {isVisible(QUEUE_STAGE.UPCOMING) && (
           <StageColumn
-            roomy={stageTab === 'all'}
+            roomy={stageTab === QUEUE_STAGE.ALL}
             title={t.queue.upcomingToday}
             count={upcomingList.length}
             accentClass="bg-muted-foreground"
@@ -370,8 +350,8 @@ export function WaitingQueueBoard({
                       size="sm"
                       variant="outline"
                       className="w-full text-xs font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
-                      disabled={updateMutation.isPending}
-                      onClick={(e) => { e.stopPropagation(); handleQuickStatus(appt, APPOINTMENT_STATUS.WAITING); }}
+                      disabled={markWaiting.isPending}
+                      onClick={(e) => { e.stopPropagation(); markWaiting.mutate(appt); }}
                     >
                       <IconActivate className="me-1.5 size-3.5 text-primary" />
                       {t.queue.patientArrived}
@@ -383,9 +363,9 @@ export function WaitingQueueBoard({
           </StageColumn>
         )}
 
-        {isVisible('completed') && (
+        {isVisible(QUEUE_STAGE.COMPLETED) && (
           <StageColumn
-            roomy={stageTab === 'all'}
+            roomy={stageTab === QUEUE_STAGE.ALL}
             title={t.queue.completed}
             count={completedList.length}
             accentClass="bg-success"
@@ -422,23 +402,12 @@ export function WaitingQueueBoard({
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (!appt.paymentMethodId) {
-                                  toast.info(t.queue.selectPaymentMethodFirst);
-                                  onEventClick(appt);
-                                  return;
-                                }
-                                markPaidMutation.mutate(
-                                  { id: appt.id, paymentMethodId: appt.paymentMethodId },
-                                  {
-                                    onSuccess: () => toast.success(t.queue.markedAsPaid),
-                                    onError: (err) => toast.error(extractErrorMessage(err) || t.queue.failedToMarkPaid),
-                                  },
-                                );
+                                router.push(ROUTES.VISIT(appt.id));
                               }}
                               className="cursor-pointer"
                             >
                               <IconCreditCard className="size-3" />
-                              {t.appointments.unpaid} · {t.appointments.markPaid}
+                              {t.appointments.unpaid} · {t.visits.openVisit}
                             </button>
                           </Badge>
                         )}
@@ -479,7 +448,7 @@ function StageColumn({
   title: string;
   count: number;
   accentClass: string;
-  badgeVariant: Tone;
+  badgeVariant: BadgeVariant;
   icon: React.ReactNode;
   children: React.ReactNode;
 }) {

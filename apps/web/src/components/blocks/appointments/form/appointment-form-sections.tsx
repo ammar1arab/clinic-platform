@@ -1,8 +1,9 @@
 'use client';
 
 import { Controller, useFormContext } from 'react-hook-form';
+import type { AppointmentPermission } from '@clinic/types';
 import { Badge, Input, Textarea } from '@/components/ui';
-import { DatePicker, FormField, TimePicker } from '@/components/primitives';
+import { DatePicker, FormField, ReadOnlyMark, TimePicker } from '@/components/primitives';
 import { IconInPerson, IconOnline, IconTimer } from '@/constants/icons';
 import type { AppointmentFormData } from '@/lib/validations';
 import { formatWaitingMins } from '@/lib/waiting-time';
@@ -10,16 +11,53 @@ import { useLanguage } from '@/providers';
 import type { AppointmentStatus } from '@/services/appointments.service';
 import type { Room } from '@/services/rooms.service';
 import type { ServiceItem } from '@/services/services.service';
+import { StatusBadgeBlock } from '../shared/status-badge';
 import { StatusFieldPicker } from '../shared/status-menu';
-import { ChoiceButton, FormSection, OptionalSelect } from './appointment-form-controls';
+import { ChoiceButton, FormSection, LockedValue, OptionalSelect } from './appointment-form-controls';
 
-export function AppointmentScheduleFields() {
+export type AppointmentFieldAccess = Record<AppointmentPermission, boolean>;
+
+export type AppointmentReadOnly = {
+  patient: string;
+  doctor: string;
+  department: string;
+  service: string;
+  date: string;
+  time: string;
+  duration: string;
+  session: string;
+  placeLabel: string;
+  place: string;
+  notes: string;
+};
+
+export function AppointmentScheduleFields({
+  locked = false,
+  values,
+}: {
+  locked?: boolean;
+  values?: Pick<AppointmentReadOnly, 'date' | 'time' | 'duration'>;
+}) {
   const { t } = useLanguage();
   const {
     control,
     register,
     formState: { errors },
   } = useFormContext<AppointmentFormData>();
+
+  if (locked) {
+    return (
+      <FormSection
+        title={t.appointments.schedule}
+        action={<ReadOnlyMark label={t.common.readOnly} size="md" />}
+        contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-3"
+      >
+        <LockedValue label={t.appointments.dateLabel} value={values?.date ?? ''} />
+        <LockedValue label={t.appointments.timeLabel} value={values?.time ?? ''} />
+        <LockedValue label={t.appointments.durationMinutes} value={values?.duration ?? ''} />
+      </FormSection>
+    );
+  }
 
   return (
     <FormSection
@@ -76,10 +114,14 @@ export function AppointmentSessionFields({
   sessionType,
   selectedService,
   rooms,
+  locked = false,
+  values,
 }: {
   sessionType: AppointmentFormData['sessionType'];
   selectedService: ServiceItem | undefined;
   rooms: Room[] | undefined;
+  locked?: boolean;
+  values?: Pick<AppointmentReadOnly, 'session' | 'placeLabel' | 'place'>;
 }) {
   const { t, lang } = useLanguage();
   const {
@@ -90,6 +132,19 @@ export function AppointmentSessionFields({
   const modes = selectedService?.supportedModes;
   const canInPerson = !modes || modes.includes('in_person');
   const canOnline = !modes || modes.includes('online');
+
+  if (locked) {
+    return (
+      <FormSection
+        title={t.appointments.sessionType}
+        action={<ReadOnlyMark label={t.common.readOnly} size="md" />}
+        contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-2"
+      >
+        <LockedValue label={t.appointments.sessionType} value={values?.session ?? ''} />
+        <LockedValue label={values?.placeLabel || t.appointments.room} value={values?.place ?? ''} />
+      </FormSection>
+    );
+  }
 
   return (
     <FormSection title={t.appointments.sessionType} contentClassName="space-y-4">
@@ -157,21 +212,30 @@ export function AppointmentStatusFields({
   status,
   cancelReason,
   waitingMins,
+  canEdit = true,
   onStatusChange,
   onCancelReasonChange,
 }: {
   status: AppointmentStatus;
   cancelReason: string;
   waitingMins: number | null;
+  canEdit?: boolean;
   onStatusChange: (status: AppointmentStatus) => void;
   onCancelReasonChange: (reason: string) => void;
 }) {
   const { t } = useLanguage();
 
   return (
-    <FormSection title={t.appointments.status}>
+    <FormSection
+      title={t.appointments.status}
+      action={canEdit ? undefined : <ReadOnlyMark label={t.common.readOnly} size="md" />}
+    >
       <div className="space-y-3">
-        <StatusFieldPicker status={status} onChange={onStatusChange} />
+        {canEdit ? (
+          <StatusFieldPicker status={status} onChange={onStatusChange} />
+        ) : (
+          <StatusBadgeBlock status={status} tip={false} />
+        )}
         {waitingMins != null ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">
@@ -183,7 +247,7 @@ export function AppointmentStatusFields({
             </Badge>
           </div>
         ) : null}
-        {status === 'cancelled' ? (
+        {canEdit && status === 'cancelled' ? (
           <FormField
             label={t.appointments.cancellationReason}
             required
@@ -203,12 +267,29 @@ export function AppointmentStatusFields({
   );
 }
 
-export function AppointmentNotesFields() {
+export function AppointmentNotesFields({
+  locked = false,
+  value = '',
+}: {
+  locked?: boolean;
+  value?: string;
+}) {
   const { t } = useLanguage();
   const {
     register,
     formState: { errors },
   } = useFormContext<AppointmentFormData>();
+
+  if (locked) {
+    return (
+      <FormSection
+        title={t.appointments.notes}
+        action={<ReadOnlyMark label={t.common.readOnly} size="md" />}
+      >
+        <LockedValue label={t.appointments.notes} value={value} />
+      </FormSection>
+    );
+  }
 
   return (
     <FormSection title={t.appointments.notes}>

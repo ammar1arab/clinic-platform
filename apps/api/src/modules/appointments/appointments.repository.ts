@@ -204,6 +204,12 @@ export class AppointmentsRepository {
   ) {
     return this.write(clinicId, async (tx) => {
       const current = await this.current(tx, clinicId, id, expectedUpdatedAt);
+      const presenceChanged =
+        (dto.scheduledAt !== undefined &&
+          new Date(dto.scheduledAt).getTime() !== current.scheduledAt.getTime()) ||
+        (dto.sessionType !== undefined && dto.sessionType !== current.sessionType) ||
+        (dto.meetingUrl !== undefined && dto.meetingUrl !== current.meetingUrl);
+      const resetPresence = presenceChanged && !current.inProgressAt;
       if (dto.discountCodeId && dto.discountCodeId !== current.discountCodeId)
         await this.consumeDiscountCode(tx, clinicId, dto.discountCodeId);
       const status = dto.status ?? current.status;
@@ -222,6 +228,16 @@ export class AppointmentsRepository {
         where: { id, clinicId },
         data: {
           ...dto,
+          ...(resetPresence && {
+            presenceConfirmedAt: null,
+            presenceConfirmedById: null,
+            presenceSource: null,
+            waitingStartedAt: null,
+            ...((current.status === "checked_in" || current.status === "waiting") && {
+              status: dto.status ?? "confirmed",
+            }),
+          }),
+          revision: { increment: 1 },
           updatedAt: nextRevision(current.updatedAt),
         },
         include: appointmentInclude,
@@ -248,6 +264,7 @@ export class AppointmentsRepository {
         where: { id, clinicId },
         data: {
           ...data,
+          revision: { increment: 1 },
           updatedAt: nextRevision(current.updatedAt),
 
           paymentMethod: null,
@@ -306,6 +323,7 @@ export class AppointmentsRepository {
         where: { id, clinicId },
         data: {
           ...data,
+          revision: { increment: 1 },
           updatedAt: nextRevision(current.updatedAt),
         },
         include: appointmentInclude,
@@ -323,6 +341,7 @@ export class AppointmentsRepository {
       return tx.appointment.update({
         where: { id, clinicId },
         data: {
+          revision: { increment: 1 },
           updatedAt: nextRevision(current.updatedAt),
           isPaid: false,
           paidAt: null,

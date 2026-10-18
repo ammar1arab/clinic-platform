@@ -1,0 +1,115 @@
+import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { VisitsRepository } from "./visits.repository";
+import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
+import { createLogger } from "@/infrastructure/logger";
+@Injectable()
+export class DocumentationRemindersWorker
+  implements OnModuleInit, OnModuleDestroy
+{
+  private timer?: ReturnType<typeof setInterval>;
+  private active = false;
+  private readonly log = createLogger("DocumentationReminders");
+  constructor(
+    private readonly repo: VisitsRepository,
+    private readonly gateway: DashboardGateway,
+  ) {}
+  onModuleInit() {
+    if (process.env.VISIT_REMINDERS_ENABLED === "false") return;
+    this.timer = setInterval(() => {
+      void this.tick();
+    }, 60_000);
+    this.timer.unref();
+  }
+  onModuleDestroy() {
+    if (this.timer) clearInterval(this.timer);
+  }
+  async tick() {
+    if (this.active) return;
+    this.active = true;
+    try {
+      const now = new Date();
+      const soon = new Date(now.getTime() + 3600_000);
+      const rows = await this.repo.db.visit.findMany({
+        where: {
+          noteStatus: { not: "signed" },
+          unlockGrantedAt: null,
+          OR: [
+            {
+              documentationDeadlineAt: { lte: now },
+              events: { none: { kind: "documentation_locked_notice" } },
+            },
+            {
+              documentationDeadlineAt: { gt: now, lte: soon },
+              events: { none: { kind: "documentation_due_notice" } },
+            },
+          ],
+        },
+        select: { id: true, clinicId: true, appointmentId: true },
+        take: 100,
+      });
+      for (const row of rows) {
+        const recipients = await this.repo.transaction(async (tx) => {
+          await tx.$queryRaw`SELECT "id" FROM "Appointment" WHERE "id" = ${row.appointmentId} AND "clinicId" = ${row.clinicId} FOR UPDATE`;
+          const visit = await tx.visit.findFirst({
+            where: { id: row.id, clinicId: row.clinicId },
+            include: { appointment: true },
+          });
+          if (!visit || visit.noteStatus === "signed" || visit.unlockGrantedAt)
+            return [];
+          const kind =
+            visit.documentationDeadlineAt <= new Date()
+              ? "documentation_locked_notice"
+              : "documentation_due_notice";
+          if (await tx.visitEvent.count({ where: { visitId: row.id, kind } }))
+            return [];
+          const owners = await tx.clinicUser.findMany({
+            where: { clinicId: row.clinicId, role: "owner", isActive: true },
+            select: { id: true },
+          });
+          const ids = [
+            ...new Set([
+              visit.appointment.doctorId,
+              ...owners.map((owner) => owner.id),
+            ]),
+          ];
+          await tx.visitEvent.create({
+            data: {
+              clinicId: row.clinicId,
+              visitId: row.id,
+              actorId: "system:documentation-reminders",
+              kind,
+            },
+          });
+          await tx.notification.createMany({
+            data: ids.map((userId) => ({
+              clinicId: row.clinicId,
+              userId,
+              type: kind,
+              title:
+                kind === "documentation_locked_notice"
+                  ? "Visit documentation is locked"
+                  : "Visit documentation is due within an hour",
+              payload: {
+                visitId: row.id,
+                appointmentId: row.appointmentId,
+                documentationDeadlineAt:
+                  visit.documentationDeadlineAt.toISOString(),
+                titleAr:
+                  kind === "documentation_locked_notice"
+                    ? "توثيق الزيارة مقفل"
+                    : "تنتهي مهلة توثيق الزيارة خلال ساعة",
+              },
+            })),
+          });
+          return ids;
+        });
+        for (const id of recipients)
+          this.gateway.emitNotificationCreated(row.clinicId, id);
+      }
+    } catch {
+      this.log.warn("documentation_reminder_failed");
+    } finally {
+      this.active = false;
+    }
+  }
+}

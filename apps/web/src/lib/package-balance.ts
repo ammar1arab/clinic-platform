@@ -8,8 +8,11 @@ export function formatClinicNumber(value: string | number | null | undefined) {
   return Number(value ?? 0).toFixed(3);
 }
 
-export function formatClinicAmount(value: string | number | null | undefined) {
-  return `${formatClinicNumber(value)} ${CLINIC_CURRENCY}`;
+export function formatClinicAmount(
+  value: string | number | null | undefined,
+  currency = CLINIC_CURRENCY,
+) {
+  return `${formatClinicNumber(value)} ${currency}`;
 }
 
 export function formatPackageBalance(

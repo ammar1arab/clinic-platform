@@ -115,6 +115,15 @@ export const TIMELINE_DOCTOR_COLORS = [
 
 export type ScheduleView = 'day' | 'week' | 'month' | 'doctors' | 'queue';
 
+export const QUEUE_STAGE = {
+  ALL: 'all',
+  WAITING: 'waiting',
+  IN_PROGRESS: 'in_progress',
+  UPCOMING: 'upcoming',
+  COMPLETED: 'completed',
+} as const;
+export type QueueStage = (typeof QUEUE_STAGE)[keyof typeof QUEUE_STAGE];
+
 export const VIEW_TO_FC: Record<ScheduleView, string> = {
   day: 'timeGridDay',
   week: 'timeGridWeek',

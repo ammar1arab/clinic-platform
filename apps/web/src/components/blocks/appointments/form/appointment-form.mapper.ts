@@ -3,6 +3,7 @@ import { toDateParam, toTimeParam } from '@/lib/datetime';
 import { formatClinicAmount } from '@/lib/package-balance';
 import { getTranslations } from '@/i18n';
 import type { AppointmentFormData } from '@/lib/validations';
+import { appointmentUpdateDenied, type Role } from '@clinic/types';
 import type {
   Appointment,
   CreateAppointmentInput,
@@ -130,11 +131,12 @@ export function toUpdateAppointmentInput(
   data: AppointmentFormData,
   appliedCodeId: string | null,
   extra: Pick<UpdateAppointmentInput, 'status' | 'cancelReason'>,
+  role?: Role | null,
 ): UpdateAppointmentInput {
   const shared: Partial<CreateAppointmentInput> = sharedWriteFields(data);
   delete shared.patientId;
   const discount = discountFields(data, appliedCodeId);
-  return {
+  const body: UpdateAppointmentInput = {
     ...shared,
     ...extra,
     discount: discount?.discount ?? 0,
@@ -142,6 +144,11 @@ export function toUpdateAppointmentInput(
     discountReason: discount?.discountReason,
     discountCodeId: appliedCodeId,
   };
+  const denied = new Set(appointmentUpdateDenied(role, Object.keys(body)));
+  (Object.keys(body) as (keyof UpdateAppointmentInput)[]).forEach((key) => {
+    if (denied.has(key)) delete body[key];
+  });
+  return body;
 }
 
 export type AppliedDiscount = {

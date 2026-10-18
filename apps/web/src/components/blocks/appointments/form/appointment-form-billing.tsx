@@ -2,7 +2,7 @@
 
 import { Controller, useFormContext } from 'react-hook-form';
 import { Badge, Button, Input, Switch } from '@/components/ui';
-import { FormField, ButtonSpinner } from '@/components/primitives';
+import { FormField, ButtonSpinner, ReadOnlyMark } from '@/components/primitives';
 import { CLINIC_CURRENCY } from '@/constants/appointment';
 import { IconCreditCard, IconWarning } from '@/constants/icons';
 import { formatClinicAmount, formatClinicNumber } from '@/lib/package-balance';
@@ -48,6 +48,7 @@ export function AppointmentBillingFields({
   paymentMethods,
   onTogglePaid,
   paidPending,
+  canManage = true,
 }: {
   appointment?: Appointment;
   isEdit: boolean;
@@ -73,6 +74,7 @@ export function AppointmentBillingFields({
   paymentMethods: PaymentMethod[];
   onTogglePaid: (paid: boolean) => void;
   paidPending: boolean;
+  canManage?: boolean;
 }) {
   const { t, lang } = useLanguage();
   const {
@@ -83,8 +85,12 @@ export function AppointmentBillingFields({
   const payment = appointment ? paymentStatusMeta(appointment, lang) : null;
 
   return (
-    <FormSection title={t.billing.title} contentClassName="space-y-4">
-      {pricingLocked && (
+    <FormSection
+      title={t.billing.title}
+      action={canManage ? undefined : <ReadOnlyMark label={t.common.readOnly} size="md" />}
+      contentClassName="space-y-4"
+    >
+      {canManage && pricingLocked && (
         <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 px-2.5 py-2">
           <IconWarning className="mt-0.5 size-3.5 shrink-0 text-warning" />
           <p className="text-xs text-muted-foreground">
@@ -93,6 +99,8 @@ export function AppointmentBillingFields({
         </div>
       )}
 
+      {canManage ? (
+      <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField
           label={t.appointments.fee}
@@ -176,8 +184,10 @@ export function AppointmentBillingFields({
           {...register('discountReason')}
         />
       </FormField>
+      </>
+      ) : null}
 
-      {hasPatient ? (
+      {canManage && hasPatient ? (
         <PatientBalancePanel
           billing={billing}
           isLoading={billingLoading}
@@ -237,9 +247,11 @@ export function AppointmentBillingFields({
                   {payment.label}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground">{payment.detail}</p>
+              {canManage ? (
+                <p className="text-xs text-muted-foreground">{payment.detail}</p>
+              ) : null}
             </div>
-            {appointment.patientPackageId ? (
+            {canManage && appointment.patientPackageId ? (
               <Button
                 type="button"
                 variant="outline"
@@ -249,15 +261,15 @@ export function AppointmentBillingFields({
               >
                 {releasePending ? <ButtonSpinner className="me-0" /> : t.appointments.removePackage}
               </Button>
-            ) : (
+            ) : canManage ? (
               <Switch
                 checked={appointment.isPaid}
                 disabled={paidPending}
                 onCheckedChange={onTogglePaid}
               />
-            )}
+            ) : null}
           </div>
-          {!appointment.isPaid && !appointment.patientPackageId && (
+          {canManage && !appointment.isPaid && !appointment.patientPackageId && (
             <FormField label={t.settings.paymentMethod}>
               <OptionalSelect
                 value={payMethodId}

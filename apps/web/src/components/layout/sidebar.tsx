@@ -24,6 +24,7 @@ import {
   IconTimer,
   IconService,
   IconSettings,
+  IconVisit,
   IconSidebarCollapse,
   type LucideIcon,
 } from '@/constants/icons';
@@ -50,6 +51,7 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
       { label: t.layout.titles.home, href: ROUTES.HOME, icon: IconDashboard, accent: 'default' },
       { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'violet' },
       { label: t.queue.waitingQueue, href: ROUTES.HOME_QUEUE, icon: IconTimer, accent: 'warning' },
+      { label: t.layout.sidebar.visits, href: ROUTES.VISITS, icon: IconVisit, accent: 'teal' },
       { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'orange' },
     ];
   }
@@ -59,6 +61,7 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
     { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'teal' },
       { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer, accent: 'warning' },
       { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconService, accent: 'violet' },
+      { label: t.layout.sidebar.visits, href: ROUTES.VISITS, icon: IconVisit, accent: 'teal' },
     { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
     { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner, accent: 'indigo' },
     { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'orange' },

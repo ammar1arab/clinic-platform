@@ -1,3 +1,4 @@
+import { visitError } from "@/modules/visits/visit-errors";
 import {
   Injectable,
   NotFoundException,
@@ -21,6 +22,7 @@ import { PatientPackagesService } from "@/modules/patient-packages/patient-packa
 import { computePayable } from "./payable";
 import type { AuthUser } from "@/modules/auth/types";
 import { securityError } from "@/security/security-error";
+import { appointmentUpdateDenied } from "@clinic/types";
 import {
   CreateAppointmentDto,
   UpdateAppointmentDto,
@@ -432,16 +434,16 @@ export class AppointmentsService {
   ) {
     const practitionerId =
       actor?.role === Role.practitioner ? actor.clinicUserId : undefined;
-    if (
-      practitionerId &&
-      Object.keys(dto).some(
-        (key) =>
-          !["status", "notes", "statusReason", "cancelReason"].includes(key),
-      )
-    ) {
-      securityError("clinicUnavailable", 403);
-    }
+    const denied = appointmentUpdateDenied(actor?.role, Object.keys(dto)).filter(
+      (key) => !(practitionerId && key === "notes"),
+    );
+    if (denied.length) securityError("clinicUnavailable", 403);
     const existing = await this.findOne(clinicId, id, practitionerId);
+    if (dto.status && ['checked_in','waiting','in_progress','completed'].includes(dto.status)) visitError('visitUseCommands', 409);
+    const visit = await this.prisma.visit.findFirst({ where: { appointmentId: id, clinicId }, select: { id: true } });
+    if (visit && Object.keys(dto).some(key => !['notes','statusReason'].includes(key))) visitError('visitScheduleFrozen', 409);
+    if (practitionerId && dto.notes !== undefined) visitError('visitUseClinicalNote', 403);
+
     if (dto.discountCodeId)
       await this.resolveDiscountCode(clinicId, dto.discountCodeId);
 
@@ -637,6 +639,7 @@ export class AppointmentsService {
     dto: MarkPaidDto,
   ) {
     const existing = await this.findOne(clinicId, id);
+    if (await this.prisma.visit.count({ where: { appointmentId: id, clinicId } })) visitError('visitUseInvoice', 409);
     if (existing.patientPackageId) {
       throw new BadRequestException(
         "Release package coverage before marking paid with a payment method",
@@ -671,6 +674,7 @@ export class AppointmentsService {
 
   async markUnpaid(clinicId: string, id: string) {
     const existing = await this.findOne(clinicId, id);
+    if (await this.prisma.visit.count({ where: { appointmentId: id, clinicId } })) visitError('visitUseInvoice', 409);
     if (existing.patientPackageId) {
       throw new BadRequestException(
         "Release package coverage instead of marking unpaid",
@@ -693,6 +697,7 @@ export class AppointmentsService {
     dto: RedeemPackageDto,
   ) {
     const existing = await this.findOne(clinicId, id);
+    if (await this.prisma.visit.count({ where: { appointmentId: id, clinicId } })) visitError('visitUseInvoice', 409);
     if (existing.patientPackageId) {
       throw new BadRequestException(
         "This appointment is already covered by a package",
@@ -737,6 +742,7 @@ export class AppointmentsService {
 
   async releasePackage(clinicId: string, id: string) {
     const existing = await this.findOne(clinicId, id);
+    if (await this.prisma.visit.count({ where: { appointmentId: id, clinicId } })) visitError('visitUseInvoice', 409);
     if (!existing.patientPackageId) {
       throw new BadRequestException(
         "This appointment is not covered by a package",

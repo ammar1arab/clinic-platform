@@ -13,8 +13,9 @@ import {
   ProfileInfoGrid,
   ProfileSection,
   ProfileShell,
+  ReadOnlyMark,
 } from "@/components/primitives";
-import { IconEdit, IconLock } from "@/constants/icons";
+import { IconEdit } from "@/constants/icons";
 import { useUpdateAccountProfile } from "@/hooks/api/use-auth-mutations";
 import { useAuth, useLanguage } from "@/providers";
 import type { AccountProfileInput } from "@clinic/types";
@@ -27,9 +28,7 @@ function LockedField({ label, value, readOnlyLabel }: { label: string; value: st
     <div className="rounded-xl border border-border/70 bg-muted/30 px-3.5 py-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <span title={readOnlyLabel} aria-label={readOnlyLabel} className="grid size-6 place-items-center rounded-full bg-background text-muted-foreground shadow-sm ring-1 ring-border/70">
-          <IconLock className="size-3" aria-hidden />
-        </span>
+        <ReadOnlyMark label={readOnlyLabel} />
       </div>
       <p className="mt-1.5 break-words text-sm font-medium text-foreground">{value || "—"}</p>
     </div>
