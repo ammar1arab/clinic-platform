@@ -214,6 +214,7 @@ function SchedulePageInner() {
               appointments={filteredAppointments}
               isLoading={isLoading}
               focused={focused}
+              canManagePayments={!isPractitioner}
               onEventClick={handleEventClick}
             />
           )}

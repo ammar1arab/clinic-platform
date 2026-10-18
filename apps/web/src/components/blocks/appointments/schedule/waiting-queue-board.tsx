@@ -34,6 +34,7 @@ interface Props {
   appointments: Appointment[] | undefined;
   isLoading: boolean;
   focused?: boolean;
+  canManagePayments?: boolean;
   onEventClick: (appointment: Appointment) => void;
 }
 
@@ -41,6 +42,7 @@ export function WaitingQueueBoard({
   appointments,
   isLoading,
   focused = false,
+  canManagePayments = true,
   onEventClick,
 }: Props) {
   const { t, lang } = useLanguage();
@@ -417,40 +419,39 @@ export function WaitingQueueBoard({
                     </div>
                   </div>
 
-                  <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-[11px]">
-                    <span className="text-muted-foreground font-medium">{t.appointments.paymentStatus}:</span>
-                    {appt.isPaid ? (
-                      <Badge variant="success">
-                        <IconCreditCard className="size-3" />
-                        {t.appointments.paid}
-                      </Badge>
-                    ) : (
-                      <Badge asChild variant="warning">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!appt.paymentMethodId) {
-                              toast.info(t.queue.selectPaymentMethodFirst);
-                              onEventClick(appt);
-                              return;
-                            }
-                            markPaidMutation.mutate(
-                              { id: appt.id, paymentMethodId: appt.paymentMethodId },
-                              {
-                                onSuccess: () => toast.success(t.queue.markedAsPaid),
-                                onError: (err) => toast.error(extractErrorMessage(err) || t.queue.failedToMarkPaid),
-                              },
-                            );
-                          }}
-                          className="cursor-pointer"
-                        >
-                          <IconCreditCard className="size-3" />
-                          {t.appointments.unpaid} · {t.appointments.markPaid}
-                        </button>
-                      </Badge>
-                    )}
-                  </div>
+                    {canManagePayments ? (
+                      <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-[11px]">
+                        <span className="font-medium text-muted-foreground">{t.appointments.paymentStatus}:</span>
+                        {appt.isPaid ? (
+                          <Badge variant="success"><IconCreditCard className="size-3" />{t.appointments.paid}</Badge>
+                        ) : (
+                          <Badge asChild variant="warning">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!appt.paymentMethodId) {
+                                  toast.info(t.queue.selectPaymentMethodFirst);
+                                  onEventClick(appt);
+                                  return;
+                                }
+                                markPaidMutation.mutate(
+                                  { id: appt.id, paymentMethodId: appt.paymentMethodId },
+                                  {
+                                    onSuccess: () => toast.success(t.queue.markedAsPaid),
+                                    onError: (err) => toast.error(extractErrorMessage(err) || t.queue.failedToMarkPaid),
+                                  },
+                                );
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <IconCreditCard className="size-3" />
+                              {t.appointments.unpaid} · {t.appointments.markPaid}
+                            </button>
+                          </Badge>
+                        )}
+                      </div>
+                    ) : null}
                 </QueueCard>
               ))
             )}

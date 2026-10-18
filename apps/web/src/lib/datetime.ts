@@ -144,6 +144,15 @@ export function toDateParam(date: Date) {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
+export function todayAppointmentRange(daysAhead = 0) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + daysAhead);
+  end.setHours(23, 59, 59, 999);
+  return { startDate: start.toISOString(), endDate: end.toISOString() };
+}
+
 export function toTimeParam(date: Date) {
   return toClockValue(date.getHours(), date.getMinutes());
 }

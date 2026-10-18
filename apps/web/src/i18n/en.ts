@@ -1066,6 +1066,7 @@ export const en = {
     homeEmptyDesc: "Use your profile, waiting queue, or calendar to get started.",
     overview: "Clinic Overview",
     todaySchedule: "Today's Schedule",
+    nextVisits: "Next visits",
     roomUtilization: "Room Utilization",
     roomUtilizationToday: "Room Utilization Today",
     unassignedDepartment: "Unassigned",

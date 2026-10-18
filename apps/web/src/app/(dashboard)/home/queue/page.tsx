@@ -9,17 +9,17 @@ import { ROUTES } from '@/constants/routes';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers';
 import { ROLE } from '@clinic/types';
+import { todayAppointmentRange } from '@/lib/datetime';
 
 export default function PractitionerQueuePage() {
   const { user } = useAuth();
   const router = useRouter();
   const clinicId = useClinicId();
-  const today = new Date().toISOString().slice(0, 10);
+  const dayRange = todayAppointmentRange();
   useClinicRealtime(clinicId);
   const appointments = useAppointments(
     {
-      startDate: today,
-      endDate: today,
+      ...dayRange,
       doctorId: user?.role === ROLE.PRACTITIONER ? user.clinicUserId : undefined,
     },
     !!user,
@@ -34,6 +34,7 @@ export default function PractitionerQueuePage() {
       <WaitingQueueBoard
         appointments={appointments.data}
         isLoading={appointments.isLoading}
+        canManagePayments={false}
         onEventClick={(appointment) => router.push(`${ROUTES.SCHEDULE_EDIT(appointment.id)}?view=queue`)}
       />
     </div>

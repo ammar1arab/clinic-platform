@@ -1057,6 +1057,7 @@ export const ar: Translations = {
     homeEmptyDesc: "استخدم ملفك الشخصي أو قائمة الانتظار أو التقويم للبدء.",
     overview: "نظرة عامة على العيادة",
     todaySchedule: "جدول اليوم",
+    nextVisits: "المواعيد القادمة",
     roomUtilization: "إشغال الغرف",
     roomUtilizationToday: "إشغال الغرف اليوم",
     unassignedDepartment: "غير معيّن",

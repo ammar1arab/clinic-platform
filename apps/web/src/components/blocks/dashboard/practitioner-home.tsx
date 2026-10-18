@@ -14,7 +14,7 @@ import { usePractitioner } from '@/hooks/api/use-practitioners';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useAuth, useLanguage } from '@/providers';
 import { ROUTES } from '@/constants/routes';
-import { formatDate, formatTime } from '@/lib/datetime';
+import { formatDate, formatTime, todayAppointmentRange } from '@/lib/datetime';
 import { getBilingualName, getPersonName } from '@/i18n';
 import { schedulePath } from '@/components/blocks/appointments/schedule/schedule-nav';
 import {
@@ -32,9 +32,11 @@ export function PractitionerHome() {
   const { user } = useAuth();
   const { lang, t } = useLanguage();
   const router = useRouter();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const dayRange = todayAppointmentRange(14);
+  const todayEnd = todayAppointmentRange().endDate;
   const appointments = useAppointments(
-    { startDate: today, endDate: today, doctorId: user?.clinicUserId },
+    { ...dayRange, doctorId: user?.clinicUserId },
     Boolean(user?.clinicUserId),
   );
   const profile = usePractitioner(user?.clinicUserId ?? '');
@@ -42,9 +44,14 @@ export function PractitionerHome() {
   useClinicRealtime(clinicId, { notifyOnAppointmentChange: true });
 
   const ordered = useMemo(
-    () => [...(appointments.data ?? [])].sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)),
-    [appointments.data],
+    () => (appointments.data ?? []).filter((item) => item.scheduledAt <= todayEnd),
+    [appointments.data, todayEnd],
   );
+  const upcoming = (appointments.data ?? []).filter((item) =>
+    item.scheduledAt > todayEnd &&
+    item.status !== APPOINTMENT_STATUS.CANCELLED &&
+    item.status !== APPOINTMENT_STATUS.NO_SHOW,
+  ).slice(0, 3);
   const waiting = ordered.filter((item) =>
     item.status === APPOINTMENT_STATUS.WAITING || item.status === APPOINTMENT_STATUS.CHECKED_IN,
   ).length;
@@ -90,7 +97,7 @@ export function PractitionerHome() {
       </Card>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
-        <KpiCardBlock label={t.dashboard.todaysAppointments} value={appointments.data?.length} icon={IconTodaysAppointments} accent="default" isLoading={appointments.isLoading} />
+        <KpiCardBlock label={t.dashboard.todaysAppointments} value={ordered.length} icon={IconTodaysAppointments} accent="default" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.dashboard.waiting} value={waiting} icon={IconTimer} accent="warning" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.dashboard.completed} value={completed} icon={IconCheckCircle} accent="success" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.queue.upcomingToday} value={nextVisit ? formatTime(nextVisit.scheduledAt, undefined, lang) : '—'} icon={IconTime} accent="teal" isLoading={appointments.isLoading} />
@@ -106,8 +113,8 @@ export function PractitionerHome() {
                 <p className="mt-1 text-xs text-muted-foreground">{nextVisit ? `${t.queue.upcomingToday}: ${formatTime(nextVisit.scheduledAt, undefined, lang)}` : t.appointments.noAppointments}</p>
               </div>
             </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link href={schedulePath('month')}>{t.appointments.calendar}</Link>
+            <Button asChild variant="outline" size="sm" className="gap-1.5">
+              <Link href={schedulePath('month')}><IconCalendarClock className="size-4" />{t.appointments.calendar}</Link>
             </Button>
           </CardHeader>
           <CardContent className="px-5 pb-5 sm:px-6 sm:pb-6">
@@ -131,6 +138,17 @@ export function PractitionerHome() {
                 <EmptyState size="compact" icon={IconCalendarClock} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} />
               </div>
             )}
+            {upcoming.length > 0 && (
+              <div className="mt-4 space-y-2 border-t border-border/70 pt-4">
+                <h3 className="text-sm font-semibold">{t.dashboard.nextVisits}</h3>
+                {upcoming.map((appointment) => (
+                  <Link key={appointment.id} href={`${ROUTES.SCHEDULE_EDIT(appointment.id)}?view=month`} className="flex items-center justify-between gap-3 rounded-lg border border-border/70 px-3 py-2.5 text-sm transition-colors hover:bg-muted/45">
+                    <span className="min-w-0 truncate font-medium">{getPersonName(appointment.patient, lang)}</span>
+                    <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatDate(appointment.scheduledAt, undefined, lang)} · {formatTime(appointment.scheduledAt, undefined, lang)}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -143,7 +161,7 @@ export function PractitionerHome() {
             <HomeDetail icon={IconRoom} label={t.practitioner.defaultRoom} value={room} loading={profile.isLoading} />
             <HomeDetail icon={IconService} label={t.practitioner.services} value={practitioner?.services.map((service) => getBilingualName(service.name, service.nameAr, lang)).join(', ')} loading={profile.isLoading} />
             <HomeDetail icon={IconCalendarClock} label={t.practitioner.workingDays} value={practitioner ? String(new Set(practitioner.availabilities.map((slot) => slot.dayOfWeek)).size) : ''} loading={profile.isLoading} />
-            <Button asChild variant="outline" className="mt-1 w-full">
+            <Button asChild variant="outline" className="mt-1 w-full gap-2">
               <Link href={ROUTES.HOME_QUEUE}><IconTimer className="size-4" />{t.queue.waitingQueue}</Link>
             </Button>
           </CardContent>
