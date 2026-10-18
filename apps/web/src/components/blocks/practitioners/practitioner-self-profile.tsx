@@ -8,7 +8,7 @@ import {
   ProfileInfoGrid, ProfileSection, ProfileShell,
 } from '@/components/primitives';
 import { useUpdatePractitionerSelfProfile } from '@/hooks/api/use-practitioners';
-import { IconCalendarClock, IconEdit, IconKey, IconService } from '@/constants/icons';
+import { IconCalendarClock, IconEdit, IconLock, IconService } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
 import type { PractitionerDetail, PractitionerSelfProfileInput } from '@/services/practitioners.service';
 import { useLanguage } from '@/providers';
@@ -18,21 +18,19 @@ const WEEKDAY_KEYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'F
 
 const display = (value: string | null | undefined) => value?.trim() || null;
 
-function LockedProfileField({ label, value }: { label: string; value: string | null | undefined }) {
+function LockedProfileField({ label, value, readOnlyLabel }: { label: string; value: string | null | undefined; readOnlyLabel: string }) {
   return (
     <div className="rounded-xl border border-border/70 bg-muted/30 px-3.5 py-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <span className="grid size-6 place-items-center rounded-full bg-background text-muted-foreground shadow-sm ring-1 ring-border/70" title={tReadOnly}>
-          <IconKey className="size-3" aria-hidden />
+        <span className="grid size-7 place-items-center rounded-lg border border-primary/20 bg-primary/5 text-primary" title={readOnlyLabel} aria-label={readOnlyLabel}>
+          <IconLock className="size-3.5" aria-hidden />
         </span>
       </div>
       <p className="mt-1.5 break-words text-sm font-medium text-foreground">{value || '—'}</p>
     </div>
   );
 }
-
-const tReadOnly = 'Read-only';
 
 export function PractitionerSelfProfile({ practitioner }: { practitioner: PractitionerDetail }) {
   const { lang, t } = useLanguage();
@@ -68,8 +66,8 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
 
   return (
     <ProfileShell
-      backHref={ROUTES.DASHBOARD}
-      backLabel={t.layout.sidebar.dashboard}
+      backHref={editing ? ROUTES.PROFILE : ROUTES.DASHBOARD}
+      backLabel={editing ? t.common.accountProfile : t.layout.sidebar.dashboard}
       actions={!editing ? (
         <Button type="button" variant="outline" onClick={() => setEditing(true)}>
           <IconEdit className="size-3.5" />{t.practitioner.edit}
@@ -109,13 +107,13 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
           </ProfileSection>
           <ProfileSection title={t.common.readOnly} description={t.practitioner.weeklyAvailability}>
             <ProfileInfoGrid className="lg:grid-cols-3">
-              <LockedProfileField label={t.practitioner.email} value={practitioner.email} />
-              <LockedProfileField label={t.practitioner.specialty} value={specialty} />
-              <LockedProfileField label={t.practitioner.department} value={department} />
-              <LockedProfileField label={t.practitioner.defaultRoom} value={room} />
-              <LockedProfileField label={t.practitioner.employment} value={practitioner.employmentType} />
-              <LockedProfileField label={t.practitioner.licenseNumber} value={display(practitioner.licenseNumber)} />
-              <LockedProfileField label={t.practitioner.licenseExpiry} value={display(practitioner.licenseExpiry)} />
+              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.email} value={practitioner.email} />
+              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.specialty} value={specialty} />
+              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.department} value={department} />
+              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.defaultRoom} value={room} />
+              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.employment} value={practitioner.employmentType} />
+              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.licenseNumber} value={display(practitioner.licenseNumber)} />
+              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.licenseExpiry} value={display(practitioner.licenseExpiry)} />
             </ProfileInfoGrid>
           </ProfileSection>
         </form>
@@ -137,16 +135,16 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ProfileSection title={t.practitioner.services} action={<IconKey className="size-4 text-muted-foreground" aria-label="Read-only" />}>
+        <ProfileSection title={t.practitioner.services}>
           {practitioner.services.length ? <div className="flex flex-wrap gap-2">{practitioner.services.map((service) => <Badge key={service.id} variant="secondary">{getBilingualName(service.name, service.nameAr, lang)}</Badge>)}</div> : <EmptyState size="compact" icon={IconService} title={t.practitioner.noServicesAssigned} />}
         </ProfileSection>
-        <ProfileSection title={t.practitioner.weeklyAvailability} action={<IconKey className="size-4 text-muted-foreground" aria-label="Read-only" />}>
+        <ProfileSection title={t.practitioner.weeklyAvailability}>
           {practitioner.availabilities.length ? <div className="space-y-2">{practitioner.availabilities.map((slot) => <div key={slot.id ?? `${slot.dayOfWeek}-${slot.startTime}`} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{t.constants.weekdays[WEEKDAY_KEYS[slot.dayOfWeek]]}</span><span className="font-medium">{slot.startTime} - {slot.endTime}</span></div>)}</div> : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noWeeklyPatterns} />}
         </ProfileSection>
-        <ProfileSection title={t.practitioner.extraAvailability} action={<IconKey className="size-4 text-muted-foreground" aria-label="Read-only" />}>
+        <ProfileSection title={t.practitioner.extraAvailability}>
           {practitioner.availabilityOverrides.length ? practitioner.availabilityOverrides.map((entry) => <div key={entry.id ?? entry.startAt} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.extraAvailability}</span><span className="font-medium">{entry.startAt.slice(0, 10)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noExtraAvailability} />}
         </ProfileSection>
-        <ProfileSection title={t.practitioner.leave} action={<IconKey className="size-4 text-muted-foreground" aria-label="Read-only" />}>
+        <ProfileSection title={t.practitioner.leave}>
           {practitioner.timeOffs.length ? practitioner.timeOffs.map((entry) => <div key={entry.id ?? entry.startDate} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.leave}</span><span className="font-medium">{entry.startDate.slice(0, 10)} - {entry.endDate.slice(0, 10)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noLeaveBlocks} />}
         </ProfileSection>
       </div>

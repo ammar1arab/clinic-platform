@@ -1,5 +1,5 @@
-import { DashboardOverview } from '@/components/blocks/dashboard';
+import { PractitionerHome } from '@/components/blocks/dashboard';
 
 export default function PractitionerHomePage() {
-  return <DashboardOverview />;
+  return <PractitionerHome />;
 }
