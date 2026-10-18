@@ -1,4 +1,5 @@
 const keyFor = (clinicId: string) => `clinic-logo:${clinicId}`;
+const activeKey = 'clinic-logo:active';
 
 const stripped = new Map<string, string>();
 
@@ -96,11 +97,25 @@ export function readClinicLogo(clinicId: string) {
   }
 }
 
+export function readActiveClinicLogo() {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(activeKey);
+  } catch {
+    return null;
+  }
+}
+
 export function writeClinicLogo(clinicId: string, url: string | null) {
   if (!clinicId || typeof window === 'undefined') return;
   try {
-    if (url) localStorage.setItem(keyFor(clinicId), url);
-    else localStorage.removeItem(keyFor(clinicId));
+    if (url) {
+      localStorage.setItem(keyFor(clinicId), url);
+      localStorage.setItem(activeKey, url);
+    } else {
+      localStorage.removeItem(keyFor(clinicId));
+      localStorage.removeItem(activeKey);
+    }
     window.dispatchEvent(new Event('clinic-logo'));
   } catch {
     /* the picture still lives in the current page cache */

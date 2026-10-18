@@ -10,6 +10,7 @@ import {
 import { useUpdatePractitionerSelfProfile } from '@/hooks/api/use-practitioners';
 import { IconCalendarClock, IconEdit, IconLock, IconService } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
+import { formatDate } from '@/lib/datetime';
 import type { PractitionerDetail, PractitionerSelfProfileInput } from '@/services/practitioners.service';
 import { useLanguage } from '@/providers';
 import { ROUTES } from '@/constants/routes';
@@ -17,20 +18,6 @@ import { ROUTES } from '@/constants/routes';
 const WEEKDAY_KEYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 
 const display = (value: string | null | undefined) => value?.trim() || null;
-
-function LockedProfileField({ label, value, readOnlyLabel }: { label: string; value: string | null | undefined; readOnlyLabel: string }) {
-  return (
-    <div className="rounded-xl border border-border/70 bg-muted/30 px-3.5 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <span className="grid size-7 place-items-center rounded-lg border border-primary/20 bg-primary/5 text-primary" title={readOnlyLabel} aria-label={readOnlyLabel}>
-          <IconLock className="size-3.5" aria-hidden />
-        </span>
-      </div>
-      <p className="mt-1.5 break-words text-sm font-medium text-foreground">{value || '—'}</p>
-    </div>
-  );
-}
 
 export function PractitionerSelfProfile({ practitioner }: { practitioner: PractitionerDetail }) {
   const { lang, t } = useLanguage();
@@ -105,15 +92,23 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
             </div>
             <FormActions className="mt-5" onCancel={() => { reset(); setEditing(false); }} submitLabel={t.common.save} pending={mutation.isPending} />
           </ProfileSection>
-          <ProfileSection title={t.common.readOnly} description={t.practitioner.weeklyAvailability}>
+          <ProfileSection
+            title={t.common.readOnly}
+            action={
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
+                <IconLock className="size-3.5" aria-hidden />
+                {t.common.readOnly}
+              </span>
+            }
+          >
             <ProfileInfoGrid className="lg:grid-cols-3">
-              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.email} value={practitioner.email} />
-              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.specialty} value={specialty} />
-              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.department} value={department} />
-              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.defaultRoom} value={room} />
-              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.employment} value={practitioner.employmentType} />
-              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.licenseNumber} value={display(practitioner.licenseNumber)} />
-              <LockedProfileField readOnlyLabel={t.common.readOnly} label={t.practitioner.licenseExpiry} value={display(practitioner.licenseExpiry)} />
+              <ProfileInfoField label={t.practitioner.email} value={practitioner.email} />
+              <ProfileInfoField label={t.practitioner.specialty} value={specialty} />
+              <ProfileInfoField label={t.practitioner.department} value={department} />
+              <ProfileInfoField label={t.practitioner.defaultRoom} value={room} />
+              <ProfileInfoField label={t.practitioner.employment} value={practitioner.employmentType} />
+              <ProfileInfoField label={t.practitioner.licenseNumber} value={display(practitioner.licenseNumber)} />
+              <ProfileInfoField label={t.practitioner.licenseExpiry} value={formatDate(practitioner.licenseExpiry, undefined, lang)} />
             </ProfileInfoGrid>
           </ProfileSection>
         </form>
@@ -128,7 +123,7 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
             <ProfileInfoField label={t.practitioner.defaultRoom} value={room} />
             <ProfileInfoField label={t.practitioner.employment} value={practitioner.employmentType} />
             <ProfileInfoField label={t.practitioner.licenseNumber} value={display(practitioner.licenseNumber)} />
-            <ProfileInfoField label={t.practitioner.licenseExpiry} value={display(practitioner.licenseExpiry)} />
+            <ProfileInfoField label={t.practitioner.licenseExpiry} value={formatDate(practitioner.licenseExpiry, undefined, lang)} />
           </ProfileInfoGrid>
           {display(getBilingualName(practitioner.bio, practitioner.bioAr, lang)) ? <p className="mt-5 whitespace-pre-wrap border-t border-border/70 pt-4 text-sm leading-relaxed text-muted-foreground">{getBilingualName(practitioner.bio, practitioner.bioAr, lang)}</p> : null}
         </ProfileSection>

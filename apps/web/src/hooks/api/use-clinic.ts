@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { useClinicId } from "../shared/use-clinic-id";
-import { readClinicLogo, writeClinicLogo } from "@/lib/clinic-logo";
+import { readActiveClinicLogo, readClinicLogo, writeClinicLogo } from "@/lib/clinic-logo";
 import {
   clinicsService,
   UpdateClinicInput,
@@ -41,7 +41,7 @@ export function useClinicLogo() {
   const clinicId = useClinicId();
   const { data: clinic } = useClinic(clinicId);
   const read = useMemo(
-    () => () => (clinicId ? readClinicLogo(clinicId) : null),
+    () => () => (clinicId ? readClinicLogo(clinicId) : readActiveClinicLogo()),
     [clinicId],
   );
   const stored = useSyncExternalStore(subscribeToClinicLogo, read, () => null);

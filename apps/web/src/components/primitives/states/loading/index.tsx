@@ -1,8 +1,25 @@
 'use client';
 
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { IconSpinner } from '@/constants/icons';
-import { BrandMark, LoadingDots } from '@/components/primitives/display/brand-mark';
+import { LoadingDots } from '@/components/primitives/display/brand-mark';
+import { useClinicLogo } from '@/hooks/api/use-clinic';
+
+function ClinicLoadingLogo({ size }: { size: 'md' | 'lg' }) {
+  const logoUrl = useClinicLogo();
+  const box = size === 'lg' ? 'size-16' : 'size-12';
+  const px = size === 'lg' ? 64 : 48;
+
+  if (!logoUrl) return <Spinner size="lg" />;
+
+  return (
+    <span className={cn('relative grid place-items-center', box)}>
+      <span className="absolute inset-0 rounded-2xl border border-border animate-clinic-ripple" aria-hidden />
+      <Image src={logoUrl} alt="" width={px} height={px} unoptimized className="relative size-full animate-clinic-breathe object-contain" priority />
+    </span>
+  );
+}
 
 export function Spinner({
   size = 'default',
@@ -53,7 +70,7 @@ export function SectionLoader({
       role="status"
       aria-live="polite"
     >
-      <BrandMark size="md" spinning />
+      <ClinicLoadingLogo size="md" />
       {label && (
         <div className="flex flex-col items-center gap-2">
           <p className="text-sm text-muted-foreground">{label}</p>
@@ -82,7 +99,7 @@ export function PageLoadingState({
         className,
       )}
     >
-      <BrandMark size="lg" spinning />
+      <ClinicLoadingLogo size="lg" />
       <div className="flex flex-col items-center gap-1.5">
         {title && (
           <h3 className="text-sm font-semibold tracking-tight text-foreground">

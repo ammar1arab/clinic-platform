@@ -77,9 +77,11 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
     }
     stored = await stripSolidBackdrop(stored);
     if (logoUrl.startsWith('blob:') && logoUrl !== url) URL.revokeObjectURL(logoUrl);
-    setLogoUrl(stored);
-    writeClinicLogo(clinicId, stored || null);
-    mirror({ logoUrl: stored || null });
+    const updated = await updateMutation.mutateAsync({ logoUrl: stored || null });
+    const nextLogo = updated.logoUrl || '';
+    setLogoUrl(nextLogo);
+    writeClinicLogo(clinicId, nextLogo || null);
+    mirror({ logoUrl: nextLogo || null });
   };
 
   const [workingHoursStart, setWorkingHoursStart] = useState(clinic.workingHoursStart || '08:00');
