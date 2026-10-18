@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from "@nestjs/common";
 import {
   AppointmentStatus,
@@ -144,7 +145,7 @@ export class AppointmentsService {
     if (!patient) throw new BadRequestException("Invalid or inactive patient");
 
     const doctor = await this.prisma.clinicUser.findFirst({
-      where: { id: dto.doctorId, clinicId, isActive: true },
+      where: { id: dto.doctorId, clinicId, isActive: true, role: Role.practitioner },
     });
     if (!doctor) throw new BadRequestException("Invalid or inactive doctor");
 
@@ -401,6 +402,9 @@ export class AppointmentsService {
     role?: Role,
     clinicUserId?: string,
   ) {
+    if (role === Role.practitioner && !clinicUserId) {
+      throw new ForbiddenException("Practitioner identity is required");
+    }
     return this.appointmentsRepository.findAllByClinic(clinicId, {
       ...filters,
       doctorId: role === Role.practitioner ? clinicUserId : filters.doctorId,

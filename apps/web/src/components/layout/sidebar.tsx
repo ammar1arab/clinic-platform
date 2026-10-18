@@ -48,8 +48,8 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
     return [
       profile,
       { label: t.layout.titles.home, href: ROUTES.HOME, icon: IconDashboard, accent: 'default' },
-      { label: t.queue.waitingQueue, href: ROUTES.HOME_QUEUE, icon: IconPatients, accent: 'teal' },
       { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'violet' },
+      { label: t.queue.waitingQueue, href: ROUTES.HOME_QUEUE, icon: IconTimer, accent: 'warning' },
     ];
   }
   const items: NavItem[] = [

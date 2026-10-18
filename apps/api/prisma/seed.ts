@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import {
   PrismaClient,
   Prisma,
@@ -577,7 +578,59 @@ async function main() {
     daysFromNow,
     now,
   });
-  await prisma.appointment.createMany({ data: appointmentRows });
+  const guaranteedPractitionerRows: Prisma.AppointmentUncheckedCreateInput[] = [];
+  const queueStatuses = ["checked_in", "waiting", "confirmed"] as const;
+  for (const [doctorIndex, doctor] of doctorUsers.entries()) {
+    const seed = rosterByEmail.get(doctor.user.email);
+    const department =
+      (seed ? deptByName.get(seed.departmentName) : undefined) ??
+      departments.find((item) => item.isActive);
+    const service = services.find((item) => item.departmentId === department?.id) ?? services[0];
+    const patient =
+      patientRows.find((item) => item.primaryDoctorId === doctor.id && item.isActive) ??
+      patientRows[doctorIndex % patientRows.length];
+    const room = rooms.find((item) => item.departmentId === service?.departmentId) ?? rooms[0];
+    if (!department || !service || !patient || !room) continue;
+
+    for (const [slot, status] of queueStatuses.entries()) {
+      const scheduledAt = daysFromNow(0, 17 + slot, 0);
+      const waitingStartedAt = status === "confirmed" ? null : scheduledAt;
+      guaranteedPractitionerRows.push({
+        id: randomUUID(),
+        clinicId: clinic.id,
+        patientId: patient.id,
+        doctorId: doctor.id,
+        departmentId: department.id,
+        roomId: room.id,
+        serviceId: service.id,
+        scheduledAt,
+        durationMins: service.durationMins,
+        sessionType: "in_person",
+        meetingUrl: null,
+        status,
+        statusUpdatedAt: now,
+        statusUpdatedBy: doctor.userId,
+        waitingStartedAt,
+        inProgressAt: null,
+        waitingMins: null,
+        cancelReason: null,
+        notes: "Demo appointment for practitioner queue",
+        fee: service.fee,
+        discount: null,
+        discountType: null,
+        discountReason: null,
+        discountCodeId: null,
+        isPaid: false,
+        paidAt: null,
+        paidById: null,
+        paymentMethodId: null,
+        paymentMethod: null,
+        patientPackageId: null,
+        packageCredit: null,
+      });
+    }
+  }
+  await prisma.appointment.createMany({ data: [...appointmentRows, ...guaranteedPractitionerRows] });
 
   const referralRows = buildBulkReferrals({
     clinicId: clinic.id,

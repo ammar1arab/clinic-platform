@@ -35,6 +35,8 @@ export class AppointmentsController {
   }
 
   @Get()
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial, Role.practitioner)
   @ApiQuery({ name: "startDate", required: false, type: String })
   @ApiQuery({ name: "endDate", required: false, type: String })
   @ApiQuery({ name: "doctorId", required: false, type: String })
@@ -52,6 +54,8 @@ export class AppointmentsController {
   }
 
   @Get(":id")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial, Role.practitioner)
   findOne(@CurrentUser() user: AuthUser, @Param("id") id: string) {
     return this.appointmentsService.findOne(
       user.clinicId,

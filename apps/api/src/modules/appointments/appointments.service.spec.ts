@@ -7,7 +7,7 @@ import { DiscountCodesService } from "@/modules/discount-codes/discount-codes.se
 import { PatientPackagesService } from "@/modules/patient-packages/patient-packages.service";
 import { BadRequestException } from "@nestjs/common";
 import { AppointmentStatusDto } from "./dto";
-import type { SessionType } from "@prisma/client";
+import { Role, type SessionType } from "@prisma/client";
 
 type MockFn = jest.Mock;
 
@@ -269,6 +269,30 @@ describe("AppointmentsService", () => {
           doctorId: "d1",
         }),
       ).rejects.toThrow("Invalid or inactive patient");
+    });
+  });
+
+  describe("role scoping", () => {
+    it("forces practitioner appointment lists to their own clinic user", async () => {
+      repository.findAllByClinic.mockResolvedValue([]);
+
+      await service.findAll(
+        "clinic1",
+        { doctorId: "another-doctor" },
+        Role.practitioner,
+        "own-doctor",
+      );
+
+      expect(repository.findAllByClinic).toHaveBeenCalledWith("clinic1", {
+        doctorId: "own-doctor",
+      });
+    });
+
+    it("rejects a practitioner list request without an authenticated clinic user", async () => {
+      await expect(
+        service.findAll("clinic1", {}, Role.practitioner),
+      ).rejects.toThrow("Practitioner identity is required");
+      expect(repository.findAllByClinic).not.toHaveBeenCalled();
     });
   });
 
