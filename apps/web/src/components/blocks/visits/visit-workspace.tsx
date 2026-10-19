@@ -101,7 +101,7 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
             <div className="flex max-w-36 flex-col items-end gap-2 sm:max-w-52">
               <StatusBadgeBlock status={data.appointmentStatus} tip={false} />
             {data.mode === SESSION_TYPE.IN_PERSON ? (
-              <Badge variant="outline" className="whitespace-normal text-end"><IconInPerson className="size-4 shrink-0" />{t.visits.inPerson}{data.room ? ` · ${roomName}` : ''}</Badge>
+              <Badge variant="outline" className="h-6 min-h-0 max-w-full px-2 py-0 text-[11px] leading-none sm:text-xs"><span className="truncate">{t.visits.inPerson}{data.room ? ` · ${roomName}` : ''}</span></Badge>
             ) : data.meetingUrl ? (
               <Badge variant="outline" asChild><a href={data.meetingUrl} target="_blank" rel="noopener noreferrer">
                 <IconOnline className="size-4" />{t.visits.join}

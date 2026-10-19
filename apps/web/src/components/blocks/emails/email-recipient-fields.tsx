@@ -26,6 +26,7 @@ import {
   SearchablePicker,
   SearchInput,
   OverflowActions,
+  DIRECTORY_FILTER_BADGE_CLASS,
 } from "@/components/primitives";
 import { useEmailAudiences } from "@/hooks/api/use-emails";
 import { useDepartments } from "@/hooks/api/use-departments";
@@ -38,6 +39,7 @@ import { EMAIL_AUDIENCE, ROLE } from "@clinic/types";
 import { getStatusConfig, STATUS_OPTIONS } from "@/constants/appointment";
 import { IconFilters } from "@/constants/icons";
 import { keepNestedPortals } from "@/lib/overlay";
+import { cn } from "@/lib/utils";
 import type { EmailComposerValues } from "@/lib/validations";
 
 const AUDIENCE = {
@@ -208,11 +210,21 @@ export function EmailRecipientFields({
           </FormField>
           <Popover>
             <PopoverTrigger asChild>
-              <Button type="button" variant="outline" className="gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                aria-label={t.common.filters}
+                className={cn(
+                  'gap-2',
+                  activeFilters > 0
+                    ? 'max-sm:h-8 max-sm:w-auto max-sm:gap-1 max-sm:px-2'
+                    : 'max-sm:size-8 max-sm:p-0',
+                )}
+              >
                 <IconFilters className="size-4" />
-                {t.common.filters}
+                <span className="hidden sm:inline">{t.common.filters}</span>
                 {activeFilters > 0 && (
-                  <Badge variant="info">{activeFilters}</Badge>
+                  <Badge variant="info" className={DIRECTORY_FILTER_BADGE_CLASS}>{activeFilters}</Badge>
                 )}
               </Button>
             </PopoverTrigger>
