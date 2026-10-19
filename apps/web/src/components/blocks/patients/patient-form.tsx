@@ -160,16 +160,19 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
           <CardTitle className="text-sm">{t.patient.personalInfo}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField error={errors.imageUrl?.message} className="sm:col-span-2">
-            <AvatarUpload
-              value={imageUrl}
-              onChange={(url) =>
-                setValue('imageUrl', url, { shouldValidate: true, shouldDirty: true })
-              }
-              fallbackLabel={`${firstNameEn || firstNameAr || 'P'}${lastNameEn || lastNameAr || ''}`}
-              disabled={isPending}
-            />
-          </FormField>
+          <div className="flex items-start gap-3 sm:col-span-2 sm:items-center sm:gap-5">
+            <FormField error={errors.imageUrl?.message} className="shrink-0">
+              <AvatarUpload
+                className="shrink-0"
+                value={imageUrl}
+                onChange={(url) =>
+                  setValue('imageUrl', url, { shouldValidate: true, shouldDirty: true })
+                }
+                fallbackLabel={`${firstNameEn || firstNameAr || 'P'}${lastNameEn || lastNameAr || ''}`}
+                disabled={isPending}
+              />
+            </FormField>
+            <div className="grid min-w-0 flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label={t.patient.firstNameEn} required error={errors.firstNameEn?.message}>
             <Input maxLength={50} {...register('firstNameEn')} placeholder={t.patient.firstNamePlaceholder} />
           </FormField>
@@ -196,6 +199,8 @@ export function PatientForm({ clinicId, patient, onCancel, onSuccess }: Props) {
               {...register('lastNameAr')}
             />
           </FormField>
+            </div>
+          </div>
           <FormField label={t.patient.dateOfBirth} error={errors.dob?.message}>
             <Controller
               control={control}

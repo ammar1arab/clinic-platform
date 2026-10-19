@@ -40,7 +40,7 @@ import {
 } from "@/constants/icons";
 import { useLanguage } from "@/providers";
 import { getPersonName } from "@/i18n";
-import { formatDate } from "@/lib/datetime";
+import { formatDateTime } from "@/lib/datetime";
 import { ROUTES } from "@/constants/routes";
 
 const PAGE_SIZE = 15;
@@ -144,6 +144,7 @@ export function PatientsList({
     if (!canManage) return null;
     return (
     <DirectoryActions
+      className="justify-between"
       name={nameFor(patient)}
       active={patient.isActive}
       disabled={toggleStatus.isPending}
@@ -157,7 +158,6 @@ export function PatientsList({
     {
       id: "patient",
       label: t.patient.patient,
-      className: "w-[23%]",
       render: (p) => (
         <DirectoryIdentity
           copyContacts
@@ -171,14 +171,14 @@ export function PatientsList({
     {
       id: "phone",
       label: t.patient.phone,
-      className: "w-[12%]",
+      className: "w-36",
       cellClassName: "text-muted-foreground",
       render: (p) => <PhoneLink copyable value={p.phone} className="block" />,
     },
     {
       id: "doctor",
       label: t.patient.practitioner,
-      className: "w-[13%]",
+      className: "w-40",
       render: (p) => (
         <TruncatedText>{p.primaryDoctorName ?? "-"}</TruncatedText>
       ),
@@ -186,33 +186,33 @@ export function PatientsList({
     {
       id: "lastVisit",
       label: t.patient.lastVisit,
-      className: "w-[12%]",
+      className: "w-44",
       cellClassName: "text-xs text-muted-foreground",
-      render: (p) => formatDate(p.lastVisit, undefined, lang),
+      render: (p) => formatDateTime(p.lastVisit, undefined, lang),
     },
     {
       id: "sessions",
       label: t.patient.sessions,
-      className: "w-[6%]",
+      className: "w-20",
       cellClassName: "tabular-nums",
       render: (p) => p.totalSessions,
     },
     {
       id: "age",
       label: t.patient.age,
-      className: "w-[7%]",
+      className: "w-20",
       render: (p) => patientAgeLabel(p.dob, t) || "-",
     },
     {
       id: "gender",
       label: t.patient.gender,
-      className: "w-[8%]",
+      className: "w-24",
       render: gender,
     },
     {
       id: "nationalId",
       label: t.patient.nationalId,
-      className: "w-[9%]",
+      className: "w-32",
       cellClassName: "text-muted-foreground tabular-nums",
       render: (p) => <TruncatedText>{p.nationalId ?? "-"}</TruncatedText>,
     },
@@ -220,7 +220,7 @@ export function PatientsList({
       ? [{
           id: "actions",
           label: t.common.active,
-          className: "w-[10%]",
+          className: "w-20",
           render: controls,
         }]
       : []),
@@ -263,10 +263,10 @@ export function PatientsList({
         onOpen={(p) => openPatient(p.id)}
         onPrefetch={(p) => prefetchPatient(p.id)}
         inactive={(p) => !p.isActive}
-        className="hidden md:flex"
-        tableClassName="min-w-[64rem]"
+        className="hidden lg:flex"
+        tableClassName="min-w-[72rem]"
       />
-      <div className="page-fill overflow-y-auto overscroll-y-contain md:hidden">
+      <div className="page-fill overflow-y-auto overscroll-y-contain lg:hidden">
         <div className="grid grid-cols-1 gap-3">
           {pageItems.map((p) => (
             <EntityMobileCard

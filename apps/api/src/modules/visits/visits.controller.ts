@@ -40,6 +40,7 @@ import {
   ReportDraftDto,
   ReversalDto,
   RevisionDto,
+  ScheduleTemplateDto,
   SignDto,
   StartVisitDto,
   TemplateDto,
@@ -375,6 +376,18 @@ export class ClinicalTemplatesController {
     @Body() body: SignDto,
   ) {
     return this.templates.publish(actor, id, body.revision);
+  }
+  @Post(":id/schedule") @Header("Cache-Control", "no-store") schedule(
+    @CurrentUser() actor: AuthUser,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: ScheduleTemplateDto,
+  ) {
+    return this.templates.schedule(
+      actor,
+      id,
+      body.revision,
+      new Date(body.scheduledAt),
+    );
   }
   @Post(":id/archive") @Header("Cache-Control", "no-store") archive(
     @CurrentUser() actor: AuthUser,

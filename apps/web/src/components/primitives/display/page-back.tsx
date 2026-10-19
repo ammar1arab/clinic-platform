@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/providers/language-provider';
 import { Button } from '@/components/ui';
@@ -9,46 +10,39 @@ import { IconWell, type IconWellAccent } from './icon-well';
 
 interface Props {
   backHref: string;
-  backLabel?: string;
-  actions?: React.ReactNode;
+  search?: ReactNode;
+  actions?: ReactNode;
   className?: string;
   icon?: LucideIcon;
   accent?: IconWellAccent;
-  title?: string;
 }
 
 export function PageBack({
   backHref,
+  search,
   actions,
   className,
   icon,
   accent,
-  title,
 }: Props) {
   const { t } = useLanguage();
 
   return (
-    <div className={cn('flex items-center justify-between gap-3', className)}>
-      <div className="flex min-w-0 items-center gap-2.5">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ms-2 h-7 shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground"
-          asChild
-        >
-          <Link href={backHref} prefetch>
-            <IconArrowLeft className="size-3.5 me-1 rtl:rotate-180" />
-            {t.ui.back}
-          </Link>
-        </Button>
-        {icon ? <IconWell icon={icon} accent={accent} size="md" /> : null}
-        {title ? (
-          <h2 className="truncate text-sm font-semibold tracking-tight text-foreground sm:text-base">
-            {title}
-          </h2>
-        ) : null}
-      </div>
-      {actions ? <div className="ms-auto shrink-0">{actions}</div> : null}
+    <div className={cn('flex items-center gap-2', className)}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ms-2 h-8 shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground"
+        asChild
+      >
+        <Link href={backHref} prefetch>
+          <IconArrowLeft className="size-3.5 me-1 rtl:rotate-180" />
+          {t.ui.back}
+        </Link>
+      </Button>
+      {icon ? <IconWell icon={icon} accent={accent} size="md" /> : null}
+      {search ? <div className="min-w-0 flex-1">{search}</div> : null}
+      {actions ? <div className={cn('shrink-0', !search && 'ms-auto')}>{actions}</div> : null}
     </div>
   );
 }

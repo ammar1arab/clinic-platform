@@ -26,16 +26,20 @@ export const visitInclude = {
   },
 } satisfies Prisma.VisitInclude;
 export const workspaceInclude = {
-  patient: true,
-  doctor: true,
-  clinic: true,
-  room: true,
-  service: true,
+  patient: { select: {
+    clinicId: true, firstNameEn: true, lastNameEn: true, firstNameAr: true, lastNameAr: true,
+    imageUrl: true, phone: true, dob: true, gender: true, allergies: true, bloodType: true,
+  } },
+  doctor: { select: { clinicId: true, name: true, nameAr: true, imageUrl: true } },
+  clinic: { select: { name: true, nameAr: true, timezone: true } },
+  room: { select: { id: true, clinicId: true, name: true, nameAr: true } },
+  service: { select: { clinicId: true, name: true } },
   visit: { include: visitInclude },
 } satisfies Prisma.AppointmentInclude;
 export const summaryInclude = {
   patient: {
     select: {
+      imageUrl: true,
       firstNameEn: true,
       lastNameEn: true,
       firstNameAr: true,

@@ -113,6 +113,9 @@ export class TemplateDto {
 export class UpdateTemplateDto extends TemplateDto {
   @IsInt() @Min(0) revision: number;
 }
+export class ScheduleTemplateDto extends SignDto {
+  @IsISO8601() scheduledAt: string;
+}
 export class NotePreferenceDto {
   @ValidateIf((_object: unknown, value: unknown) => value !== null)
   @IsUUID()

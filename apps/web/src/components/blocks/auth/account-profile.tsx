@@ -4,48 +4,50 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { compressImageToJpeg } from "@/lib/upload-local";
-import { Badge, Button, Card, CardContent, Input } from "@/components/ui";
+import { Button, Card, CardContent, Input } from "@/components/ui";
 import {
   AvatarUpload,
+  ContactLine,
+  EmailLink,
   FormField,
   FormActions,
+  PhoneLink,
   ProfileInfoField,
   ProfileInfoGrid,
   ProfileSection,
   ProfileShell,
-  ReadOnlyMark,
 } from "@/components/primitives";
 import { IconEdit } from "@/constants/icons";
-import { useUpdateAccountProfile } from "@/hooks/api/use-auth-mutations";
+import { useRequestEmailChange, useConfirmEmailChange, useUpdateAccountProfile } from "@/hooks/api/use-auth-mutations";
 import { useAuth, useLanguage } from "@/providers";
 import type { AccountProfileInput } from "@clinic/types";
 import { ROLE } from "@clinic/types";
 import { ROUTES } from "@/constants/routes";
+import { getBilingualName } from "@/i18n";
+import { extractErrorMessage } from "@/lib/api";
+import { AccountVerificationDialog } from "./account-verification-dialog";
 import { AccountPasswordReset } from "./account-password-reset";
 
-function LockedField({ label, value, readOnlyLabel }: { label: string; value: string; readOnlyLabel: string }) {
-  return (
-    <div className="rounded-xl border border-border/70 bg-muted/30 px-3.5 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <ReadOnlyMark label={readOnlyLabel} />
-      </div>
-      <p className="mt-1.5 break-words text-sm font-medium text-foreground">{value || "—"}</p>
-    </div>
-  );
-}
-
 export function AccountProfile() {
-  const { user } = useAuth();
-  const { t } = useLanguage();
+  const { user, logout } = useAuth();
+  const { t, lang } = useLanguage();
   const [editing, setEditing] = useState(false);
   const mutation = useUpdateAccountProfile();
+  const emailChange = useRequestEmailChange();
+  const confirmEmail = useConfirmEmailChange();
+  const [challenge, setChallenge] = useState<{ token: string; email: string; resendAt: number } | null>(null);
+  const [verificationError, setVerificationError] = useState("");
+  const requestEmail = async (email: string) => {
+    const response = await emailChange.mutateAsync(email);
+    if (response.next === "otp") setChallenge({ token: response.token, email: response.email, resendAt: new Date().getTime() + response.cooldownSeconds * 1000 });
+  };
   const { register, control, setValue, reset, handleSubmit, formState: { isSubmitting, errors } } = useForm<AccountProfileInput>({
     defaultValues: {
       name: user?.name ?? "",
       imageUrl: user?.imageUrl ?? "",
       nameAr: user?.nameAr ?? "",
       phone: user?.phone ?? "",
+      email: user?.email ?? "",
     },
   });
   const imageUrl = useWatch({ control, name: "imageUrl" });
@@ -73,22 +75,22 @@ export function AccountProfile() {
         imageUrl: nextImage,
       });
       if (values.imageUrl?.startsWith("blob:")) URL.revokeObjectURL(values.imageUrl);
-      reset({ name: values.name.trim(), nameAr: values.nameAr ?? "", phone: values.phone ?? "", imageUrl: nextImage });
+      reset({ email: values.email ?? user.email, name: values.name.trim(), nameAr: values.nameAr ?? "", phone: values.phone ?? "", imageUrl: nextImage });
       setEditing(false);
-    } catch {
-      toast.error(t.common.couldNotProcessImage);
+      if (values.email && values.email.trim().toLowerCase() !== user.email) await requestEmail(values.email.trim().toLowerCase());
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t.errors.generic);
     }
   };
 
   const cancel = () => {
-    reset({ name: user.name ?? "", nameAr: user.nameAr ?? "", phone: user.phone ?? "", imageUrl: user.imageUrl ?? "" });
+    reset({ email: user.email, name: user.name ?? "", nameAr: user.nameAr ?? "", phone: user.phone ?? "", imageUrl: user.imageUrl ?? "" });
     setEditing(false);
   };
 
   return (
     <ProfileShell
       backHref={ROUTES.DASHBOARD}
-      backLabel={t.layout.sidebar.dashboard}
       actions={!editing ? (
         <Button type="button" variant="outline" onClick={() => setEditing(true)}>
           <IconEdit className="size-3.5" />{t.common.edit}
@@ -96,15 +98,11 @@ export function AccountProfile() {
       ) : undefined}
     >
       <Card className="card-aura overflow-hidden ring-0">
-        <CardContent className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
-          <AvatarUpload value={editing ? imageUrl : user.imageUrl} onChange={(value) => setValue("imageUrl", value)} fallbackLabel={editing ? name : user.name} showPreviewNotice={false} disabled={!editing} />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-heading text-2xl font-semibold tracking-tight">{user.name}</h1>
-              <Badge variant="success">{t.common.active}</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">{t.common.accountProfile}</p>
-            <p className="break-words text-sm text-muted-foreground">{user.email}</p>
+        <CardContent className="flex flex-row items-center gap-3 p-4 sm:gap-5 sm:p-5">
+          <AvatarUpload className="shrink-0" value={editing ? imageUrl : user.imageUrl} onChange={(value) => setValue("imageUrl", value)} fallbackLabel={editing ? name : user.name} showPreviewNotice={false} disabled={!editing} />
+          <div className="min-w-0 flex-1 space-y-1">
+            <h1 dir="auto" className="truncate text-start font-heading text-base font-semibold tracking-tight sm:text-lg">{getBilingualName(user.name, user.nameAr, lang)}</h1>
+            <ContactLine phone={user.phone} email={user.email} className="text-xs sm:text-sm" />
           </div>
         </CardContent>
       </Card>
@@ -112,7 +110,7 @@ export function AccountProfile() {
       {editing ? (
         <form onSubmit={handleSubmit(save)}>
           <fieldset disabled={mutation.isPending || isSubmitting} className="min-w-0">
-            <ProfileSection title={t.common.accountProfile} description={t.common.signInEmailHint}>
+            <ProfileSection title={t.common.accountProfile}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField label={t.common.name} htmlFor="account-name" required error={errors.name?.message}>
                   <Input id="account-name" maxLength={120} {...register("name", { required: t.validation.required })} />
@@ -123,7 +121,9 @@ export function AccountProfile() {
                 <FormField label={t.exports.phone} htmlFor="account-phone">
                   <Input id="account-phone" dir="ltr" type="tel" maxLength={40} {...register("phone")} />
                 </FormField>
-                <LockedField label={t.common.signInEmail} value={user.email} readOnlyLabel={t.common.readOnly} />
+                <FormField label={t.common.signInEmail} htmlFor="account-email" required error={errors.email?.message}>
+                  <Input id="account-email" dir="ltr" type="email" maxLength={254} {...register("email", { required: t.validation.required })} />
+                </FormField>
               </div>
               <FormActions className="mt-5" onCancel={cancel} submitLabel={t.common.save} pending={mutation.isPending || isSubmitting} />
             </ProfileSection>
@@ -134,13 +134,29 @@ export function AccountProfile() {
           <ProfileInfoGrid className="lg:grid-cols-3">
             <ProfileInfoField label={t.common.name} value={user.name} />
             <ProfileInfoField label={t.common.accountArabicName} value={user.nameAr} dir="rtl" />
-            <ProfileInfoField label={t.exports.phone} value={user.phone} dir="ltr" />
-            <ProfileInfoField label={t.common.signInEmail} value={user.email} />
+            <ProfileInfoField label={t.exports.phone} value={user.phone} dir="ltr">
+              <PhoneLink value={user.phone} copyable className="text-sm font-medium" />
+            </ProfileInfoField>
+            <ProfileInfoField label={t.common.signInEmail} value={user.email}>
+              <EmailLink value={user.email} copyable className="text-sm font-medium" />
+            </ProfileInfoField>
           </ProfileInfoGrid>
         </ProfileSection>
       )}
 
       <AccountPasswordReset id={user.clinicUserId} />
+      <AccountVerificationDialog open={!!challenge} pending={confirmEmail.isPending || emailChange.isPending} email={challenge?.email} resendAt={challenge?.resendAt ?? 0} error={verificationError}
+        onClose={() => { setChallenge(null); setVerificationError(""); }}
+        onResend={async () => { if (challenge) await requestEmail(challenge.email); }}
+        onVerify={async (code) => {
+          if (!challenge) return;
+          try {
+            await confirmEmail.mutateAsync({ token: challenge.token, code });
+            setChallenge(null);
+            await logout();
+          } catch (error) { setVerificationError(extractErrorMessage(error instanceof Error ? error : { message: t.errors.generic })); }
+        }}
+      />
     </ProfileShell>
   );
 }

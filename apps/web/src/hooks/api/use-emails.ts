@@ -18,6 +18,7 @@ import { QUERY_KEYS } from "@/constants/query-keys";
 import { useLanguage } from "@/providers";
 import { useApiMutation, useFetchData } from "../query";
 import type { TResponseError } from "../query";
+import { useClinic } from "./use-clinic";
 import { useClinicId } from "../shared/use-clinic-id";
 import { useQueryClient } from "@tanstack/react-query";
 import { isHttpStatus } from "@/lib/api";
@@ -41,8 +42,10 @@ export function useEmailHistory(
 
 export function useEmailMessage(clinicId: string, id: string, page: number) {
   const { lang } = useLanguage();
+  const { data: clinic } = useClinic(clinicId);
+  const brandStamp = clinic?.updatedAt ?? "";
   return useFetchData<EmailMessageDetail>({
-    queryKey: QUERY_KEYS.emails.detail(clinicId, lang, id, page),
+    queryKey: QUERY_KEYS.emails.detail(clinicId, lang, id, page, brandStamp),
     request: () => emailsService.detail(id, { page, limit: 20 }),
     options: {
       enabled: !!clinicId && !!id,
@@ -115,13 +118,15 @@ export function useEmailRecipientQuery(
 
 export function useEmailPreviewQuery(input: EmailPreviewInput, enabled = true) {
   const clinicId = useClinicId();
+  const { data: clinic } = useClinic(clinicId);
+  const brandStamp = clinic?.updatedAt ?? "";
   return useFetchData<EmailPreviewResponse>({
-    queryKey: QUERY_KEYS.emails.preview(clinicId, input),
+    queryKey: QUERY_KEYS.emails.preview(clinicId, input, brandStamp),
     request: () => emailsService.preview(input),
     options: {
       enabled: !!clinicId && enabled,
       keepPreviousData: true,
-      staleTime: 15_000,
+      staleTime: 0,
     },
   });
 }

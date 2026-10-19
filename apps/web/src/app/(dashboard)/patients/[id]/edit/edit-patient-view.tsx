@@ -30,7 +30,6 @@ export function EditPatientView({ id }: { id: string }) {
     <div className="page-stack space-y-4">
       <PageBack
         backHref={`/patients/${id}`}
-        backLabel={t.patient.backToPatient}
         actions={
           patient ? (
             <RowActionsMenu

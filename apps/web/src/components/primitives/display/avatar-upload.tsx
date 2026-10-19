@@ -85,7 +85,7 @@ export function AvatarUpload({
   const face = (
     <span
       className={cn(
-        'relative grid size-28 place-items-center overflow-hidden',
+        'relative grid size-20 place-items-center overflow-hidden sm:size-28',
         plain ? 'rounded-none' : 'rounded-full',
         value
           ? plain
@@ -109,7 +109,7 @@ export function AvatarUpload({
           <AvatarImage
             src={value}
             fill
-            sizes="112px"
+            sizes="(max-width: 640px) 80px, 112px"
             priority
           />
         )
@@ -148,11 +148,10 @@ export function AvatarUpload({
               className={cn(
                 'group relative rounded-full outline-none transition-transform active:scale-[0.98]',
                 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                locked && 'pointer-events-none cursor-not-allowed opacity-60',
+                locked && 'pointer-events-none cursor-not-allowed',
               )}
             >
               {face}
-              <span className="pointer-events-none absolute inset-0 rounded-full bg-foreground/35 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-aria-expanded:opacity-100" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" className="flex w-auto min-w-0 gap-1 p-1">
@@ -185,7 +184,7 @@ export function AvatarUpload({
           className={cn(
             'rounded-full outline-none transition-transform hover:scale-[1.02] active:scale-[0.98]',
             'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-            locked && 'pointer-events-none cursor-not-allowed opacity-60',
+            locked && 'pointer-events-none cursor-not-allowed',
           )}
         >
           {face}

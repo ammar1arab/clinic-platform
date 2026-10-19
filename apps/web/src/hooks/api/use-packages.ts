@@ -13,6 +13,7 @@ const {
   useCreate: useCreatePackage,
   useUpdate: useUpdatePackage,
   useDeactivate: useDeactivatePackage,
+  useReactivate: useReactivatePackage,
   useRemove: useDeletePackage,
 } = createCrudHooks<ClinicPackage, CreatePackageInput, UpdatePackageInput>({
   keys: QUERY_KEYS.packages,
@@ -23,6 +24,7 @@ const {
     create: packagesService.create,
     update: packagesService.update,
     deactivate: packagesService.deactivate,
+    reactivate: packagesService.reactivate,
     remove: packagesService.remove,
   },
 });
@@ -32,5 +34,6 @@ export {
   useCreatePackage,
   useUpdatePackage,
   useDeactivatePackage,
+  useReactivatePackage,
   useDeletePackage,
 };

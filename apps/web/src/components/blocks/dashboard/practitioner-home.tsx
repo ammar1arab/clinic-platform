@@ -60,6 +60,9 @@ export function PractitionerHome() {
     item.status !== APPOINTMENT_STATUS.CANCELLED &&
     item.status !== APPOINTMENT_STATUS.NO_SHOW,
   );
+  const lastCompleted = [...ordered]
+    .filter((item) => item.status === APPOINTMENT_STATUS.COMPLETED)
+    .at(-1);
 
   if (appointments.isError && !appointments.data) {
     return <ErrorState onRetry={() => void appointments.refetch()} className="page-fill" />;
@@ -82,23 +85,38 @@ export function PractitionerHome() {
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4 pb-6 xl:page-fill xl:pb-0">
-      <Card className="card-aura shrink-0 overflow-hidden ring-0">
-        <CardContent className="flex items-center gap-4 p-4 sm:gap-5 sm:p-5">
+      <Card className="card-aura relative isolate shrink-0 gap-0 overflow-hidden py-0 ring-0">
+        <CardContent className="relative z-10 flex flex-row items-center gap-3 p-3 py-7 sm:gap-4 sm:p-4 sm:py-8 lg:pe-[min(30%,24rem)]">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="welcome-ambient absolute -inset-12" />
+          <svg viewBox="0 0 360 120" preserveAspectRatio="none" fill="none" className="absolute inset-y-0 end-2 hidden h-full w-[28%] text-primary lg:block rtl:-scale-x-100">
+            <path d="M0 68h76l12-12 15 26 20-52 20 71 17-33h200" stroke="currentColor" strokeOpacity="0.12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path className="welcome-trace" pathLength="1" d="M0 68h76l12-12 15 26 20-52 20 71 17-33h200" stroke="currentColor" strokeOpacity="0.8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <circle className="welcome-beacon" cx="276" cy="68" r="16" fill="currentColor" fillOpacity="0.08" />
+            <circle cx="276" cy="68" r="4" fill="currentColor" fillOpacity="0.55" />
+          </svg>
+        </div>
           {profile.isLoading ? (
-            <Skeleton className="size-20 shrink-0 rounded-full sm:size-24" />
+            <Skeleton className="size-16 shrink-0 rounded-full sm:size-20" />
           ) : (
-            <PreviewableAvatar src={practitioner?.imageUrl ?? user?.imageUrl} seed={user?.clinicUserId ?? 'practitioner'} size="xl" priority className="size-20 ring-2 ring-primary/15 sm:size-24" />
+            <PreviewableAvatar src={practitioner?.imageUrl ?? user?.imageUrl} seed={user?.clinicUserId ?? 'practitioner'} size="xl" priority className="size-16 ring-2 ring-primary/15 sm:size-20" />
           )}
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{formatDate(today, undefined, lang)}</p>
-            <h1 className="mt-1 font-heading text-xl font-semibold leading-tight tracking-tight sm:text-2xl lg:text-3xl">{t.dashboard.welcome}, {getBilingualName(user?.name, user?.nameAr, lang)}</h1>
-            <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">{formatDate(today, undefined, lang)}</p>
+            <h1 className="truncate font-heading text-base font-semibold leading-tight tracking-tight sm:text-lg">{t.dashboard.welcome}, {getBilingualName(user?.name, user?.nameAr, lang)}</h1>
+            {lastCompleted ? (
+              <p className="mt-0.5 truncate text-[11px] text-muted-foreground sm:text-xs">
+                {t.patient.lastVisit}: {getPersonName(lastCompleted.patient, lang)} · {formatTime(lastCompleted.scheduledAt, undefined, lang)}
+              </p>
+            ) : null}
+            <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {specialty ? <WelcomeFact label={t.exports.specialty} value={specialty} /> : null}
               {department ? <WelcomeFact label={t.exports.department} value={department} /> : null}
               {room ? <WelcomeFact label={t.exports.room} value={room} /> : null}
               {practitioner?.experienceYears != null ? <WelcomeFact label={t.exports.experience} value={`${practitioner.experienceYears} ${t.common.years}`} /> : null}
             </div>
           </div>
+
         </CardContent>
       </Card>
 
@@ -176,9 +194,9 @@ export function PractitionerHome() {
 
 function WelcomeFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 bg-card px-3 py-2">
-      <p className="truncate text-xs text-muted-foreground">{label}</p>
-      <p className="truncate text-sm font-medium text-foreground">{value}</p>
+    <div className="min-w-0 shrink-0 rounded-md bg-muted/50 px-2 py-1">
+      <p className="truncate text-[10px] leading-tight text-muted-foreground">{label}</p>
+      <p className="max-w-36 truncate text-xs font-medium leading-tight text-foreground sm:max-w-44">{value}</p>
     </div>
   );
 }
@@ -187,13 +205,13 @@ function PractitionerHomeSkeleton() {
   return (
     <div className="flex w-full min-w-0 flex-col gap-4 pb-6 xl:page-fill xl:pb-0" aria-hidden>
       <Card className="overflow-hidden ring-0">
-        <CardContent className="flex items-center gap-5 p-5 sm:gap-6 sm:p-7 lg:p-8">
-          <Skeleton className="size-20 shrink-0 rounded-full sm:size-24" />
-          <div className="min-w-0 flex-1 space-y-2.5">
+        <CardContent className="flex items-center gap-3 p-3 sm:gap-4 sm:p-4 lg:pe-[min(30%,24rem)]">
+          <Skeleton className="size-16 shrink-0 rounded-full sm:size-20" />
+          <div className="min-w-0 flex-1 space-y-1">
             <Skeleton className="h-3 w-28" />
-            <Skeleton className="h-7 w-full max-w-sm" />
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg sm:grid-cols-4">
-              {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="h-12 w-full rounded-none" />)}
+            <Skeleton className="h-5 w-full max-w-sm sm:h-6" />
+            <div className="flex gap-2 overflow-hidden pt-1">
+              {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="h-9 w-28 shrink-0 rounded-lg" />)}
             </div>
           </div>
         </CardContent>

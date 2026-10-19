@@ -35,6 +35,13 @@ export class PaymentMethodsRepository {
     });
   }
 
+  reactivate(id: string, clinicId: string) {
+    return this.prisma.paymentMethod.update({
+      where: { id, clinicId },
+      data: { isActive: true },
+    });
+  }
+
   hardDelete(id: string, clinicId: string) {
     return this.prisma.$transaction(async (tx) => {
       await tx.appointment.updateMany({

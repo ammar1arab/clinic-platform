@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
   Skeleton,
-  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -25,6 +24,7 @@ import {
   SelectValue,
   } from '@/components/ui';
 import {
+  DirectoryActions,
   RowActionsMenu,
   EmptyState,
   FormField,
@@ -163,21 +163,22 @@ export default function ServicesPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <SettingsPageBack />
-
-      <div className="flex items-center gap-2">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={t.settings.searchServices}
-          className="min-w-0 flex-1 sm:max-w-sm"
-        />
-        <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 me-1.5" />
-          <span className="hidden sm:inline">{t.settings.addService}</span>
-          <span className="sm:hidden">{t.common.add}</span>
-        </Button>
-      </div>
+      <SettingsPageBack
+        search={
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={t.settings.searchServices}
+          />
+        }
+        actions={
+          <Button size="sm" onClick={openCreate} className="shrink-0">
+            <IconAdd className="size-4 me-1.5" />
+            <span className="hidden sm:inline">{t.settings.addService}</span>
+            <span className="sm:hidden">{t.common.add}</span>
+          </Button>
+        }
+      />
 
       <div className="hidden md:block">
         <TableFrame>
@@ -188,8 +189,7 @@ export default function ServicesPage() {
                 <TableHead className="w-[22%]">{t.settings.departments}</TableHead>
                 <TableHead className="w-[12%]">{t.common.duration}</TableHead>
                 <TableHead className="w-[14%]">{t.common.fee} (JOD)</TableHead>
-                <TableHead className="w-[10%]">{t.common.active}</TableHead>
-                <TableHead className="w-[10%]" />
+                <TableHead className="w-[20%] text-end">{t.common.active}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -209,15 +209,14 @@ export default function ServicesPage() {
                       <Skeleton className="h-4 w-16" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-9" />
+                      <Skeleton className="h-5 w-9 ms-auto" />
                     </TableCell>
-                    <TableCell />
                   </TableRow>
                 ))}
 
               {!isLoading && totalItems === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="p-0">
+                  <TableCell colSpan={5} className="p-0">
                     <EmptyState
                       icon={IconService}
                       title={search ? t.settings.noMatchingServices : t.settings.noServices}
@@ -248,14 +247,14 @@ export default function ServicesPage() {
                     {Number(svc.fee).toFixed(3)} JOD
                   </TableCell>
                   <TableCell>
-                    <Switch
-                      checked={svc.isActive}
-                      onCheckedChange={(checked) => handleToggleActive(svc, checked)}
+                    <DirectoryActions
+                      name={svc.name}
+                      active={svc.isActive}
                       disabled={isToggling}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">{rowActions(svc)}</div>
+                      onChange={(checked) => handleToggleActive(svc, checked)}
+                    >
+                      {rowActions(svc)}
+                    </DirectoryActions>
                   </TableCell>
                 </TableRow>
               ))}

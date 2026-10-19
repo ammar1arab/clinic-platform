@@ -19,7 +19,6 @@ export function PractitionerHoursView({ id }: { id: string }) {
     <div className="page-stack space-y-4">
       <PageBack
         backHref={ROUTES.PRACTITIONER_DETAIL(id)}
-        backLabel={t.practitioner.backToProfile}
         actions={
           <RowActionsMenu
             items={[
@@ -37,7 +36,6 @@ export function PractitionerHoursView({ id }: { id: string }) {
           />
         }
       />
-      <h1 className="font-heading text-lg font-semibold">{t.practitioner.workingHours}</h1>
       {isLoading ? (
         <FormPageSkeleton sections={[2, 2, 2]} />
       ) : isError || !data ? (

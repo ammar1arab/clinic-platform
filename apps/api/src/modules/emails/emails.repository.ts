@@ -147,16 +147,19 @@ export class EmailsRepository {
     });
 
     const [summary] = await this.present([row]);
-    const rendered = await this.prisma.emailRecipient.findFirst({
+    const stored = await this.prisma.emailRecipient.findFirst({
       where: { messageId: id },
       orderBy: { id: "asc" },
-      select: { subject: true, html: true, text: true },
+      select: { subject: true, html: true, text: true, name: true },
     });
+    const rendered = stored
+      ? { subject: stored.subject, html: stored.html, text: stored.text }
+      : undefined;
 
     return {
       ...summary,
       body: row.body,
-      rendered: rendered ?? undefined,
+      rendered,
       recipients: recipients.map((r) => ({
         ...r,
         updatedAt: r.updatedAt.toISOString(),

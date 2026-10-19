@@ -13,6 +13,7 @@ const {
   useCreate: useCreatePaymentMethod,
   useUpdate: useUpdatePaymentMethod,
   useDeactivate: useDeactivatePaymentMethod,
+  useReactivate: useReactivatePaymentMethod,
   useRemove: useDeletePaymentMethod,
 } = createCrudHooks<PaymentMethod, CreatePaymentMethodInput, UpdatePaymentMethodInput>({
   keys: QUERY_KEYS.paymentMethods,
@@ -23,6 +24,7 @@ const {
     create: paymentMethodsService.create,
     update: paymentMethodsService.update,
     deactivate: paymentMethodsService.deactivate,
+    reactivate: paymentMethodsService.reactivate,
     remove: paymentMethodsService.remove,
   },
 });
@@ -40,5 +42,6 @@ export {
   useCreatePaymentMethod,
   useUpdatePaymentMethod,
   useDeactivatePaymentMethod,
+  useReactivatePaymentMethod,
   useDeletePaymentMethod,
 };

@@ -62,6 +62,13 @@ export class PaymentMethodsController {
     return this.paymentMethodsService.deactivate(id, user.clinicId);
   }
 
+  @Patch(":id/reactivate")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial)
+  reactivate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.paymentMethodsService.reactivate(id, user.clinicId);
+  }
+
   @Patch(":id")
   @UseGuards(RolesGuard)
   @Roles(Role.owner, Role.admin, Role.financial)

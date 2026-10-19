@@ -31,7 +31,10 @@ export const discountCodesService = {
       .then((r) => r.data),
 
   deactivate: (id: string) =>
-    api.patch(ENDPOINTS.DISCOUNT_CODES.DEACTIVATE(id)).then((r) => r.data),
+    api.patch<DiscountCodeDto>(ENDPOINTS.DISCOUNT_CODES.DEACTIVATE(id)).then((r) => r.data),
+
+  reactivate: (id: string) =>
+    api.patch<DiscountCodeDto>(ENDPOINTS.DISCOUNT_CODES.REACTIVATE(id)).then((r) => r.data),
 
   remove: (id: string) =>
     api.delete(ENDPOINTS.DISCOUNT_CODES.BY_ID(id)).then((r) => r.data),

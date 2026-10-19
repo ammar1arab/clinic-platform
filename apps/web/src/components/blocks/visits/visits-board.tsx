@@ -2,13 +2,39 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { APPOINTMENT_STATUS, INVOICE_STATUS, NOTE_STATUS, ROLE, SESSION_TYPE, VISIT_QUEUE, VISIT_REPORT_STATUS, type InvoiceStatus, type NoteStatus, type VisitQueue, type VisitReportStatus } from '@clinic/types';
-import { Badge, Button, Card, CardContent, SelectItem, Skeleton } from '@/components/ui';
-import { EmptyState, ErrorState, FilterSelect, Pagination, SearchInput, SearchablePicker } from '@/components/primitives';
-import { IconVisit } from '@/constants/icons';
+import {
+  APPOINTMENT_STATUS,
+  INVOICE_STATUS,
+  NOTE_STATUS,
+  ROLE,
+  SESSION_TYPE,
+  VISIT_QUEUE,
+  VISIT_REPORT_STATUS,
+  type InvoiceStatus,
+  type NoteStatus,
+  type VisitQueue,
+  type VisitReportStatus,
+} from '@clinic/types';
+import { Badge, Button, Card, CardContent, Popover, PopoverContent, PopoverTrigger, SelectItem, Skeleton } from '@/components/ui';
+import {
+  DatePicker,
+  DirectoryToolbar,
+  DIRECTORY_ACTION_CLASS,
+  EmptyState,
+  EntityAvatar,
+  ErrorState,
+  FilterSelect,
+  FormField,
+  Pagination,
+  SearchablePicker,
+} from '@/components/primitives';
+import { IconClinicalRecord, IconClose, IconFilters, IconInPerson, IconOnline } from '@/constants/icons';
+import { StatusBadgeBlock } from '@/components/blocks/appointments/shared/status-badge';
 import { ROUTES } from '@/constants/routes';
+import { keepNestedPortals } from '@/lib/overlay';
+import { cn } from '@/lib/utils';
 import { getBilingualName } from '@/i18n';
-import { formatDateTime } from '@/lib/datetime';
+import { formatDate, formatTime } from '@/lib/datetime';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { usePractitionerDirectory } from '@/hooks/api/use-practitioners';
 import { useVisits } from '@/hooks/api/use-visits';
@@ -17,6 +43,7 @@ import { useAuth, useLanguage } from '@/providers';
 const NOTE_FILTERS = Object.values(NOTE_STATUS);
 const REPORT_FILTERS = Object.values(VISIT_REPORT_STATUS);
 const INVOICE_FILTERS = Object.values(INVOICE_STATUS);
+const QUEUE_FILTERS = Object.values(VISIT_QUEUE);
 
 export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialReportStatus }: { initialNoteStatus?: NoteStatus; initialInvoiceStatus?: InvoiceStatus; initialReportStatus?: VisitReportStatus }) {
   const { lang, t } = useLanguage();
@@ -48,87 +75,149 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
     limit: 20,
   };
   const visits = useVisits(query, !!user);
-  const applyQueue = (next: VisitQueue) => {
-    setQueue(next);
+  const resetPage = () => setPage(1);
+  const activeCount =
+    (queue ? 1 : 0) +
+    (practitionerId ? 1 : 0) +
+    (appointmentStatus ? 1 : 0) +
+    (noteStatus ? 1 : 0) +
+    (reportStatus ? 1 : 0) +
+    (invoiceStatus ? 1 : 0) +
+    (from ? 1 : 0) +
+    (to ? 1 : 0);
+  const resetFilters = () => {
+    setQueue('');
+    setPractitionerId('');
+    setAppointmentStatus('');
     setNoteStatus('');
     setReportStatus('');
     setInvoiceStatus('');
-    setAppointmentStatus('');
-    setPage(1);
+    setFrom('');
+    setTo('');
+    resetPage();
   };
-  const shortcuts: { label: string; queue: VisitQueue }[] = [
-    { label: t.visits.lateDocumentation, queue: VISIT_QUEUE.LOCKED },
-    { label: t.visits.invoiceNeedsReview, queue: VISIT_QUEUE.INVOICE_REVIEW },
-    { label: t.visits.inProgress, queue: VISIT_QUEUE.IN_PROGRESS },
-    { label: t.visits.awaitingDocumentation, queue: VISIT_QUEUE.DOCUMENTATION_PENDING },
-  ];
 
   return (
     <div className="page-fill gap-4">
-      <div className="shrink-0 space-y-3">
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          {shortcuts.map((item) => (
-            <Button key={item.queue} type="button" variant={queue === item.queue ? 'default' : 'outline'} className="h-auto justify-start px-3 py-3 text-start" onClick={() => applyQueue(item.queue)}>{item.label}</Button>
+      <DirectoryToolbar
+        search={search}
+        onSearchChange={(value) => { setSearch(value); resetPage(); }}
+        searchPlaceholder={t.common.search}
+        actions={
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label={t.common.filters}
+                className={cn(
+                  DIRECTORY_ACTION_CLASS,
+                  'border-border/70 bg-background/50',
+                  activeCount > 0 && 'border-primary/35 bg-primary/5',
+                )}
+              >
+                <IconFilters className="size-3.5 shrink-0 text-muted-foreground" />
+                <span className="hidden font-semibold sm:inline">{t.common.filters}</span>
+                {activeCount > 0 ? (
+                  <Badge variant="info" className="ms-0 h-5 min-w-5 justify-center px-1 text-xs">{activeCount}</Badge>
+                ) : null}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-80 max-h-[min(32rem,calc(100dvh-var(--app-header-height)-2rem))] space-y-3 overflow-y-auto"
+              onInteractOutside={keepNestedPortals}
+              onFocusOutside={keepNestedPortals}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{t.common.filters}</p>
+                {activeCount > 0 ? (
+                  <Button variant="ghost" size="xs" onClick={resetFilters}>
+                    <IconClose className="size-3.5" />
+                    {t.common.clear}
+                  </Button>
+                ) : null}
+              </div>
+              <FilterSelect label={t.visits.workQueue} value={queue} onChange={(value) => { setQueue(value as VisitQueue | ''); setAppointmentStatus(''); setNoteStatus(''); setReportStatus(''); setInvoiceStatus(''); resetPage(); }}>
+                {QUEUE_FILTERS.map((item) => <SelectItem key={item} value={item}>{t.visits.queues[item]}</SelectItem>)}
+              </FilterSelect>
+              {staffView ? (
+                <FormField label={t.visits.practitioners} labelClassName="text-xs">
+                  <SearchablePicker
+                    options={[
+                      { value: '', label: t.visits.allPractitioners },
+                      ...(practitioners.data ?? []).map((item) => ({ value: item.id, label: getBilingualName(item.name, item.nameAr, lang) })),
+                    ]}
+                    value={practitionerId}
+                    onChange={(value) => { setPractitionerId(value); resetPage(); }}
+                    placeholder={t.visits.allPractitioners}
+                  />
+                </FormField>
+              ) : null}
+              <FilterSelect label={t.visits.appointmentStatus} value={appointmentStatus} onChange={(value) => { setQueue(''); setAppointmentStatus(value); resetPage(); }}>
+                {Object.values(APPOINTMENT_STATUS).map((status) => <SelectItem key={status} value={status}>{t.constants.status[status].label}</SelectItem>)}
+              </FilterSelect>
+              <FilterSelect label={t.visits.noteStatus} value={noteStatus} onChange={(value) => { setQueue(''); setNoteStatus(value); resetPage(); }}>
+                {NOTE_FILTERS.map((status) => <SelectItem key={status} value={status}>{t.visits.noteStatuses[status]}</SelectItem>)}
+              </FilterSelect>
+              <FilterSelect label={t.visits.reportStatus} value={reportStatus} onChange={(value) => { setQueue(''); setReportStatus(value); resetPage(); }}>
+                {REPORT_FILTERS.map((status) => <SelectItem key={status} value={status}>{t.visits.reportStatuses[status]}</SelectItem>)}
+              </FilterSelect>
+              <FilterSelect label={t.visits.invoiceStatus} value={invoiceStatus} onChange={(value) => { setQueue(''); setInvoiceStatus(value); resetPage(); }}>
+                {INVOICE_FILTERS.map((status) => <SelectItem key={status} value={status}>{t.visits.invoiceStatuses[status]}</SelectItem>)}
+              </FilterSelect>
+              <FormField label={t.visits.from} labelClassName="text-xs">
+                <DatePicker value={from} onChange={(value) => { setFrom(value); resetPage(); }} placeholder={t.visits.from} />
+              </FormField>
+              <FormField label={t.visits.to} labelClassName="text-xs">
+                <DatePicker value={to} onChange={(value) => { setTo(value); resetPage(); }} placeholder={t.visits.to} />
+              </FormField>
+            </PopoverContent>
+          </Popover>
+        }
+      />
+
+      {visits.isError ? (
+        <ErrorState onRetry={() => void visits.refetch()} className="page-fill" />
+      ) : visits.isLoading ? (
+        <div className="page-fill gap-4" aria-busy="true">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Card key={index} className="shrink-0 gap-0 py-0">
+              <CardContent className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-3 p-3 sm:p-4 xl:grid-cols-[6rem_minmax(0,1fr)_minmax(24rem,1fr)]">
+                <div className="flex min-h-12 flex-col items-center justify-center gap-1 border-e border-border/70 pe-3"><Skeleton className="h-5 w-16 max-w-full" /><Skeleton className="h-4 w-8" /></div>
+                <div className="space-y-1.5"><div className="flex items-center gap-2"><Skeleton className="size-6 shrink-0 rounded-full" /><Skeleton className="h-5 w-36 max-w-full" /></div><Skeleton className="h-4 w-2/3" /><Skeleton className="h-4 w-16" /></div>
+                <div className="col-span-2 grid grid-cols-3 gap-3 border-t border-border/60 pt-3 xl:col-span-1 xl:border-t-0 xl:border-s xl:ps-4 xl:pt-0">{[0, 1, 2].map((cell) => <div key={cell} className="space-y-1"><Skeleton className="h-4 w-14 max-w-full" /><Skeleton className="h-4 w-20 max-w-full" /></div>)}</div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <SearchInput value={search} onChange={(value) => { setSearch(value); setPage(1); }} placeholder={t.common.search} />
-          {staffView ? (
-            <SearchablePicker
-              options={[
-                { value: '', label: t.visits.allPractitioners },
-                ...(practitioners.data ?? []).map((item) => ({ value: item.id, label: getBilingualName(item.name, item.nameAr, lang) })),
-              ]}
-              value={practitionerId}
-              onChange={(value) => { setPractitionerId(value); setPage(1); }}
-              placeholder={t.visits.allPractitioners}
-            />
-          ) : null}
-          <FilterSelect label={t.visits.appointmentStatus} value={appointmentStatus} onChange={(value) => { setQueue(''); setAppointmentStatus(value); setPage(1); }}>
-            {Object.values(APPOINTMENT_STATUS).map((status) => <SelectItem key={status} value={status}>{t.constants.status[status].label}</SelectItem>)}
-          </FilterSelect>
-          <FilterSelect label={t.visits.noteStatus} value={noteStatus} onChange={(value) => { setQueue(''); setNoteStatus(value); setPage(1); }}>
-            {NOTE_FILTERS.map((status) => <SelectItem key={status} value={status}>{t.visits.noteStatuses[status]}</SelectItem>)}
-          </FilterSelect>
-          <FilterSelect label={t.visits.reportStatus} value={reportStatus} onChange={(value) => { setQueue(''); setReportStatus(value); setPage(1); }}>
-            {REPORT_FILTERS.map((status) => <SelectItem key={status} value={status}>{t.visits.reportStatuses[status]}</SelectItem>)}
-          </FilterSelect>
-          <FilterSelect label={t.visits.invoiceStatus} value={invoiceStatus} onChange={(value) => { setQueue(''); setInvoiceStatus(value); setPage(1); }}>
-            {INVOICE_FILTERS.map((status) => <SelectItem key={status} value={status}>{t.visits.invoiceStatuses[status]}</SelectItem>)}
-          </FilterSelect>
-          <label className="space-y-1.5 text-xs">
-            <span className="text-muted-foreground">{t.visits.from}</span>
-            <input type="date" value={from} onChange={(event) => { setFrom(event.target.value); setPage(1); }} className="h-8 w-full rounded-lg border border-input bg-transparent px-2" />
-          </label>
-          <label className="space-y-1.5 text-xs">
-            <span className="text-muted-foreground">{t.visits.to}</span>
-            <input type="date" value={to} onChange={(event) => { setTo(event.target.value); setPage(1); }} className="h-8 w-full rounded-lg border border-input bg-transparent px-2" />
-          </label>
-        </div>
-      </div>
-      {visits.isLoading ? (
-        <div className="space-y-2">{[0, 1, 2, 3].map((item) => <Skeleton key={item} className="h-24 w-full rounded-xl" />)}</div>
-      ) : visits.isError ? (
-        <ErrorState onRetry={() => void visits.refetch()} className="page-fill" />
       ) : !visits.data?.items.length ? (
-        <EmptyState icon={IconVisit} title={t.visits.empty} description={t.visits.emptyDesc} className="page-fill" />
+        <EmptyState icon={IconClinicalRecord} title={t.visits.empty} description={t.visits.emptyDesc} className="page-fill" />
       ) : (
         <div className="page-fill min-h-0 gap-3">
           <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
             {visits.data.items.map((item) => (
               <Link key={item.appointmentId} href={ROUTES.VISIT(item.appointmentId)} className="block rounded-xl focus-visible:outline focus-visible:outline-ring">
-                <Card className="transition-colors hover:bg-muted/40">
-                  <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{getBilingualName(item.patient.name, item.patient.nameAr, lang)}</p>
-                      <p className="text-xs text-muted-foreground">{formatDateTime(item.scheduledAt, undefined, lang)} · {getBilingualName(item.practitioner.name, item.practitioner.nameAr, lang)}</p>
+                <Card className="gap-0 py-0 transition-colors hover:bg-muted/40">
+                  <CardContent className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 xl:grid-cols-[6rem_minmax(0,1fr)_minmax(24rem,1fr)] sm:p-4">
+                    <div className="flex min-h-12 flex-col items-center justify-center gap-1 border-e border-border/70 pe-3 text-center">
+                      <p className="whitespace-nowrap text-sm font-semibold tabular-nums">{formatTime(item.scheduledAt, undefined, lang)}</p>
+                      <p className="whitespace-nowrap text-[11px] leading-4 text-muted-foreground">{t.visits.plannedDuration.replace('{minutes}', String(item.durationMins))}</p>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      <Badge variant="muted">{item.mode === SESSION_TYPE.ONLINE ? t.visits.online : t.visits.inPerson}</Badge>
-                      <Badge variant="info">{t.visits.noteStatuses[item.noteStatus]}</Badge>
-                      <Badge variant="muted">{t.visits.reportStatuses[item.reportStatus]}</Badge>
-                      <Badge variant="muted">{t.visits.invoiceStatuses[item.invoiceStatus]}</Badge>
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <div className="flex min-w-0 items-center gap-2"><EntityAvatar src={item.patient.imageUrl} seed={item.patient.id} size="sm" /><p className="truncate font-semibold">{getBilingualName(item.patient.name, item.patient.nameAr, lang)}</p></div>
+                        <StatusBadgeBlock status={item.appointmentStatus} tip={false} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">{formatDate(item.scheduledAt, undefined, lang)} · {getBilingualName(item.practitioner.name, item.practitioner.nameAr, lang)}</p>
+                      <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">{item.mode === SESSION_TYPE.ONLINE ? <IconOnline className="size-3.5" /> : <IconInPerson className="size-3.5" />}{item.mode === SESSION_TYPE.ONLINE ? t.visits.online : t.visits.inPerson}</p>
                     </div>
+                    <dl className="col-span-2 grid grid-cols-3 gap-3 border-t border-border/60 pt-3 text-xs xl:col-span-1 xl:border-t-0 xl:border-s xl:ps-4 xl:pt-0">
+                      <div className="min-w-0 space-y-1"><dt className="text-muted-foreground">{t.visits.note}</dt><dd className={cn('font-medium', item.noteStatus === NOTE_STATUS.LOCKED && 'text-warning')}>{t.visits.noteStatuses[item.noteStatus]}</dd></div>
+                      <div className="min-w-0 space-y-1"><dt className="text-muted-foreground">{t.visits.report}</dt><dd className="font-medium">{t.visits.reportStatuses[item.reportStatus]}</dd></div>
+                      <div className="min-w-0 space-y-1"><dt className="text-muted-foreground">{t.visits.invoice}</dt><dd className={cn('font-medium', item.invoiceStatus === INVOICE_STATUS.AWAITING_REVIEW && 'text-warning')}>{t.visits.invoiceStatuses[item.invoiceStatus]}</dd></div>
+                    </dl>
                   </CardContent>
                 </Card>
               </Link>

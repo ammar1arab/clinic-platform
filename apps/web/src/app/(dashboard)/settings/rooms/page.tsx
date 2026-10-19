@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
   Skeleton,
-  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -24,6 +23,7 @@ import {
   SelectValue,
   } from '@/components/ui';
 import {
+  DirectoryActions,
   RowActionsMenu,
   EmptyState,
   FormField,
@@ -155,21 +155,22 @@ export default function RoomsPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <SettingsPageBack />
-
-      <div className="flex items-center gap-2">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={t.settings.searchRooms}
-          className="min-w-0 flex-1 sm:max-w-sm"
-        />
-        <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 me-1.5" />
-          <span className="hidden sm:inline">{t.settings.addRoom}</span>
-          <span className="sm:hidden">{t.common.add}</span>
-        </Button>
-      </div>
+      <SettingsPageBack
+        search={
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={t.settings.searchRooms}
+          />
+        }
+        actions={
+          <Button size="sm" onClick={openCreate} className="shrink-0">
+            <IconAdd className="size-4 me-1.5" />
+            <span className="hidden sm:inline">{t.settings.addRoom}</span>
+            <span className="sm:hidden">{t.common.add}</span>
+          </Button>
+        }
+      />
 
       <div className="hidden md:block">
         <TableFrame>
@@ -178,8 +179,7 @@ export default function RoomsPage() {
               <TableRow>
                 <TableHead className="w-[45%]">{t.common.name}</TableHead>
                 <TableHead className="w-[25%]">{t.settings.departments}</TableHead>
-                <TableHead className="w-[15%]">{t.common.active}</TableHead>
-                <TableHead className="w-[15%]" />
+                <TableHead className="w-[30%] text-end">{t.common.active}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -193,15 +193,14 @@ export default function RoomsPage() {
                       <Skeleton className="h-4 w-24" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-9" />
+                      <Skeleton className="h-5 w-9 ms-auto" />
                     </TableCell>
-                    <TableCell />
                   </TableRow>
                 ))}
 
               {!isLoading && totalItems === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="p-0">
+                  <TableCell colSpan={3} className="p-0">
                     <EmptyState
                       icon={IconRoom}
                       title={search ? t.settings.noMatchingRooms : t.settings.noRooms}
@@ -228,14 +227,14 @@ export default function RoomsPage() {
                     </TruncatedText>
                   </TableCell>
                   <TableCell>
-                    <Switch
-                      checked={room.isActive}
-                      onCheckedChange={(checked) => handleToggleActive(room, checked)}
+                    <DirectoryActions
+                      name={room.name}
+                      active={room.isActive}
                       disabled={isToggling}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">{rowActions(room)}</div>
+                      onChange={(checked) => handleToggleActive(room, checked)}
+                    >
+                      {rowActions(room)}
+                    </DirectoryActions>
                   </TableCell>
                 </TableRow>
               ))}

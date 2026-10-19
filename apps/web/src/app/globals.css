@@ -179,12 +179,15 @@ th, td {
 
 @utility page-fill {
   display: flex;
-  height: 0;
-  min-height: 0;
   min-width: 0;
-  flex: 1 1 0%;
   flex-direction: column;
-  overflow: hidden;
+
+  @media (min-width: 768px) {
+    height: 0;
+    min-height: 0;
+    flex: 1 1 0%;
+    overflow: hidden;
+  }
 }
 
 @utility page-scroll {
@@ -1183,18 +1186,24 @@ html[data-view-focus='true'] [data-view-focus='true'] {
   box-shadow: 0 1px 3px color-mix(in oklch, var(--color-primary) 30%, transparent);
 }
 
-.fc-col-header-cell {
+.fc .fc-col-header-cell {
   background: var(--color-muted);
-  padding: 8px 0;
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
   border-color: var(--color-border) !important;
 }
 
-.fc-col-header-cell-cushion {
+.fc .fc-col-header-cell-cushion {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.25rem;
+  text-align: center;
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-muted-foreground);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: normal;
 }
 
 .fc-timegrid-slot {
@@ -1843,7 +1852,7 @@ html[data-view-focus='true'] [data-view-focus='true'] {
     padding-inline: 0.45rem;
   }
 
-  .fc-col-header-cell-cushion {
+  .fc .fc-col-header-cell-cushion {
     font-size: 0.65rem;
     padding: 0.25rem 0;
   }
@@ -1922,4 +1931,43 @@ html[data-view-focus='true'] [data-view-focus='true'] {
       font-size: 16px !important;
     }
   }
+}
+
+@keyframes welcomeDrift {
+  0%, 100% { transform: translate3d(-6%, 0, 0); }
+  50% { transform: translate3d(6%, -3%, 0); }
+}
+
+.welcome-ambient {
+  background: radial-gradient(ellipse at 15% 35%, color-mix(in oklch, var(--color-primary) 16%, transparent), transparent 55%), radial-gradient(ellipse at 85% 70%, color-mix(in oklch, var(--color-primary) 10%, transparent), transparent 55%);
+  animation: welcomeDrift 18s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-ambient { animation: none; }
+}
+
+@keyframes welcomeTrace {
+  to { stroke-dashoffset: -1; }
+}
+
+@keyframes welcomeBeacon {
+  0%, 100% { opacity: 0.45; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.welcome-trace {
+  stroke-dasharray: 0.18 0.82;
+  animation: welcomeTrace 5s linear infinite;
+}
+
+.welcome-beacon {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: welcomeBeacon 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-trace { animation: none; stroke-dasharray: none; opacity: 0.25; }
+  .welcome-beacon { animation: none; }
 }

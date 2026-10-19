@@ -15,6 +15,7 @@ const {
   useCreate: useCreateDiscountCode,
   useUpdate: useUpdateDiscountCode,
   useDeactivate: useDeactivateDiscountCode,
+  useReactivate: useReactivateDiscountCode,
   useRemove: useDeleteDiscountCode,
 } = createCrudHooks<DiscountCode, CreateDiscountCodeInput, UpdateDiscountCodeInput>({
   keys: QUERY_KEYS.discountCodes,
@@ -25,6 +26,7 @@ const {
     create: discountCodesService.create,
     update: discountCodesService.update,
     deactivate: discountCodesService.deactivate,
+    reactivate: discountCodesService.reactivate,
     remove: discountCodesService.remove,
   },
 });
@@ -42,5 +44,6 @@ export {
   useCreateDiscountCode,
   useUpdateDiscountCode,
   useDeactivateDiscountCode,
+  useReactivateDiscountCode,
   useDeleteDiscountCode,
 };

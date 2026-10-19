@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
   Skeleton,
-  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -19,6 +18,7 @@ import {
   DialogFooter,
   } from '@/components/ui';
 import {
+  DirectoryActions,
   RowActionsMenu,
   EmptyState,
   FormActions,
@@ -135,21 +135,22 @@ export default function DepartmentsPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <SettingsPageBack />
-
-      <div className="flex items-center gap-2">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={t.settings.searchDepartments}
-          className="min-w-0 flex-1 sm:max-w-sm"
-        />
-        <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 me-1.5" />
-          <span className="hidden sm:inline">{t.settings.addDepartment}</span>
-          <span className="sm:hidden">{t.common.add}</span>
-        </Button>
-      </div>
+      <SettingsPageBack
+        search={
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={t.settings.searchDepartments}
+          />
+        }
+        actions={
+          <Button size="sm" onClick={openCreate} className="shrink-0">
+            <IconAdd className="size-4 me-1.5" />
+            <span className="hidden sm:inline">{t.settings.addDepartment}</span>
+            <span className="sm:hidden">{t.common.add}</span>
+          </Button>
+        }
+      />
 
       <div className="hidden md:block">
         <TableFrame>
@@ -157,8 +158,7 @@ export default function DepartmentsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[60%]">{t.common.name}</TableHead>
-                <TableHead className="w-[20%]">{t.common.active}</TableHead>
-                <TableHead className="w-[20%]" />
+                <TableHead className="w-[40%] text-end">{t.common.active}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -169,15 +169,14 @@ export default function DepartmentsPage() {
                       <Skeleton className="h-4 w-32 max-w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-9" />
+                      <Skeleton className="h-5 w-9 ms-auto" />
                     </TableCell>
-                    <TableCell />
                   </TableRow>
                 ))}
 
               {!isLoading && totalItems === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="p-0">
+                  <TableCell colSpan={2} className="p-0">
                     <EmptyState
                       icon={IconDepartment}
                       title={search ? t.settings.noMatchingDepartments : t.settings.noDepartments}
@@ -199,14 +198,14 @@ export default function DepartmentsPage() {
                     </TruncatedText>
                   </TableCell>
                   <TableCell>
-                    <Switch
-                      checked={dept.isActive}
-                      onCheckedChange={(checked) => handleToggleActive(dept, checked)}
+                    <DirectoryActions
+                      name={dept.name}
+                      active={dept.isActive}
                       disabled={isToggling}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">{rowActions(dept)}</div>
+                      onChange={(checked) => handleToggleActive(dept, checked)}
+                    >
+                      {rowActions(dept)}
+                    </DirectoryActions>
                   </TableCell>
                 </TableRow>
               ))}

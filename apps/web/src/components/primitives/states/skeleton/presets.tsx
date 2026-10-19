@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@/components/ui';
+import { Card, CardContent, Skeleton } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 export function StatGridSkeleton({
@@ -75,6 +75,32 @@ export function TableSkeleton({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+export function IconCardSkeleton({
+  count = 4,
+  className,
+}: {
+  count?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn('space-y-3', className)}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-4 rounded-xl bg-card px-4 py-3.5 md:border"
+        >
+          <Skeleton className="size-10 shrink-0 rounded-xl" />
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton className="h-3.5 w-40 max-w-full" />
+            <Skeleton className="h-2.5 w-24" />
+          </div>
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -188,6 +214,23 @@ export function FormPageSkeleton({
   );
 }
 
+export function NoteTemplateBuilderSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn('page-fill gap-2', className)} aria-busy="true">
+      <div className="flex shrink-0 items-center justify-between"><Skeleton className="h-8 w-16" /><Skeleton className="h-5 w-16 rounded-full" /></div>
+      <div className="flex h-11 shrink-0 items-center gap-6 border-b border-border/60">{[0, 1, 2].map((step) => <Skeleton key={step} className="h-4 w-24" />)}</div>
+      <div className="space-y-4 p-1">
+        <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+          <Skeleton className="h-5 w-28" />
+          <div className="grid gap-4 xl:grid-cols-2">{[0, 1].map((field) => <div key={field} className="space-y-1.5"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-full rounded-lg" /></div>)}</div>
+          <div className="space-y-1.5"><Skeleton className="h-4 w-32" /><Skeleton className="size-6 rounded-full" /></div>
+        </div>
+        <div className="flex gap-2"><Skeleton className="h-8 w-20 rounded-lg" /><Skeleton className="h-8 w-20 rounded-lg" /></div>
+      </div>
+    </div>
+  );
+}
+
 export function TimelineSkeleton({
   hours = 8,
   columns = 3,
@@ -271,6 +314,46 @@ export function PageHeaderSkeleton({
           <Skeleton className="h-9 w-32 rounded-lg" />
         </div>
       )}
+    </div>
+  );
+}
+
+export function QueueColumnSkeleton({ count = 2 }: { count?: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index} className="rounded-xl border-2 bg-card p-3 shadow-xs sm:p-3.5">
+          <div className="mb-2 flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1 space-y-1"><Skeleton className="h-4 w-28 max-w-full" /><Skeleton className="h-3 w-20" /></div>
+            <Skeleton className="size-7 shrink-0 rounded-full" />
+          </div>
+          <div className="mb-2.5 space-y-1"><Skeleton className="h-3 w-3/4" /><Skeleton className="h-3 w-1/3" /></div>
+          <div className="flex justify-between gap-2"><Skeleton className="h-5 w-24 rounded-full" /><Skeleton className="h-5 w-16 rounded-full" /></div>
+          <Skeleton className="mt-3 h-7 w-full rounded-lg" />
+        </div>
+      ))}
+    </>
+  );
+}
+
+export function VisitWorkspaceSkeleton() {
+  return (
+    <div className="space-y-3" aria-busy="true">
+      <Card className="gap-0 py-0">
+        <CardContent className="space-y-3 p-3 sm:p-4">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-3"><Skeleton className="size-10 shrink-0 rounded-full" /><div className="min-w-0 space-y-2"><Skeleton className="h-7 w-40 max-w-full" /><Skeleton className="h-4 w-56 max-w-full" /></div></div>
+            <div className="flex gap-2"><Skeleton className="h-5 w-24 rounded-full" /><Skeleton className="h-5 w-16 rounded-full" /></div>
+          </div>
+          <div className="grid grid-cols-2 items-start gap-x-4 gap-y-3 lg:grid-cols-4">
+            {[0, 1, 2, 3].map((item) => <div key={item} className="space-y-1"><Skeleton className="h-4 w-16" /><Skeleton className="h-6 w-28 max-w-full" /></div>)}
+          </div>
+        </CardContent>
+      </Card>
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+        {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-16 w-full rounded-lg" />)}
+      </div>
+      <Card className="gap-0 py-0"><CardContent className="space-y-4 p-3 sm:p-4"><Skeleton className="h-4 w-32" /><Skeleton className="h-32 w-full" /></CardContent></Card>
     </div>
   );
 }

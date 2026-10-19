@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
   Skeleton,
-  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -25,6 +24,7 @@ import {
   SelectValue,
   } from '@/components/ui';
 import {
+  DirectoryActions,
   RowActionsMenu,
   EmptyState,
   FormField,
@@ -49,6 +49,7 @@ import {
   useCreateDiscountCode,
   useUpdateDiscountCode,
   useDeactivateDiscountCode,
+  useReactivateDiscountCode,
   useDeleteDiscountCode,
 } from '@/hooks/api/use-discount-codes';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
@@ -88,6 +89,7 @@ export default function DiscountCodesPage() {
   const createMutation = useCreateDiscountCode(clinicId);
   const updateMutation = useUpdateDiscountCode(clinicId);
   const deactivateMutation = useDeactivateDiscountCode(clinicId);
+  const reactivateMutation = useReactivateDiscountCode(clinicId);
   const deleteMutation = useDeleteDiscountCode(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
@@ -101,7 +103,7 @@ export default function DiscountCodesPage() {
   const [validTo, setValidTo] = useState('');
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-  const isToggling = deactivateMutation.isPending || updateMutation.isPending;
+  const isToggling = deactivateMutation.isPending || reactivateMutation.isPending;
 
   const openCreate = () => {
     setEditing(null);
@@ -157,7 +159,7 @@ export default function DiscountCodesPage() {
   };
 
   const handleToggle = (c: DiscountCode, next: boolean) => {
-    if (next) updateMutation.mutate({ id: c.id, data: { isActive: true } });
+    if (next) reactivateMutation.mutate(c.id);
     else deactivateMutation.mutate(c.id);
   };
 
@@ -177,21 +179,22 @@ export default function DiscountCodesPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <SettingsPageBack />
-
-      <div className="flex items-center gap-2">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={t.settings.searchPromocodes}
-          className="min-w-0 flex-1 sm:max-w-sm"
-        />
-        <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 me-1.5" />
-          <span className="hidden sm:inline">{t.settings.addPromocode}</span>
-          <span className="sm:hidden">{t.common.add}</span>
-        </Button>
-      </div>
+      <SettingsPageBack
+        search={
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={t.settings.searchPromocodes}
+          />
+        }
+        actions={
+          <Button size="sm" onClick={openCreate} className="shrink-0">
+            <IconAdd className="size-4 me-1.5" />
+            <span className="hidden sm:inline">{t.settings.addPromocode}</span>
+            <span className="sm:hidden">{t.common.add}</span>
+          </Button>
+        }
+      />
 
       <div className="hidden md:block">
         <TableFrame>
@@ -203,8 +206,7 @@ export default function DiscountCodesPage() {
                 <TableHead className="w-[14%]">{t.settings.uses}</TableHead>
                 <TableHead className="w-[14%]">{t.settings.validFrom}</TableHead>
                 <TableHead className="w-[14%]">{t.settings.validTo}</TableHead>
-                <TableHead className="w-[10%]">{t.common.active}</TableHead>
-                <TableHead className="w-[10%]" />
+                <TableHead className="w-[20%] text-end">{t.common.active}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -227,15 +229,14 @@ export default function DiscountCodesPage() {
                       <Skeleton className="h-4 w-16" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-9" />
+                      <Skeleton className="h-5 w-9 ms-auto" />
                     </TableCell>
-                    <TableCell />
                   </TableRow>
                 ))}
 
               {!isLoading && totalItems === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="p-0">
+                  <TableCell colSpan={6} className="p-0">
                     <EmptyState
                       icon={IconDiscount}
                       title={search ? t.settings.noMatchingDiscountCodes : t.settings.noDiscountCodes}
@@ -262,14 +263,14 @@ export default function DiscountCodesPage() {
                   <TableCell className="text-muted-foreground">{formatDate(c.validFrom)}</TableCell>
                   <TableCell className="text-muted-foreground">{formatDate(c.validTo)}</TableCell>
                   <TableCell>
-                    <Switch
-                      checked={c.isActive}
-                      onCheckedChange={(checked) => handleToggle(c, checked)}
+                    <DirectoryActions
+                      name={c.code}
+                      active={c.isActive}
                       disabled={isToggling}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">{rowActions(c)}</div>
+                      onChange={(checked) => handleToggle(c, checked)}
+                    >
+                      {rowActions(c)}
+                    </DirectoryActions>
                   </TableCell>
                 </TableRow>
               ))}

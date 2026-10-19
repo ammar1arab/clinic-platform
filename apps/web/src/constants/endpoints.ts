@@ -56,11 +56,13 @@ export const ENDPOINTS = {
     BASE: "/discount-codes",
     BY_ID: (id: string) => `/discount-codes/${id}`,
     DEACTIVATE: (id: string) => `/discount-codes/${id}/deactivate`,
+    REACTIVATE: (id: string) => `/discount-codes/${id}/reactivate`,
   },
   PACKAGES: {
     BASE: "/packages",
     BY_ID: (id: string) => `/packages/${id}`,
     DEACTIVATE: (id: string) => `/packages/${id}/deactivate`,
+    REACTIVATE: (id: string) => `/packages/${id}/reactivate`,
   },
   PATIENT_PACKAGES: {
     BASE: "/patient-packages",
@@ -78,6 +80,7 @@ export const ENDPOINTS = {
     BASE: "/payment-methods",
     BY_ID: (id: string) => `/payment-methods/${id}`,
     DEACTIVATE: (id: string) => `/payment-methods/${id}/deactivate`,
+    REACTIVATE: (id: string) => `/payment-methods/${id}/reactivate`,
     REORDER: "/payment-methods/reorder",
   },
   PRACTITIONERS: {
@@ -133,6 +136,7 @@ export const ENDPOINTS = {
     BY_ID: (id: string) => `/clinical-note-templates/${id}`,
     VERSIONS: (id: string) => `/clinical-note-templates/${id}/versions`,
     PUBLISH: (id: string) => `/clinical-note-templates/${id}/publish`,
+    SCHEDULE: (id: string) => `/clinical-note-templates/${id}/schedule`,
     ARCHIVE: (id: string) => `/clinical-note-templates/${id}/archive`,
     CLONE: (id: string) => `/clinical-note-templates/${id}/clone`,
     AVAILABLE: "/clinical-note-templates/available",

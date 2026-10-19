@@ -128,6 +128,7 @@ export function summary(
     visitId: visit?.id ?? null,
     patient: {
       id: row.patientId,
+      imageUrl: row.patient.imageUrl,
       name: `${row.patient.firstNameEn} ${row.patient.lastNameEn}`,
       nameAr:
         [row.patient.firstNameAr, row.patient.lastNameAr]
@@ -228,8 +229,10 @@ export function workspaceDto(
             })),
         }
       : null;
+  const visitSummary = summary(row, now);
   return {
-    ...summary(row, now),
+    ...visitSummary,
+    practitioner: { ...visitSummary.practitioner, imageUrl: row.doctor.imageUrl },
     serverNow: now.toISOString(),
     clinicTimezone: row.clinic.timezone,
     visitRevision: visit?.revision ?? 0,

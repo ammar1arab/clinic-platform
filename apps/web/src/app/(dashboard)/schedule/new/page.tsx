@@ -23,7 +23,7 @@ function NewAppointmentInner() {
 
   return (
     <div className="page-stack space-y-4">
-      <PageBack backHref={backHref} backLabel={t.appointments.backToSchedule} />
+      <PageBack backHref={backHref} />
 
       <AppointmentForm
         defaultDate={defaultDate}

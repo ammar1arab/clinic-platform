@@ -146,26 +146,28 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
           <CardTitle className="text-sm">{t.practitioner.overview}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField error={errors.imageUrl?.message} className="sm:col-span-2">
-            <AvatarUpload
-              value={imageUrl}
-              onChange={(url) =>
-                setValue('imageUrl', url, { shouldValidate: true, shouldDirty: true })
-              }
-              fallbackLabel={name || 'DR'}
-              disabled={pending}
+          <div className="flex items-center gap-3 sm:col-span-2 sm:gap-5">
+            <FormField error={errors.imageUrl?.message} className="shrink-0">
+              <AvatarUpload
+                className="shrink-0"
+                value={imageUrl}
+                onChange={(url) =>
+                  setValue('imageUrl', url, { shouldValidate: true, shouldDirty: true })
+                }
+                fallbackLabel={name || 'DR'}
+                disabled={pending}
+              />
+            </FormField>
+            <BilingualNameFields
+              className="min-w-0 flex-1"
+              name={name}
+              nameAr={nameAr ?? ''}
+              onNameChange={(v) => setValue('name', v, { shouldValidate: true })}
+              onNameArChange={(v) => setValue('nameAr', v, { shouldValidate: true })}
+              englishError={errors.name?.message}
+              arabicError={errors.nameAr?.message}
             />
-          </FormField>
-
-          <BilingualNameFields
-            className="sm:col-span-2"
-            name={name}
-            nameAr={nameAr ?? ''}
-            onNameChange={(v) => setValue('name', v, { shouldValidate: true })}
-            onNameArChange={(v) => setValue('nameAr', v, { shouldValidate: true })}
-            englishError={errors.name?.message}
-            arabicError={errors.nameAr?.message}
-          />
+          </div>
 
           <FormField label={t.practitioner.nameTitle} error={errors.title?.message}>
             <Input placeholder={t.practitioner.nameTitlePlaceholder} {...register('title')} />
@@ -286,10 +288,10 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
             />
           </FormField>
           <FormField label={t.practitioner.bio} error={errors.bio?.message} className="sm:col-span-2">
-            <Textarea rows={3} {...register('bio')} />
+            <Textarea rows={4} {...register('bio')} className="h-28 min-h-28 max-h-28 resize-none overflow-y-auto field-sizing-fixed" />
           </FormField>
           <FormField label={t.practitioner.bioAr} error={errors.bioAr?.message} className="sm:col-span-2">
-            <Textarea rows={3} dir="rtl" {...register('bioAr')} />
+            <Textarea rows={4} dir="rtl" {...register('bioAr')} className="h-28 min-h-28 max-h-28 resize-none overflow-y-auto field-sizing-fixed" />
           </FormField>
         </CardContent>
       </Card>

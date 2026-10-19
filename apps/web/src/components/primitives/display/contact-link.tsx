@@ -34,7 +34,8 @@ function ContactLink({
   const link = (
     <a
       href={href}
-      className={cn(linkClass, className)}
+      dir="ltr"
+      className={cn(linkClass, '[unicode-bidi:isolate]', className)}
       onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
     >
       {label}
@@ -84,9 +85,9 @@ export function ContactLine({
   }
   return (
     <p className={cn('flex min-w-0 flex-wrap items-center gap-x-1.5', className)}>
-      {hasPhone ? <PhoneLink value={phone} empty="" /> : null}
+      {hasPhone ? <PhoneLink value={phone} copyable empty="" /> : null}
       {hasPhone && hasEmail ? <span aria-hidden>·</span> : null}
-      {hasEmail ? <EmailLink value={email} empty="" /> : null}
+      {hasEmail ? <EmailLink value={email} copyable empty="" /> : null}
     </p>
   );
 }

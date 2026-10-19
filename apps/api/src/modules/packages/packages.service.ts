@@ -30,6 +30,11 @@ export class PackagesService {
     return this.packagesRepository.deactivate(id, clinicId);
   }
 
+  async reactivate(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.packagesRepository.reactivate(id, clinicId);
+  }
+
   async remove(id: string, clinicId: string) {
     await this.findOne(id, clinicId);
     return this.packagesRepository.hardDelete(id, clinicId);

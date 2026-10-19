@@ -62,12 +62,29 @@ export function useUpdateClinicalNoteTemplate(id: string) {
   });
 }
 
+export function useSilentUpdateClinicalNoteTemplate(id: string) {
+  return useApiMutation<TemplateDTO, TResponseError, ClinicalTemplateInput & { revision: number }>({
+    request: (body) => clinicalNoteTemplatesService.update(id, body),
+    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all, QUERY_KEYS.clinicalNoteTemplates.detail(id)],
+  });
+}
+
 export function usePublishClinicalNoteTemplate() {
   const { t } = useLanguage();
   return useApiMutation({
     request: (input: { id: string; revision: number }) => clinicalNoteTemplatesService.publish(input.id, input.revision),
     invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all],
     successMessage: t.visits.templatePublished,
+  });
+}
+
+export function useScheduleClinicalNoteTemplate() {
+  const { t } = useLanguage();
+  return useApiMutation({
+    request: (input: { id: string; revision: number; scheduledAt: string }) =>
+      clinicalNoteTemplatesService.schedule(input.id, input.revision, input.scheduledAt),
+    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all],
+    successMessage: t.visits.templateScheduled,
   });
 }
 

@@ -27,9 +27,14 @@ export { PhoneInputField } from './forms/phone-input';
 export { RowActionsMenu, type RowActionItem } from './display/row-actions-menu';
 export { SearchInput } from './forms/search-input';
 export { SearchablePicker, PickerSearch, type PickerOption } from './forms/searchable-picker';
+export { SidePanel } from './display/side-panel';
 export {
   CardGridSkeleton,
+  IconCardSkeleton,
   FormPageSkeleton,
+  NoteTemplateBuilderSkeleton,
+  QueueColumnSkeleton,
+  VisitWorkspaceSkeleton,
   FormSkeleton,
   PageHeaderSkeleton,
   StatGridSkeleton,

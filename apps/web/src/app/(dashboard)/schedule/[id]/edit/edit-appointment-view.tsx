@@ -38,7 +38,6 @@ function EditAppointmentInner({ id }: { id: string }) {
     <div className="page-stack space-y-4">
       <PageBack
         backHref={backHref}
-        backLabel={t.ui.back}
         actions={
           canCancel ? (
             <RowActionsMenu

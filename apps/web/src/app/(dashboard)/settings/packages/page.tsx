@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
   Skeleton,
-  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -25,6 +24,7 @@ import {
   SelectValue,
   } from '@/components/ui';
 import {
+  DirectoryActions,
   RowActionsMenu,
   EmptyState,
   FormField,
@@ -50,6 +50,7 @@ import {
   useCreatePackage,
   useUpdatePackage,
   useDeactivatePackage,
+  useReactivatePackage,
   useDeletePackage,
 } from '@/hooks/api/use-packages';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
@@ -85,6 +86,7 @@ export default function PackagesPage() {
   const createMutation = useCreatePackage(clinicId);
   const updateMutation = useUpdatePackage(clinicId);
   const deactivateMutation = useDeactivatePackage(clinicId);
+  const reactivateMutation = useReactivatePackage(clinicId);
   const deleteMutation = useDeletePackage(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
@@ -98,7 +100,7 @@ export default function PackagesPage() {
   const [discountValue, setDiscountValue] = useState('');
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-  const isToggling = deactivateMutation.isPending || updateMutation.isPending;
+  const isToggling = deactivateMutation.isPending || reactivateMutation.isPending;
 
   const openCreate = () => {
     setEditing(null);
@@ -148,7 +150,7 @@ export default function PackagesPage() {
   };
 
   const handleToggle = (p: ClinicPackage, next: boolean) => {
-    if (next) updateMutation.mutate({ id: p.id, data: { isActive: true } });
+    if (next) reactivateMutation.mutate(p.id);
     else deactivateMutation.mutate(p.id);
   };
 
@@ -168,21 +170,22 @@ export default function PackagesPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <SettingsPageBack />
-
-      <div className="flex items-center gap-2">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={t.settings.searchPackages}
-          className="min-w-0 flex-1 sm:max-w-sm"
-        />
-        <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 me-1.5" />
-          <span className="hidden sm:inline">{t.settings.addPackage}</span>
-          <span className="sm:hidden">{t.common.add}</span>
-        </Button>
-      </div>
+      <SettingsPageBack
+        search={
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={t.settings.searchPackages}
+          />
+        }
+        actions={
+          <Button size="sm" onClick={openCreate} className="shrink-0">
+            <IconAdd className="size-4 me-1.5" />
+            <span className="hidden sm:inline">{t.settings.addPackage}</span>
+            <span className="sm:hidden">{t.common.add}</span>
+          </Button>
+        }
+      />
 
       <div className="hidden md:block">
         <TableFrame>
@@ -193,8 +196,7 @@ export default function PackagesPage() {
                 <TableHead className="w-[12%]">{t.settings.sessions}</TableHead>
                 <TableHead className="w-[14%]">{t.common.fee}</TableHead>
                 <TableHead className="w-[14%]">{t.appointments.discount}</TableHead>
-                <TableHead className="w-[10%]">{t.common.active}</TableHead>
-                <TableHead className="w-[14%]" />
+                <TableHead className="w-[24%] text-end">{t.common.active}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -214,15 +216,14 @@ export default function PackagesPage() {
                       <Skeleton className="h-4 w-12" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-9" />
+                      <Skeleton className="h-5 w-9 ms-auto" />
                     </TableCell>
-                    <TableCell />
                   </TableRow>
                 ))}
 
               {!isLoading && totalItems === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="p-0">
+                  <TableCell colSpan={5} className="p-0">
                     <EmptyState
                       icon={IconPackage}
                       title={search ? t.settings.noMatchingPackages : t.settings.noPackages}
@@ -252,14 +253,14 @@ export default function PackagesPage() {
                     {formatPackageDiscount(p)}
                   </TableCell>
                   <TableCell>
-                    <Switch
-                      checked={p.isActive}
-                      onCheckedChange={(checked) => handleToggle(p, checked)}
+                    <DirectoryActions
+                      name={p.name}
+                      active={p.isActive}
                       disabled={isToggling}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">{rowActions(p)}</div>
+                      onChange={(checked) => handleToggle(p, checked)}
+                    >
+                      {rowActions(p)}
+                    </DirectoryActions>
                   </TableCell>
                 </TableRow>
               ))}

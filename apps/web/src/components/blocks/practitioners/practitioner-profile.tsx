@@ -29,7 +29,6 @@ import {
   ProfileSection,
   ProfileShell,
   ProfileSoftRow,
-  ProfileStatusBadge,
 } from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import {
@@ -95,7 +94,6 @@ export function PractitionerProfile({
   return (
     <ProfileShell
       backHref={ROUTES.PRACTITIONERS}
-      backLabel={t.practitioner.backToPractitioners}
       actions={canManage ? (
         <RowActionsMenu
           items={[
@@ -151,17 +149,14 @@ export function PractitionerProfile({
         }
         title={titleName}
         badges={
-          <>
-            <ProfileStatusBadge active={practitioner.isActive} />
-            {employment && practitioner.employmentType ? (
-              <Badge
-                variant={PRACTITIONER_EMPLOYMENT_VARIANT[practitioner.employmentType] ?? 'secondary'}
-                className="font-normal"
-              >
-                {employment}
-              </Badge>
-            ) : null}
-          </>
+          employment && practitioner.employmentType ? (
+            <Badge
+              variant={PRACTITIONER_EMPLOYMENT_VARIANT[practitioner.employmentType] ?? 'secondary'}
+              className="font-normal"
+            >
+              {employment}
+            </Badge>
+          ) : null
         }
         subtitle={specialtyName ? <p>{specialtyName}</p> : null}
         meta={<ContactLine phone={practitioner.phone} email={practitioner.email} />}

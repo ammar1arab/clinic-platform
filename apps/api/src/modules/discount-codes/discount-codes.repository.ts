@@ -79,6 +79,13 @@ export class DiscountCodesRepository {
     });
   }
 
+  reactivate(id: string, clinicId: string) {
+    return this.prisma.discountCode.update({
+      where: { id, clinicId },
+      data: { isActive: true },
+    });
+  }
+
   hardDelete(id: string, clinicId: string) {
     return this.prisma.$transaction(async (tx) => {
       await tx.patient.updateMany({

@@ -163,7 +163,7 @@ function SchedulePageInner() {
   );
 
   return (
-    <div className="page-fill gap-2">
+    <div className="page-fill gap-4">
       <div className="shrink-0">
       <ScheduleToolbar
         view={activeView}

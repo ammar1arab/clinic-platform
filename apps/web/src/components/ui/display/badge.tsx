@@ -27,6 +27,8 @@ const badgeVariants = cva(
           "border-primary/30 bg-primary/12 text-primary shadow-primary/10 dark:border-transparent dark:bg-primary dark:text-primary-foreground",
         muted:
           "border-border/80 bg-muted/80 text-muted-foreground",
+        fill:
+          "w-full max-w-none justify-center rounded-lg bg-muted px-3 py-2 shadow-none max-lg:w-fit",
       },
     },
     defaultVariants: {

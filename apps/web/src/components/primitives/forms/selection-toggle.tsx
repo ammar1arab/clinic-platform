@@ -26,8 +26,8 @@ export function SelectionToggle({
       aria-label={label}
       disabled={disabled}
       className={cn(
-        "size-6 rounded-full border border-border bg-transparent text-primary transition-colors hover:bg-transparent focus-visible:border-primary",
-        checked && "border-primary",
+        "group/selection size-5 shrink-0 rounded-full border border-primary/50 bg-background p-0 text-primary shadow-none transition-[background-color,border-color,transform] duration-(--motion-fast) hover:border-primary hover:bg-primary/5 hover:text-primary aria-expanded:text-primary focus-visible:border-primary focus-visible:ring-0 active:scale-95 motion-reduce:transform-none motion-reduce:transition-none [@media(pointer:coarse)]:size-7",
+        checked && "border-primary bg-primary/10 hover:bg-primary/15",
         className,
       )}
       onClick={(event) => {
@@ -38,8 +38,8 @@ export function SelectionToggle({
       <span
         aria-hidden
         className={cn(
-          "rounded-full bg-current transition-[opacity,scale] duration-150 size-3",
-          checked === "mixed" && "size-1.5",
+          "size-2 rounded-full bg-primary transition-[opacity,transform] duration-(--motion-normal) motion-reduce:transition-none",
+          checked === "mixed" && "scale-50",
           !checked && "scale-50 opacity-0",
         )}
       />

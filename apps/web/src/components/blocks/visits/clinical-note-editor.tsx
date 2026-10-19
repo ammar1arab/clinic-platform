@@ -1,14 +1,16 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { DRAFT_SAVE_PHASE, NOTE_STATUS, type ClinicalSection, type ClinicalValue, type DraftSavePhase, type TemplateDTO, type VisitErrorCode, type VisitWorkspace } from '@clinic/types';
-import { Badge, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
-import { EmptyState, ReasonDialog } from '@/components/primitives';
+import { Badge, Button, Card, CardContent, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
+import { EmptyState, IconCard, ReasonDialog } from '@/components/primitives';
 import { IconFileText } from '@/constants/icons';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { useSignNote, useNoteAddendum, useNoteHistory, visitErrorCode } from '@/hooks/api/use-visits';
 import { useUnsavedGuard } from '@/hooks/shared/use-now';
+import { formatDate, formatTime } from '@/lib/datetime';
+import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
 import { visitsService } from '@/services/visits.service';
 import { ClinicalFields, clinicalText, fieldVisible } from './clinical-fields';
@@ -51,8 +53,15 @@ export function ClinicalNoteEditor({
   const timer = useRef<number | null>(null);
   const valuesRef = useRef<Record<string, ClinicalValue>>(note?.values ?? {});
   const generationRef = useRef(0);
+  const editSequence = useRef(0);
+  const saving = useRef<Promise<VisitWorkspace | null> | null>(null);
+  const savedRevision = useRef(note?.revision ?? 0);
+  const bind = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    return () => { if (timer.current) window.clearTimeout(timer.current); };
+  }, []);
   const [values, setValues] = useState<Record<string, ClinicalValue>>(note?.values ?? {});
-  const [templateVersionId, setTemplateVersionId] = useState(note?.templateVersionId ?? templates.find((item) => item.publishedVersionId)?.publishedVersionId ?? '');
+  const [templateVersionId, setTemplateVersionId] = useState(note?.templateVersionId ?? '');
   const [seenNote, setSeenNote] = useState({ revision: note?.revision ?? -1, version: note?.templateVersionId ?? '' });
   const [generation, setGeneration] = useState(0);
 
@@ -66,36 +75,49 @@ export function ClinicalNoteEditor({
   const selected = templates.find((item) => item.publishedVersionId === templateVersionId);
   const sections = note && note.templateVersionId === templateVersionId ? note.sectionsSnapshot : selected?.sections ?? note?.sectionsSnapshot ?? [];
   const canEdit = workspace.allowedActions.editNote;
+  const published = templates.filter((item) => item.publishedVersionId);
   useUnsavedGuard(dirty, t.visits.leaveWarning);
 
   const applyWorkspace = (next: VisitWorkspace) => {
     queryClient.setQueryData(QUERY_KEYS.visits.workspace(appointmentId), next);
   };
 
-  const flush = async (nextValues: Record<string, ClinicalValue>, versionId: string, acknowledgeTemplateChange = false, revision = note?.revision ?? 0) => {
+  const flush = async (nextValues: Record<string, ClinicalValue>, versionId: string, acknowledgeTemplateChange = false, revision?: number): Promise<VisitWorkspace | null> => {
     if (!workspace.visitId || !versionId || !canEdit) return null;
+    const sequence = editSequence.current;
+    while (saving.current) await saving.current;
+    if (sequence !== editSequence.current) return null;
     setPhase(DRAFT_SAVE_PHASE.SAVING);
-    try {
-      const next = await visitsService.saveNote(workspace.visitId, {
-        templateVersionId: versionId,
-        values: compactValues(sections, nextValues),
-        revision,
-        ...(acknowledgeTemplateChange ? { acknowledgeTemplateChange: true } : {}),
-      });
-      applyWorkspace(next);
-      setDirty(false);
-      setPhase(DRAFT_SAVE_PHASE.SAVED);
-      setAck(false);
-      return next;
-    } catch (error) {
-      const code = visitErrorCode(error);
-      const revisionConflict: VisitErrorCode = 'visitRevisionConflict';
-      const templateConfirm: VisitErrorCode = 'clinicalTemplateChangeConfirmationRequired';
-      if (code === revisionConflict) setPhase(DRAFT_SAVE_PHASE.CONFLICT);
-      else if (code === templateConfirm) setPhase(DRAFT_SAVE_PHASE.CONFIRM_TEMPLATE);
-      else setPhase(DRAFT_SAVE_PHASE.ERROR);
-      return null;
-    }
+    const request = (async () => {
+      try {
+        const next = await visitsService.saveNote(workspace.visitId!, {
+          templateVersionId: versionId,
+          values: compactValues(sections, nextValues),
+          revision: revision ?? Math.max(savedRevision.current, note?.revision ?? 0),
+          ...(acknowledgeTemplateChange ? { acknowledgeTemplateChange: true } : {}),
+        });
+        savedRevision.current = next.note?.revision ?? savedRevision.current;
+        applyWorkspace(next);
+        if (sequence === editSequence.current) {
+          setDirty(false);
+          setPhase(DRAFT_SAVE_PHASE.SAVED);
+          setAck(false);
+        }
+        return next;
+      } catch (error) {
+        if (sequence !== editSequence.current) return null;
+        const code = visitErrorCode(error);
+        const revisionConflict: VisitErrorCode = 'visitRevisionConflict';
+        const templateConfirm: VisitErrorCode = 'clinicalTemplateChangeConfirmationRequired';
+        if (code === revisionConflict) setPhase(DRAFT_SAVE_PHASE.CONFLICT);
+        else if (code === templateConfirm) setPhase(DRAFT_SAVE_PHASE.CONFIRM_TEMPLATE);
+        else setPhase(DRAFT_SAVE_PHASE.ERROR);
+        return null;
+      }
+    })();
+    saving.current = request;
+    try { return await request; }
+    finally { if (saving.current === request) saving.current = null; }
   };
 
   const schedule = (nextValues: Record<string, ClinicalValue>, versionId: string) => {
@@ -104,6 +126,7 @@ export function ClinicalNoteEditor({
   };
 
   const write = (fieldId: string, value: ClinicalValue | undefined) => {
+    editSequence.current += 1;
     if (generationRef.current !== generation) {
       generationRef.current = generation;
       valuesRef.current = values;
@@ -121,6 +144,10 @@ export function ClinicalNoteEditor({
     if (versionId === templateVersionId) return;
     const hasContent = Object.keys(values).length > 0;
     if (hasContent && !window.confirm(t.visits.changeTemplateWarning)) return;
+    if (timer.current) window.clearTimeout(timer.current);
+    editSequence.current += 1;
+    valuesRef.current = {};
+    setValues({});
     setTemplateVersionId(versionId);
     setAck(hasContent);
     setDirty(true);
@@ -128,25 +155,43 @@ export function ClinicalNoteEditor({
   };
 
   const phaseLabel = phase === DRAFT_SAVE_PHASE.SAVING ? t.visits.saving : phase === DRAFT_SAVE_PHASE.SAVED ? t.visits.saved : phase === DRAFT_SAVE_PHASE.ERROR ? t.visits.saveError : phase === DRAFT_SAVE_PHASE.CONFLICT ? t.visits.conflict : null;
+  const picking = canEdit && !note && !templateVersionId;
 
   if (!workspace.visitId) {
-    return <EmptyState icon={IconFileText} title={t.visits.note} description={t.visits.startBeforeNote} />;
+    return <EmptyState icon={IconFileText} title={t.visits.clinicNote} description={t.visits.startBeforeNote} />;
   }
   if (!canEdit && !note) {
-    return <EmptyState icon={IconFileText} title={t.visits.note} description={workspace.noteStatus === 'locked' ? t.visits.lockedNote : t.visits.noTemplateDesc} />;
+    return <EmptyState icon={IconFileText} title={t.visits.clinicNote} description={workspace.noteStatus === 'locked' ? t.visits.lockedNote : t.visits.noTemplateDesc} />;
   }
-  if (canEdit && !note && !selected) {
+  if (canEdit && !note && !published.length) {
     return <EmptyState icon={IconFileText} title={t.visits.noTemplate} description={t.visits.noTemplateDesc} />;
   }
 
   return (
-    <div className="space-y-4">
+    <div ref={bind} className="space-y-4">
+      <Card aura={false}>
+        <CardContent className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <p className="text-xs text-muted-foreground">{t.visits.identityPatient}</p>
+            <p className="text-sm font-medium">{getBilingualName(workspace.patient.name, workspace.patient.nameAr, lang)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">{t.visits.identityWhen}</p>
+            <p className="text-sm font-medium">{formatDate(workspace.scheduledAt, undefined, lang)} · {formatTime(workspace.scheduledAt, undefined, lang)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">{t.visits.identityClinician}</p>
+            <p className="text-sm font-medium">{getBilingualName(workspace.practitioner.name, workspace.practitioner.nameAr, lang)}</p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex flex-wrap items-center gap-2">
-        {canEdit && templates.length > 0 ? (
+        {canEdit && note && published.length > 0 ? (
           <Select value={templateVersionId} onValueChange={chooseTemplate}>
             <SelectTrigger className="w-full sm:max-w-xs"><SelectValue placeholder={t.visits.template} /></SelectTrigger>
             <SelectContent>
-              {templates.filter((item) => item.publishedVersionId).map((item) => (
+              {published.map((item) => (
                 <SelectItem key={item.id} value={item.publishedVersionId ?? item.id}>
                   {clinicalText(lang, item.name, item.nameAr)}
                 </SelectItem>
@@ -161,6 +206,22 @@ export function ClinicalNoteEditor({
         {phaseLabel ? <span className="text-xs text-muted-foreground">{phaseLabel}</span> : null}
       </div>
 
+      {picking ? (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold">{t.visits.pickTemplate}</p>
+          {published.map((item) => (
+            <IconCard
+              key={item.id}
+              icon={IconFileText}
+              accent="teal"
+              title={clinicalText(lang, item.name, item.nameAr)}
+              description={t.visits.version.replace('{version}', String(item.version))}
+              onClick={() => chooseTemplate(item.publishedVersionId ?? item.id)}
+            />
+          ))}
+        </div>
+      ) : null}
+
       {phase === DRAFT_SAVE_PHASE.CONFLICT ? (
         <div className="flex flex-wrap gap-2 rounded-xl border border-warning/40 bg-warning/10 p-3 text-sm">
           <p className="w-full">{t.visits.conflict}</p>
@@ -168,7 +229,7 @@ export function ClinicalNoteEditor({
             const fresh = await visitsService.workspace(appointmentId);
             await flush(valuesRef.current, templateVersionId, ack, fresh.note?.revision ?? 0);
           })()}>{t.visits.keepMine}</Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => { setDirty(false); void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.visits.workspace(appointmentId) }); setPhase(DRAFT_SAVE_PHASE.IDLE); }}>{t.visits.loadServer}</Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => { if (timer.current) window.clearTimeout(timer.current); editSequence.current += 1; setDirty(false); void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.visits.workspace(appointmentId) }); setPhase(DRAFT_SAVE_PHASE.IDLE); }}>{t.visits.loadServer}</Button>
         </div>
       ) : null}
       {phase === DRAFT_SAVE_PHASE.CONFIRM_TEMPLATE ? (
@@ -181,32 +242,50 @@ export function ClinicalNoteEditor({
         <Button type="button" variant="outline" size="sm" onClick={() => void flush(valuesRef.current, templateVersionId, ack)}>{t.visits.retrySave}</Button>
       ) : null}
 
-      <ClinicalFields
-        sections={sections}
-        values={values}
-        lang={lang}
-        disabled={!canEdit}
-        focusedId={focusedId}
-        onFocusSection={setFocusedId}
-        onChange={canEdit ? write : undefined}
-      />
+      {!picking && sections.length ? (
+        <ClinicalFields
+          sections={sections}
+          values={values}
+          lang={lang}
+          disabled={!canEdit}
+          focusedId={focusedId}
+          onFocusSection={setFocusedId}
+          onChange={canEdit ? write : undefined}
+        />
+      ) : null}
 
-      {workspace.allowedActions.signNote ? (
-        <Button
-          type="button"
-          disabled={sign.isPending || phase === DRAFT_SAVE_PHASE.SAVING}
-          onClick={() => {
-            if (timer.current) window.clearTimeout(timer.current);
-            void (async () => {
-              const saved = dirty ? await flush(valuesRef.current, templateVersionId, ack) : workspace;
-              const revision = saved?.note?.revision ?? note?.revision;
-              if (revision == null || !workspace.visitId) return;
-              sign.mutate({ visitId: workspace.visitId, revision });
-            })();
-          }}
-        >
-          {t.visits.signNote}
-        </Button>
+      {canEdit && templateVersionId ? (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={phase === DRAFT_SAVE_PHASE.SAVING}
+            onClick={() => {
+              if (timer.current) window.clearTimeout(timer.current);
+              void flush(values, templateVersionId, ack);
+            }}
+          >
+            {t.visits.saveDraft}
+          </Button>
+          {workspace.allowedActions.signNote ? (
+            <Button
+              type="button"
+              disabled={sign.isPending || phase === DRAFT_SAVE_PHASE.SAVING}
+              onClick={() => {
+                if (timer.current) window.clearTimeout(timer.current);
+                void (async () => {
+                  const saved = dirty ? await flush(values, templateVersionId, ack) : workspace;
+                  if (!saved) return;
+                  const revision = saved.note?.revision;
+                  if (revision == null || !workspace.visitId) return;
+                  sign.mutate({ visitId: workspace.visitId, revision });
+                })();
+              }}
+            >
+              {t.visits.signNote}
+            </Button>
+          ) : null}
+        </div>
       ) : null}
 
       {workspace.allowedActions.addAddendum ? (

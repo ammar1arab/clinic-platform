@@ -164,6 +164,7 @@ export function PractitionersList({
     p.experienceYears == null ? "-" : `${p.experienceYears} ${t.common.years}`;
   const controls = (p: Practitioner) => (
     <DirectoryActions
+      className="justify-between"
       name={nameFor(p)}
       active={p.isActive}
       disabled={toggling}
@@ -176,7 +177,6 @@ export function PractitionersList({
     {
       id: "practitioner",
       label: t.practitioner.practitioner,
-      className: "w-[22%]",
       render: (p) => (
         <DirectoryIdentity
           copyContacts
@@ -189,7 +189,7 @@ export function PractitionersList({
     {
       id: "specialty",
       label: t.practitioner.specialty,
-      className: "w-[13%]",
+      className: "w-40",
       render: (p) => (
         <TruncatedText lines={2}>{specialtyFor(p) || "-"}</TruncatedText>
       ),
@@ -197,27 +197,27 @@ export function PractitionersList({
     {
       id: "department",
       label: t.practitioner.department,
-      className: "w-[10%]",
+      className: "w-32",
       render: (p) => <CellBadge value={departmentFor(p)} variant="outline" />,
     },
     {
       id: "phone",
       label: t.practitioner.phone,
-      className: "w-[12%]",
+      className: "w-36",
       cellClassName: "text-muted-foreground",
       render: (p) => <PhoneLink copyable value={p.phone} className="block" />,
     },
     {
       id: "experience",
       label: t.practitioner.experience,
-      className: "w-[8%]",
+      className: "w-24",
       cellClassName: "text-muted-foreground",
       render: experienceFor,
     },
     {
       id: "languages",
       label: t.practitioner.languages,
-      className: "w-[11%]",
+      className: "w-32",
       cellClassName: "text-xs text-muted-foreground",
       render: (p) => (
         <TruncatedText lines={2}>
@@ -228,20 +228,20 @@ export function PractitionersList({
     {
       id: "room",
       label: t.entities.room,
-      className: "w-[9%]",
+      className: "w-28",
       render: (p) => <CellBadge value={roomFor(p)} variant="outline" />,
     },
     {
       id: "services",
       label: t.practitioner.services,
-      className: "w-[5%]",
+      className: "w-20",
       cellClassName: "tabular-nums",
       render: (p) => p.serviceIds.length,
     },
     {
       id: "actions",
       label: t.practitioner.active,
-      className: "w-[10%]",
+      className: "w-20",
       render: controls,
     },
   ];
@@ -287,10 +287,10 @@ export function PractitionersList({
         onOpen={(p) => openProfile(p.id)}
         onPrefetch={(p) => prefetchProfile(p.id)}
         inactive={(p) => !p.isActive}
-        className="hidden md:flex"
+        className="hidden lg:flex"
         tableClassName="min-w-[72rem]"
       />
-      <div className="page-fill overflow-y-auto overscroll-y-contain md:hidden">
+      <div className="page-fill overflow-y-auto overscroll-y-contain lg:hidden">
         <div className="grid grid-cols-1 gap-3">
           {pageItems.map((p) => (
             <EntityMobileCard

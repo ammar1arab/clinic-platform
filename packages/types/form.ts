@@ -2,6 +2,8 @@ export type FormFieldType =
   | "text"
   | "textarea"
   | "number"
+  | "radio"
+  | "checkboxes"
   | "select"
   | "multi_select"
   | "boolean"
@@ -11,6 +13,8 @@ export const FORM_FIELD_TYPE = {
   TEXT: "text",
   TEXTAREA: "textarea",
   NUMBER: "number",
+  RADIO: "radio",
+  CHECKBOXES: "checkboxes",
   SELECT: "select",
   MULTI_SELECT: "multi_select",
   BOOLEAN: "boolean",
@@ -57,10 +61,11 @@ export interface FormAssignments {
   departmentIds: string[];
   serviceIds: string[];
 }
-export type TemplateStatus = "draft" | "published" | "archived";
+export type TemplateStatus = "draft" | "published" | "scheduled" | "archived";
 export const TEMPLATE_STATUS = {
   DRAFT: "draft",
   PUBLISHED: "published",
+  SCHEDULED: "scheduled",
   ARCHIVED: "archived",
 } as const satisfies Record<string, TemplateStatus>;
 export interface FormTemplateInput {
@@ -74,6 +79,7 @@ export interface FormTemplate extends FormTemplateInput {
   id: string;
   clinicId: string;
   status: TemplateStatus;
+  scheduledAt?: string | null;
   revision: number;
   version: number;
   publishedVersionId: string | null;

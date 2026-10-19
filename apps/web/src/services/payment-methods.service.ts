@@ -28,7 +28,10 @@ export const paymentMethodsService = {
       .then((r) => r.data),
 
   deactivate: (id: string) =>
-    api.patch(ENDPOINTS.PAYMENT_METHODS.DEACTIVATE(id)).then((r) => r.data),
+    api.patch<PaymentMethodDto>(ENDPOINTS.PAYMENT_METHODS.DEACTIVATE(id)).then((r) => r.data),
+
+  reactivate: (id: string) =>
+    api.patch<PaymentMethodDto>(ENDPOINTS.PAYMENT_METHODS.REACTIVATE(id)).then((r) => r.data),
 
   remove: (id: string) =>
     api.delete(ENDPOINTS.PAYMENT_METHODS.BY_ID(id)).then((r) => r.data),

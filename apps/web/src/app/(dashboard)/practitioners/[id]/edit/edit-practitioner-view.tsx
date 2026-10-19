@@ -39,7 +39,6 @@ export function EditPractitionerView({ id }: { id: string }) {
     <div className="page-stack space-y-4">
       <PageBack
         backHref={ROUTES.PRACTITIONER_DETAIL(id)}
-        backLabel={t.practitioner.backToProfile}
         actions={
           <RowActionsMenu
             items={[

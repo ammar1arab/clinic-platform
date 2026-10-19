@@ -8,31 +8,21 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Input,
 } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/primitives/states/empty';
+import { SearchInput } from '@/components/primitives/forms/search-input';
+import { SelectionToggle } from '@/components/primitives/forms/selection-toggle';
+import { SoftTip } from '@/components/primitives/display/soft-tip';
 import {
   IconCheck,
   IconChevronsUpDown,
-  IconClose,
   IconSearch,
 } from '@/constants/icons';
 
 export type MultiSelectOption = {
   value: string;
   label: string;
-};
-
-type Props = {
-  options: MultiSelectOption[];
-  value: string[];
-  onChange: (value: string[]) => void;
-  placeholder?: string;
-  searchPlaceholder?: string;
-  emptyText?: string;
-  className?: string;
-  disabled?: boolean;
 };
 
 export function MultiSelect({
@@ -44,7 +34,16 @@ export function MultiSelect({
   emptyText,
   className,
   disabled,
-}: Props) {
+}: {
+  options: MultiSelectOption[];
+  value: string[];
+  onChange: (value: string[]) => void;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyText?: string;
+  className?: string;
+  disabled?: boolean;
+}) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -66,6 +65,13 @@ export function MultiSelect({
 
   const selectAll = () => onChange(options.map((o) => o.value));
 
+  const allChecked: boolean | 'mixed' =
+    selected.length === 0
+      ? false
+      : selected.length === options.length
+        ? true
+        : 'mixed';
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -78,40 +84,17 @@ export function MultiSelect({
             className,
           )}
         >
-          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-start">
+          <span className="flex min-w-0 flex-1 items-center gap-1.5 text-start">
             {selected.length === 0 ? (
               <span className="text-muted-foreground">
                 {placeholder ?? t.ui.select}
               </span>
             ) : (
-              selected.map((item) => (
-                <span
-                  key={item.value}
-                  className="inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs text-foreground"
-                >
-                  <span className="truncate">{item.label}</span>
-                  <span
-                    role="button"
-                    aria-label={t.ui.removeItem.replace('{name}', item.label)}
-                    tabIndex={0}
-                    className="rounded-sm text-muted-foreground hover:text-foreground"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggle(item.value);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggle(item.value);
-                      }
-                    }}
-                  >
-                    <IconClose className="size-3" />
-                  </span>
+              <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs text-foreground">
+                <span className="truncate">
+                  {t.ui.selectedCount.replace('{count}', String(selected.length))}
                 </span>
-              ))
+              </span>
             )}
           </span>
           <IconChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
@@ -121,43 +104,28 @@ export function MultiSelect({
         className="w-[var(--radix-popover-trigger-width)] min-w-64 p-0"
         align="start"
       >
-        <div className="border-b border-border p-2">
-          <div className="relative">
-            <IconSearch className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={searchPlaceholder ?? t.common.search}
-              className="h-8 ps-8"
+        <div className="flex items-center gap-2 border-b border-border p-2">
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder={searchPlaceholder ?? t.common.search}
+            debounceMs={0}
+            className="h-8 flex-1"
+          />
+          <SoftTip label={allChecked === true ? t.common.clear : t.ui.selectAll}>
+            <SelectionToggle
+              label={allChecked === true ? t.common.clear : t.ui.selectAll}
+              checked={allChecked}
+              onChange={(checked) => (checked ? selectAll() : clear())}
             />
-          </div>
-          <div className="mt-2 flex gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={selectAll}
-            >
-              {t.ui.selectAll}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={clear}
-            >
-              {t.common.clear}
-            </Button>
-          </div>
+          </SoftTip>
         </div>
         <div className="max-h-56 overflow-y-auto p-1">
           {filtered.length === 0 ? (
             <EmptyState
               icon={IconSearch}
               title={emptyText ?? t.ui.noOptions}
-              size="inline"
+              size="compact"
             />
           ) : (
             filtered.map((option) => {

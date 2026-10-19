@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react';
 import {
-  Badge,
   Card,
   CardContent,
   CardHeader,
@@ -11,22 +10,19 @@ import {
 import { PageBack, TruncatedText } from '@/components/primitives';
 import { EmptyState } from '../states/empty';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/providers/language-provider';
 
 export function ProfileShell({
   backHref,
-  backLabel,
   actions,
   children,
 }: {
   backHref: string;
-  backLabel: string;
   actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="page-stack space-y-4">
-      <PageBack backHref={backHref} backLabel={backLabel} actions={actions} />
+      <PageBack backHref={backHref} actions={actions} />
       {children}
     </div>
   );
@@ -51,21 +47,21 @@ export function ProfileHero({
 }) {
   return (
     <Card className="card-aura overflow-hidden ring-0">
-      <CardContent className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
-        <div className="shrink-0 self-start sm:self-center">{avatar}</div>
-        <div className="min-w-0 flex-1 space-y-2.5">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <h1 className="min-w-0 font-heading text-2xl font-semibold tracking-tight">
+      <CardContent className="flex flex-row items-center gap-3 p-4 sm:gap-5 sm:p-5">
+        <div className="shrink-0">{avatar}</div>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <h1 className="min-w-0 truncate font-heading text-base font-semibold tracking-tight sm:text-lg">
               {title}
             </h1>
             {titleExtra}
             {badges}
           </div>
           {subtitle ? (
-            <div className="text-sm text-muted-foreground">{subtitle}</div>
+            <div className="truncate text-xs text-muted-foreground sm:text-sm">{subtitle}</div>
           ) : null}
           {meta ? (
-            <div className="text-sm text-muted-foreground">{meta}</div>
+            <div className="text-xs text-muted-foreground sm:text-sm">{meta}</div>
           ) : null}
         </div>
       </CardContent>
@@ -79,11 +75,11 @@ export function ProfileHero({
           )}
         >
           {stats.map((stat) => (
-            <div key={stat.label} className="px-3 py-3.5 text-center sm:px-4">
-              <p className="text-lg font-semibold tabular-nums tracking-tight">
+            <div key={stat.label} className="px-2 py-2 text-center sm:px-3 sm:py-2.5">
+              <p className="text-xs font-semibold tabular-nums tracking-tight sm:text-sm">
                 {stat.value}
               </p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
+              <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground sm:text-xs">
                 {stat.label}
               </p>
             </div>
@@ -220,15 +216,6 @@ export function ProfileGroup({
       ) : null}
       <ProfileInfoGrid>{children}</ProfileInfoGrid>
     </div>
-  );
-}
-
-export function ProfileStatusBadge({ active }: { active: boolean }) {
-  const { t } = useLanguage();
-  return (
-    <Badge variant={active ? 'success' : 'muted'} className="font-normal">
-      {active ? t.common.active : t.common.inactive}
-    </Badge>
   );
 }
 

@@ -19,6 +19,7 @@ export interface Clinic extends ClinicSummary {
   defaultCalendarView: CalendarView;
   defaultSessionType: SessionType;
   defaultDepartmentId: string | null;
+  updatedAt: string;
 }
 
 export interface UpdateClinicInput {

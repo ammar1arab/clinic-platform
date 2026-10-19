@@ -11,7 +11,6 @@ import {
   TableHeader,
   TableRow,
   Skeleton,
-  Switch,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -20,6 +19,7 @@ import {
   Input,
   } from '@/components/ui';
 import {
+  DirectoryActions,
   RowActionsMenu,
   EmptyState,
   FormField,
@@ -37,6 +37,7 @@ import {
   useCreatePaymentMethod,
   useUpdatePaymentMethod,
   useDeactivatePaymentMethod,
+  useReactivatePaymentMethod,
   useDeletePaymentMethod,
   useReorderPaymentMethods,
 } from '@/hooks/api/use-payment-methods';
@@ -66,6 +67,7 @@ export default function PaymentMethodsPage() {
   const createMutation = useCreatePaymentMethod(clinicId);
   const updateMutation = useUpdatePaymentMethod(clinicId);
   const deactivateMutation = useDeactivatePaymentMethod(clinicId);
+  const reactivateMutation = useReactivatePaymentMethod(clinicId);
   const deleteMutation = useDeletePaymentMethod(clinicId);
   const reorderMutation = useReorderPaymentMethods(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
@@ -75,7 +77,7 @@ export default function PaymentMethodsPage() {
   const [name, setName] = useState('');
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-  const isToggling = deactivateMutation.isPending || updateMutation.isPending;
+  const isToggling = deactivateMutation.isPending || reactivateMutation.isPending;
   const sorted = [...(methods ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
 
   const openCreate = () => {
@@ -119,7 +121,7 @@ export default function PaymentMethodsPage() {
   };
 
   const handleToggle = (m: PaymentMethod, next: boolean) => {
-    if (next) updateMutation.mutate({ id: m.id, data: { isActive: true } });
+    if (next) reactivateMutation.mutate(m.id);
     else deactivateMutation.mutate(m.id);
   };
 
@@ -162,21 +164,22 @@ export default function PaymentMethodsPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      <SettingsPageBack />
-
-      <div className="flex items-center gap-2">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder={t.settings.searchPaymentMethods}
-          className="min-w-0 flex-1 sm:max-w-sm"
-        />
-        <Button size="sm" onClick={openCreate} className="shrink-0">
-          <IconAdd className="size-4 me-1.5" />
-          <span className="hidden sm:inline">{t.settings.addPaymentMethod}</span>
-          <span className="sm:hidden">{t.common.add}</span>
-        </Button>
-      </div>
+      <SettingsPageBack
+        search={
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={t.settings.searchPaymentMethods}
+          />
+        }
+        actions={
+          <Button size="sm" onClick={openCreate} className="shrink-0">
+            <IconAdd className="size-4 me-1.5" />
+            <span className="hidden sm:inline">{t.settings.addPaymentMethod}</span>
+            <span className="sm:hidden">{t.common.add}</span>
+          </Button>
+        }
+      />
 
       <div className="hidden md:block">
         <TableFrame>
@@ -185,8 +188,7 @@ export default function PaymentMethodsPage() {
               <TableRow>
                 <TableHead className="w-[12%]">{t.common.sort}</TableHead>
                 <TableHead className="w-[58%]">{t.common.name}</TableHead>
-                <TableHead className="w-[15%]">{t.common.active}</TableHead>
-                <TableHead className="w-[15%]" />
+                <TableHead className="w-[30%] text-end">{t.common.active}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -200,15 +202,14 @@ export default function PaymentMethodsPage() {
                       <Skeleton className="h-4 w-32 max-w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-5 w-9" />
+                      <Skeleton className="h-5 w-9 ms-auto" />
                     </TableCell>
-                    <TableCell />
                   </TableRow>
                 ))}
 
               {!isLoading && totalItems === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="p-0">
+                  <TableCell colSpan={3} className="p-0">
                     <EmptyState
                       icon={IconPayment}
                       title={search ? t.settings.noMatchingPaymentMethods : t.settings.noPaymentMethods}
@@ -231,14 +232,14 @@ export default function PaymentMethodsPage() {
                     <TruncatedText className="font-medium">{m.name}</TruncatedText>
                   </TableCell>
                   <TableCell>
-                    <Switch
-                      checked={m.isActive}
-                      onCheckedChange={(checked) => handleToggle(m, checked)}
+                    <DirectoryActions
+                      name={m.name}
+                      active={m.isActive}
                       disabled={isToggling}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-end gap-1">{rowActions(m)}</div>
+                      onChange={(checked) => handleToggle(m, checked)}
+                    >
+                      {rowActions(m)}
+                    </DirectoryActions>
                   </TableCell>
                 </TableRow>
               ))}

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { ROUTES } from '@/constants/routes';
 import {
   IconBadgePercent,
@@ -116,8 +117,12 @@ export function getSettingsSections(t: Translations) {
 
 export function SettingsPageBack({
   backHref = ROUTES.SETTINGS,
+  search,
+  actions,
 }: {
   backHref?: string;
+  search?: ReactNode;
+  actions?: ReactNode;
 }) {
-  return <PageBack backHref={backHref} />;
+  return <PageBack backHref={backHref} search={search} actions={actions} />;
 }

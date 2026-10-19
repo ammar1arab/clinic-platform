@@ -16,7 +16,10 @@ export class ClinicsService {
     if (!clinic) {
       throw new NotFoundException("Clinic not found");
     }
-    return clinic;
+    return {
+      ...clinic,
+      updatedAt: clinic.updatedAt.toISOString(),
+    };
   }
 
   async findStaff(clinicId: string) {
@@ -34,6 +37,10 @@ export class ClinicsService {
       ))
     )
       securityError("clinicUnavailable", 403);
-    return this.clinicsRepository.update(id, dto);
+    const clinic = await this.clinicsRepository.update(id, dto);
+    return {
+      ...clinic,
+      updatedAt: clinic.updatedAt.toISOString(),
+    };
   }
 }

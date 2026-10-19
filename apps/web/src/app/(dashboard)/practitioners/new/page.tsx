@@ -5,16 +5,14 @@ import { PageBack } from '@/components/primitives';
 import { PractitionerForm } from '@/components/blocks/practitioners';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { ROUTES } from '@/constants/routes';
-import { useLanguage } from '@/providers';
 
 export default function NewPractitionerPage() {
   const clinicId = useClinicId();
   const router = useRouter();
-  const { t } = useLanguage();
 
   return (
     <div className="page-stack space-y-4">
-      <PageBack backHref={ROUTES.PRACTITIONERS} backLabel={t.practitioner.backToPractitioners} />
+      <PageBack backHref={ROUTES.PRACTITIONERS} />
       <PractitionerForm
         clinicId={clinicId}
         onCancel={() => router.push(ROUTES.PRACTITIONERS)}

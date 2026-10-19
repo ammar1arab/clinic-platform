@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { can, PROFILE_PERMISSIONS } from '@clinic/types';
 import { Badge, Button, Card, CardContent, Input, Textarea } from '@/components/ui';
 import {
+  ContactLine,
   EmptyState, FormActions, FormField, PreviewableAvatar, ProfileInfoField,
   ProfileInfoGrid, ProfileSection, ProfileShell, ReadOnlyMark,
 } from '@/components/primitives';
@@ -61,7 +62,6 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
   return (
     <ProfileShell
       backHref={editing ? ROUTES.PROFILE : ROUTES.DASHBOARD}
-      backLabel={editing ? t.common.accountProfile : t.layout.sidebar.dashboard}
       actions={!editing ? (
         <Button type="button" variant="outline" onClick={() => setEditing(true)}>
           <IconEdit className="size-3.5" />{t.practitioner.edit}
@@ -69,17 +69,12 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
       ) : undefined}
     >
       <Card className="card-aura overflow-hidden ring-0">
-        <CardContent className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
+        <CardContent className="flex flex-row items-center gap-3 p-4 sm:gap-5 sm:p-5">
           <PreviewableAvatar src={practitioner.imageUrl} seed={practitioner.id} size="xl" priority />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-heading text-2xl font-semibold tracking-tight">{name}</h1>
-              <Badge variant={practitioner.isActive ? 'success' : 'muted'}>
-                {practitioner.isActive ? t.practitioner.active : t.common.inactive}
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">{specialty || t.practitioner.practitioner}</p>
-            <p className="text-sm text-muted-foreground">{practitioner.email}</p>
+          <div className="min-w-0 flex-1 space-y-1">
+            <h1 className="truncate font-heading text-base font-semibold tracking-tight sm:text-lg">{name}</h1>
+            <p className="truncate text-xs text-muted-foreground sm:text-sm">{specialty || t.practitioner.practitioner}</p>
+            <ContactLine phone={practitioner.phone} email={practitioner.email} className="text-xs sm:text-sm" />
           </div>
         </CardContent>
       </Card>
@@ -94,8 +89,12 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
               <FormField label={t.ui.nameArabic} htmlFor="self-name-ar"><Input id="self-name-ar" dir="rtl" {...register('nameAr')} /></FormField>
               <FormField label={t.practitioner.phone} htmlFor="self-phone"><Input id="self-phone" type="tel" {...register('phone')} /></FormField>
               <FormField label={t.practitioner.whatsapp} htmlFor="self-whatsapp"><Input id="self-whatsapp" type="tel" {...register('whatsapp')} /></FormField>
-              <FormField label={t.practitioner.bio} htmlFor="self-bio"><Textarea id="self-bio" rows={4} {...register('bio')} /></FormField>
-              <FormField label={t.practitioner.bioAr} htmlFor="self-bio-ar"><Textarea id="self-bio-ar" dir="rtl" rows={4} {...register('bioAr')} /></FormField>
+              <FormField label={t.practitioner.bio} htmlFor="self-bio" className="sm:col-span-2">
+                <Textarea id="self-bio" rows={4} {...register('bio')} className="h-28 min-h-28 max-h-28 resize-none overflow-y-auto field-sizing-fixed" />
+              </FormField>
+              <FormField label={t.practitioner.bioAr} htmlFor="self-bio-ar" className="sm:col-span-2">
+                <Textarea id="self-bio-ar" dir="rtl" rows={4} {...register('bioAr')} className="h-28 min-h-28 max-h-28 resize-none overflow-y-auto field-sizing-fixed" />
+              </FormField>
             </div>
             <FormActions className="mt-5" onCancel={() => { reset(); setEditing(false); }} submitLabel={t.common.save} pending={mutation.isPending} />
           </ProfileSection>
@@ -131,8 +130,6 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
         </ProfileSection>
       )}
 
-      <NotePreference />
-
       <div className="grid gap-4 lg:grid-cols-2">
         <ProfileSection title={t.practitioner.services} action={editing && lockServices ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
           {practitioner.services.length ? <div className="flex flex-wrap gap-2">{practitioner.services.map((service) => <Badge key={service.id} variant="secondary">{getBilingualName(service.name, service.nameAr, lang)}</Badge>)}</div> : <EmptyState size="compact" icon={IconService} title={t.practitioner.noServicesAssigned} />}
@@ -147,6 +144,10 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
           {practitioner.timeOffs.length ? practitioner.timeOffs.map((entry) => <div key={entry.id ?? entry.startDate} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.leave}</span><span className="font-medium">{entry.startDate.slice(0, 10)} - {entry.endDate.slice(0, 10)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noLeaveBlocks} />}
         </ProfileSection>
       </div>
+
+      <ProfileSection title={t.visits.preference}>
+        <NotePreference />
+      </ProfileSection>
     </ProfileShell>
   );
 }

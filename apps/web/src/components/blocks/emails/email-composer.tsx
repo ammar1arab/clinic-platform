@@ -143,7 +143,6 @@ export function EmailComposer() {
       <PageBack
         className="shrink-0"
         backHref={ROUTES.EMAILS}
-        backLabel={t.emails.history}
         actions={
           <div className="flex items-center gap-2">
             <SoftTip

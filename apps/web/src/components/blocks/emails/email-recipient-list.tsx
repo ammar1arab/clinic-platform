@@ -108,7 +108,7 @@ export function EmailRecipientList({
             id: "selection",
             label: "",
             header: selectAll,
-            className: "w-10 px-2!",
+            className: "w-12 ps-3! pe-1!",
             render: selectRow,
           },
         ]
@@ -116,7 +116,7 @@ export function EmailRecipientList({
     {
       id: "recipient",
       label: t.common.name,
-      className: onExcludeMany ? "w-[30%]" : "w-[38%]",
+      cellClassName: "ps-1!",
       render: (row) => (
         <DirectoryIdentity
           name={getBilingualName(row.name, row.nameAr, lang)}
@@ -168,12 +168,12 @@ export function EmailRecipientList({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="@container space-y-2">
       {onExcludeMany && (
         <div
-          className={`flex items-center justify-between gap-2 ${chosen.length ? "" : "md:hidden"}`}
+          className={`flex items-center justify-between gap-2 ${chosen.length ? "" : "@[40rem]:hidden"}`}
         >
-          <div className="md:hidden">{selectAll}</div>
+          <div className="@[40rem]:hidden">{selectAll}</div>
           {chosen.length > 0 && (
             <div className="ms-auto flex items-center gap-2">
               <SoftTip label={t.common.clearSelection}>
@@ -208,7 +208,7 @@ export function EmailRecipientList({
           )}
         </div>
       )}
-      <div className="grid grid-cols-1 gap-4 md:hidden">
+      <div className="grid grid-cols-1 gap-4 @[40rem]:hidden">
         {rows.map((row) => {
           const name = getBilingualName(row.name, row.nameAr, lang) || "—";
           return (
@@ -237,7 +237,7 @@ export function EmailRecipientList({
         rows={rows}
         columns={columns}
         rowKey={(row) => row.email}
-        className="hidden md:flex"
+        className="hidden @[40rem]:flex"
         tableClassName={onExcludeMany ? "min-w-[36rem]" : "min-w-[32rem]"}
         scroll={false}
       />

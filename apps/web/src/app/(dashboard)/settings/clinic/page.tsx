@@ -32,7 +32,7 @@ import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useLanguage } from '@/providers';
 import { FORM_NONE } from '@/constants/form';
 import { SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
-import { readClinicLogo, stripSolidBackdrop, writeClinicLogo } from '@/lib/clinic-logo';
+import { applyClinicBrandChrome, stripSolidBackdrop, writeClinicBrand } from '@/lib/clinic-logo';
 import type { Clinic } from '@/services/clinics.service';
 
 const TIMEZONES = [
@@ -80,8 +80,17 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
     const updated = await updateMutation.mutateAsync({ logoUrl: stored || null });
     const nextLogo = updated.logoUrl || '';
     setLogoUrl(nextLogo);
-    writeClinicLogo(clinicId, nextLogo || null);
-    mirror({ logoUrl: nextLogo || null });
+    writeClinicBrand(clinicId, {
+      logoUrl: nextLogo || null,
+      brandColor: updated.brandColor,
+      stamp: updated.updatedAt,
+    });
+    applyClinicBrandChrome({
+      logoUrl: nextLogo || null,
+      brandColor: updated.brandColor,
+      stamp: updated.updatedAt,
+    });
+    mirror({ logoUrl: nextLogo || null, updatedAt: updated.updatedAt });
   };
 
   const [workingHoursStart, setWorkingHoursStart] = useState(clinic.workingHoursStart || '08:00');
@@ -100,86 +109,112 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
   const [email, setEmail] = useState(clinic.email ?? '');
   const [phone, setPhone] = useState(clinic.phone ?? '');
   const [address, setAddress] = useState(clinic.address ?? '');
-  const [logoUrl, setLogoUrl] = useState(
-    () => readClinicLogo(clinicId) || clinic.logoUrl || '',
-  );
+  const [logoUrl, setLogoUrl] = useState(clinic.logoUrl || '');
   const [brandColor, setBrandColor] = useState(clinic.brandColor ?? '#0f766e');
 
   const handleSave = () => {
-    updateMutation.mutate({
-      workingHoursStart,
-      workingHoursEnd,
-      timezone,
-      defaultCalendarView,
-      defaultSessionType,
-      defaultDepartmentId: defaultDepartmentId || null,
-      letterheadFooter: letterheadFooter.trim() || undefined,
-      name: name.trim(),
-      nameAr: nameAr.trim() || undefined,
-      email: email.trim() || undefined,
-      phone: phone.trim(),
-      address: address.trim(),
-      logoUrl: logoUrl || null,
-      brandColor,
-    });
+    updateMutation.mutate(
+      {
+        workingHoursStart,
+        workingHoursEnd,
+        timezone,
+        defaultCalendarView,
+        defaultSessionType,
+        defaultDepartmentId: defaultDepartmentId || null,
+        letterheadFooter: letterheadFooter.trim() || undefined,
+        name: name.trim(),
+        nameAr: nameAr.trim() || undefined,
+        email: email.trim() || undefined,
+        phone: phone.trim(),
+        address: address.trim(),
+        logoUrl: logoUrl || null,
+        brandColor,
+      },
+      {
+        onSuccess: (updated) => {
+          writeClinicBrand(clinicId, {
+            logoUrl: updated.logoUrl,
+            brandColor: updated.brandColor,
+            stamp: updated.updatedAt,
+          });
+          applyClinicBrandChrome({
+            logoUrl: updated.logoUrl,
+            brandColor: updated.brandColor,
+            stamp: updated.updatedAt,
+          });
+          mirror({
+            logoUrl: updated.logoUrl,
+            brandColor: updated.brandColor,
+            updatedAt: updated.updatedAt,
+          });
+        },
+      },
+    );
   };
 
   return (
     <div className="space-y-4">
       <Card>
         <CardContent className="space-y-4">
-          <div className="flex min-w-0 flex-col items-center gap-6">
+          <div className="flex items-center gap-3 sm:gap-5">
             <AvatarUpload
               plain
+              className="shrink-0"
               value={logoUrl}
               onChange={(url) => void storeLogo(url)}
               fallbackLabel={name}
             />
-            <div className="w-full min-w-0 space-y-4">
-              <BilingualNameFields
-                name={name}
-                nameAr={nameAr}
-                onNameChange={(value) => {
-                  setName(value);
-                  mirror({ name: value });
+            <BilingualNameFields
+              className="min-w-0 flex-1"
+              name={name}
+              nameAr={nameAr}
+              onNameChange={(value) => {
+                setName(value);
+                mirror({ name: value });
+              }}
+              onNameArChange={(value) => {
+                setNameAr(value);
+                mirror({ nameAr: value || null });
+              }}
+              maxLength={120}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label={t.common.clinicContactEmail} htmlFor="clinic-email">
+              <Input
+                id="clinic-email"
+                type="email"
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  mirror({ email: event.target.value || null });
                 }}
-                onNameArChange={(value) => {
-                  setNameAr(value);
-                  mirror({ nameAr: value || null });
-                }}
-                maxLength={120}
+                maxLength={200}
               />
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField label={t.common.clinicContactEmail} htmlFor="clinic-email">
-                  <Input
-                    id="clinic-email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      mirror({ email: event.target.value || null });
-                    }}
-                    maxLength={200}
-                  />
-                </FormField>
-                <FormField label={t.exports.phone} htmlFor="clinic-phone">
-                  <Input id="clinic-phone" type="tel" dir="ltr" value={phone} onChange={event => setPhone(event.target.value)} maxLength={40} />
-                </FormField>
-                <FormField label={t.emails.clinicAddress} htmlFor="clinic-address">
-                  <Input id="clinic-address" value={address} onChange={event => setAddress(event.target.value)} maxLength={500} />
-                </FormField>
-                <FormField label={t.settings.brandColor}>
-                  <BrandColorField
-                    value={brandColor}
-                    onChange={(value) => {
-                      setBrandColor(value);
-                      if (/^#[0-9A-Fa-f]{6}$/.test(value)) mirror({ brandColor: value });
-                    }}
-                    label={t.settings.brandColor}
-                  />
-                </FormField>
-              </div>
-            </div>
+            </FormField>
+            <FormField label={t.exports.phone} htmlFor="clinic-phone">
+              <Input id="clinic-phone" type="tel" dir="ltr" value={phone} onChange={event => setPhone(event.target.value)} maxLength={40} />
+            </FormField>
+            <FormField label={t.emails.clinicAddress} htmlFor="clinic-address">
+              <Input id="clinic-address" value={address} onChange={event => setAddress(event.target.value)} maxLength={500} />
+            </FormField>
+            <FormField label={t.settings.brandColor}>
+              <BrandColorField
+                value={brandColor}
+                onChange={(value) => {
+                  setBrandColor(value);
+                  if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                    mirror({ brandColor: value });
+                    applyClinicBrandChrome({
+                      logoUrl: logoUrl || null,
+                      brandColor: value,
+                      stamp: clinic.updatedAt,
+                    });
+                  }
+                }}
+                label={t.settings.brandColor}
+              />
+            </FormField>
           </div>
         </CardContent>
       </Card>
@@ -339,15 +374,16 @@ export default function ClinicSettingsPage() {
   const clinicId = useClinicId();
   const { data: clinic, isLoading, isError, refetch } = useClinic(clinicId);
 
-  if (isError) return <ErrorState onRetry={() => void refetch()} />;
-  if (isLoading || !clinic) {
-    return <FormPageSkeleton />;
-  }
-
   return (
     <div className="page-stack space-y-4">
       <SettingsPageBack />
-      <ClinicSettingsForm key={clinic.id} clinic={clinic} clinicId={clinicId} />
+      {isError ? (
+        <ErrorState onRetry={() => void refetch()} />
+      ) : isLoading || !clinic ? (
+        <FormPageSkeleton />
+      ) : (
+        <ClinicSettingsForm key={clinic.id} clinic={clinic} clinicId={clinicId} />
+      )}
     </div>
   );
 }

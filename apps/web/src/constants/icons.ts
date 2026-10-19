@@ -1,6 +1,14 @@
 export type { LucideIcon } from 'lucide-react';
 
 export {
+  GripVertical as IconGrip,
+  Type as IconFieldText,
+  AlignLeft as IconFieldParagraph,
+  Hash as IconFieldNumber,
+  List as IconFieldSelect,
+  ListChecks as IconFieldMultiSelect,
+  ToggleLeft as IconFieldBoolean,
+  Ruler as IconFieldMeasurement,
   Mail as IconMail,
   LayoutDashboard as IconDashboard,
   Calendar as IconSchedule,
@@ -8,6 +16,7 @@ export {
   CalendarCheck as IconTodaysAppointments,
   CalendarClock as IconCalendarClock,
   CalendarDays as IconVisit,
+  NotebookPen as IconClinicalRecord,
   Users as IconPatients,
   UserRound as IconPerson,
   UserPlus as IconNewPatient,
@@ -41,6 +50,7 @@ export {
   Star as IconLoyal,
   UserRoundCog as IconPractitioner,
   Upload as IconUpload,
+  Archive as IconArchive,
   ArrowDown as IconArrowDown,
   ArrowLeft as IconArrowLeft,
   ArrowUp as IconArrowUp,

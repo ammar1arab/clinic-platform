@@ -18,7 +18,7 @@ function ClinicLoadingLogo({ size }: { size: 'md' | 'lg' }) {
       <span className="absolute inset-0 rounded-[1.4rem] border border-primary/15 bg-primary/5 animate-clinic-ripple" aria-hidden />
       <span className="absolute inset-1 rounded-[1.15rem] border border-border/70 bg-card" aria-hidden />
       <span className="relative grid size-[calc(100%-0.75rem)] place-items-center overflow-hidden rounded-2xl p-1.5 animate-clinic-breathe">
-        <Image src={logoUrl} alt="" width={px} height={px} unoptimized className="max-h-full max-w-full object-contain" priority />
+        <Image key={logoUrl} src={logoUrl} alt="" width={px} height={px} unoptimized className="max-h-full max-w-full object-contain" priority />
       </span>
     </span>
   );

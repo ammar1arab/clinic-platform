@@ -1,10 +1,11 @@
 'use client';
 
-import { TEMPLATE_STATUS } from '@clinic/types';
+import { useState } from 'react';
+import { TEMPLATE_STATUS, type TemplateStatus } from '@clinic/types';
 import Link from 'next/link';
-import { Badge, Button } from '@/components/ui';
-import { EmptyState, ErrorState, IconCard } from '@/components/primitives';
-import { IconFileText } from '@/constants/icons';
+import { Badge, Button, Select, SelectContent, SelectTrigger, SelectValue, SelectItem } from '@/components/ui';
+import { EmptyState, ErrorState, IconCard, IconCardSkeleton, PageBack, SearchInput } from '@/components/primitives';
+import { IconAdd, IconFileText } from '@/constants/icons';
 import { ROUTES } from '@/constants/routes';
 import { useClinicalNoteTemplates } from '@/hooks/api/use-clinical-note-templates';
 import { getBilingualName } from '@/i18n';
@@ -13,15 +14,38 @@ import { useLanguage } from '@/providers';
 export function NoteTemplateList() {
   const { lang, t } = useLanguage();
   const templates = useClinicalNoteTemplates();
-
-  if (templates.isLoading) return <div className="h-40 animate-pulse rounded-xl bg-muted" />;
-  if (templates.isError) return <ErrorState onRetry={() => void templates.refetch()} />;
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const items = (templates.data ?? []).filter((template) => {
+    if (status && template.status !== status) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return `${template.name} ${template.nameAr ?? ''}`.toLowerCase().includes(q);
+  });
 
   return (
-    <div className="space-y-3">
-      <Button asChild><Link href={ROUTES.SETTINGS_NOTE_TEMPLATE_NEW}>{t.visits.newTemplate}</Link></Button>
-      {!templates.data?.length ? <EmptyState icon={IconFileText} title={t.visits.noTemplate} description={t.visits.templatesDesc} /> : null}
-      {templates.data?.map((template) => (
+    <div className="space-y-4">
+      <PageBack backHref={ROUTES.SETTINGS}
+        search={<SearchInput value={search} onChange={setSearch} placeholder={t.common.search} className="w-full" />}
+        actions={<div className="flex items-center gap-2">
+          <Select value={status || 'all'} onValueChange={(value) => setStatus(value === 'all' ? '' : value)}>
+            <SelectTrigger className="h-9 w-28 sm:w-36" aria-label={t.common.status}><SelectValue placeholder={t.common.allStatus} /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t.common.allStatus}</SelectItem>
+              {Object.values(TEMPLATE_STATUS).map((value: TemplateStatus) => <SelectItem key={value} value={value}>{t.visits.templateStatuses[value]}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button asChild className="h-9 shrink-0 px-2 sm:px-3">
+            <Link href={ROUTES.SETTINGS_NOTE_TEMPLATE_NEW} aria-label={t.visits.newTemplate}><IconAdd className="size-4" /><span className="hidden sm:inline">{t.visits.newTemplate}</span></Link>
+          </Button>
+        </div>}
+      />
+      {templates.isLoading ? <IconCardSkeleton count={4} /> : null}
+      {templates.isError ? <ErrorState onRetry={() => void templates.refetch()} /> : null}
+      {!templates.isLoading && !templates.isError && !items.length ? (
+        <EmptyState icon={IconFileText} title={t.visits.templates} description={t.visits.templatesDesc} />
+      ) : null}
+      {items.map((template) => (
         <IconCard
           key={template.id}
           href={ROUTES.SETTINGS_NOTE_TEMPLATE(template.id)}

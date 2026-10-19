@@ -1,6 +1,12 @@
-import { useEffect, useMemo, useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useClinicId } from "../shared/use-clinic-id";
-import { readActiveClinicLogo, readClinicLogo, writeClinicLogo } from "@/lib/clinic-logo";
+import {
+  CLINIC_BRAND_EVENT,
+  applyClinicBrandChrome,
+  readClinicBrand,
+  versionedAssetUrl,
+  writeClinicBrand,
+} from "@/lib/clinic-logo";
 import {
   clinicsService,
   UpdateClinicInput,
@@ -32,26 +38,70 @@ export function useUpdateClinic(clinicId: string) {
   });
 }
 
-function subscribeToClinicLogo(listener: () => void) {
+function subscribeToClinicBrand(listener: () => void) {
+  window.addEventListener(CLINIC_BRAND_EVENT, listener);
   window.addEventListener("clinic-logo", listener);
-  return () => window.removeEventListener("clinic-logo", listener);
+  window.addEventListener("storage", listener);
+  return () => {
+    window.removeEventListener(CLINIC_BRAND_EVENT, listener);
+    window.removeEventListener("clinic-logo", listener);
+    window.removeEventListener("storage", listener);
+  };
 }
 
-export function useClinicLogo() {
+const brandSnapshots = new Map<string, ReturnType<typeof readClinicBrand>>();
+
+function clinicBrandSnapshot(clinicId: string) {
+  const next = readClinicBrand(clinicId || undefined);
+  const previous = brandSnapshots.get(clinicId) ?? null;
+  if (
+    previous?.logoUrl === next?.logoUrl &&
+    previous?.brandColor === next?.brandColor &&
+    previous?.stamp === next?.stamp
+  ) return previous;
+  brandSnapshots.set(clinicId, next);
+  return next;
+}
+
+export function useClinicBrand() {
   const clinicId = useClinicId();
   const { data: clinic } = useClinic(clinicId);
   const read = useMemo(
-    () => () => (clinicId ? readClinicLogo(clinicId) : readActiveClinicLogo()),
+    () => () => clinicBrandSnapshot(clinicId),
     [clinicId],
   );
-  const stored = useSyncExternalStore(subscribeToClinicLogo, read, () => null);
+  const stored = useSyncExternalStore(subscribeToClinicBrand, read, () => null);
+  const source = clinic
+    ? {
+        logoUrl: clinic.logoUrl,
+        brandColor: clinic.brandColor,
+        stamp: clinic.updatedAt,
+      }
+    : stored ?? { logoUrl: null, brandColor: null, stamp: "0" };
+  const { logoUrl, brandColor, stamp } = source;
+  const displayLogoUrl = logoUrl ? versionedAssetUrl(logoUrl, stamp) : null;
+  return useMemo(
+    () => ({ logoUrl, brandColor, stamp, displayLogoUrl }),
+    [displayLogoUrl, brandColor, logoUrl, stamp],
+  );
+}
 
-  useEffect(() => {
-    if (!clinicId || !clinic) return;
-    writeClinicLogo(clinicId, clinic.logoUrl);
-  }, [clinicId, clinic]);
+export function useClinicLogo() {
+  return useClinicBrand().displayLogoUrl;
+}
 
-  // Once the clinic request resolves, the API value wins and a removed logo
-  // cannot be resurrected by an old browser cache.
-  return clinic ? clinic.logoUrl : stored || null;
+export function bindClinicBrand(
+  node: HTMLElement | null,
+  brand: { logoUrl: string | null; brandColor: string | null; stamp?: string },
+  persist?: { clinicId: string; clinic?: Clinic },
+) {
+  if (!node) return;
+  if (persist?.clinicId && persist.clinic) {
+    writeClinicBrand(persist.clinicId, {
+      logoUrl: persist.clinic.logoUrl,
+      brandColor: persist.clinic.brandColor,
+      stamp: persist.clinic.updatedAt,
+    });
+  }
+  return applyClinicBrandChrome(brand);
 }

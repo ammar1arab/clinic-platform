@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useId } from 'react';
 import { useLanguage } from '@/providers/language-provider';
 import { BRAND_MARK_SRC } from '@/constants/brand';
+import { useClinicBrand } from '@/hooks/api/use-clinic';
 import { cn } from '@/lib/utils';
 
 type Size = 'sm' | 'md' | 'lg';
@@ -69,6 +70,33 @@ export function BrandMark({
           'relative size-full object-contain',
           spinning && 'animate-clinic-breathe',
         )}
+      />
+    </div>
+  );
+}
+
+export function ClinicBrandMark({
+  className,
+  size = 'md',
+  spinning = false,
+}: {
+  className?: string;
+  size?: Size;
+  spinning?: boolean;
+}) {
+  const { displayLogoUrl } = useClinicBrand();
+  if (!displayLogoUrl) return <BrandMark className={className} size={size} spinning={spinning} />;
+  const { box, px } = dims[size];
+  return (
+    <div className={cn('relative inline-flex items-center justify-center', box, className)} role="img">
+      <Image
+        key={displayLogoUrl}
+        src={displayLogoUrl}
+        alt=""
+        width={px}
+        height={px}
+        unoptimized
+        className="relative size-full object-contain"
       />
     </div>
   );

@@ -25,7 +25,10 @@ export const packagesService = {
       .then((r) => r.data),
 
   deactivate: (id: string) =>
-    api.patch(ENDPOINTS.PACKAGES.DEACTIVATE(id)).then((r) => r.data),
+    api.patch<PackageDto>(ENDPOINTS.PACKAGES.DEACTIVATE(id)).then((r) => r.data),
+
+  reactivate: (id: string) =>
+    api.patch<PackageDto>(ENDPOINTS.PACKAGES.REACTIVATE(id)).then((r) => r.data),
 
   remove: (id: string) =>
     api.delete(ENDPOINTS.PACKAGES.BY_ID(id)).then((r) => r.data),

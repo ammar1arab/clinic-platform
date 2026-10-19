@@ -16,7 +16,7 @@ import type {
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { visitsService } from '@/services/visits.service';
 import { useLanguage } from '@/providers';
-import { INVALIDATE, LIVE_LIST_OPTIONS, useApiMutation, useFetchData, type TResponseError } from '../query';
+import { BILLING_OPTIONS, INVALIDATE, LIVE_LIST_OPTIONS, useApiMutation, useFetchData, type TResponseError } from '../query';
 
 export function visitErrorCode(error: unknown): string | undefined {
   if (!axios.isAxiosError(error)) return undefined;
@@ -53,7 +53,7 @@ export function useVisitWorkspace(appointmentId: string) {
   return useFetchData<VisitWorkspace>({
     queryKey: QUERY_KEYS.visits.workspace(appointmentId),
     request: () => visitsService.workspace(appointmentId),
-    options: { enabled: !!appointmentId },
+    options: { ...BILLING_OPTIONS, enabled: !!appointmentId },
   });
 }
 

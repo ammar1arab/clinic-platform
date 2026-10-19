@@ -47,6 +47,7 @@ export class TemplatesService {
       clinicId: row.clinicId,
       ...snapshotOf(row),
       status: row.status as TemplateDTO["status"],
+      scheduledAt: row.scheduledAt?.toISOString() ?? null,
       revision: row.revision,
       version: row.version,
       publishedVersionId: latest?.id ?? null,
@@ -234,6 +235,7 @@ export class TemplatesService {
           assignments: toJson(data.assignments),
           sections: toJson(data.sections),
           status: "draft",
+          scheduledAt: null,
           revision: { increment: 1 },
         },
       });
@@ -244,6 +246,30 @@ export class TemplatesService {
       });
       return this.dto(updated, updated.versions[0]);
     });
+  }
+  async publishNow(tx: VisitTx, clinicId: string, row: ClinicalNoteTemplate) {
+    const updated = await tx.clinicalNoteTemplate.updateMany({
+      where: { id: row.id, clinicId, revision: row.revision },
+      data: {
+        version: { increment: 1 },
+        revision: { increment: 1 },
+        status: "published",
+        scheduledAt: null,
+      },
+    });
+    if (!updated.count) visitError("visitRevisionConflict", 409);
+    const version = await tx.clinicalTemplateVersion.create({
+      data: {
+        clinicId,
+        templateId: row.id,
+        version: row.version + 1,
+        snapshot: toJson(snapshotOf(row)),
+      },
+    });
+    return this.dto(
+      await tx.clinicalNoteTemplate.findUniqueOrThrow({ where: { id: row.id } }),
+      version,
+    );
   }
   async publish(actor: AuthUser, id: string, revision: number) {
     this.owner(actor);
@@ -258,34 +284,68 @@ export class TemplatesService {
       });
       if (!row) visitError("visitRevisionConflict", 409);
       await this.validate(tx, actor.clinicId, snapshotOf(row));
+      return this.publishNow(tx, actor.clinicId, row);
+    });
+  }
+  async schedule(
+    actor: AuthUser,
+    id: string,
+    revision: number,
+    scheduledAt: Date,
+  ) {
+    this.owner(actor);
+    if (!(scheduledAt.getTime() > Date.now()))
+      visitError("clinicalTemplateInvalid");
+    return this.repo.transaction(async (tx) => {
+      const row = await tx.clinicalNoteTemplate.findFirst({
+        where: {
+          id,
+          clinicId: actor.clinicId,
+          revision,
+          status: { not: "archived" },
+        },
+      });
+      if (!row) visitError("visitRevisionConflict", 409);
+      await this.validate(tx, actor.clinicId, snapshotOf(row));
       const updated = await tx.clinicalNoteTemplate.updateMany({
         where: { id, clinicId: actor.clinicId, revision },
         data: {
-          version: { increment: 1 },
+          status: "scheduled",
+          scheduledAt,
           revision: { increment: 1 },
-          status: "published",
         },
       });
       if (!updated.count) visitError("visitRevisionConflict", 409);
-      const version = await tx.clinicalTemplateVersion.create({
-        data: {
-          clinicId: actor.clinicId,
-          templateId: id,
-          version: row.version + 1,
-          snapshot: toJson(snapshotOf(row)),
-        },
+      const scheduled = await tx.clinicalNoteTemplate.findUniqueOrThrow({
+        where: { id, clinicId: actor.clinicId },
+        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
       });
-      return this.dto(
-        await tx.clinicalNoteTemplate.findUniqueOrThrow({ where: { id } }),
-        version,
-      );
+      return this.dto(scheduled, scheduled.versions[0]);
     });
+  }
+  async promoteScheduled(now: Date) {
+    const due = await this.repo.db.clinicalNoteTemplate.findMany({
+      where: { status: "scheduled", scheduledAt: { lte: now } },
+      orderBy: [{ scheduledAt: "asc" }, { id: "asc" }],
+      take: 100,
+    });
+    for (const row of due) {
+      await this.repo.transaction(async (tx) => {
+        const current = await tx.clinicalNoteTemplate.findFirst({
+          where: { id: row.id, clinicId: row.clinicId, status: "scheduled", scheduledAt: { lte: now } },
+        });
+        if (!current) return;
+        validateSections(current.sections);
+        await this.publishNow(tx, current.clinicId, current);
+      });
+    }
+    return due.length;
   }
   async archive(actor: AuthUser, id: string, revision: number) {
     this.owner(actor);
     const result = await this.repo.db.clinicalNoteTemplate.updateMany({
       where: { id, clinicId: actor.clinicId, revision },
-      data: { status: "archived", revision: { increment: 1 } },
+      data: { status: "archived", scheduledAt: null, revision: { increment: 1 } },
     });
     if (!result.count) visitError("visitRevisionConflict", 409);
     return this.get(actor, id);

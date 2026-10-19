@@ -1,4 +1,5 @@
 import { DocumentationRemindersWorker } from "./documentation-reminders.worker";
+import { TemplatePublishWorker } from "./template-publish.worker";
 import { Module } from "@nestjs/common";
 import { AuthModule } from "@/modules/auth/auth.module";
 import { DashboardModule } from "@/modules/dashboard/dashboard.module";
@@ -15,6 +16,7 @@ import {
   controllers: [VisitsController, ClinicalTemplatesController],
   providers: [
     DocumentationRemindersWorker,
+    TemplatePublishWorker,
     VisitsRepository,
     VisitsService,
     TemplatesService,

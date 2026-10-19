@@ -11,8 +11,9 @@ import {
   FeedbackOverlay,
   SUCCESS_OVERLAY_MS,
 } from "@/components/primitives/states/feedback-overlay";
-import { BrandMark } from "@/components/primitives/display/brand-mark";
+import { ClinicBrandMark } from "@/components/primitives/display/brand-mark";
 import { LoadingState, ErrorState } from "@/components/primitives";
+import { bindClinicBrand, useClinicBrand } from "@/hooks/api/use-clinic";
 import { prepareFeedbackSound } from "@/lib/feedback-sound";
 import { postLoginPath } from "@/constants/nav-access";
 import { ROUTES } from "@/constants/routes";
@@ -41,6 +42,11 @@ export function AuthFlow({ hasSession = false }: { hasSession?: boolean }) {
   const destRef = useRef<string>(ROUTES.DASHBOARD);
   const { login, user, isAuthenticated, isLoading, isHydrated, isSessionError, retrySession } = useAuth();
   const { t } = useLanguage();
+  const brand = useClinicBrand();
+  const bindBrand = useCallback(
+    (node: HTMLElement | null) => bindClinicBrand(node, brand),
+    [brand],
+  );
   const mutation = useAuthMutation();
   const pending = mutation.isPending || success;
   const flipped = step.next !== "login";
@@ -68,7 +74,11 @@ export function AuthFlow({ hasSession = false }: { hasSession?: boolean }) {
   }, []);
 
   if (hasSession && (!isHydrated || isLoading) && !success) {
-    return <LoadingState variant="page" text={t.auth.signingIn} />;
+    return (
+      <div ref={bindBrand} className="contents">
+        <LoadingState variant="page" text={t.auth.signingIn} />
+      </div>
+    );
   }
 
   if (isSessionError && !success) return <ErrorState onRetry={retrySession} />;
@@ -134,6 +144,7 @@ export function AuthFlow({ hasSession = false }: { hasSession?: boolean }) {
 
   return (
     <main
+      ref={bindBrand}
       className="grid min-h-dvh place-items-center bg-background px-4 py-8"
       onPointerDown={prepareFeedbackSound}
     >
@@ -147,7 +158,7 @@ export function AuthFlow({ hasSession = false }: { hasSession?: boolean }) {
           >
             <CardContent className="space-y-6">
               <div className="flex flex-col items-center gap-3 text-center">
-                <BrandMark size="md" />
+                <ClinicBrandMark size="md" />
                 <h1 className="font-heading text-xl font-semibold">
                   {t.auth.title}
                 </h1>
@@ -196,7 +207,7 @@ export function AuthFlow({ hasSession = false }: { hasSession?: boolean }) {
           >
             <CardContent className="space-y-6">
               <div className="flex flex-col items-center gap-3 text-center">
-                <BrandMark size="md" />
+                <ClinicBrandMark size="md" />
                 <h1 className="font-heading text-xl font-semibold">{title}</h1>
                 <p className="text-sm text-muted-foreground">{description}</p>
                 {"email" in step && (

@@ -54,6 +54,13 @@ export class PackagesRepository {
     });
   }
 
+  reactivate(id: string, clinicId: string) {
+    return this.prisma.package.update({
+      where: { id, clinicId },
+      data: { isActive: true },
+    });
+  }
+
   hardDelete(id: string, clinicId: string) {
     return this.prisma.$transaction(async (tx) => {
       await tx.patient.updateMany({

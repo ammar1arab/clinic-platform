@@ -7,8 +7,6 @@ import { ROLE } from '@clinic/types';
 import { ROUTES } from '@/constants/routes';
 import { EntityAvatar, SoftTip } from '@/components/primitives';
 import { useClinicLogo } from '@/hooks/api/use-clinic';
-import { useClinicId } from '@/hooks/shared/use-clinic-id';
-import { stripSolidBackdrop, writeClinicLogo } from '@/lib/clinic-logo';
 import { useAuth, useLanguage } from '@/providers';
 import { cn } from '@/lib/utils';
 
@@ -36,11 +34,8 @@ export function ProfileLink({ onClick, mobile = false, collapsed = true }: { onC
 }
 
 export function ClinicLockup() {
-  const clinicId = useClinicId();
   const logoUrl = useClinicLogo();
 
-  // Do not fall back to the product mark here. The clinic profile image is the
-  // single source of truth and a reserved box prevents a flash of another logo.
   if (!logoUrl) return <span aria-hidden="true" className="size-8 shrink-0" />;
 
   return (
@@ -52,13 +47,6 @@ export function ClinicLockup() {
       height={32}
       unoptimized
       className="size-8 shrink-0 bg-transparent object-contain"
-      onLoad={() => {
-        if (!clinicId) return;
-        void stripSolidBackdrop(logoUrl).then((next) => {
-          if (!next || next === logoUrl) return;
-          writeClinicLogo(clinicId, next);
-        });
-      }}
     />
   );
 }

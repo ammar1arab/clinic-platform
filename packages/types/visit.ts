@@ -37,7 +37,7 @@ export const PRESENCE_SOURCE = {
 export interface VisitSummary {
   appointmentId: string;
   visitId: string | null;
-  patient: { id: string; name: string; nameAr: string | null };
+  patient: { id: string; name: string; nameAr: string | null; imageUrl: string | null };
   practitioner: { id: string; name: string; nameAr: string | null };
   mode: SessionType;
   scheduledAt: string;
@@ -219,6 +219,7 @@ export interface VisitActions {
   confirmPresence: boolean;
 }
 export interface VisitWorkspace extends VisitSummary {
+  practitioner: VisitSummary["practitioner"] & { imageUrl: string | null };
   serverNow: string;
   clinicTimezone: string;
   visitRevision: number;

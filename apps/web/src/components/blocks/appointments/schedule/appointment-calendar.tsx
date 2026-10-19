@@ -16,10 +16,10 @@ import {
   EventMountArg,
   MoreLinkContentArg,
 } from "@fullcalendar/core";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, Tabs, TabsList, TabsTrigger } from "@/components/ui";
 import { SoftTip } from "@/components/primitives";
 import { cn } from "@/lib/utils";
-import { IconCalendar } from "@/constants/icons";
+import { IconCalendar, IconChevronLeft, IconChevronRight } from "@/constants/icons";
 import { Appointment } from "@/services/appointments.service";
 import { STATUS_COLORS } from "../shared/status-badge";
 import { patientDisplayName } from "../shared/appointment-display";
@@ -107,6 +107,8 @@ export function AppointmentCalendar({
   hours,
 }: Props) {
   const calendarRef = useRef<FullCalendar>(null);
+  const [visibleDate, setVisibleDate] = useState<Date>();
+  const [calendarTitle, setCalendarTitle] = useState('');
   const updateMutation = useUpdateAppointment();
   const isMobile = useIsMobile();
   const { t, lang } = useLanguage();
@@ -245,6 +247,9 @@ export function AppointmentCalendar({
 
   const handleDatesSet = useCallback(
     (arg: DatesSetArg) => {
+      setCalendarTitle(arg.view.title);
+      const currentDate = calendarRef.current?.getApi().getDate();
+      if (currentDate) setVisibleDate((previous) => previous?.getTime() === currentDate.getTime() ? previous : currentDate);
       const next = FC_TO_VIEW[arg.view.type];
       if (next && next !== view) onViewChange(next);
       onVisibleRangeChange?.(arg.start, arg.end);
@@ -476,6 +481,34 @@ export function AppointmentCalendar({
       )}
       aria-busy={isFetching || undefined}
     >
+      <div className="mb-2 grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-3">
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon-xs" aria-label={t.common.previous} onClick={() => calendarRef.current?.getApi().prev()}>
+            <IconChevronLeft className="size-4 rtl:rotate-180" />
+          </Button>
+          <Button variant="ghost" size="icon-xs" aria-label={t.common.next} onClick={() => calendarRef.current?.getApi().next()}>
+            <IconChevronRight className="size-4 rtl:rotate-180" />
+          </Button>
+        </div>
+        <Tabs value={view} onValueChange={(value) => {
+          if (value === 'day' || value === 'week' || value === 'month') calendarRef.current?.getApi().changeView(VIEW_TO_FC[value]);
+        }}>
+          <TabsList variant="pill" aria-label={t.layout.titles.schedule}>
+            <TabsTrigger value="day" className="px-1.5 sm:px-4">{t.appointments.day}</TabsTrigger>
+            <TabsTrigger value="week" className="px-1.5 sm:px-4">{t.appointments.week}</TabsTrigger>
+            <TabsTrigger value="month" className="px-1.5 sm:px-4">{t.appointments.month}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
+          <h2 className="min-w-0 truncate text-xs font-semibold sm:text-sm" title={calendarTitle}>{calendarTitle}</h2>
+          <SoftTip label={t.appointments.today}>
+            <Button type="button" variant="ghost" size="icon-xs" onClick={() => calendarRef.current?.getApi().today()} aria-label={t.appointments.today}>
+              <IconCalendar className="size-3.5" />
+            </Button>
+          </SoftTip>
+          <ViewFocusToggle />
+        </div>
+      </div>
       <div
         ref={sizeHostRef}
         onClickCapture={handleCalendarClickCapture}
@@ -492,36 +525,18 @@ export function AppointmentCalendar({
           setAppointmentPopover(null);
           setDayPopover(null);
         }}
-        className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0 md:[&_.fc-header-toolbar]:pe-20"
+        className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0"
       >
-        <div className="absolute top-0 inset-e-0 z-20 flex items-center gap-1">
-          <SoftTip label={t.appointments.today}>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              onClick={() => calendarRef.current?.getApi().today()}
-              aria-label={t.appointments.today}
-              className="size-8 shrink-0 rounded-lg border-border/70 bg-background/80 text-muted-foreground shadow-2xs hover:border-primary/40 hover:bg-card hover:text-foreground active:scale-95"
-            >
-              <IconCalendar className="size-3.5" />
-            </Button>
-          </SoftTip>
-          <ViewFocusToggle />
-        </div>
         <FullCalendar
           key={`${view}-${lang}-${hours?.start ?? ''}-${hours?.end ?? ''}`}
           ref={calendarRef}
           plugins={PLUGINS}
           initialView={VIEW_TO_FC[view]}
+          initialDate={visibleDate}
           locales={[arLocale]}
           locale={lang === "ar" ? "ar" : "en"}
           direction={lang === "ar" ? "rtl" : "ltr"}
-          headerToolbar={{
-            left: "prev,next",
-            center: "title",
-            right: "timeGridDay,timeGridWeek,dayGridMonth",
-          }}
+          headerToolbar={false}
           buttonText={{
             today: t.appointments.today,
             day: t.appointments.day,

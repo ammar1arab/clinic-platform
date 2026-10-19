@@ -40,6 +40,11 @@ export class PaymentMethodsService {
     return this.paymentMethodsRepository.deactivate(id, clinicId);
   }
 
+  async reactivate(id: string, clinicId: string) {
+    await this.findOne(id, clinicId);
+    return this.paymentMethodsRepository.reactivate(id, clinicId);
+  }
+
   async remove(id: string, clinicId: string) {
     await this.findOne(id, clinicId);
     return this.paymentMethodsRepository.hardDelete(id, clinicId);

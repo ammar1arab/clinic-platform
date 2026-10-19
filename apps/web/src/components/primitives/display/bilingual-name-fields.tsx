@@ -34,7 +34,7 @@ export function BilingualNameFields({
   englishError,
   arabicError,
 }: Props) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   return (
     <div className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2', className)}>
       <FormField
@@ -52,6 +52,7 @@ export function BilingualNameFields({
           onChange={(e) => onNameChange(e.target.value)}
           placeholder={t.ui.englishName}
           autoComplete="off"
+          className={lang === 'ar' ? 'placeholder:text-end' : undefined}
         />
       </FormField>
       <FormField label={t.ui.nameArabic} htmlFor={nameArId} error={arabicError}>

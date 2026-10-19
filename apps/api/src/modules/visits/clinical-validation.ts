@@ -57,6 +57,8 @@ export function validateSections(
           "text",
           "textarea",
           "number",
+          "radio",
+          "checkboxes",
           "select",
           "multi_select",
           "boolean",
@@ -102,7 +104,7 @@ export function validateSections(
         visitError("clinicalTemplateInvalid");
       if (field.type === "measurement" && !text(field.unit, 30))
         visitError("clinicalTemplateInvalid");
-      if (["select", "multi_select"].includes(String(field.type))) {
+      if (["select", "multi_select", "radio", "checkboxes"].includes(String(field.type))) {
         if (
           !Array.isArray(field.options) ||
           !field.options.length ||
@@ -150,7 +152,7 @@ export function validateSections(
         !dependency ||
         dependency.id === field.id ||
         dependency.visibility !== undefined ||
-        ["measurement", "multi_select"].includes(String(dependency.type))
+        ["measurement", "multi_select", "checkboxes"].includes(String(dependency.type))
       )
         visitError("clinicalTemplateInvalid");
     }
@@ -212,9 +214,11 @@ export function validateValues(
           (field.min === undefined || value.value >= field.min) &&
           (field.max === undefined || value.value <= field.max);
         break;
+      case "radio":
       case "select":
         valid = typeof value === "string" && choices.includes(value);
         break;
+      case "checkboxes":
       case "multi_select":
         valid =
           Array.isArray(value) &&

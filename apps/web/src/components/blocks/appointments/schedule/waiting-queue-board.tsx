@@ -6,6 +6,7 @@ import { useNow } from '@/hooks/shared/use-now';
 import {
   Button,
   Badge,
+  Skeleton,
   type BadgeVariant,
 } from '@/components/ui';
 import { Appointment } from '@/services/appointments.service';
@@ -18,7 +19,7 @@ import {
   type AppointmentPopoverState,
 } from './appointment-popovers';
 import { cn } from '@/lib/utils';
-import { CardGridSkeleton, EmptyState, SoftTip } from '@/components/primitives';
+import { EmptyState, QueueColumnSkeleton, SoftTip } from '@/components/primitives';
 import { ViewFocusToggle } from './view-focus';
 import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
 import { IconActivate, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
@@ -117,9 +118,7 @@ export function WaitingQueueBoard({
     [stageTab],
   );
 
-  if (isLoading && (!appointments || appointments.length === 0)) {
-    return <CardGridSkeleton count={4} columns="grid-cols-1 lg:grid-cols-4" />;
-  }
+  const loading = isLoading && !appointments?.length;
 
   const stageTabs: {
     key: QueueStage;
@@ -162,6 +161,7 @@ export function WaitingQueueBoard({
   return (
     <div
       data-schedule-host=""
+      aria-busy={loading || undefined}
       className={cn(
         'relative page-fill overflow-hidden border bg-card shadow-xs',
         focused ? 'rounded-none border-0' : 'card-aura rounded-xl sm:rounded-2xl',
@@ -180,19 +180,21 @@ export function WaitingQueueBoard({
                 >
                   <button
                     type="button"
+                    disabled={loading}
                     onClick={() => setStageTab(key)}
-                    aria-label={label}
+                    aria-label={loading ? t.common.loading : label}
                     aria-pressed={selected}
                     className={cn(
-                      'cursor-pointer py-1.5 shadow-2xs active:scale-95',
+                      'relative cursor-pointer py-1.5 shadow-2xs active:scale-95',
                       !showMobileLabel && 'gap-0 px-2 sm:gap-1.5 sm:px-2.5',
                     )}
                   >
-                    {icon}
-                    <span className={cn(showMobileLabel ? 'sm:hidden' : 'hidden')}>
+                    {loading ? <Skeleton className="absolute inset-x-2 inset-y-1.5 rounded-full" /> : null}
+                    {icon ? <span aria-hidden={loading} className={cn("inline-flex items-center gap-1.5", loading && "invisible")}>{icon}</span> : null}
+                    <span className={cn(showMobileLabel ? 'sm:hidden' : 'hidden', loading && 'invisible')}>
                       {short}
                     </span>
-                    <span className="hidden sm:inline">{label}</span>
+                    <span className={cn("hidden sm:inline", loading && "invisible")}>{label}</span>
                   </button>
                 </Badge>
               </SoftTip>
@@ -215,12 +217,12 @@ export function WaitingQueueBoard({
           <StageColumn
             roomy={stageTab === QUEUE_STAGE.ALL}
             title={t.queue.waiting}
-            count={waitingList.length}
+            count={loading ? undefined : waitingList.length}
             accentClass="bg-warning"
             badgeVariant="warning"
             icon={<IconTimer className="size-4 text-warning" />}
           >
-            {waitingList.length === 0 ? (
+            {loading ? <QueueColumnSkeleton /> : waitingList.length === 0 ? (
               <EmptyState
                 icon={IconTimer}
                 title={t.queue.noPatientsWaiting}
@@ -268,12 +270,12 @@ export function WaitingQueueBoard({
           <StageColumn
             roomy={stageTab === QUEUE_STAGE.ALL}
             title={t.queue.inSession}
-            count={inProgressList.length}
+            count={loading ? undefined : inProgressList.length}
             accentClass="bg-primary"
             badgeVariant="info"
             icon={<IconService className="size-4 text-primary" />}
           >
-            {inProgressList.length === 0 ? (
+            {loading ? <QueueColumnSkeleton /> : inProgressList.length === 0 ? (
               <EmptyState
                 icon={IconService}
                 title={t.queue.noConsultationsInSession}
@@ -322,12 +324,12 @@ export function WaitingQueueBoard({
           <StageColumn
             roomy={stageTab === QUEUE_STAGE.ALL}
             title={t.queue.upcomingToday}
-            count={upcomingList.length}
+            count={loading ? undefined : upcomingList.length}
             accentClass="bg-muted-foreground"
             badgeVariant="muted"
             icon={<IconCalendarClock className="size-4 text-muted-foreground" />}
           >
-            {upcomingList.length === 0 ? (
+            {loading ? <QueueColumnSkeleton /> : upcomingList.length === 0 ? (
               <EmptyState
                 icon={IconCalendarClock}
                 title={t.queue.noUpcomingVisitsToday}
@@ -367,12 +369,12 @@ export function WaitingQueueBoard({
           <StageColumn
             roomy={stageTab === QUEUE_STAGE.ALL}
             title={t.queue.completed}
-            count={completedList.length}
+            count={loading ? undefined : completedList.length}
             accentClass="bg-success"
             badgeVariant="success"
             icon={<IconCheckCircle className="size-4 text-success" />}
           >
-            {completedList.length === 0 ? (
+            {loading ? <QueueColumnSkeleton /> : completedList.length === 0 ? (
               <EmptyState
                 icon={IconCheckCircle}
                 title={t.queue.noCompletedVisitsToday}
@@ -446,7 +448,7 @@ function StageColumn({
 }: {
   roomy: boolean;
   title: string;
-  count: number;
+  count: number | undefined;
   accentClass: string;
   badgeVariant: BadgeVariant;
   icon: React.ReactNode;
@@ -461,7 +463,7 @@ function StageColumn({
           <h3 className="text-xs font-bold tracking-tight text-foreground">{title}</h3>
         </div>
         <Badge variant={badgeVariant} className="font-bold">
-          {count}
+          {count === undefined ? <Skeleton className="h-4 w-4" /> : count}
         </Badge>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-3 touch-pan-y">

@@ -64,6 +64,9 @@ function resolveTitle(pathname: string, scheduleView: string | null, t: Translat
   if (pathname.startsWith(`${ROUTES.PRACTITIONERS}/`) && pathname.endsWith('/edit')) {
     return t.layout.titles.editPractitioner;
   }
+  if (pathname.startsWith(`${ROUTES.PRACTITIONERS}/`) && pathname.endsWith('/hours')) {
+    return t.practitioner.workingHours;
+  }
   if (pathname.startsWith(`${ROUTES.PRACTITIONERS}/`)) return t.layout.titles.practitioner;
   if (pathname.startsWith(`${ROUTES.SCHEDULE}/`)) return t.layout.titles.appointment;
   if (pathname.startsWith(`${ROUTES.PATIENTS}/`)) return t.layout.titles.patient;

@@ -14,11 +14,13 @@ export interface CreateDepartmentInput {
   clinicId: string;
   name: string;
   nameAr?: string;
+  isActive?: boolean;
 }
 
 export interface UpdateDepartmentInput {
   name?: string;
   nameAr?: string;
+  isActive?: boolean;
 }
 
 export interface Room {
@@ -37,12 +39,14 @@ export interface CreateRoomInput {
   departmentId?: string;
   name: string;
   nameAr?: string;
+  isActive?: boolean;
 }
 
 export interface UpdateRoomInput {
   departmentId?: string;
   name?: string;
   nameAr?: string;
+  isActive?: boolean;
 }
 
 export interface ServiceItem {
@@ -66,6 +70,7 @@ export interface CreateServiceInput {
   nameAr?: string;
   durationMins?: number;
   fee: number;
+  isActive?: boolean;
 }
 
 export interface UpdateServiceInput {
@@ -74,4 +79,5 @@ export interface UpdateServiceInput {
   nameAr?: string;
   durationMins?: number;
   fee?: number;
+  isActive?: boolean;
 }

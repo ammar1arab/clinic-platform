@@ -173,17 +173,19 @@ export function DirectoryActions({
   onChange,
   children,
   name,
+  className,
 }: {
   active: boolean;
   disabled?: boolean;
   onChange: (value: boolean) => void;
   children: ReactNode;
   name: string;
+  className?: string;
 }) {
   const { t } = useLanguage();
   return (
     <div
-      className="flex items-center justify-end gap-1"
+      className={cn("flex items-center justify-end gap-1", className)}
       onClick={(event) => event.stopPropagation()}
     >
       <Switch

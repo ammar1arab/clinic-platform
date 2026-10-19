@@ -17,7 +17,6 @@ import {
   ProfileInfoGrid,
   ProfileSection,
   ProfileShell,
-  ProfileStatusBadge,
 } from '@/components/primitives';
 import { ExportFormatButton } from '@/components/blocks/reports';
 import { PatientReferralsBlock } from './patient-referrals';
@@ -32,7 +31,7 @@ import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useDeletePatient, usePatient, useTogglePatientStatus } from '@/hooks/api/use-patients';
 import { useDownloadPatientReport } from '@/hooks/api/use-reports';
 import { calcAge } from '@/lib/age';
-import { formatDate, formatMonthYear } from '@/lib/datetime';
+import { formatDate, formatDateTime, formatMonthYear } from '@/lib/datetime';
 import { useLanguage } from '@/providers';
 
 export function PatientProfile({ patientId }: { patientId: string }) {
@@ -71,7 +70,6 @@ export function PatientProfile({ patientId }: { patientId: string }) {
   return (
     <ProfileShell
       backHref={ROUTES.PATIENTS}
-      backLabel={t.patient.patients}
       actions={
         <div className="flex items-center gap-2">
           <ExportFormatButton
@@ -123,7 +121,13 @@ export function PatientProfile({ patientId }: { patientId: string }) {
             <IconLoyal className="size-4 shrink-0 fill-warning text-warning" />
           ) : null
         }
-        badges={<ProfileStatusBadge active={patient.isActive} />}
+        badges={
+          lastVisit ? (
+            <Badge variant="muted" className="font-normal">
+              {t.patient.lastVisit}: {formatDateTime(lastVisit, undefined, lang)}
+            </Badge>
+          ) : null
+        }
         meta={<ContactLine phone={patient.phone} email={patient.email} />}
         stats={[
           {
@@ -138,7 +142,7 @@ export function PatientProfile({ patientId }: { patientId: string }) {
           },
           {
             label: t.patient.lastVisit,
-            value: lastVisit ? formatMonthYear(lastVisit, undefined, lang) : '—',
+            value: lastVisit ? formatDateTime(lastVisit, undefined, lang) : '—',
           },
         ]}
       />
