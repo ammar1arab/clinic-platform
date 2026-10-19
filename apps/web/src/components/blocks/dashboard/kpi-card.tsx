@@ -22,11 +22,11 @@ export function KpiCardBlock({
       icon={icon}
       accent={accent}
       title={
-        isLoading || value === undefined || value === null ? (
+        isLoading ? (
           <Skeleton className="h-7 w-16 rounded-md mb-1" />
         ) : (
           <span className="font-heading text-2xl font-semibold tracking-tight tabular-nums leading-none">
-            {value}
+            {value ?? 0}
           </span>
         )
       }

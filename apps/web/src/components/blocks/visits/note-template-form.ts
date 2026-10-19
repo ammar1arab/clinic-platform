@@ -164,16 +164,4 @@ export function previewSections(draft: ClinicalTemplateInput) {
     .map((section) => ({ ...section, fields: section.fields.filter((field) => field.label) }));
 }
 
-export const VISIBILITY_ALWAYS = 'always';
-
-export function encodeVisibility(field: ClinicalField) {
-  if (!field.visibility) return VISIBILITY_ALWAYS;
-  return JSON.stringify(field.visibility);
-}
-
-export function decodeVisibility(value: string): ClinicalField['visibility'] {
-  if (value === VISIBILITY_ALWAYS) return undefined;
-  return JSON.parse(value) as ClinicalField['visibility'];
-}
-
 export type { ClinicalSection };

@@ -124,7 +124,7 @@ export function PractitionerHome() {
         <KpiCardBlock label={t.dashboard.todaysAppointments} value={ordered.length} icon={IconTodaysAppointments} accent="default" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.dashboard.waiting} value={waiting} icon={IconTimer} accent="warning" isLoading={appointments.isLoading} />
         <KpiCardBlock label={t.dashboard.completed} value={completed} icon={IconCheckCircle} accent="success" isLoading={appointments.isLoading} />
-        <KpiCardBlock label={t.queue.upcomingToday} value={nextVisit ? formatTime(nextVisit.scheduledAt, undefined, lang) : '—'} icon={IconTime} accent="teal" isLoading={appointments.isLoading} />
+        <KpiCardBlock label={t.queue.upcomingToday} value={nextVisit ? formatTime(nextVisit.scheduledAt, undefined, lang) : 0} icon={IconTime} accent="teal" isLoading={appointments.isLoading} />
       </div>
 
       <div className="grid min-w-0 items-stretch gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)]">

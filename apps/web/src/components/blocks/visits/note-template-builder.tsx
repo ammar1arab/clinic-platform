@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CLINICAL_FIELD_TYPE, TEMPLATE_STATUS, VISIBILITY_OPERATOR, type ClinicalField, type ClinicalValue, type ClinicalSection, type TemplateDTO } from '@clinic/types';
+import { CLINICAL_FIELD_TYPE, TEMPLATE_STATUS, type ClinicalField, type ClinicalValue, type ClinicalSection, type TemplateDTO } from '@clinic/types';
 import {
   Badge,
   Button,
@@ -35,7 +35,7 @@ import {
 } from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import { TEMPLATE_STATUS_VARIANT } from '@/constants/status';
-import { IconFieldText, IconFieldParagraph, IconFieldNumber, IconFieldSelect, IconFieldMultiSelect, IconFieldBoolean, IconFieldMeasurement, IconCalendar, IconGrip, IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconFileText, IconArchive, IconCopy, IconClose, IconCheck, IconFilters } from '@/constants/icons';
+import { IconFieldText, IconFieldParagraph, IconFieldNumber, IconFieldSelect, IconFieldMultiSelect, IconFieldBoolean, IconFieldMeasurement, IconCalendar, IconGrip, IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconFileText, IconArchive, IconCopy, IconClose, IconCheck, IconFilters, IconSettings } from '@/constants/icons';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useServices } from '@/hooks/api/use-services';
 import { usePractitionerDirectory } from '@/hooks/api/use-practitioners';
@@ -45,7 +45,7 @@ import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
 import { cn } from '@/lib/utils';
 import { ClinicalFields } from './clinical-fields';
-import { MEDICAL_NOTE_PALETTE, VISIBILITY_ALWAYS, clinicalId, decodeVisibility, encodeVisibility, isChoiceType, previewSections } from './note-template-form';
+import { MEDICAL_NOTE_PALETTE, clinicalId, isChoiceType, previewSections } from './note-template-form';
 
 export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
   const { lang, t } = useLanguage();
@@ -177,7 +177,7 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
           </SidePanel>
 
           <Card className="min-h-0 min-w-0 overflow-visible">
-            <CardHeader className="shrink-0"><p className="text-sm font-semibold">{t.visits.canvas}</p></CardHeader>
+            <CardHeader className="shrink-0 gap-1"><p className="text-sm font-semibold">{t.visits.canvas}</p><p className="text-xs text-muted-foreground">{t.visits.canvasHint}</p></CardHeader>
             <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pt-1 pb-2">
             {!draft.sections.length ? (
               <EmptyState icon={IconFileText} title={t.visits.emptyCanvas} description={t.visits.emptyCanvasCta} action={<Button type="button" disabled={locked} onClick={builder.addSection}><IconAdd className="size-4" />{t.visits.addSection}</Button>} />
@@ -232,7 +232,9 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
           </Card>
 
           <SidePanel
-            title={t.visits.fieldSettings}
+            title={<span className="flex items-center gap-2"><IconSettings className="size-4 text-muted-foreground" />{t.visits.fieldSettings}</span>}
+            description={t.visits.fieldSettingsHint}
+            className="border-dashed bg-muted/30"
             mobileSheet
             open={!!selectedField}
             onClose={() => builder.setSelected(selectedSection ? { sectionId: selectedSection.id } : null)}
@@ -333,13 +335,15 @@ function PaletteItems({ locked, onPick, onDrop, compact = false }: {
   const { t } = useLanguage();
   return MEDICAL_NOTE_PALETTE.map((type) => {
     const Icon = FIELD_ICONS[type];
-    return <DragItem key={type} label={t.visits.fieldTypes[type]} disabled={locked}
-      className={cn('group/palette h-auto justify-start rounded-xl border-border/50 bg-muted/20 text-start font-normal hover:border-primary/40 hover:bg-primary/5', compact ? 'min-h-9 shrink-0 gap-1.5 px-2.5 py-1.5' : 'min-h-12 w-full px-3 py-3')}
-      onPick={() => onPick(type)} onDrop={(target) => onDrop(type, target)}>
-      <span className={cn('grid shrink-0 place-items-center rounded-lg bg-background text-muted-foreground group-hover/palette:text-primary', compact ? 'size-6' : 'size-7')}><Icon className={compact ? 'size-3.5' : 'size-4'} aria-hidden /></span>
-      <span className={cn('min-w-0 flex-1 whitespace-normal leading-snug', compact ? 'text-xs' : 'text-sm')}>{t.visits.fieldTypes[type]}</span>
-      {!compact ? <IconGrip className="size-3.5 shrink-0 text-muted-foreground/50" /> : null}
-    </DragItem>;
+    return <div key={type} className={cn('group/palette flex min-w-0 items-center rounded-xl border border-border/50 bg-muted/20 hover:border-primary/40 hover:bg-primary/5', compact ? 'shrink-0' : 'w-full')}>
+      <Button type="button" variant="ghost" disabled={locked} onClick={() => onPick(type)} className={cn('h-auto min-w-0 flex-1 justify-start gap-2 rounded-xl text-start font-normal', compact ? 'min-h-9 px-2.5 py-1.5' : 'min-h-12 px-3 py-3')}>
+        <span className={cn('grid shrink-0 place-items-center rounded-lg bg-background text-muted-foreground group-hover/palette:text-primary', compact ? 'size-6' : 'size-7')}><Icon className={compact ? 'size-3.5' : 'size-4'} aria-hidden /></span>
+        <span className={cn('min-w-0 flex-1 leading-snug', compact ? 'whitespace-nowrap text-xs' : 'whitespace-normal text-sm')}>{t.visits.fieldTypes[type]}</span>
+      </Button>
+      <DragItem label={t.visits.fieldTypes[type]} disabled={locked} variant="ghost" className="me-1 size-8 shrink-0 justify-center gap-0 p-0" onDrop={(target) => onDrop(type, target)}>
+        <IconGrip className="size-3.5 text-muted-foreground" />
+      </DragItem>
+    </div>;
   });
 }
 
@@ -367,10 +371,13 @@ function FieldSettings({
   canMoveDown: boolean;
 }) {
   const { t } = useLanguage();
-  const visibilityOptions = siblings.filter((item) => item.id !== field.id && !item.visibility && item.type !== CLINICAL_FIELD_TYPE.MEASUREMENT && item.type !== CLINICAL_FIELD_TYPE.MULTI_SELECT && item.type !== CLINICAL_FIELD_TYPE.CHECKBOXES);
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-2">
+        <label className="flex items-center gap-2 text-sm">
+          <SelectionToggle label={t.visits.required} checked={field.required} disabled={locked} onChange={(required) => onPatch({ required })} />
+          {t.visits.required}
+        </label>
         <RowActionsMenu
           items={[
             { label: t.visits.moveUp, icon: IconArrowUp, disabled: locked || !canMoveUp, onSelect: () => onMove(-1) },
@@ -393,10 +400,6 @@ function FieldSettings({
           </SelectContent>
         </Select>
       </FormField>
-      <label className="flex items-center gap-2 text-sm">
-        <SelectionToggle label={t.visits.required} checked={field.required} disabled={locked} onChange={(required) => onPatch({ required })} />
-        {t.visits.required}
-      </label>
       {field.type === CLINICAL_FIELD_TYPE.NUMBER || field.type === CLINICAL_FIELD_TYPE.MEASUREMENT ? (
         <div className="grid grid-cols-2 gap-2">
           <FormField label={t.visits.minimum} error={problems.includes(`${field.id}-range`) ? t.visits.invalidRange : undefined}>
@@ -425,32 +428,6 @@ function FieldSettings({
             <IconAdd className="size-4" />{t.visits.addOption}
           </Button>
         </div>
-      ) : null}
-      {visibilityOptions.length ? (
-        <FormField label={t.visits.visibility}>
-          <Select
-            value={encodeVisibility(field)}
-            disabled={locked}
-            onValueChange={(value) => onPatch({ visibility: decodeVisibility(value) })}
-          >
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={VISIBILITY_ALWAYS}>{t.visits.alwaysVisible}</SelectItem>
-              {visibilityOptions.flatMap((item) => {
-                if (item.type === CLINICAL_FIELD_TYPE.BOOLEAN) {
-                  return [true, false].map((value) => {
-                    const next = JSON.stringify({ fieldId: item.id, operator: VISIBILITY_OPERATOR.EQUALS, value });
-                    return <SelectItem key={next} value={next}>{item.label} = {value ? t.visits.yes : t.visits.no}</SelectItem>;
-                  });
-                }
-                return (item.options ?? []).map((option) => {
-                  const next = JSON.stringify({ fieldId: item.id, operator: VISIBILITY_OPERATOR.EQUALS, value: option.value });
-                  return <SelectItem key={next} value={next}>{item.label || item.id} = {option.label || option.value}</SelectItem>;
-                });
-              })}
-            </SelectContent>
-          </Select>
-        </FormField>
       ) : null}
     </div>
   );

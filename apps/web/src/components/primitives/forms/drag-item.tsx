@@ -39,6 +39,7 @@ export function DragItem({ label, children, disabled, onPick, onDrop, className,
     <>
       <Button
         ref={bind}
+        data-drag-handle=""
         type="button" variant={variant} disabled={disabled} aria-label={label}
         className={cn('touch-none select-none justify-start gap-3 cursor-grab active:cursor-grabbing motion-reduce:transition-none', className)}
         onClick={() => { if (!suppressClick.current) onPick?.(); suppressClick.current = false; }}
