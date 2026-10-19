@@ -17,6 +17,8 @@ import {
   DatePicker,
   DirectoryToolbar,
   DIRECTORY_ACTION_CLASS,
+  DIRECTORY_FILTER_BUTTON_CLASS,
+  DIRECTORY_FILTER_BADGE_CLASS,
   FormField,
   FilterSelect,
   SoftTip,
@@ -99,6 +101,7 @@ export function PatientFiltersBlock({
                   aria-label={t?.common?.filters}
                   className={cn(
                     DIRECTORY_ACTION_CLASS,
+                    activeCount > 0 && DIRECTORY_FILTER_BUTTON_CLASS,
                     'border-border/70 bg-background/50',
                     activeCount > 0 && 'border-primary/35 bg-primary/5',
                   )}
@@ -106,7 +109,7 @@ export function PatientFiltersBlock({
                   <IconFilters className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className="hidden font-semibold sm:inline">{t?.common?.filters}</span>
                   {activeCount > 0 ? (
-                    <Badge variant="info" className="ms-0 h-5 min-w-5 justify-center px-1 text-xs">
+                    <Badge variant="info" className={DIRECTORY_FILTER_BADGE_CLASS}>
                       {activeCount}
                     </Badge>
                   ) : null}

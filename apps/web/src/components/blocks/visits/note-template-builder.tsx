@@ -32,6 +32,7 @@ import {
   SidePanel,
   SoftTip,
   DragItem,
+  FormActions,
 } from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import { TEMPLATE_STATUS_VARIANT } from '@/constants/status';
@@ -41,6 +42,7 @@ import { useServices } from '@/hooks/api/use-services';
 import { usePractitionerDirectory } from '@/hooks/api/use-practitioners';
 import { useNoteTemplateBuilder } from '@/hooks/api/use-note-template-builder';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { useIsMobile } from '@/hooks/shared/use-media-query';
 import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
 import { cn } from '@/lib/utils';
@@ -59,6 +61,8 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
   const statusVariant = TEMPLATE_STATUS_VARIANT[status];
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduling, setScheduling] = useState(false);
+  const mobile = useIsMobile();
+  const closeFieldSettings = () => builder.setSelected(selectedSection ? { sectionId: selectedSection.id } : null);
 
   return (
     <Tabs ref={bind} defaultValue="settings" className="page-fill gap-2">
@@ -241,12 +245,16 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
           >
             {selectedField && selectedSection ? (
               <FieldSettings
+                key={selectedField.id}
                 field={selectedField}
                 siblings={selectedSection.fields}
                 locked={locked}
                 problems={builder.problems}
-                onPatch={(patch) => builder.patchField(selectedSection.id, selectedField.id, patch)}
-                onType={(type) => builder.setType(selectedSection.id, selectedField, type)}
+                onSave={(next) => {
+                  builder.patchField(selectedSection.id, selectedField.id, next);
+                  if (mobile) closeFieldSettings();
+                }}
+                onClose={mobile ? closeFieldSettings : undefined}
                 onMove={(direction) => {
                   const index = selectedSection.fields.findIndex((item) => item.id === selectedField.id);
                   builder.moveField(selectedSection.id, index, direction);
@@ -352,8 +360,8 @@ function FieldSettings({
   siblings,
   locked,
   problems,
-  onPatch,
-  onType,
+  onSave,
+  onClose,
   onMove,
   onRemove,
   canMoveUp,
@@ -363,19 +371,27 @@ function FieldSettings({
   siblings: ClinicalField[];
   locked: boolean;
   problems: string[];
-  onPatch: (patch: Partial<ClinicalField>) => void;
-  onType: (type: ClinicalField['type']) => void;
+  onSave: (next: ClinicalField) => void;
+  onClose?: () => void;
   onMove: (direction: -1 | 1) => void;
   onRemove: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
 }) {
   const { t } = useLanguage();
+  const [draft, setDraft] = useState<ClinicalField>(field);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(field);
+  const edit = (patch: Partial<ClinicalField>) => setDraft((current) => ({ ...current, ...patch }));
+  const setDraftType = (type: ClinicalField['type']) => edit({
+    type,
+    options: isChoiceType(type) ? draft.options ?? [{ value: `${draft.id}_opt`, label: '' }] : undefined,
+    unit: type === CLINICAL_FIELD_TYPE.MEASUREMENT ? draft.unit : undefined,
+  });
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <label className="flex items-center gap-2 text-sm">
-          <SelectionToggle label={t.visits.required} checked={field.required} disabled={locked} onChange={(required) => onPatch({ required })} />
+          <SelectionToggle label={t.visits.required} checked={draft.required} disabled={locked} onChange={(required) => edit({ required })} />
           {t.visits.required}
         </label>
         <RowActionsMenu
@@ -386,49 +402,56 @@ function FieldSettings({
           ]}
         />
       </div>
-      <FormField label={t.visits.field} htmlFor={`${field.id}-label`} required error={problems.includes(field.id) ? t.validation.required : undefined}>
-        <Input id={`${field.id}-label`} value={field.label} disabled={locked} onChange={(event) => onPatch({ label: event.target.value })} />
+      <FormField label={t.visits.field} htmlFor={`${draft.id}-label`} required error={problems.includes(draft.id) ? t.validation.required : undefined}>
+        <Input id={`${draft.id}-label`} value={draft.label} disabled={locked} onChange={(event) => edit({ label: event.target.value })} />
       </FormField>
-      <FormField label={t.visits.fieldLabelAr} htmlFor={`${field.id}-label-ar`}>
-        <Input id={`${field.id}-label-ar`} dir="rtl" value={field.labelAr ?? ''} disabled={locked} onChange={(event) => onPatch({ labelAr: event.target.value })} />
+      <FormField label={t.visits.fieldLabelAr} htmlFor={`${draft.id}-label-ar`}>
+        <Input id={`${draft.id}-label-ar`} dir="rtl" value={draft.labelAr ?? ''} disabled={locked} onChange={(event) => edit({ labelAr: event.target.value })} />
       </FormField>
       <FormField label={t.visits.fieldType}>
-        <Select value={field.type} disabled={locked} onValueChange={(type) => onType(type as ClinicalField['type'])}>
+        <Select value={draft.type} disabled={locked} onValueChange={(type) => setDraftType(type as ClinicalField['type'])}>
           <SelectTrigger aria-label={t.visits.fieldType}><SelectValue /></SelectTrigger>
           <SelectContent>
             {MEDICAL_NOTE_PALETTE.map((type) => <SelectItem key={type} value={type}>{t.visits.fieldTypes[type]}</SelectItem>)}
           </SelectContent>
         </Select>
       </FormField>
-      {field.type === CLINICAL_FIELD_TYPE.NUMBER || field.type === CLINICAL_FIELD_TYPE.MEASUREMENT ? (
+      {draft.type === CLINICAL_FIELD_TYPE.NUMBER || draft.type === CLINICAL_FIELD_TYPE.MEASUREMENT ? (
         <div className="grid grid-cols-2 gap-2">
-          <FormField label={t.visits.minimum} error={problems.includes(`${field.id}-range`) ? t.visits.invalidRange : undefined}>
-            <Input type="number" step="any" value={field.min ?? ''} disabled={locked} onChange={(event) => onPatch({ min: event.target.value === '' ? undefined : Number(event.target.value) })} />
+          <FormField label={t.visits.minimum} error={problems.includes(`${draft.id}-range`) ? t.visits.invalidRange : undefined}>
+            <Input type="number" step="any" value={draft.min ?? ''} disabled={locked} onChange={(event) => edit({ min: event.target.value === '' ? undefined : Number(event.target.value) })} />
           </FormField>
           <FormField label={t.visits.maximum}>
-            <Input type="number" step="any" value={field.max ?? ''} disabled={locked} onChange={(event) => onPatch({ max: event.target.value === '' ? undefined : Number(event.target.value) })} />
+            <Input type="number" step="any" value={draft.max ?? ''} disabled={locked} onChange={(event) => edit({ max: event.target.value === '' ? undefined : Number(event.target.value) })} />
           </FormField>
         </div>
       ) : null}
-      {field.type === CLINICAL_FIELD_TYPE.MEASUREMENT ? (
-        <FormField label={t.visits.unit} required error={problems.includes(`${field.id}-unit`) ? t.validation.required : undefined}>
-          <Input value={field.unit ?? ''} disabled={locked} onChange={(event) => onPatch({ unit: event.target.value })} />
+      {draft.type === CLINICAL_FIELD_TYPE.MEASUREMENT ? (
+        <FormField label={t.visits.unit} required error={problems.includes(`${draft.id}-unit`) ? t.validation.required : undefined}>
+          <Input value={draft.unit ?? ''} disabled={locked} onChange={(event) => edit({ unit: event.target.value })} />
         </FormField>
       ) : null}
-      {isChoiceType(field.type) ? (
+      {isChoiceType(draft.type) ? (
         <div className="space-y-2">
-          {(field.options ?? []).map((option) => (
+          {(draft.options ?? []).map((option) => (
             <div key={option.value} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-              <Input value={option.label} disabled={locked} placeholder={t.visits.option} aria-label={t.visits.option} onChange={(event) => onPatch({ options: field.options?.map((item) => item.value === option.value ? { ...item, label: event.target.value } : item) })} />
-              <Button type="button" variant="ghost" size="icon" disabled={locked || (field.options?.length ?? 0) <= 1} aria-label={t.common.remove} onClick={() => onPatch({ options: field.options?.filter((item) => item.value !== option.value) })}><IconDelete className="size-4" /></Button>
-              <Input dir="rtl" value={option.labelAr ?? ''} disabled={locked} placeholder={t.visits.optionAr} aria-label={t.visits.optionAr} onChange={(event) => onPatch({ options: field.options?.map((item) => item.value === option.value ? { ...item, labelAr: event.target.value } : item) })} />
+              <Input value={option.label} disabled={locked} placeholder={t.visits.option} aria-label={t.visits.option} onChange={(event) => edit({ options: draft.options?.map((item) => item.value === option.value ? { ...item, label: event.target.value } : item) })} />
+              <Button type="button" variant="ghost" size="icon" disabled={locked || (draft.options?.length ?? 0) <= 1} aria-label={t.common.remove} onClick={() => edit({ options: draft.options?.filter((item) => item.value !== option.value) })}><IconDelete className="size-4" /></Button>
+              <Input dir="rtl" value={option.labelAr ?? ''} disabled={locked} placeholder={t.visits.optionAr} aria-label={t.visits.optionAr} onChange={(event) => edit({ options: draft.options?.map((item) => item.value === option.value ? { ...item, labelAr: event.target.value } : item) })} />
             </div>
           ))}
-          <Button type="button" size="sm" variant="outline" disabled={locked} onClick={() => onPatch({ options: [...(field.options ?? []), { value: clinicalId('opt'), label: '' }] })}>
+          <Button type="button" size="sm" variant="outline" disabled={locked} onClick={() => edit({ options: [...(draft.options ?? []), { value: clinicalId('opt'), label: '' }] })}>
             <IconAdd className="size-4" />{t.visits.addOption}
           </Button>
         </div>
       ) : null}
+      <FormActions
+        onCancel={() => { setDraft(field); onClose?.(); }}
+        submitLabel={t.common.save}
+        cancelLabel={t.common.cancel}
+        disabled={locked || !dirty}
+        onSubmitClick={() => onSave(draft)}
+      />
     </div>
   );
 }
