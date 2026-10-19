@@ -217,8 +217,8 @@ export function EmailRecipientFields({
                 className={cn(
                   'gap-2',
                   activeFilters > 0
-                    ? 'max-sm:h-8 max-sm:w-auto max-sm:gap-1 max-sm:px-2'
-                    : 'max-sm:size-8 max-sm:p-0',
+                    ? 'max-sm:h-9 max-sm:w-auto max-sm:gap-1 max-sm:px-2'
+                    : 'max-sm:h-9 max-sm:w-9 max-sm:p-0',
                 )}
               >
                 <IconFilters className="size-4" />
