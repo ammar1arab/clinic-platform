@@ -184,10 +184,10 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
         <div className="page-fill gap-4" aria-busy="true">
           {Array.from({ length: 4 }, (_, index) => (
             <Card key={index} className="shrink-0 gap-0 py-0">
-              <CardContent className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-3 p-3 sm:p-4 xl:grid-cols-[6rem_minmax(0,1fr)_minmax(24rem,1fr)]">
-                <div className="flex min-h-12 flex-col items-center justify-center gap-1 border-e border-border/70 pe-3"><Skeleton className="h-5 w-16 max-w-full" /><Skeleton className="h-4 w-8" /></div>
-                <div className="space-y-1.5"><div className="flex items-center gap-2"><Skeleton className="size-6 shrink-0 rounded-full" /><Skeleton className="h-5 w-36 max-w-full" /></div><Skeleton className="h-4 w-2/3" /><Skeleton className="h-4 w-16" /></div>
-                <div className="col-span-2 grid grid-cols-3 gap-3 border-t border-border/60 pt-3 xl:col-span-1 xl:border-t-0 xl:border-s xl:ps-4 xl:pt-0">{[0, 1, 2].map((cell) => <div key={cell} className="space-y-1"><Skeleton className="h-4 w-14 max-w-full" /><Skeleton className="h-4 w-20 max-w-full" /></div>)}</div>
+              <CardContent className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 sm:p-4 xl:grid-cols-[6rem_minmax(0,1fr)_minmax(24rem,1fr)]">
+                <div className="order-2 flex min-h-12 flex-col items-center justify-center gap-1 border-s border-border/70 ps-3 xl:order-none xl:border-s-0 xl:border-e xl:ps-0 xl:pe-3"><Skeleton className="h-5 w-16 max-w-full" /><Skeleton className="h-4 w-8" /></div>
+                <div className="order-1 min-w-0 space-y-1.5 xl:order-none"><div className="flex items-center gap-2"><Skeleton className="size-6 shrink-0 rounded-full" /><Skeleton className="h-5 w-36 max-w-full" /></div><Skeleton className="h-4 w-2/3" /><Skeleton className="h-4 w-16" /></div>
+                <div className="order-3 col-span-2 grid grid-cols-3 gap-3 border-t border-border/60 pt-3 xl:col-span-1 xl:border-t-0 xl:border-s xl:ps-4 xl:pt-0">{[0, 1, 2].map((cell) => <div key={cell} className="flex min-w-0 flex-col items-center gap-1"><Skeleton className="h-4 w-14 max-w-full" /><Skeleton className="h-4 w-20 max-w-full" /></div>)}</div>
               </CardContent>
             </Card>
           ))}
@@ -200,12 +200,12 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
             {visits.data.items.map((item) => (
               <Link key={item.appointmentId} href={ROUTES.VISIT(item.appointmentId)} className="block rounded-xl focus-visible:outline focus-visible:outline-ring">
                 <Card className="gap-0 py-0 transition-colors hover:bg-muted/40">
-                  <CardContent className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 xl:grid-cols-[6rem_minmax(0,1fr)_minmax(24rem,1fr)] sm:p-4">
-                    <div className="flex min-h-12 flex-col items-center justify-center gap-1 border-e border-border/70 pe-3 text-center">
+                  <CardContent className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 p-3 sm:p-4 xl:grid-cols-[6rem_minmax(0,1fr)_minmax(24rem,1fr)]">
+                    <div className="order-2 flex min-h-12 flex-col items-center justify-center gap-1 border-s border-border/70 ps-3 text-center xl:order-none xl:border-s-0 xl:border-e xl:ps-0 xl:pe-3">
                       <p className="whitespace-nowrap text-sm font-semibold tabular-nums">{formatTime(item.scheduledAt, undefined, lang)}</p>
                       <p className="whitespace-nowrap text-[11px] leading-4 text-muted-foreground">{t.visits.plannedDuration.replace('{minutes}', String(item.durationMins))}</p>
                     </div>
-                    <div className="min-w-0 space-y-1.5">
+                    <div className="order-1 min-w-0 space-y-1.5 xl:order-none">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <div className="flex min-w-0 items-center gap-2"><EntityAvatar src={item.patient.imageUrl} seed={item.patient.id} size="sm" /><p className="truncate font-semibold">{getBilingualName(item.patient.name, item.patient.nameAr, lang)}</p></div>
                         <StatusBadgeBlock status={item.appointmentStatus} tip={false} />
@@ -213,7 +213,7 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
                       <p className="text-xs text-muted-foreground">{formatDate(item.scheduledAt, undefined, lang)} · {getBilingualName(item.practitioner.name, item.practitioner.nameAr, lang)}</p>
                       <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">{item.mode === SESSION_TYPE.ONLINE ? <IconOnline className="size-3.5" /> : <IconInPerson className="size-3.5" />}{item.mode === SESSION_TYPE.ONLINE ? t.visits.online : t.visits.inPerson}</p>
                     </div>
-                    <dl className="col-span-2 grid grid-cols-3 gap-3 border-t border-border/60 pt-3 text-xs xl:col-span-1 xl:border-t-0 xl:border-s xl:ps-4 xl:pt-0">
+                    <dl className="order-3 col-span-2 grid grid-cols-3 gap-3 border-t border-border/60 pt-3 text-center text-xs xl:col-span-1 xl:border-t-0 xl:border-s xl:ps-4 xl:pt-0">
                       <div className="min-w-0 space-y-1"><dt className="text-muted-foreground">{t.visits.note}</dt><dd className={cn('font-medium', item.noteStatus === NOTE_STATUS.LOCKED && 'text-warning')}>{t.visits.noteStatuses[item.noteStatus]}</dd></div>
                       <div className="min-w-0 space-y-1"><dt className="text-muted-foreground">{t.visits.report}</dt><dd className="font-medium">{t.visits.reportStatuses[item.reportStatus]}</dd></div>
                       <div className="min-w-0 space-y-1"><dt className="text-muted-foreground">{t.visits.invoice}</dt><dd className={cn('font-medium', item.invoiceStatus === INVOICE_STATUS.AWAITING_REVIEW && 'text-warning')}>{t.visits.invoiceStatuses[item.invoiceStatus]}</dd></div>

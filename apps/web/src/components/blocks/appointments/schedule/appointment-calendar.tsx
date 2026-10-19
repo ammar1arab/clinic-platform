@@ -87,6 +87,7 @@ interface Props {
   isFetching: boolean;
   view: ScheduleView;
   focused?: boolean;
+  canManageAppointments?: boolean;
   onViewChange: (view: ScheduleView) => void;
   onVisibleRangeChange?: (start: Date, end: Date) => void;
   onEventClick: (appointment: Appointment) => void;
@@ -100,6 +101,7 @@ export function AppointmentCalendar({
   isFetching,
   view,
   focused = false,
+  canManageAppointments = true,
   onViewChange,
   onVisibleRangeChange,
   onEventClick,
@@ -184,6 +186,7 @@ export function AppointmentCalendar({
         textColor: "var(--color-primary-foreground)",
         display: "block" as const,
         editable:
+          canManageAppointments &&
           appointment.status !== "cancelled" &&
           appointment.status !== "completed",
         classNames:
@@ -198,7 +201,7 @@ export function AppointmentCalendar({
       ),
     );
     return { events: calendarEvents, appointmentsByDay: byDay };
-  }, [appointments, lang]);
+  }, [appointments, canManageAppointments, lang]);
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const appt = readCalendarAppointment(arg.event.extendedProps);
@@ -227,22 +230,27 @@ export function AppointmentCalendar({
         return;
       setDayPopover(null);
       setAppointmentPopover(null);
+      if (!canManageAppointments) {
+        calendarRef.current?.getApi().changeView(VIEW_TO_FC.day, arg.date);
+        return;
+      }
       const slot = new Date(arg.date);
       if (slot.getHours() === 0 && slot.getMinutes() === 0) {
         slot.setHours(9, 0, 0, 0);
       }
       onSelectSlot(slot);
     },
-    [onSelectSlot],
+    [canManageAppointments, onSelectSlot],
   );
 
   const handleDateSelect = useCallback(
     (arg: DateSelectArg) => {
+      if (!canManageAppointments) return;
       setDayPopover(null);
       setAppointmentPopover(null);
       onSelectSlot(arg.start);
     },
-    [onSelectSlot],
+    [canManageAppointments, onSelectSlot],
   );
 
   const handleDatesSet = useCallback(
@@ -420,6 +428,7 @@ export function AppointmentCalendar({
 
   const handleDayCellDidMount = useCallback(
     (arg: { view: { type: string }; el: HTMLElement; date: Date }) => {
+      if (!canManageAppointments) return;
       if (arg.view.type !== "dayGridMonth") return;
       const frame = arg.el.querySelector(".fc-daygrid-day-frame");
       if (!frame || frame.querySelector(".fc-day-add")) return;
@@ -433,7 +442,7 @@ export function AppointmentCalendar({
       btn.tabIndex = -1;
       frame.appendChild(btn);
     },
-    [t],
+    [canManageAppointments, t],
   );
 
   const calendarSizeRef = useRef({ width: 0, height: 0 });
@@ -481,7 +490,7 @@ export function AppointmentCalendar({
       )}
       aria-busy={isFetching || undefined}
     >
-      <div className="mb-2 grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-3">
+      <div className="mb-2 grid shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3">
         <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon-xs" aria-label={t.common.previous} onClick={() => calendarRef.current?.getApi().prev()}>
             <IconChevronLeft className="size-4 rtl:rotate-180" />
@@ -490,17 +499,17 @@ export function AppointmentCalendar({
             <IconChevronRight className="size-4 rtl:rotate-180" />
           </Button>
         </div>
-        <Tabs value={view} onValueChange={(value) => {
-          if (value === 'day' || value === 'week' || value === 'month') calendarRef.current?.getApi().changeView(VIEW_TO_FC[value]);
+        <Tabs className="order-3 col-span-2 w-full sm:order-none sm:col-span-1 sm:w-auto" value={view} onValueChange={(value) => {
+          if (value === 'day' || value === 'week' || value === 'month') onViewChange(value);
         }}>
-          <TabsList variant="pill" aria-label={t.layout.titles.schedule}>
-            <TabsTrigger value="day" className="px-1.5 sm:px-4">{t.appointments.day}</TabsTrigger>
-            <TabsTrigger value="week" className="px-1.5 sm:px-4">{t.appointments.week}</TabsTrigger>
-            <TabsTrigger value="month" className="px-1.5 sm:px-4">{t.appointments.month}</TabsTrigger>
+          <TabsList variant="pill" className="w-full sm:w-auto" aria-label={t.layout.titles.schedule}>
+            <TabsTrigger value="day" className="flex-1 px-1.5 sm:flex-none sm:px-4">{t.appointments.day}</TabsTrigger>
+            <TabsTrigger value="week" className="flex-1 px-1.5 sm:flex-none sm:px-4">{t.appointments.week}</TabsTrigger>
+            <TabsTrigger value="month" className="flex-1 px-1.5 sm:flex-none sm:px-4">{t.appointments.month}</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
-          <h2 className="min-w-0 truncate text-xs font-semibold sm:text-sm" title={calendarTitle}>{calendarTitle}</h2>
+          <h2 className="min-w-0 text-end text-xs font-semibold leading-snug sm:text-sm">{calendarTitle}</h2>
           <SoftTip label={t.appointments.today}>
             <Button type="button" variant="ghost" size="icon-xs" onClick={() => calendarRef.current?.getApi().today()} aria-label={t.appointments.today}>
               <IconCalendar className="size-3.5" />
@@ -547,16 +556,16 @@ export function AppointmentCalendar({
           slotMinTime={hours ? `${hours.start}:00` : '07:00:00'}
           slotMaxTime={hours ? `${hours.end}:00` : '21:00:00'}
           allDaySlot={false}
-          selectable
+          selectable={canManageAppointments}
           selectMirror
           longPressDelay={500}
           selectLongPressDelay={500}
           eventLongPressDelay={300}
           selectMinDistance={12}
           selectAllow={() => view !== "month"}
-          editable
-          eventDurationEditable
-          eventResizableFromStart
+          editable={canManageAppointments}
+          eventDurationEditable={canManageAppointments}
+          eventResizableFromStart={canManageAppointments}
           nowIndicator
           slotLabelContent={(arg) => formatTime(arg.date, undefined, lang)}
           eventTimeFormat={{

@@ -86,10 +86,10 @@ export function PractitionerHome() {
   return (
     <div className="flex w-full min-w-0 flex-col gap-4 pb-6 xl:page-fill xl:pb-0">
       <Card className="card-aura relative isolate shrink-0 gap-0 overflow-hidden py-0 ring-0">
-        <CardContent className="relative z-10 flex flex-row items-center gap-3 p-3 py-7 sm:gap-4 sm:p-4 sm:py-8 lg:pe-[min(30%,24rem)]">
+        <CardContent className="relative z-10 flex flex-row items-center gap-3 px-3 pb-20 pt-5 sm:gap-4 sm:px-4 sm:pt-6 lg:py-8 lg:pe-[min(30%,24rem)]">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           <div className="welcome-ambient absolute -inset-12" />
-          <svg viewBox="0 0 360 120" preserveAspectRatio="none" fill="none" className="absolute inset-y-0 end-2 hidden h-full w-[28%] text-primary lg:block rtl:-scale-x-100">
+          <svg viewBox="0 0 360 120" fill="none" className="absolute inset-x-3 bottom-0 h-20 w-[calc(100%_-_1.5rem)] text-primary lg:inset-x-auto lg:inset-y-0 lg:end-2 lg:h-full lg:w-[28%] rtl:-scale-x-100">
             <path d="M0 68h76l12-12 15 26 20-52 20 71 17-33h200" stroke="currentColor" strokeOpacity="0.12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             <path className="welcome-trace" pathLength="1" d="M0 68h76l12-12 15 26 20-52 20 71 17-33h200" stroke="currentColor" strokeOpacity="0.8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             <circle className="welcome-beacon" cx="276" cy="68" r="16" fill="currentColor" fillOpacity="0.08" />
@@ -103,7 +103,7 @@ export function PractitionerHome() {
           )}
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-xs">{formatDate(today, undefined, lang)}</p>
-            <h1 className="truncate font-heading text-base font-semibold leading-tight tracking-tight sm:text-lg">{t.dashboard.welcome}, {getBilingualName(user?.name, user?.nameAr, lang)}</h1>
+            <h1 className="break-words font-heading text-base font-semibold leading-tight tracking-tight sm:text-lg">{t.dashboard.welcome}, {getBilingualName(user?.name, user?.nameAr, lang)}</h1>
             {lastCompleted ? (
               <p className="mt-0.5 truncate text-[11px] text-muted-foreground sm:text-xs">
                 {t.patient.lastVisit}: {getPersonName(lastCompleted.patient, lang)} · {formatTime(lastCompleted.scheduledAt, undefined, lang)}
@@ -204,8 +204,8 @@ function WelcomeFact({ label, value }: { label: string; value: string }) {
 function PractitionerHomeSkeleton() {
   return (
     <div className="flex w-full min-w-0 flex-col gap-4 pb-6 xl:page-fill xl:pb-0" aria-hidden>
-      <Card className="overflow-hidden ring-0">
-        <CardContent className="flex items-center gap-3 p-3 sm:gap-4 sm:p-4 lg:pe-[min(30%,24rem)]">
+      <Card className="shrink-0 gap-0 overflow-hidden py-0 ring-0">
+        <CardContent className="flex items-center gap-3 px-3 pb-20 pt-5 sm:gap-4 sm:px-4 sm:pt-6 lg:py-8 lg:pe-[min(30%,24rem)]">
           <Skeleton className="size-16 shrink-0 rounded-full sm:size-20" />
           <div className="min-w-0 flex-1 space-y-1">
             <Skeleton className="h-3 w-28" />

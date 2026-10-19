@@ -341,9 +341,9 @@ export function VisitWorkspaceSkeleton() {
     <div className="space-y-3" aria-busy="true">
       <Card className="gap-0 py-0">
         <CardContent className="space-y-3 p-3 sm:p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="flex min-w-0 items-center gap-3"><Skeleton className="size-10 shrink-0 rounded-full" /><div className="min-w-0 space-y-2"><Skeleton className="h-7 w-40 max-w-full" /><Skeleton className="h-4 w-56 max-w-full" /></div></div>
-            <div className="flex gap-2"><Skeleton className="h-5 w-24 rounded-full" /><Skeleton className="h-5 w-16 rounded-full" /></div>
+            <div className="flex flex-col items-end gap-2"><Skeleton className="h-5 w-24 rounded-full" /><Skeleton className="h-5 w-28 rounded-full" /></div>
           </div>
           <div className="grid grid-cols-2 items-start gap-x-4 gap-y-3 lg:grid-cols-4">
             {[0, 1, 2, 3].map((item) => <div key={item} className="space-y-1"><Skeleton className="h-4 w-16" /><Skeleton className="h-6 w-28 max-w-full" /></div>)}

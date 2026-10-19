@@ -21,6 +21,7 @@ import { useAvailableNoteTemplates } from '@/hooks/api/use-clinical-note-templat
 import { useCheckIn, useFinishVisit, useRevokeUnlock, useStartVisit, useUnlockNote, useVisitWorkspace } from '@/hooks/api/use-visits';
 import { getBilingualName } from '@/i18n';
 import { ClinicalNoteEditor } from './clinical-note-editor';
+import { StatusBadgeBlock } from '@/components/blocks/appointments/shared/status-badge';
 import { InvoiceReview } from './invoice-review';
 import { MedicalReportEditor } from './medical-report-editor';
 
@@ -87,27 +88,27 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
 
       <Card className="gap-0 py-0">
         <CardContent className="space-y-3 p-3 sm:p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <PreviewableAvatar src={data.patient.imageUrl} seed={data.patient.id} size="lg" />
               <div className="min-w-0">
-              <h1 className="truncate font-heading text-lg font-semibold tracking-tight sm:text-xl">{patientName}</h1>
+              <h1 className="break-words font-heading text-lg font-semibold tracking-tight sm:text-xl">{patientName}</h1>
               <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                 {formatDate(data.scheduledAt, undefined, lang)} · {formatTime(data.scheduledAt, undefined, lang)} · {t.visits.plannedDuration.replace('{minutes}', String(data.durationMins))}
               </p>
             </div>
               </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex max-w-36 flex-col items-end gap-2 sm:max-w-52">
+              <StatusBadgeBlock status={data.appointmentStatus} tip={false} />
             {data.mode === SESSION_TYPE.IN_PERSON ? (
-              <Badge variant="outline"><IconInPerson className="size-4" />{t.visits.inPerson}{data.room ? ` · ${roomName}` : ''}</Badge>
+              <Badge variant="outline" className="whitespace-normal text-end"><IconInPerson className="size-4 shrink-0" />{t.visits.inPerson}{data.room ? ` · ${roomName}` : ''}</Badge>
             ) : data.meetingUrl ? (
-              <a href={data.meetingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary underline-offset-2 hover:underline">
+              <Badge variant="outline" asChild><a href={data.meetingUrl} target="_blank" rel="noopener noreferrer">
                 <IconOnline className="size-4" />{t.visits.join}
-              </a>
+              </a></Badge>
             ) : (
-              <Badge variant="warning"><IconOnline className="size-4" />{t.visits.joinMissing}</Badge>
+              <Badge variant="warning" className="whitespace-normal text-end"><IconOnline className="size-4" />{t.visits.joinMissing}</Badge>
             )}
-              <Badge variant="muted">{t.constants.status[data.appointmentStatus].label}</Badge>
             </div>
           </div>
 
@@ -134,9 +135,9 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
       ) : (
         <Tabs defaultValue="note" className="min-w-0 flex-1 gap-3">
           <TabsList variant="document" className="shrink-0">
-            <TabsTrigger value="note"><span className="max-w-full truncate">{t.visits.note}</span><span className="max-w-full truncate text-xs font-normal text-muted-foreground">{t.visits.noteStatuses[data.noteStatus]}</span></TabsTrigger>
-            <TabsTrigger value="report"><span className="max-w-full truncate">{t.visits.report}</span><span className="max-w-full truncate text-xs font-normal text-muted-foreground">{t.visits.reportStatuses[data.reportStatus]}</span></TabsTrigger>
-            <TabsTrigger value="invoice"><span className="max-w-full truncate">{t.visits.billing}</span><span className="max-w-full truncate text-xs font-normal text-muted-foreground">{t.visits.invoiceStatuses[data.invoiceStatus]}</span></TabsTrigger>
+            <TabsTrigger value="note"><span className="max-w-full whitespace-normal break-words">{t.visits.note}</span><span className="max-w-full whitespace-normal break-words text-xs font-normal text-muted-foreground">{t.visits.noteStatuses[data.noteStatus]}</span></TabsTrigger>
+            <TabsTrigger value="report"><span className="max-w-full whitespace-normal break-words">{t.visits.report}</span><span className="max-w-full whitespace-normal break-words text-xs font-normal text-muted-foreground">{t.visits.reportStatuses[data.reportStatus]}</span></TabsTrigger>
+            <TabsTrigger value="invoice"><span className="max-w-full whitespace-normal break-words">{t.visits.invoice}</span><span className="max-w-full whitespace-normal break-words text-xs font-normal text-muted-foreground">{t.visits.invoiceStatuses[data.invoiceStatus]}</span></TabsTrigger>
           </TabsList>
           <Card className="min-w-0 flex-1 gap-0 py-0">
             <CardContent className="flex flex-1 flex-col p-3 sm:p-4">
