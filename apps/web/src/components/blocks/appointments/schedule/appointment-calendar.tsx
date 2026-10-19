@@ -542,7 +542,7 @@ export function AppointmentCalendar({
           setAppointmentPopover(null);
           setDayPopover(null);
         }}
-        className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0"
+        className="relative flex h-[calc(100dvh-15rem)] min-h-96 flex-col md:h-0 md:min-h-0 md:flex-1 [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0"
       >
         <FullCalendar
           key={`${lang}-${hours?.start ?? ''}-${hours?.end ?? ''}`}
