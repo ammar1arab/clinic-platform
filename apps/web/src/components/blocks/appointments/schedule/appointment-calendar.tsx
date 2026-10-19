@@ -491,7 +491,7 @@ export function AppointmentCalendar({
       className={cn(
         "relative page-fill bg-card [&_.fc]:text-sm",
         focused
-          ? "min-h-0 flex-1 rounded-none border-0 p-1.5 sm:p-2"
+          ? "h-[calc(100dvh-1rem)] min-h-0 rounded-none border-0 p-1.5 sm:p-2 md:h-0 md:flex-1"
           : "card-aura rounded-xl border p-2 sm:p-2.5",
       )}
       aria-busy={isFetching || undefined}
@@ -545,7 +545,7 @@ export function AppointmentCalendar({
         className={cn(
           "relative flex flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0",
           focused
-            ? "min-h-0 flex-1"
+            ? "h-[calc(100dvh-1rem)] min-h-0 md:h-0 md:min-h-0 md:flex-1"
             : "h-[calc(100dvh-15rem)] min-h-96 md:h-0 md:min-h-0 md:flex-1",
         )}
       >

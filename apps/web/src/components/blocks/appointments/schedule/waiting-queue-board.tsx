@@ -207,7 +207,7 @@ export function WaitingQueueBoard({
       <div
         className={cn(
           'grid min-h-0 flex-1 grid-cols-1 gap-2.5 overflow-y-auto overscroll-y-contain p-2.5',
-          focused && 'h-0',
+          focused && 'md:h-0',
           'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
           stageTab === QUEUE_STAGE.ALL ? 'lg:grid-cols-4' : 'lg:grid-cols-1',
           'lg:grid-rows-[minmax(0,1fr)] lg:items-stretch lg:overflow-hidden',
