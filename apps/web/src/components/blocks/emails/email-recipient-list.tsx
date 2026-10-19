@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { EmailRecipientPreview } from "@clinic/types";
-import { Button } from "@/components/ui";
+import { Button, Card, CardContent } from "@/components/ui";
 import {
   EmailLink,
   EmptyState,
@@ -164,7 +164,13 @@ export function EmailRecipientList({
   ];
 
   if (!recipients.length || !visible.length) {
-    return <EmptyState icon={IconMail} title={t.emails.noRecipients} size="compact" />;
+    return (
+      <Card>
+        <CardContent>
+          <EmptyState icon={IconMail} title={t.emails.noRecipients} size="compact" />
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
