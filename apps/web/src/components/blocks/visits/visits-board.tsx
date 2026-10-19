@@ -39,6 +39,9 @@ import { getBilingualName } from '@/i18n';
 import { formatDate, formatTime } from '@/lib/datetime';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { usePractitionerDirectory } from '@/hooks/api/use-practitioners';
+import { useDownloadVisitsReport } from '@/hooks/api/use-reports';
+import { ExportFormatButton } from '@/components/blocks/reports';
+import type { ReportFormat } from '@/services/reports.service';
 import { useVisits } from '@/hooks/api/use-visits';
 import { useAuth, useLanguage } from '@/providers';
 
@@ -77,6 +80,21 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
     limit: 20,
   };
   const visits = useVisits(query, !!user);
+  const downloadVisits = useDownloadVisitsReport(clinicId);
+  const handleExport = (format: ReportFormat) => {
+    downloadVisits.mutate({
+      format,
+      from: query.from,
+      to: query.to,
+      practitionerId: query.practitionerId,
+      appointmentStatus: query.appointmentStatus,
+      noteStatus: query.noteStatus,
+      queue: query.queue,
+      reportStatus: query.reportStatus,
+      invoiceStatus: query.invoiceStatus,
+      search: query.search,
+    });
+  };
   const resetPage = () => setPage(1);
   const activeCount =
     (queue ? 1 : 0) +
@@ -106,6 +124,7 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
         onSearchChange={(value) => { setSearch(value); resetPage(); }}
         searchPlaceholder={t.common.search}
         actions={
+          <>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -178,6 +197,14 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
               </FormField>
             </PopoverContent>
           </Popover>
+          <ExportFormatButton
+            compact
+            className="shrink-0"
+            disabled={visits.isLoading || downloadVisits.isPending || !visits.data?.items?.length}
+            pending={downloadVisits.isPending}
+            onSelect={handleExport}
+          />
+          </>
         }
       />
 

@@ -232,6 +232,38 @@ export const reportsService = {
     );
   },
 
+  downloadVisits: (params: {
+    clinicId: string;
+    format?: ReportFormat;
+    from?: string;
+    to?: string;
+    queue?: string;
+    reportStatus?: string;
+    invoiceStatus?: string;
+    search?: string;
+    practitionerId?: string;
+    appointmentStatus?: string;
+    noteStatus?: string;
+  }) => {
+    const format = params.format ?? "pdf";
+    return downloadReport(
+      withQuery(ENDPOINTS.REPORTS.VISITS, {
+        clinicId: params.clinicId,
+        format,
+        from: params.from,
+        to: params.to,
+        practitionerId: params.practitionerId,
+        appointmentStatus: params.appointmentStatus,
+        noteStatus: params.noteStatus,
+        queue: params.queue,
+        reportStatus: params.reportStatus,
+        invoiceStatus: params.invoiceStatus,
+        search: params.search,
+      }),
+      `clinical-records.${extFor(format)}`,
+    );
+  },
+
   downloadFinance: (params: {
     clinicId: string;
     format?: ReportFormat;

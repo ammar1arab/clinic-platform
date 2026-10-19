@@ -153,6 +153,7 @@ export const ENDPOINTS = {
     PRACTITIONER_EXCEPTIONS: (id: string) =>
       `/reports/practitioners/${id}/exceptions`,
     APPOINTMENTS: "/reports/appointments",
+    VISITS: "/reports/visits",
     REFERRALS: "/reports/referrals",
     FINANCE: "/reports/finance",
   },

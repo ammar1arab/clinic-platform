@@ -20,6 +20,7 @@ import {
   useDownloadPractitionerProfile,
   useDownloadPractitionersDirectory,
   useDownloadReferralsReport,
+  useDownloadVisitsReport,
 } from '@/hooks/api/use-reports';
 import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import { currentMonthRange } from '@/constants/report';
@@ -49,7 +50,8 @@ type ReportKey =
   | 'practitionerExceptions'
   | 'clinicAppointments'
   | 'referrals'
-  | 'finance';
+  | 'finance'
+  | 'signedVisits';
 
 type ReportDef = {
   key: ReportKey;
@@ -122,6 +124,16 @@ export default function ReportsPage() {
   const downloadClinicAppointments = useDownloadClinicAppointments(clinicId);
   const downloadReferrals = useDownloadReferralsReport(clinicId);
   const downloadFinance = useDownloadFinanceReport(clinicId);
+  const downloadVisits = useDownloadVisitsReport(clinicId);
+
+  const signedVisitsDef: ReportDef = {
+    key: 'signedVisits',
+    icon: IconFileText,
+    accent: 'teal',
+    title: t.visits.signedReports,
+    description: t.visits.signedReportsDesc,
+    filters: { dates: true },
+  };
 
   const ownerCatalog: { title: string; items: ReportDef[] }[] = [
     {
@@ -257,9 +269,10 @@ export default function ReportsPage() {
       ]
     : ownerCatalog;
 
-  const active = catalog
-    .flatMap((group) => group.items)
-    .find((item) => item.key === activeKey);
+  const active =
+    activeKey === 'signedVisits'
+      ? signedVisitsDef
+      : catalog.flatMap((group) => group.items).find((item) => item.key === activeKey);
 
   const isDirectory =
     activeKey === 'patientsDirectory' || activeKey === 'practitionersDirectory';
@@ -274,7 +287,8 @@ export default function ReportsPage() {
     downloadPractitionerAppointments.isPending ||
     downloadClinicAppointments.isPending ||
     downloadReferrals.isPending ||
-    downloadFinance.isPending;
+    downloadFinance.isPending ||
+    downloadVisits.isPending;
 
   const exportDisabled =
     (active?.filters?.patient === 'required' && !patientId) ||
@@ -331,6 +345,14 @@ export default function ReportsPage() {
           to: toDate || undefined,
         });
         break;
+      case 'signedVisits':
+        downloadVisits.mutate({
+          format,
+          from: fromDate || undefined,
+          to: toDate || undefined,
+          reportStatus: 'signed',
+        });
+        break;
       case 'finance':
         downloadFinance.mutate({
           format,
@@ -348,7 +370,7 @@ export default function ReportsPage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-muted-foreground">{t.visits.title}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <IconCard href={`${ROUTES.VISITS}?reportStatus=signed`} icon={IconFileText} accent="teal" title={t.visits.signedReports} description={t.visits.signedReportsDesc} />
+          <ReportCard icon={IconFileText} accent="teal" title={t.visits.signedReports} description={t.visits.signedReportsDesc} onClick={() => setActiveKey('signedVisits')} />
           {canFinance ? <IconCard href={`${ROUTES.VISITS}?invoiceStatus=issued`} icon={IconPayment} accent="success" title={t.visits.issuedInvoices} description={t.visits.issuedInvoicesDesc} /> : null}
         </div>
       </section>

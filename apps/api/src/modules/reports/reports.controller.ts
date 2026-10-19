@@ -22,6 +22,7 @@ import {
   PractitionerScopedReportQueryDto,
   ReferralsReportQueryDto,
   ReportFormatDto,
+  VisitsReportQueryDto,
 } from "./dto";
 import type { ExportedReport } from "./exporters/report-exporter";
 
@@ -204,6 +205,23 @@ export class ReportsController {
         this.practitionerScope(user, practitionerId),
         query.format ?? ReportFormatDto.pdf,
       ),
+    );
+  }
+
+  @Get("visits")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.financial, Role.practitioner)
+  @ApiProduces(...PRODUCES)
+  @ApiQuery({ name: "clinicId", required: true })
+  @ApiQuery({ name: "format", required: false, enum: ReportFormatDto })
+  async visits(
+    @CurrentUser() user: AuthUser,
+    @Query() query: VisitsReportQueryDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    return sendExport(
+      res,
+      await this.reportsService.exportVisits(user, query),
     );
   }
 
