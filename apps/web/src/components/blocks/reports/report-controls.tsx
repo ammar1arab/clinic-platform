@@ -75,13 +75,13 @@ export function ExportFormatButton({
             className={cn(
               'h-8 rounded-lg',
               compact &&
-                'size-8 shrink-0 border-border/70 bg-background/50 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5',
+                'h-7 shrink-0 gap-1 border-border/70 bg-background/50 px-1.5 text-xs font-semibold shadow-2xs active:scale-95',
               className,
             )}
             disabled={disabled || pending}
           >
-            {pending ? <ButtonSpinner /> : <IconExport className="size-4" />}
-            <span className={cn(compact && 'hidden font-semibold sm:inline')}>{t.common.download}</span>
+            {pending ? <ButtonSpinner /> : compact ? null : <IconExport className="size-4" />}
+            <span>{t.common.download}</span>
           </Button>
         </DropdownMenuTrigger>
       </SoftTip>

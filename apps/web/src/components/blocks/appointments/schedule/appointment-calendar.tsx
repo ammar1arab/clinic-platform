@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -202,6 +202,12 @@ export function AppointmentCalendar({
     );
     return { events: calendarEvents, appointmentsByDay: byDay };
   }, [appointments, canManageAppointments, lang]);
+
+  useEffect(() => {
+    const api = calendarRef.current?.getApi();
+    const target = VIEW_TO_FC[view];
+    if (api && target && api.view.type !== target) api.changeView(target);
+  }, [view]);
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const appt = readCalendarAppointment(arg.event.extendedProps);
@@ -500,12 +506,14 @@ export function AppointmentCalendar({
           </Button>
         </div>
         <Tabs className="order-3 col-span-2 w-full sm:order-none sm:col-span-1 sm:w-auto" value={view} onValueChange={(value) => {
-          if (value === 'day' || value === 'week' || value === 'month') onViewChange(value);
+          if (value === 'day' || value === 'week' || value === 'month') {
+            calendarRef.current?.getApi().changeView(VIEW_TO_FC[value]);
+          }
         }}>
-          <TabsList variant="pill" className="w-full sm:w-auto" aria-label={t.layout.titles.schedule}>
-            <TabsTrigger value="day" className="flex-1 px-1.5 sm:flex-none sm:px-4">{t.appointments.day}</TabsTrigger>
-            <TabsTrigger value="week" className="flex-1 px-1.5 sm:flex-none sm:px-4">{t.appointments.week}</TabsTrigger>
-            <TabsTrigger value="month" className="flex-1 px-1.5 sm:flex-none sm:px-4">{t.appointments.month}</TabsTrigger>
+          <TabsList variant="fill" className="w-full sm:w-72" aria-label={t.layout.titles.schedule}>
+            <TabsTrigger value="day">{t.appointments.day}</TabsTrigger>
+            <TabsTrigger value="week">{t.appointments.week}</TabsTrigger>
+            <TabsTrigger value="month">{t.appointments.month}</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
@@ -537,7 +545,7 @@ export function AppointmentCalendar({
         className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0"
       >
         <FullCalendar
-          key={`${view}-${lang}-${hours?.start ?? ''}-${hours?.end ?? ''}`}
+          key={`${lang}-${hours?.start ?? ''}-${hours?.end ?? ''}`}
           ref={calendarRef}
           plugins={PLUGINS}
           initialView={VIEW_TO_FC[view]}
