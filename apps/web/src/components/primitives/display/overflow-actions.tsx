@@ -15,6 +15,8 @@ export function OverflowActions({
 }) {
   const { t, dir } = useLanguage();
   const row = useRef<HTMLElement | null>(null);
+  const pan = useRef<{ pointerId: number; x: number; scrollLeft: number; moved: boolean } | null>(null);
+  const suppressClick = useRef(false);
   const [overflow, setOverflow] = useState(false);
   const measure = useCallback((element: HTMLElement) => {
     row.current = element;
@@ -49,9 +51,57 @@ export function OverflowActions({
       )}
       <div
         ref={observe}
-        className="min-w-0 flex-1 overflow-x-auto scrollbar-none"
+        className="min-w-0 flex-1 touch-auto select-none overflow-x-auto scrollbar-none data-[panning=true]:cursor-grabbing"
         role="group"
         aria-label={label}
+        onPointerDown={(event) => {
+          suppressClick.current = false;
+          if (event.pointerType !== 'mouse' || event.button !== 0 || !event.isPrimary) return;
+          if (!(event.target instanceof Element) || event.target.closest('[data-drag-handle], input, textarea, select, [contenteditable=true]')) return;
+          const element = event.currentTarget;
+          if (element.scrollWidth - element.clientWidth <= 1) return;
+          pan.current = { pointerId: event.pointerId, x: event.clientX, scrollLeft: element.scrollLeft, moved: false };
+        }}
+        onPointerMove={(event) => {
+          const start = pan.current;
+          if (!start || start.pointerId !== event.pointerId) return;
+          const distance = event.clientX - start.x;
+          if (!start.moved && Math.abs(distance) < 8) return;
+          if (!start.moved) {
+            start.moved = true;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            event.currentTarget.dataset.panning = 'true';
+          }
+          event.preventDefault();
+          event.currentTarget.scrollLeft = start.scrollLeft - distance;
+        }}
+        onPointerUp={(event) => {
+          if (pan.current?.pointerId !== event.pointerId) return;
+          suppressClick.current = pan.current.moved;
+          pan.current = null;
+          delete event.currentTarget.dataset.panning;
+        }}
+        onPointerCancel={(event) => {
+          suppressClick.current = !!pan.current?.moved;
+          pan.current = null;
+          delete event.currentTarget.dataset.panning;
+        }}
+        onLostPointerCapture={(event) => {
+          if (pan.current?.pointerId === event.pointerId) {
+            suppressClick.current = pan.current.moved;
+            pan.current = null;
+          }
+          delete event.currentTarget.dataset.panning;
+        }}
+        onPointerLeave={(event) => {
+          if (!pan.current?.moved && pan.current?.pointerId === event.pointerId) pan.current = null;
+        }}
+        onClickCapture={(event) => {
+          if (!suppressClick.current) return;
+          event.preventDefault();
+          event.stopPropagation();
+          suppressClick.current = false;
+        }}
       >
         <div ref={observeContent} className="flex w-max min-w-full gap-2">
           {children}

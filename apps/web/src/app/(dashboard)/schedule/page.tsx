@@ -31,8 +31,7 @@ import {
 import { toDateParam, toTimeParam } from "@/lib/datetime";
 import { useAuth, useLanguage } from "@/providers";
 import { ROLE } from "@clinic/types";
-import { EmptyState, ErrorState } from "@/components/primitives";
-import { IconCalendar } from "@/constants/icons";
+import { ErrorState } from "@/components/primitives";
 
 const AppointmentCalendar = dynamic(
   () =>
@@ -145,6 +144,7 @@ function SchedulePageInner() {
 
   const goNewAppointment = useCallback(
     (date?: Date, doctorId?: string) => {
+      if (isPractitioner) return;
       const params = new URLSearchParams({ view: activeView });
       if (date) {
         params.set("date", toDateParam(date));
@@ -153,14 +153,14 @@ function SchedulePageInner() {
       if (doctorId) params.set("doctorId", doctorId);
       router.push(`${ROUTES.SCHEDULE_NEW}?${params.toString()}`);
     },
-    [activeView, router],
+    [activeView, isPractitioner, router],
   );
 
   const handleEventClick = useCallback(
     (appt: Appointment) => {
-      router.push(`${ROUTES.SCHEDULE_EDIT(appt.id)}?view=${activeView}`);
+      router.push(isPractitioner ? ROUTES.VISIT(appt.id) : `${ROUTES.SCHEDULE_EDIT(appt.id)}?view=${activeView}`);
     },
-    [activeView, router],
+    [activeView, isPractitioner, router],
   );
 
   return (
@@ -189,13 +189,6 @@ function SchedulePageInner() {
 
       {isError && !appointments ? (
         <ErrorState onRetry={() => void refetch()} className="page-fill" />
-      ) : !isLoading && filteredAppointments?.length === 0 ? (
-        <EmptyState
-          icon={IconCalendar}
-          title={t.appointments.noAppointments}
-          description={t.appointments.noAppointmentsDesc}
-          className="page-fill"
-        />
       ) : activeView === "doctors" ? (
         <ViewFocus label={t.appointments.doctorTimeline}>
           {(focused) => (
@@ -232,6 +225,7 @@ function SchedulePageInner() {
               isFetching={isFetching}
               view={activeView}
               focused={focused}
+              canManageAppointments={!isPractitioner}
               onViewChange={setView}
               onVisibleRangeChange={handleVisibleRangeChange}
               onEventClick={handleEventClick}

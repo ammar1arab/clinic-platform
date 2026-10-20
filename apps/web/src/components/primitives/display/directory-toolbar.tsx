@@ -19,6 +19,11 @@ import { useLanguage } from '@/providers/language-provider';
 export const DIRECTORY_ACTION_CLASS =
   'size-8 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5';
 
+export const DIRECTORY_FILTER_BUTTON_CLASS = 'h-8 w-auto min-w-8 gap-1 px-2 sm:gap-1.5 sm:px-2.5';
+
+export const DIRECTORY_FILTER_BADGE_CLASS =
+  'ms-0 h-4 min-h-4 min-w-4 justify-center px-1 py-0 text-[10px] leading-none';
+
 export function DirectoryToolbar({
   search,
   onSearchChange,

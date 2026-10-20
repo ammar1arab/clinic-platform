@@ -304,30 +304,26 @@ export function PractitionersList({
                   <CellBadge value={specialtyFor(p)} />
                 ) : undefined
               }
-              footer={
-                <PhoneLink
-                  copyable
-                  value={p.phone}
-                  className="text-xs text-muted-foreground"
-                />
-              }
               actions={controls(p)}
               active={p.isActive}
               onClick={() => openProfile(p.id)}
               onMouseEnter={() => prefetchProfile(p.id)}
               onFocus={() => prefetchProfile(p.id)}
               meta={
-                <DirectoryMeta
-                  columns={columns}
-                  item={p}
-                  ids={[
-                    "department",
-                    "experience",
-                    "languages",
-                    "room",
-                    "services",
-                  ]}
-                />
+                <>
+                  <DirectoryMeta
+                    columns={columns}
+                    item={p}
+                    ids={[
+                      "department",
+                      "experience",
+                      "languages",
+                      "room",
+                      "services",
+                    ]}
+                  />
+                  <DirectoryMeta columns={columns} item={p} ids={["phone"]} />
+                </>
               }
             />
           ))}

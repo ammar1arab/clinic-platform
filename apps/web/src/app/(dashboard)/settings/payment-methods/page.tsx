@@ -173,10 +173,9 @@ export default function PaymentMethodsPage() {
           />
         }
         actions={
-          <Button size="sm" onClick={openCreate} className="shrink-0">
-            <IconAdd className="size-4 me-1.5" />
+          <Button size="sm" onClick={openCreate} className="shrink-0 max-sm:size-8 max-sm:px-0" aria-label={t.settings.addPaymentMethod}>
+            <IconAdd className="size-4 sm:me-1.5" />
             <span className="hidden sm:inline">{t.settings.addPaymentMethod}</span>
-            <span className="sm:hidden">{t.common.add}</span>
           </Button>
         }
       />

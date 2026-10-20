@@ -7,6 +7,8 @@ export {
   DirectorySortMenu,
   DirectoryToolbar,
   DIRECTORY_ACTION_CLASS,
+  DIRECTORY_FILTER_BUTTON_CLASS,
+  DIRECTORY_FILTER_BADGE_CLASS,
 } from './display/directory-toolbar';
 export { EmptyState } from './states/empty';
 export { AvatarImage, EntityAvatar } from './display/entity-avatar';

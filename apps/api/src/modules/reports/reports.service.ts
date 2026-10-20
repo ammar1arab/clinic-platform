@@ -4,10 +4,13 @@ import { PatientsService } from "@/modules/patients/patients.service";
 import { PractitionersService } from "@/modules/practitioners/practitioners.service";
 import { PatientSortBy, SortOrder } from "@/modules/patients/dto";
 import { ReportsRepository } from "./reports.repository";
-import { ReportDocumentFactory } from "./report-document.factory";
+import { ReportDocumentFactory, type VisitReportRow } from "./report-document.factory";
 import { ReportExporterFactory } from "./exporters/report-exporter.factory";
 import { ExportedReport } from "./exporters/report-exporter";
-import { DirectoryReportQueryDto, ReportFormatDto } from "./dto";
+import { DirectoryReportQueryDto, ReportFormatDto, VisitsReportQueryDto } from "./dto";
+import { VisitsService } from "@/modules/visits/visits.service";
+import type { AuthUser } from "@/modules/auth/types";
+import type { VisitFiltersDto } from "@/modules/visits/visits.dto";
 
 function dayBounds(from?: string, to?: string) {
   const fromDate = from
@@ -35,6 +38,7 @@ export class ReportsService {
     private patientsService: PatientsService,
     private practitionersService: PractitionersService,
     private appointmentsService: AppointmentsService,
+    private visitsService: VisitsService,
   ) {}
 
   async exportPatientMedical(
@@ -309,6 +313,56 @@ export class ReportsService {
       filtersLabel: [periodLabel(from, to), status].filter(Boolean).join("-"),
       type: "clinic_appointments",
     });
+    return this.exporterFactory.export(doc, format);
+  }
+
+  async exportVisits(
+    actor: AuthUser,
+    query: Omit<VisitsReportQueryDto, "clinicId">,
+  ): Promise<ExportedReport> {
+    const format = query.format ?? ReportFormatDto.pdf;
+    const clinic = await this.requireClinic(actor.clinicId);
+    const filters = {
+      from: query.from,
+      to: query.to,
+      practitionerId: query.practitionerId,
+      appointmentStatus: query.appointmentStatus,
+      noteStatus: query.noteStatus,
+      queue: query.queue,
+      reportStatus: query.reportStatus,
+      invoiceStatus: query.invoiceStatus,
+      search: query.search,
+    };
+    const visits: VisitReportRow[] = [];
+    for (let page = 1; ; page += 1) {
+      const result = await this.visitsService.list(actor, {
+        ...filters,
+        page,
+        limit: 100,
+      } as VisitFiltersDto);
+      visits.push(
+        ...result.items.map((item) => ({
+          scheduledAt: item.scheduledAt,
+          patient: item.patient.name,
+          practitioner: item.practitioner.name,
+          mode: item.mode,
+          appointmentStatus: item.appointmentStatus,
+          noteStatus: item.noteStatus,
+          reportStatus: item.reportStatus,
+          invoiceStatus: item.invoiceStatus,
+        })),
+      );
+      if (!result.items.length || visits.length >= result.total) break;
+    }
+    const filtersLabel = [
+      periodLabel(query.from, query.to),
+      query.reportStatus,
+      query.invoiceStatus,
+      query.queue,
+    ]
+      .filter(Boolean)
+      .join("-");
+    const doc = this.documents.buildVisits({ clinic, visits, filtersLabel });
     return this.exporterFactory.export(doc, format);
   }
 

@@ -1,5 +1,16 @@
 import { formatPhoneDisplay } from "@/infrastructure";
 import { ReportDocument } from "./types/report-document";
+
+export type VisitReportRow = {
+  scheduledAt: string;
+  patient: string;
+  practitioner: string;
+  mode: string;
+  appointmentStatus: string;
+  noteStatus: string;
+  reportStatus: string;
+  invoiceStatus: string;
+};
 import {
   appointmentPerformance,
   ClinicLetterheadRow,
@@ -598,6 +609,45 @@ export class ReportDocumentFactory {
           reason: cell(entry.reason),
         })),
       ],
+    });
+  }
+
+  buildVisits(input: {
+    clinic: ClinicLetterheadRow;
+    visits: VisitReportRow[];
+    filtersLabel: string;
+  }): ReportDocument {
+    const signed = input.visits.filter((row) => row.reportStatus === "signed").length;
+    return reportDocument({
+      type: "clinic_visits",
+      title: "Clinical Records",
+      filename: ["clinical-records", input.filtersLabel || "all"],
+      clinic: input.clinic,
+      summary: [
+        { label: "Filters", value: input.filtersLabel || "All visits" },
+        { label: "Visits", value: String(input.visits.length) },
+        { label: "Reports signed", value: String(signed) },
+      ],
+      columns: [
+        { key: "date", header: "Date" },
+        { key: "patient", header: "Patient" },
+        { key: "practitioner", header: "Practitioner" },
+        { key: "mode", header: "Mode" },
+        { key: "appointment", header: "Appointment" },
+        { key: "note", header: "Clinic note" },
+        { key: "report", header: "Medical report" },
+        { key: "invoice", header: "Invoice" },
+      ],
+      rows: input.visits.map((row) => ({
+        date: formatDisplayDateTime(row.scheduledAt),
+        patient: row.patient,
+        practitioner: row.practitioner,
+        mode: row.mode,
+        appointment: row.appointmentStatus,
+        note: row.noteStatus,
+        report: row.reportStatus,
+        invoice: row.invoiceStatus,
+      })),
     });
   }
 

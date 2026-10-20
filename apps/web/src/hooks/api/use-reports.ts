@@ -17,6 +17,19 @@ type ReferralsDownloadVars = {
   to?: string;
 };
 
+type VisitsDownloadVars = {
+  format?: ReportFormat;
+  from?: string;
+  to?: string;
+  queue?: string;
+  reportStatus?: string;
+  invoiceStatus?: string;
+  search?: string;
+  practitionerId?: string;
+  appointmentStatus?: string;
+  noteStatus?: string;
+};
+
 type FinanceDownloadVars = {
   format?: ReportFormat;
   from?: string;
@@ -135,6 +148,13 @@ export function useDownloadReferralsReport(clinicId: string) {
 export function useDownloadFinanceReport(clinicId: string) {
   return useApiMutation<ReportDownloadResult, TResponseError, FinanceDownloadVars>({
     request: (params) => reportsService.downloadFinance({ clinicId, ...params }),
+    successMessage: downloaded,
+  });
+}
+
+export function useDownloadVisitsReport(clinicId: string) {
+  return useApiMutation<ReportDownloadResult, TResponseError, VisitsDownloadVars>({
+    request: (params) => reportsService.downloadVisits({ clinicId, ...params }),
     successMessage: downloaded,
   });
 }

@@ -9,6 +9,7 @@ export type ReportType =
   | "practitioner_hours"
   | "practitioner_exceptions"
   | "clinic_appointments"
+  | "clinic_visits"
   | "referrals"
   | "finance_monthly";
 

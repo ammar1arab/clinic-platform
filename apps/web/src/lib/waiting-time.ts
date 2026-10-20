@@ -15,9 +15,9 @@ export function formatWaitingMins(
   mins: number | null | undefined,
   t: Translations = translations.en,
 ): string {
-  if (mins == null || Number.isNaN(mins)) return '—';
+  if (mins == null || !Number.isFinite(mins)) return '0';
   const m = Math.max(0, Math.floor(mins));
-  if (m < 1) return t.common.lessThanOneMin;
+  if (m < 1) return '0';
   if (m < 60) return `${m}${t.common.minsCompact}`;
   const h = Math.floor(m / 60);
   const rem = m % 60;
