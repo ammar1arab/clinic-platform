@@ -4,7 +4,6 @@ import { AccountPasswordReset } from '@/components/blocks/auth/account-password-
 import { IconCard } from '@/components/primitives';
 import { IconChevronLeft, IconChevronRight } from '@/constants/icons';
 import { getSettingsSections } from '@/components/blocks/settings/settings-navigation';
-import { ROLE } from '@clinic/types';
 import { useAuth, useLanguage } from '@/providers';
 
 export default function SettingsPage() {
@@ -12,7 +11,7 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const ChevronIcon = dir === 'rtl' ? IconChevronLeft : IconChevronRight;
 
-  const settingsLinks = getSettingsSections(t).filter((item) => item.key !== 'noteTemplates' || user?.role === ROLE.OWNER);
+  const settingsLinks = getSettingsSections(t, user?.role);
 
   return (
     <div className="w-full min-w-0 space-y-4">

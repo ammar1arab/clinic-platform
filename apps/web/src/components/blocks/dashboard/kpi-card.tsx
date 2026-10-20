@@ -23,15 +23,16 @@ export function KpiCardBlock({
       accent={accent}
       title={
         isLoading || value === undefined || value === null ? (
-          <Skeleton className="h-7 w-16 rounded-md mb-1" />
+          <Skeleton className="mb-1 h-6 w-14 rounded-md" />
         ) : (
-          <span className="font-heading text-2xl font-semibold tracking-tight tabular-nums leading-none">
+          <span className="font-heading text-xl font-semibold tracking-tight tabular-nums leading-none">
             {value}
           </span>
         )
       }
       description={label}
       orientation="horizontal"
+      compact
       className="cursor-default border border-border"
     />
   );

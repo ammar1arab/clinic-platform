@@ -27,7 +27,7 @@ import type { ExportedReport } from "./exporters/report-exporter";
 
 const PRODUCES = [
   "application/pdf",
-  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "text/csv",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ] as const;

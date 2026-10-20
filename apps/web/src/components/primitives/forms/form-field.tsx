@@ -12,6 +12,7 @@ import {
   Label,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { IconClose } from "@/constants/icons";
 
 type FormFieldProps = {
   label?: ReactNode;
@@ -67,20 +68,36 @@ export function FilterSelect({
   const { t } = useLanguage();
   const id = useId();
   const anyText = placeholder ?? t.common.any;
+  const active = !!value;
   return (
     <FormField htmlFor={id} label={label} labelClassName="text-xs">
-      <Select
-        value={value || FORM_ANY}
-        onValueChange={(v) => onChange(v === FORM_ANY ? "" : v)}
-      >
-        <SelectTrigger id={id} className="h-8 w-full rounded-lg">
-          <SelectValue placeholder={anyText} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={FORM_ANY}>{anyText}</SelectItem>
-          {children}
-        </SelectContent>
-      </Select>
+      <div className="relative">
+        <Select
+          value={value || FORM_ANY}
+          onValueChange={(v) => onChange(v === FORM_ANY ? "" : v)}
+        >
+          <SelectTrigger
+            id={id}
+            className={cn("h-8 w-full rounded-lg", active && "border-primary/40 bg-primary/5 pe-14")}
+          >
+            <SelectValue placeholder={anyText} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={FORM_ANY}>{anyText}</SelectItem>
+            {children}
+          </SelectContent>
+        </Select>
+        {active ? (
+          <button
+            type="button"
+            aria-label={t.common.clear}
+            onClick={() => onChange("")}
+            className="absolute inset-y-0 end-7 my-auto grid size-5 cursor-pointer place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <IconClose className="size-3" />
+          </button>
+        ) : null}
+      </div>
     </FormField>
   );
 }

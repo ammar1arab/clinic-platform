@@ -80,6 +80,10 @@ export class DashboardGateway {
     this.log.debug("emit_appointment_changed", { clinicId });
   }
 
+  emitScheduleRequestChanged(clinicId: string, availabilityChanged = false) {
+    this.server.to(`clinic:${clinicId}`).emit("schedule-request-changed", { availabilityChanged });
+  }
+
   emitVisitChanged(clinicId: string) {
     this.server.to(`clinic:${clinicId}`).emit("visit-changed");
   }
@@ -89,10 +93,10 @@ export class DashboardGateway {
     this.log.debug("emit_referral_changed", { clinicId });
   }
 
-  emitNotificationCreated(clinicId: string, userId: string) {
+  emitNotificationCreated(clinicId: string, userId: string, type?: string) {
     this.server
       .to(`clinic:${clinicId}`)
-      .emit("notification-created", { userId });
+      .emit("notification-created", { userId, type });
     this.log.debug("emit_notification_created", { clinicId, userId });
   }
 }

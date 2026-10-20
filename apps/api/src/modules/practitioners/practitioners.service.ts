@@ -283,10 +283,10 @@ export class PractitionersService {
     }
 
     const invalidTimeOff = input.timeOffs?.find(
-      ({ startDate, endDate }) => new Date(startDate) > new Date(endDate),
+      ({ startDate, endDate }) => !Number.isFinite(Date.parse(startDate)) || !Number.isFinite(Date.parse(endDate)) || new Date(startDate) >= new Date(endDate),
     );
     const invalidOverride = input.availabilityOverrides?.find(
-      ({ startAt, endAt }) => new Date(startAt) >= new Date(endAt),
+      ({ startAt, endAt }) => !Number.isFinite(Date.parse(startAt)) || !Number.isFinite(Date.parse(endAt)) || new Date(startAt) >= new Date(endAt),
     );
     if (invalidTimeOff || invalidOverride) {
       throw new BadRequestException(

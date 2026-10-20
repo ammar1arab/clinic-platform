@@ -8,6 +8,9 @@ export type FormFieldType =
   | "multi_select"
   | "boolean"
   | "date"
+  | "time"
+  | "scale"
+  | "medications"
   | "measurement";
 export const FORM_FIELD_TYPE = {
   TEXT: "text",
@@ -19,13 +22,22 @@ export const FORM_FIELD_TYPE = {
   MULTI_SELECT: "multi_select",
   BOOLEAN: "boolean",
   DATE: "date",
+  TIME: "time",
+  SCALE: "scale",
+  MEDICATIONS: "medications",
   MEASUREMENT: "measurement",
 } as const satisfies Record<string, FormFieldType>;
+export interface MedicationRow {
+  drug: string;
+  dose: string;
+  frequency: string;
+}
 export type FormValue =
   | string
   | number
   | boolean
   | string[]
+  | MedicationRow[]
   | { value: number; unit: string }
   | null;
 export const VISIBILITY_OPERATOR = {
@@ -81,17 +93,9 @@ export interface FormTemplate extends FormTemplateInput {
   status: TemplateStatus;
   scheduledAt?: string | null;
   revision: number;
-  version: number;
-  publishedVersionId: string | null;
+  publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
-}
-export interface FormTemplateVersion {
-  id: string;
-  templateId: string;
-  version: number;
-  snapshot: FormTemplateInput;
-  createdAt: string;
 }
 export const DRAFT_SAVE_PHASE = {
   IDLE: "idle",
@@ -110,5 +114,4 @@ export type ClinicalSection = FormSection;
 export type TemplateAssignments = FormAssignments;
 export type ClinicalTemplateInput = FormTemplateInput;
 export type TemplateDTO = FormTemplate;
-export type TemplateVersionDTO = FormTemplateVersion;
 export const CLINICAL_FIELD_TYPE = FORM_FIELD_TYPE;

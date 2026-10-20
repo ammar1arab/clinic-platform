@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button, Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { WEEKDAY_OPTIONS } from '@/constants/practitioner';
-import { formatDate, formatTimeRange } from '@/lib/datetime';
+import { formatDateTime, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerHoursData } from '@/lib/validations';
 import { useLanguage } from '@/providers';
 
@@ -59,12 +59,9 @@ export function PractitionerHoursSummary({
                   key={`${entry.startAt}-${index}`}
                   className="rounded-lg bg-muted/40 px-3 py-2 text-sm"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span>{formatDate(entry.startAt, undefined, lang)}</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {formatTimeRange(entry.startAt, entry.endAt, undefined, lang)}
-                    </span>
-                  </div>
+                  <p className="flex flex-wrap gap-x-2 tabular-nums text-muted-foreground">
+                    <span>{formatDateTime(entry.startAt, undefined, lang)}</span><span>-</span><span>{formatDateTime(entry.endAt, undefined, lang)}</span>
+                  </p>
                   {entry.reason ? (
                     <p className="mt-1 text-xs text-muted-foreground">{entry.reason}</p>
                   ) : null}
@@ -86,7 +83,7 @@ export function PractitionerHoursSummary({
                   className="rounded-lg bg-muted/40 px-3 py-2 text-sm"
                 >
                   <div>
-                    {formatDate(entry.startDate, undefined, lang)} - {formatDate(entry.endDate, undefined, lang)}
+                    {formatDateTime(entry.startDate, undefined, lang)} - {formatDateTime(entry.endDate, undefined, lang)}
                   </div>
                   {entry.reason ? (
                     <p className="mt-1 text-xs text-muted-foreground">{entry.reason}</p>

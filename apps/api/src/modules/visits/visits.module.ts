@@ -2,6 +2,7 @@ import { DocumentationRemindersWorker } from "./documentation-reminders.worker";
 import { TemplatePublishWorker } from "./template-publish.worker";
 import { Module } from "@nestjs/common";
 import { AuthModule } from "@/modules/auth/auth.module";
+import { NotificationsModule } from "@/modules/notifications/notifications.module";
 import { DashboardModule } from "@/modules/dashboard/dashboard.module";
 import { VisitsRepository } from "./visits.repository";
 import { VisitsService } from "./visits.service";
@@ -12,7 +13,7 @@ import {
   VisitsController,
 } from "./visits.controller";
 @Module({
-  imports: [AuthModule, DashboardModule],
+  imports: [AuthModule, DashboardModule, NotificationsModule],
   controllers: [VisitsController, ClinicalTemplatesController],
   providers: [
     DocumentationRemindersWorker,

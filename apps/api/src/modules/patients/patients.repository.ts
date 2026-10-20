@@ -10,6 +10,11 @@ import {
   SortOrder,
 } from "./dto";
 
+const careRelationship = (practitionerId: string): Prisma.PatientWhereInput[] => [
+  { primaryDoctorId: practitionerId },
+  { appointments: { some: { doctorId: practitionerId } } },
+];
+
 @Injectable()
 export class PatientsRepository {
   constructor(private prisma: PrismaService) {}
@@ -56,7 +61,7 @@ export class PatientsRepository {
     return this.prisma.patient.create({ data });
   }
 
-  findAllByClinic(clinicId: string, filters: PatientFiltersDto) {
+  findAllByClinic(clinicId: string, filters: PatientFiltersDto, practitionerId?: string) {
     const {
       search,
       isActive,
@@ -78,6 +83,7 @@ export class PatientsRepository {
     const take = limit ?? undefined;
 
     const where: Prisma.PatientWhereInput = { clinicId };
+    if (practitionerId) where.AND = [{ OR: careRelationship(practitionerId) }];
 
     if (isActive !== undefined) {
       where.isActive = isActive === true || String(isActive) === "true";
@@ -168,7 +174,7 @@ export class PatientsRepository {
           },
         },
         appointments: {
-          where: { status: "completed" },
+          where: { status: "completed", ...(practitionerId && { doctorId: practitionerId }) },
           orderBy: { scheduledAt: "asc" },
         },
       },
@@ -178,7 +184,11 @@ export class PatientsRepository {
     });
   }
 
-  findById(id: string, clinicId: string) {
+  hasCareRelationship(id: string, clinicId: string, practitionerId: string) {
+    return this.prisma.patient.count({ where: { id, clinicId, OR: careRelationship(practitionerId) } }).then((count) => count > 0);
+  }
+
+  findById(id: string, clinicId: string, practitionerId?: string) {
     return this.prisma.patient.findFirst({
       where: { id, clinicId },
       include: {
@@ -202,9 +212,10 @@ export class PatientsRepository {
           },
         },
         appointments: {
+          where: { clinicId, ...(practitionerId && { doctorId: practitionerId }) },
           orderBy: { scheduledAt: "desc" },
           include: {
-            doctor: true,
+            doctor: { select: { id: true, name: true, nameAr: true, imageUrl: true } },
             service: true,
             room: true,
             referrals: {
@@ -220,9 +231,9 @@ export class PatientsRepository {
     });
   }
 
-  findReferralsByPatientId(patientId: string) {
+  findReferralsByPatientId(patientId: string, clinicId: string, practitionerId?: string) {
     return this.prisma.referral.findMany({
-      where: { appointment: { patientId } },
+      where: { clinicId, appointment: { patientId, clinicId }, ...(practitionerId && { OR: [{ fromDoctorId: practitionerId }, { toDoctorId: practitionerId }] }) },
       include: {
         fromDoctor: { select: { id: true, name: true, nameAr: true } },
         toDoctor: { select: { id: true, name: true, nameAr: true } },

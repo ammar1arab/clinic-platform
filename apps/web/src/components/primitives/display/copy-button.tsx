@@ -55,7 +55,7 @@ export function CopyButton({
       size="icon"
       aria-label={`${t.common.copyValue}: ${value}`}
       disabled={pending}
-      className="size-5 shrink-0 text-muted-foreground sm:opacity-0 sm:group-hover/contact:opacity-100 sm:group-hover/directory:opacity-100 sm:focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+      className="size-5 shrink-0 text-muted-foreground sm:opacity-0 sm:group-hover/contact:opacity-100 sm:group-hover/directory:opacity-100 sm:group-hover/card:opacity-100 sm:focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
       onClick={copy}
     >
       <IconCopy className="size-3" aria-hidden />

@@ -308,7 +308,7 @@ function refinePractitionerHours(
   });
 
   v.timeOffs.forEach((entry, index) => {
-    if (entry.startDate && entry.endDate && entry.startDate > entry.endDate) {
+    if (entry.startDate && entry.endDate && entry.startDate >= entry.endDate) {
       ctx.addIssue({
         path: ['timeOffs', index, 'endDate'],
         code: 'custom',
@@ -483,9 +483,22 @@ export const emailSettingsSchema = z.object({
   instagramUrl: emailLink,
   facebookUrl: emailLink,
   linkedinUrl: emailLink,
+  phone: internationalPhone,
   footerEn: z.string().max(1000),
   footerAr: z.string().max(1000),
 });
 
 export type EmailComposerValues = z.infer<typeof emailComposerSchema>;
 export type EmailSettingsValues = z.infer<typeof emailSettingsSchema>;
+
+export const scheduleRequestSchema = z.object({
+  kind: z.enum(['extra', 'leave', 'vacation']),
+  startAt: z.string().min(1, { error: () => getTranslations().scheduleRequests.rangeError }),
+  endAt: z.string().min(1, { error: () => getTranslations().scheduleRequests.rangeError }),
+  reason: z.string().trim().max(500, { error: () => getTranslations().scheduleRequests.reasonError }),
+}).refine((value) => {
+  const start = new Date(value.startAt).getTime();
+  const end = new Date(value.endAt).getTime();
+  return Number.isFinite(start) && Number.isFinite(end) && start > Date.now() && end > start && end - start <= 366 * 86400000;
+}, { path: ['endAt'], error: () => getTranslations().scheduleRequests.rangeError });
+export type ScheduleRequestData = z.infer<typeof scheduleRequestSchema>;

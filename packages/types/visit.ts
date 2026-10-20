@@ -38,7 +38,9 @@ export interface VisitSummary {
   appointmentId: string;
   visitId: string | null;
   patient: { id: string; name: string; nameAr: string | null; imageUrl: string | null };
-  practitioner: { id: string; name: string; nameAr: string | null };
+  practitioner: { id: string; name: string; nameAr: string | null; imageUrl: string | null };
+  service: { name: string; nameAr: string | null } | null;
+  room: { id: string; name: string; nameAr: string | null } | null;
   mode: SessionType;
   scheduledAt: string;
   durationMins: number;
@@ -100,8 +102,6 @@ export interface ClinicalNoteDTO {
   id: string;
   visitId: string;
   templateId: string;
-  templateVersionId: string;
-  templateVersion: number;
   sectionsSnapshot: ClinicalSection[];
   values: Record<string, ClinicalValue>;
   status: NoteStatus;
@@ -219,11 +219,9 @@ export interface VisitActions {
   confirmPresence: boolean;
 }
 export interface VisitWorkspace extends VisitSummary {
-  practitioner: VisitSummary["practitioner"] & { imageUrl: string | null };
   serverNow: string;
   clinicTimezone: string;
   visitRevision: number;
-  room: { id: string; name: string; nameAr: string | null } | null;
   meetingUrl: string | null;
   presenceConfirmedAt: string | null;
   documentationUnlock: {
@@ -247,7 +245,7 @@ export interface RevisionInput {
   expectedRevision: number;
 }
 export interface NoteDraftInput {
-  templateVersionId: string;
+  templateId: string;
   values: Record<string, ClinicalValue>;
   revision: number;
   acknowledgeTemplateChange?: boolean;
@@ -285,6 +283,8 @@ export interface VisitReversalInput {
 }
 export interface NotePreference {
   templateId: string | null;
+  effectiveTemplateId?: string | null;
+  clinicTemplateId?: string | null;
 }
 
 export const VISIT_ERROR_MESSAGES = {
@@ -348,9 +348,13 @@ export const VISIT_ERROR_MESSAGES = {
     en: "Template assignments must belong to this clinic.",
     ar: "يجب أن تنتمي تخصيصات القالب لهذه العيادة.",
   },
+  clinicalTemplateInUse: {
+    en: "This template is used by saved visit notes and cannot be deleted. Archive it instead.",
+    ar: "هذا القالب مستخدم في ملاحظات زيارات محفوظة ولا يمكن حذفه. يمكنك أرشفته بدلًا من ذلك.",
+  },
   clinicalTemplateNotFound: {
-    en: "Clinical template version not found.",
-    ar: "إصدار القالب الطبي غير موجود.",
+    en: "Clinical template not found.",
+    ar: "القالب الطبي غير موجود.",
   },
   clinicalTemplateUnavailable: {
     en: "This template is not available for this visit.",

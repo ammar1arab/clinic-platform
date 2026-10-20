@@ -1,4 +1,10 @@
 export const ENDPOINTS = {
+  NOTIFICATIONS: {
+    BASE: "/notifications",
+    PREFERENCES: "/notifications/preferences",
+    READ_ALL: "/notifications/read-all",
+    READ: (id: string) => `/notifications/${id}/read`,
+  },
   EMAILS: {
     BASE: "/emails",
     BY_ID: (id: string) => `/emails/${id}`,
@@ -84,6 +90,8 @@ export const ENDPOINTS = {
     REORDER: "/payment-methods/reorder",
   },
   PRACTITIONERS: {
+    SCHEDULE_REQUESTS: "/practitioners/schedule-requests",
+    SCHEDULE_REQUEST: (id: string) => `/practitioners/schedule-requests/${id}`,
     RESET_PASSWORD: (id: string) => `/practitioners/${id}/reset-password`,
     BASE: "/practitioners",
     BY_ID: (id: string) => `/practitioners/${id}`,
@@ -132,15 +140,15 @@ export const ENDPOINTS = {
     NOTE_PREFERENCE: "/practitioners/me/note-preference",
   },
   CLINICAL_NOTE_TEMPLATES: {
+    DEFAULT: "/clinical-note-templates/default",
     BASE: "/clinical-note-templates",
     BY_ID: (id: string) => `/clinical-note-templates/${id}`,
-    VERSIONS: (id: string) => `/clinical-note-templates/${id}/versions`,
     PUBLISH: (id: string) => `/clinical-note-templates/${id}/publish`,
     SCHEDULE: (id: string) => `/clinical-note-templates/${id}/schedule`,
     ARCHIVE: (id: string) => `/clinical-note-templates/${id}/archive`,
     CLONE: (id: string) => `/clinical-note-templates/${id}/clone`,
     AVAILABLE: "/clinical-note-templates/available",
-    STARTER: "/clinical-note-templates/starter",
+    STARTERS: "/clinical-note-templates/starters",
   },
   REPORTS: {
     PATIENT_MEDICAL: (patientId: string) => `/reports/patients/${patientId}`,

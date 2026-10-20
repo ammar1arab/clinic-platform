@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { useNow } from '@/hooks/shared/use-now';
 import { IconTime } from '@/constants/icons';
 import { cn } from '@/lib/utils';
+import { ClockReadout } from './clock-readout';
 import { useLanguage } from '@/providers';
 
 function pad(value: number) {
@@ -47,23 +48,24 @@ export function VisitTimer({
   const running = startedAt ? (finishedAt ? Date.parse(finishedAt) : official) - Date.parse(startedAt) : null;
   const remaining = running == null ? null : budget - running;
   const overtime = remaining != null && remaining < 0;
+  const shown = finishedAt ? formatClock(running ?? 0) : running == null ? formatClock(budget) : formatClock(Math.abs(remaining ?? 0));
 
   return (
     <div
       ref={bind}
       className={cn(
         'flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2 sm:px-4 sm:py-3',
-        compact && 'w-fit gap-3 rounded-lg border-0 bg-transparent p-0 sm:p-0',
+        compact && 'w-fit gap-1.5 rounded-lg border-0 bg-transparent p-0 sm:p-0',
         className,
       )}
     >
-      {compact ? <IconTime className="size-4 shrink-0 text-muted-foreground" /> : null}
+      {compact ? <IconTime className="size-4 shrink-0 text-muted-foreground max-sm:hidden" /> : null}
       <div className={cn("min-w-0", compact && "flex items-center gap-2")}>
         <p className={cn("text-[11px] font-medium text-muted-foreground sm:text-xs", compact && "sr-only sm:not-sr-only")}>
           {finishedAt ? t.visits.timerFinished : running == null ? t.visits.timerNotStarted : overtime ? t.visits.timerOvertime : t.visits.timerRemaining}
         </p>
         <p className={cn('font-heading text-xl font-semibold tabular-nums tracking-tight sm:text-3xl', compact && 'whitespace-nowrap text-sm sm:text-base', overtime && !finishedAt && 'text-warning')}>
-          {finishedAt ? formatClock(running ?? 0) : running == null ? formatClock(budget) : formatClock(Math.abs(remaining ?? 0))}
+          <ClockReadout main={shown.slice(0, -3)} minor={shown.slice(-3)} minorClassName="text-inherit" />
         </p>
       </div>
       <p className={cn("text-end text-[11px] text-muted-foreground sm:text-xs", compact && "hidden")}>

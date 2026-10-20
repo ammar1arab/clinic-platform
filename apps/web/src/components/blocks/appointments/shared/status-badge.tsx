@@ -11,7 +11,6 @@ export {
   getStatusConfig,
   STATUS_OPTIONS,
   STATUS_BADGE_VARIANT,
-  SCHEDULE_FILTER_STATUSES,
 } from '@/constants/appointment';
 
 type Props = {

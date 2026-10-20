@@ -31,9 +31,9 @@ export const workspaceInclude = {
     imageUrl: true, phone: true, dob: true, gender: true, allergies: true, bloodType: true,
   } },
   doctor: { select: { clinicId: true, name: true, nameAr: true, imageUrl: true } },
-  clinic: { select: { name: true, nameAr: true, timezone: true } },
+  clinic: { select: { name: true, nameAr: true, timezone: true, brandColor: true, logoUrl: true, letterheadFooter: true } },
   room: { select: { id: true, clinicId: true, name: true, nameAr: true } },
-  service: { select: { clinicId: true, name: true } },
+  service: { select: { clinicId: true, name: true, nameAr: true } },
   visit: { include: visitInclude },
 } satisfies Prisma.AppointmentInclude;
 export const summaryInclude = {
@@ -46,7 +46,9 @@ export const summaryInclude = {
       lastNameAr: true,
     },
   },
-  doctor: { select: { name: true, nameAr: true } },
+  doctor: { select: { name: true, nameAr: true, imageUrl: true } },
+  room: { select: { id: true, name: true, nameAr: true } },
+  service: { select: { name: true, nameAr: true } },
   visit: {
     select: {
       id: true,
@@ -96,27 +98,36 @@ export class VisitsRepository {
       }
     }
   }
+  private scope(actor: AuthUser, id: string): Prisma.AppointmentWhereInput {
+    return {
+      id, clinicId: actor.clinicId,
+      ...(actor.role === "practitioner" && { doctorId: actor.clinicUserId }),
+      patient: { clinicId: actor.clinicId },
+      doctor: { clinicId: actor.clinicId },
+      AND: [
+        { OR: [{ roomId: null }, { room: { clinicId: actor.clinicId } }] },
+        { OR: [{ serviceId: null }, { service: { clinicId: actor.clinicId } }] },
+      ],
+    };
+  }
+  async templateScope(tx: VisitTx, actor: AuthUser, id: string) {
+    const row = await tx.appointment.findFirst({
+      where: this.scope(actor, id),
+      select: { clinicId: true, doctorId: true, departmentId: true, serviceId: true },
+    });
+    if (!row) visitError("visitNotFound", 404);
+    return row;
+  }
   async appointment(
     tx: VisitTx,
     actor: AuthUser,
     id: string,
   ): Promise<WorkspaceRow> {
     const row = await tx.appointment.findFirst({
-      where: {
-        id,
-        clinicId: actor.clinicId,
-        ...(actor.role === "practitioner" && { doctorId: actor.clinicUserId }),
-      },
+      where: this.scope(actor, id),
       include: workspaceInclude,
     });
-    if (
-      !row ||
-      row.patient.clinicId !== actor.clinicId ||
-      row.doctor.clinicId !== actor.clinicId ||
-      (row.room && row.room.clinicId !== actor.clinicId) ||
-      (row.service && row.service.clinicId !== actor.clinicId)
-    )
-      visitError("visitNotFound", 404);
+    if (!row) visitError("visitNotFound", 404);
     return row;
   }
   async withAppointment<T>(

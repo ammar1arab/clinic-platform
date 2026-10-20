@@ -73,6 +73,7 @@ function SchedulePageInner() {
     "",
   );
 
+  const [pickerSlot, setPickerSlot] = useState<HTMLDivElement | null>(null);
   const [prevParam, setPrevParam] = useState<string | null>(null);
   if (viewParam !== prevParam) {
     setPrevParam(viewParam);
@@ -163,7 +164,7 @@ function SchedulePageInner() {
   );
 
   return (
-    <div className="page-fill gap-4">
+    <div className="page-fill gap-2.5">
       <div className="shrink-0">
       <ScheduleToolbar
         view={activeView}
@@ -175,6 +176,7 @@ function SchedulePageInner() {
         statusFilters={statusFilters}
         onToggleStatus={toggleStatus}
         onClearStatuses={clearStatuses}
+        pickerSlotRef={setPickerSlot}
         {...(!isPractitioner && {
           onNewPatient: () =>
             router.push(
@@ -204,6 +206,7 @@ function SchedulePageInner() {
               focused={focused}
               onSelectSlot={goNewAppointment}
               onEventClick={handleEventClick}
+              toolbarSlot={pickerSlot}
             />
           )}
         </ViewFocus>
@@ -216,6 +219,7 @@ function SchedulePageInner() {
               focused={focused}
               canManagePayments={!isPractitioner}
               onEventClick={handleEventClick}
+              toolbarSlot={pickerSlot}
             />
           )}
         </ViewFocus>
@@ -248,7 +252,7 @@ function SchedulePageInner() {
 function ScheduleFallback() {
   return (
     <div className="space-y-2">
-      <div className="card-aura space-y-2 rounded-xl border bg-card/90 p-2 sm:p-2.5">
+      <div className="card-aura space-y-1.5 rounded-xl border bg-card/90 p-1.5 sm:p-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="h-8 w-full rounded-lg bg-muted/60 sm:w-64" />
           <div className="flex gap-1.5">

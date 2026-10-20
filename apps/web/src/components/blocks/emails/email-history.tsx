@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useReducer } from "react";
 import {
-  EMAIL_DELIVERY_STATUS,
-  type EmailDeliveryStatus,
+  EMAIL_DELIVERY_GROUPS,
+  type EmailDeliveryGroup,
   type EmailHistoryInput,
   type EmailMessageSummary,
 } from "@clinic/types";
@@ -12,8 +12,6 @@ import {
   Badge,
   Button,
   Popover,
-  PopoverContent,
-  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -24,6 +22,8 @@ import {
   DatePicker,
   DIRECTORY_ACTION_CLASS,
   DirectoryToolbar,
+  FilterPanel,
+  FilterTrigger,
   EmptyState,
   DirectoryMeta,
   EntityMobileCard,
@@ -39,8 +39,6 @@ import {
 } from "@/components/primitives";
 import {
   IconAdd,
-  IconClose,
-  IconFilters,
   IconMail,
   IconSettings,
 } from "@/constants/icons";
@@ -48,7 +46,6 @@ import { ROUTES } from "@/constants/routes";
 import { useClinicId } from "@/hooks/shared/use-clinic-id";
 import { useEmailHistory } from "@/hooks/api/use-emails";
 import { useRouteNav } from "@/hooks/shared/use-route-nav";
-import { keepNestedPortals } from "@/lib/overlay";
 import { cn } from "@/lib/utils";
 import { getBilingualName } from "@/i18n";
 import { useLanguage } from "@/providers";
@@ -67,7 +64,7 @@ type HistoryState = {
   search: string;
   from: string;
   to: string;
-  status: EmailDeliveryStatus | typeof FILTER_ALL;
+  status: EmailDeliveryGroup | typeof FILTER_ALL;
   kind: (typeof MESSAGE_KIND)[keyof typeof MESSAGE_KIND];
 };
 
@@ -100,7 +97,7 @@ function historyReducer(
   return { ...state, page: 1, [action.type]: action.value };
 }
 
-const deliveryStatuses = Object.values(EMAIL_DELIVERY_STATUS);
+const deliveryStatuses = Object.keys(EMAIL_DELIVERY_GROUPS) as EmailDeliveryGroup[];
 
 function asDeliveryStatus(value: string): HistoryState["status"] {
   return deliveryStatuses.find((status) => status === value) ?? FILTER_ALL;
@@ -126,7 +123,7 @@ export function EmailHistory() {
     search: search || undefined,
     from: from || undefined,
     to: to ? `${to}T23:59:59.999Z` : undefined,
-    status: status === FILTER_ALL ? undefined : status,
+    group: status === FILTER_ALL ? undefined : status,
     isTest: kind === MESSAGE_KIND.ALL ? undefined : kind === MESSAGE_KIND.TEST,
   };
   const query = useEmailHistory(clinicId, filters, !invalidDates);
@@ -195,7 +192,7 @@ export function EmailHistory() {
   ];
 
   return (
-    <div className="page-fill gap-4">
+    <div className="page-fill gap-2.5">
       <div className="shrink-0">
         <DirectoryToolbar
           search={search}
@@ -207,47 +204,8 @@ export function EmailHistory() {
           actions={
             <>
               <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    aria-label={t.common.filters}
-                    className={cn(
-                      DIRECTORY_ACTION_CLASS,
-                      "border-border/70 bg-background/50",
-                      activeCount > 0 && "border-primary/35 bg-primary/5",
-                    )}
-                  >
-                    <IconFilters className="size-3.5 shrink-0 text-muted-foreground" />
-                    <span className="hidden font-semibold sm:inline">
-                      {t.common.filters}
-                    </span>
-                    {activeCount > 0 ? (
-                      <Badge
-                        variant="info"
-                        className="ms-0 h-5 min-w-5 justify-center px-1 text-xs"
-                      >
-                        {activeCount}
-                      </Badge>
-                    ) : null}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  align="end"
-                  className="w-80 max-h-[min(32rem,calc(100dvh-var(--app-header-height)-2rem))] space-y-3 overflow-y-auto"
-                  onInteractOutside={keepNestedPortals}
-                  onFocusOutside={keepNestedPortals}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{t.common.filters}</p>
-                    {activeCount > 0 ? (
-                      <Button variant="ghost" size="xs" onClick={resetFilters}>
-                        <IconClose className="size-3.5" />
-                        {t.common.clear}
-                      </Button>
-                    ) : null}
-                  </div>
+                <FilterTrigger count={activeCount} />
+                <FilterPanel count={activeCount} onClear={resetFilters}>
                   <div className="grid grid-cols-2 gap-3">
                     <FormField label={t.emails.from} labelClassName="text-xs">
                       <DatePicker
@@ -291,7 +249,7 @@ export function EmailHistory() {
                         <SelectItem value="all">
                           {t.emails.allStatuses}
                         </SelectItem>
-                        {Object.entries(t.emails.statuses).map(
+                        {Object.entries(t.emails.deliveryGroups).map(
                           ([key, label]) => (
                             <SelectItem key={key} value={key}>
                               {label}
@@ -328,7 +286,7 @@ export function EmailHistory() {
                       </SelectContent>
                     </Select>
                   </FormField>
-                </PopoverContent>
+                </FilterPanel>
               </Popover>
               <SoftTip label={t.emails.settings}>
                 <Button
@@ -363,7 +321,7 @@ export function EmailHistory() {
       {searchLoading && (
         <TableSkeleton
           className="page-fill"
-          rows={8}
+          rows={20}
           cols={6}
           hasHeader={false}
         />

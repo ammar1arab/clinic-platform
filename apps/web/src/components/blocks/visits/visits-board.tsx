@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
   APPOINTMENT_STATUS,
@@ -14,30 +15,32 @@ import {
   type NoteStatus,
   type VisitQueue,
   type VisitReportStatus,
+  type VisitSummary,
 } from '@clinic/types';
-import { Badge, Button, Card, CardContent, Popover, PopoverContent, PopoverTrigger, SelectItem, Skeleton } from '@/components/ui';
+import { Badge, Card, CardContent, Popover, SelectItem, Skeleton } from '@/components/ui';
 import {
   DatePicker,
   DirectoryToolbar,
-  DIRECTORY_ACTION_CLASS,
+  FilterPanel,
+  FilterTrigger,
   EmptyState,
-  EntityAvatar,
+  EntityMobileCard,
+  PreviewableAvatar,
   ErrorState,
   FilterSelect,
   FormField,
   Pagination,
   SearchablePicker,
 } from '@/components/primitives';
-import { IconClinicalRecord, IconClose, IconFilters, IconInPerson, IconOnline } from '@/constants/icons';
+import { IconClinicalRecord, IconInPerson, IconOnline } from '@/constants/icons';
 import { StatusBadgeBlock } from '@/components/blocks/appointments/shared/status-badge';
 import { ROUTES } from '@/constants/routes';
-import { keepNestedPortals } from '@/lib/overlay';
 import { cn } from '@/lib/utils';
 import { getBilingualName } from '@/i18n';
 import { formatDate, formatTime } from '@/lib/datetime';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { usePractitionerDirectory } from '@/hooks/api/use-practitioners';
-import { useVisits } from '@/hooks/api/use-visits';
+import { usePrefetchVisitWorkspace, useVisits } from '@/hooks/api/use-visits';
 import { useAuth, useLanguage } from '@/providers';
 
 const NOTE_FILTERS = Object.values(NOTE_STATUS);
@@ -47,8 +50,10 @@ const QUEUE_FILTERS = Object.values(VISIT_QUEUE);
 
 export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialReportStatus }: { initialNoteStatus?: NoteStatus; initialInvoiceStatus?: InvoiceStatus; initialReportStatus?: VisitReportStatus }) {
   const { lang, t } = useLanguage();
+  const router = useRouter();
   const { user } = useAuth();
   const clinicId = useClinicId();
+  const prefetchWorkspace = usePrefetchVisitWorkspace();
   const staffView = user?.role !== ROLE.PRACTITIONER;
   const [search, setSearch] = useState('');
   const [practitionerId, setPractitionerId] = useState('');
@@ -98,47 +103,15 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
   };
 
   return (
-    <div className="page-fill gap-4">
+    <div className="page-fill gap-2.5">
       <DirectoryToolbar
         search={search}
         onSearchChange={(value) => { setSearch(value); resetPage(); }}
         searchPlaceholder={t.common.search}
         actions={
           <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                aria-label={t.common.filters}
-                className={cn(
-                  DIRECTORY_ACTION_CLASS,
-                  'border-border/70 bg-background/50',
-                  activeCount > 0 && 'border-primary/35 bg-primary/5',
-                )}
-              >
-                <IconFilters className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="hidden font-semibold sm:inline">{t.common.filters}</span>
-                {activeCount > 0 ? (
-                  <Badge variant="info" className="ms-0 h-5 min-w-5 justify-center px-1 text-xs">{activeCount}</Badge>
-                ) : null}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-80 max-h-[min(32rem,calc(100dvh-var(--app-header-height)-2rem))] space-y-3 overflow-y-auto"
-              onInteractOutside={keepNestedPortals}
-              onFocusOutside={keepNestedPortals}
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{t.common.filters}</p>
-                {activeCount > 0 ? (
-                  <Button variant="ghost" size="xs" onClick={resetFilters}>
-                    <IconClose className="size-3.5" />
-                    {t.common.clear}
-                  </Button>
-                ) : null}
-              </div>
+            <FilterTrigger count={activeCount} />
+            <FilterPanel count={activeCount} onClear={resetFilters}>
               <FilterSelect label={t.visits.workQueue} value={queue} onChange={(value) => { setQueue(value as VisitQueue | ''); setAppointmentStatus(''); setNoteStatus(''); setReportStatus(''); setInvoiceStatus(''); resetPage(); }}>
                 {QUEUE_FILTERS.map((item) => <SelectItem key={item} value={item}>{t.visits.queues[item]}</SelectItem>)}
               </FilterSelect>
@@ -167,13 +140,15 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
               <FilterSelect label={t.visits.invoiceStatus} value={invoiceStatus} onChange={(value) => { setQueue(''); setInvoiceStatus(value); resetPage(); }}>
                 {INVOICE_FILTERS.map((status) => <SelectItem key={status} value={status}>{t.visits.invoiceStatuses[status]}</SelectItem>)}
               </FilterSelect>
-              <FormField label={t.visits.from} labelClassName="text-xs">
-                <DatePicker value={from} onChange={(value) => { setFrom(value); resetPage(); }} placeholder={t.visits.from} />
-              </FormField>
-              <FormField label={t.visits.to} labelClassName="text-xs">
-                <DatePicker value={to} onChange={(value) => { setTo(value); resetPage(); }} placeholder={t.visits.to} />
-              </FormField>
-            </PopoverContent>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label={t.visits.from} labelClassName="text-xs">
+                  <DatePicker value={from} onChange={(value) => { setFrom(value); resetPage(); }} placeholder={t.visits.from} />
+                </FormField>
+                <FormField label={t.visits.to} labelClassName="text-xs">
+                  <DatePicker value={to} onChange={(value) => { setTo(value); resetPage(); }} placeholder={t.visits.to} />
+                </FormField>
+              </div>
+            </FilterPanel>
           </Popover>
         }
       />
@@ -181,46 +156,69 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
       {visits.isError ? (
         <ErrorState onRetry={() => void visits.refetch()} className="page-fill" />
       ) : visits.isLoading ? (
-        <div className="page-fill gap-4" aria-busy="true">
-          {Array.from({ length: 4 }, (_, index) => (
-            <Card key={index} className="shrink-0 gap-0 py-0">
+        <div className="page-fill gap-6 overflow-hidden" aria-busy="true">
+          {Array.from({ length: 12 }, (_, index) => (
+            <div key={index} className="visit-chain relative">
+              <EntityMobileCard className="lg:hidden" title={<Skeleton className="h-5 w-32" />} avatar={<Skeleton className="size-6 rounded-full" />} subtitle={<div className="space-y-1.5"><Skeleton className="h-4 w-36 max-w-full" /><div className="flex items-center gap-1.5"><Skeleton className="size-6 shrink-0 rounded-full" /><Skeleton className="h-4 w-24 max-w-full" /></div></div>} actions={<div className="flex flex-col items-end gap-1"><Skeleton className="h-5 w-20 rounded-full" /><Skeleton className="h-5 w-28 rounded-full" /></div>} footer={<><div className="mt-3 grid grid-cols-2 gap-3 border-t pt-3 sm:grid-cols-4">{[0, 1, 2, 3].map((cell) => <div key={cell} className="space-y-1"><Skeleton className="h-4 w-16" /><Skeleton className="h-4 w-20" /></div>)}</div></>} />
+            <Card className="hidden shrink-0 gap-0 py-0 lg:flex">
               <CardContent className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-3 p-3 sm:p-4 xl:grid-cols-[6rem_minmax(0,1fr)_minmax(24rem,1fr)]">
                 <div className="flex min-h-12 flex-col items-center justify-center gap-1 border-e border-border/70 pe-3"><Skeleton className="h-5 w-16 max-w-full" /><Skeleton className="h-4 w-8" /></div>
-                <div className="space-y-1.5"><div className="flex items-center gap-2"><Skeleton className="size-6 shrink-0 rounded-full" /><Skeleton className="h-5 w-36 max-w-full" /></div><Skeleton className="h-4 w-2/3" /><Skeleton className="h-4 w-16" /></div>
-                <div className="col-span-2 grid grid-cols-3 gap-3 border-t border-border/60 pt-3 xl:col-span-1 xl:border-t-0 xl:border-s xl:ps-4 xl:pt-0">{[0, 1, 2].map((cell) => <div key={cell} className="space-y-1"><Skeleton className="h-4 w-14 max-w-full" /><Skeleton className="h-4 w-20 max-w-full" /></div>)}</div>
+                <div className="space-y-1.5"><Skeleton className="h-5 w-36 max-w-full" /><Skeleton className="h-4 w-2/3" /><Skeleton className="h-4 w-16" /></div>
+                <div className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border/60 pt-3 sm:grid-cols-4 xl:col-span-1 xl:border-t-0 xl:border-s xl:ps-4 xl:pt-0">{[0, 1, 2, 3].map((cell) => <div key={cell} className="space-y-1"><Skeleton className="h-4 w-14 max-w-full" /><Skeleton className="h-4 w-20 max-w-full" /></div>)}</div>
               </CardContent>
             </Card>
+            </div>
           ))}
         </div>
       ) : !visits.data?.items.length ? (
         <EmptyState icon={IconClinicalRecord} title={t.visits.empty} description={t.visits.emptyDesc} className="page-fill" />
       ) : (
         <div className="page-fill min-h-0 gap-3">
-          <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto">
             {visits.data.items.map((item) => (
-              <Link key={item.appointmentId} href={ROUTES.VISIT(item.appointmentId)} className="block rounded-xl focus-visible:outline focus-visible:outline-ring">
-                <Card className="gap-0 py-0 transition-colors hover:bg-muted/40">
-                  <CardContent className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 xl:grid-cols-[6rem_minmax(0,1fr)_minmax(24rem,1fr)] sm:p-4">
-                    <div className="flex min-h-12 flex-col items-center justify-center gap-1 border-e border-border/70 pe-3 text-center">
-                      <p className="whitespace-nowrap text-sm font-semibold tabular-nums">{formatTime(item.scheduledAt, undefined, lang)}</p>
-                      <p className="whitespace-nowrap text-[11px] leading-4 text-muted-foreground">{t.visits.plannedDuration.replace('{minutes}', String(item.durationMins))}</p>
+              <div key={item.appointmentId} className="visit-chain relative">
+                <EntityMobileCard className={cn('lg:hidden', item.appointmentStatus === APPOINTMENT_STATUS.IN_PROGRESS && 'border border-primary/40 bg-primary/5')}
+                  title={getBilingualName(item.patient.name, item.patient.nameAr, lang)}
+                  avatar={<span onClick={(event) => event.stopPropagation()}><PreviewableAvatar src={item.patient.imageUrl} seed={item.patient.id} size="sm" /></span>}
+                  subtitle={<div className="space-y-1.5 whitespace-normal">
+                    <p>{formatDate(item.scheduledAt, undefined, lang)} · {formatTime(item.scheduledAt, undefined, lang)}</p>
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <span onClick={(event) => event.stopPropagation()}><PreviewableAvatar src={item.practitioner.imageUrl} seed={item.practitioner.id} size="sm" /></span>
+                      <span className="min-w-0 break-words">{getBilingualName(item.practitioner.name, item.practitioner.nameAr, lang)}</span>
                     </div>
-                    <div className="min-w-0 space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <div className="flex min-w-0 items-center gap-2"><EntityAvatar src={item.patient.imageUrl} seed={item.patient.id} size="sm" /><p className="truncate font-semibold">{getBilingualName(item.patient.name, item.patient.nameAr, lang)}</p></div>
-                        <StatusBadgeBlock status={item.appointmentStatus} tip={false} />
-                      </div>
-                      <p className="text-xs text-muted-foreground">{formatDate(item.scheduledAt, undefined, lang)} · {getBilingualName(item.practitioner.name, item.practitioner.nameAr, lang)}</p>
-                      <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">{item.mode === SESSION_TYPE.ONLINE ? <IconOnline className="size-3.5" /> : <IconInPerson className="size-3.5" />}{item.mode === SESSION_TYPE.ONLINE ? t.visits.online : t.visits.inPerson}</p>
+                  </div>}
+                  actions={<div className="flex max-w-36 flex-col items-end gap-1">
+                    <StatusBadgeBlock status={item.appointmentStatus} tip={false} />
+                    <Badge variant="muted">{item.mode === SESSION_TYPE.ONLINE ? t.visits.online : t.visits.inPerson}{item.room ? ` · ${getBilingualName(item.room.name, item.room.nameAr, lang)}` : ''}</Badge>
+                  </div>}
+                  footer={<>
+                    <VisitCardMeta item={item} className="mt-3 grid grid-cols-2 gap-3 border-t pt-3 text-xs sm:grid-cols-4" />
+                  </>}
+                  onClick={() => router.push(ROUTES.VISIT(item.appointmentId))}
+                  onMouseEnter={() => prefetchWorkspace(item.appointmentId)} onFocus={() => prefetchWorkspace(item.appointmentId)}
+                />
+              <Card aura={item.appointmentStatus !== APPOINTMENT_STATUS.IN_PROGRESS} className={cn(
+                'relative hidden gap-0 py-0 transition-colors hover:bg-muted/40 lg:flex',
+                item.appointmentStatus === APPOINTMENT_STATUS.IN_PROGRESS && 'border border-primary/40 bg-primary/5 ring-0',
+              )}>
+                <Link href={ROUTES.VISIT(item.appointmentId)} onMouseEnter={() => prefetchWorkspace(item.appointmentId)} onFocus={() => prefetchWorkspace(item.appointmentId)} aria-label={getBilingualName(item.patient.name, item.patient.nameAr, lang)} className="absolute inset-0 z-10 rounded-xl focus-visible:outline focus-visible:outline-ring" />
+                <CardContent className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 xl:grid-cols-[6rem_minmax(0,1fr)_minmax(24rem,1fr)] sm:p-4">
+                  <div className="flex min-h-12 flex-col items-center justify-center gap-1 border-e border-border/70 pe-3 text-center">
+                    <p className="whitespace-nowrap text-sm font-semibold tabular-nums">{formatTime(item.scheduledAt, undefined, lang)}</p>
+                    <p className="whitespace-nowrap text-[11px] leading-4 text-muted-foreground">{t.visits.plannedDuration.replace('{minutes}', String(item.durationMins))}</p>
+                  </div>
+                  <div className="min-w-0 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <div className="flex min-w-0 items-center gap-2"><span className="relative z-20 inline-flex"><PreviewableAvatar src={item.patient.imageUrl} seed={item.patient.id} size="sm" /></span><p className="truncate font-semibold">{getBilingualName(item.patient.name, item.patient.nameAr, lang)}</p></div>
+                      <StatusBadgeBlock status={item.appointmentStatus} tip={false} />
                     </div>
-                    <dl className="col-span-2 grid grid-cols-3 gap-3 border-t border-border/60 pt-3 text-xs xl:col-span-1 xl:border-t-0 xl:border-s xl:ps-4 xl:pt-0">
-                      <div className="min-w-0 space-y-1"><dt className="text-muted-foreground">{t.visits.note}</dt><dd className={cn('font-medium', item.noteStatus === NOTE_STATUS.LOCKED && 'text-warning')}>{t.visits.noteStatuses[item.noteStatus]}</dd></div>
-                      <div className="min-w-0 space-y-1"><dt className="text-muted-foreground">{t.visits.report}</dt><dd className="font-medium">{t.visits.reportStatuses[item.reportStatus]}</dd></div>
-                      <div className="min-w-0 space-y-1"><dt className="text-muted-foreground">{t.visits.invoice}</dt><dd className={cn('font-medium', item.invoiceStatus === INVOICE_STATUS.AWAITING_REVIEW && 'text-warning')}>{t.visits.invoiceStatuses[item.invoiceStatus]}</dd></div>
-                    </dl>
-                  </CardContent>
-                </Card>
-              </Link>
+                    <p className="text-xs text-muted-foreground">{formatDate(item.scheduledAt, undefined, lang)} · {getBilingualName(item.practitioner.name, item.practitioner.nameAr, lang)}</p>
+                    <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">{item.mode === SESSION_TYPE.ONLINE ? <IconOnline className="size-3.5" /> : <IconInPerson className="size-3.5" />}{item.mode === SESSION_TYPE.ONLINE ? t.visits.online : t.visits.inPerson}{item.room ? ` · ${getBilingualName(item.room.name, item.room.nameAr, lang)}` : ''}</p>
+                  </div>
+                  <VisitCardMeta item={item} className="col-span-2 grid grid-cols-2 gap-x-3 gap-y-3 border-t border-border/60 pt-3 text-xs sm:grid-cols-4 xl:col-span-1 xl:border-t-0 xl:pt-0" />
+                </CardContent>
+              </Card>
+              </div>
             ))}
           </div>
           <Pagination page={visits.data.page} pageCount={Math.ceil(visits.data.total / visits.data.limit)} totalItems={visits.data.total} pageSize={visits.data.limit} onPageChange={setPage} />
@@ -228,4 +226,17 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
       )}
     </div>
   );
+}
+
+function VisitCardMeta({ item, className }: { item: VisitSummary; className: string }) {
+  const { t, lang } = useLanguage();
+  const details = [
+    { label: t.entities.service, value: item.service ? getBilingualName(item.service.name, item.service.nameAr, lang) : t.appointments.generalVisit },
+    { label: t.visits.note, value: t.visits.noteStatuses[item.noteStatus], warning: item.noteStatus === NOTE_STATUS.LOCKED },
+    { label: t.visits.report, value: t.visits.reportStatuses[item.reportStatus] },
+    { label: t.visits.invoice, value: t.visits.invoiceStatuses[item.invoiceStatus], warning: item.invoiceStatus === INVOICE_STATUS.AWAITING_REVIEW },
+  ];
+  return <dl className={className}>{details.map((detail) => (
+    <div key={detail.label} className="min-w-0 space-y-1 border-s border-border/70 ps-3"><dt className="text-muted-foreground">{detail.label}</dt><dd className={cn('break-words font-medium', detail.warning && 'text-warning')}>{detail.value}</dd></div>
+  ))}</dl>;
 }

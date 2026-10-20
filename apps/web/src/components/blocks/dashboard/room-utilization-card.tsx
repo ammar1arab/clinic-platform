@@ -3,14 +3,10 @@
 import { useMemo, useState } from 'react';
 import {
   Card,
-  CardAction,
   CardContent,
-  CardHeader,
-  CardTitle,
   Skeleton,
 } from '@/components/ui';
 import { EmptyState } from '@/components/primitives';
-import { ViewFocusToggle } from '@/components/blocks/appointments';
 import { RoomUtilization } from '@/services/dashboard.service';
 import { cn } from '@/lib/utils';
 import { IconChevronDown, IconRoom } from '@/constants/icons';
@@ -48,6 +44,7 @@ export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: 
   const { data: departments } = useDepartments(clinicId);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
 
+  const unassigned = t.dashboard.unassignedDepartment;
   const groups = useMemo(() => {
     if (!rooms?.length) return [];
 
@@ -65,7 +62,7 @@ export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: 
         ? getBilingualName(department.name, department.nameAr, lang)
         : room.departmentName
           ? getBilingualName(room.departmentName, room.departmentNameAr, lang)
-          : t.dashboard.unassignedDepartment;
+          : unassigned;
       const key = departmentId ?? (label || '__unassigned__');
 
       const existing = map.get(key);
@@ -77,12 +74,12 @@ export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: 
     }
 
     return Array.from(map.values()).sort((a, b) => {
-      const aUnassigned = a.label === t.dashboard.unassignedDepartment;
-      const bUnassigned = b.label === t.dashboard.unassignedDepartment;
+      const aUnassigned = a.label === unassigned;
+      const bUnassigned = b.label === unassigned;
       if (aUnassigned !== bUnassigned) return aUnassigned ? 1 : -1;
       return a.label.localeCompare(b.label, lang);
     });
-  }, [rooms, catalogRooms, departments, lang, t.dashboard.unassignedDepartment]);
+  }, [rooms, catalogRooms, departments, lang, unassigned]);
 
   const toggle = (key: string) => {
     setCollapsed((current) => {
@@ -95,15 +92,28 @@ export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: 
 
   return (
     <Card className={cn('page-fill', focused && 'rounded-none')}>
-      <CardHeader className="shrink-0">
-        <CardTitle className="text-sm">{t.dashboard.roomUtilizationToday}</CardTitle>
-        <CardAction>
-          <ViewFocusToggle />
-        </CardAction>
-      </CardHeader>
       <CardContent className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-y-contain">
         {isLoading &&
-          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
+          Array.from({ length: 4 }).map((_, group) => (
+            <section key={group} aria-hidden="true">
+              <div className="flex items-center gap-1.5 border-b border-border/60 pb-1.5">
+                <Skeleton className="size-3 shrink-0 rounded-sm" />
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="ms-auto h-3 w-4" />
+              </div>
+              <div className="space-y-3 pt-3">
+                {Array.from({ length: 3 }).map((__, room) => (
+                  <div key={room} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-8" />
+                    </div>
+                    <Skeleton className="h-2.5 w-full rounded-full" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
 
         {!isLoading && rooms?.length === 0 && (
           <EmptyState icon={IconRoom} title={t.settings.noRooms} size="compact" />

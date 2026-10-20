@@ -2,6 +2,8 @@
 
 import {
   EMAIL_DELIVERY_STATUS,
+  EMAIL_DELIVERY_GROUPS,
+  type EmailDeliveryGroup,
   type EmailDeliveryStatus,
   type EmailMessageSummary,
   type EmailPreviewResponse,
@@ -55,11 +57,14 @@ export function EmailDeliveryCounts({
 }: {
   counts: EmailMessageSummary["counts"];
 }) {
+  const { t } = useLanguage();
+  const variants = { pending: 'warning', sent: 'success', attention: 'destructive', skipped: 'muted' } as const;
   return (
     <div className="flex flex-wrap gap-1.5">
-      {(Object.keys(counts) as EmailDeliveryStatus[]).map((status) => (
-        <EmailStatus key={status} status={status} count={counts[status]} />
-      ))}
+      {(Object.keys(EMAIL_DELIVERY_GROUPS) as EmailDeliveryGroup[]).map((group) => {
+        const count = EMAIL_DELIVERY_GROUPS[group].reduce((sum, status) => sum + (counts[status] ?? 0), 0);
+        return count > 0 ? <Badge key={group} variant={variants[group]}>{t.emails.deliveryGroups[group]} {count}</Badge> : null;
+      })}
     </div>
   );
 }
@@ -169,7 +174,7 @@ export function EmailPreviewPane({
   return (
     <div
       data-email-preview
-      className="flex h-[calc(100dvh-var(--app-header-height)-2*var(--app-main-pad-y)-3.5rem)] min-h-0 min-w-0 flex-col"
+      className="flex h-[calc(100dvh-var(--app-header-height)-2*var(--app-main-pad-y)-3.5rem)] min-h-0 min-w-0 flex-col lg:h-[calc(100cqh-4px)]"
       dir={dir}
     >
       {empty ? (

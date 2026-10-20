@@ -17,6 +17,7 @@ import {
 import {
   countryLabel,
   ContactLine,
+  IconCard,
   PhoneLink,
   PreviewableAvatar,
   RowActionsMenu,
@@ -37,7 +38,7 @@ import {
   useReactivatePractitioner,
 } from '@/hooks/api/use-practitioners';
 import { calcAge } from '@/lib/age';
-import { formatDate, formatTimeRange } from '@/lib/datetime';
+import { formatDate, formatDateTime, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
 import { IconMail, IconActivate, IconCalendar, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
 import { useAuth, useLanguage } from '@/providers';
@@ -362,7 +363,7 @@ export function PractitionerProfile({
               {practitioner.timeOffs.map((block, index) => (
                 <ProfileSoftRow
                   key={block.id ?? `${block.startDate}-${index}`}
-                  title={`${formatDate(block.startDate, undefined, lang)} - ${formatDate(block.endDate, undefined, lang)}`}
+                  title={`${formatDateTime(block.startDate, undefined, lang)} - ${formatDateTime(block.endDate, undefined, lang)}`}
                   detail={block.reason}
                 />
               ))}
@@ -393,6 +394,7 @@ export function PractitionerProfile({
         finalWarning={t.practitioner.deleteWarning2}
         confirmLabel={t.practitioner.deleteConfirm}
       />}
+      {canManage && <IconCard icon={IconCalendar} title={t.scheduleRequests.title} description={t.scheduleRequests.navigationDescription} href={`${ROUTES.SETTINGS_SCHEDULE_REQUESTS}?doctorId=${encodeURIComponent(practitioner.id)}`} />}
     </ProfileShell>
   );
 }

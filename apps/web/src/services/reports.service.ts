@@ -45,7 +45,6 @@ async function downloadReport(path: string, fallbackName: string) {
 }
 
 function extFor(format: ReportFormat) {
-  if (format === "xlsx") return "xls";
   return format;
 }
 

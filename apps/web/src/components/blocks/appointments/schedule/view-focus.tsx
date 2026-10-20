@@ -8,7 +8,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Button } from '@/components/ui';
 import { SoftTip } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
@@ -62,29 +61,27 @@ function applyViewFocus(on: boolean) {
   else document.documentElement.removeAttribute('data-view-focus');
 }
 
-export function ViewFocusToggle({ className }: { className?: string }) {
+function ViewFocusHandle() {
   const api = useViewFocusControls();
   const { t } = useLanguage();
   if (!api) return null;
+  const label = api.focused ? t.layout.exitFocus : t.layout.focusView;
 
   return (
-    <SoftTip label={api.focused ? t.layout.exitFocus : t.layout.focusView}>
-      <Button
+    <SoftTip label={label} side="left">
+      <button
         type="button"
-        variant="outline"
-        size="icon-sm"
         onClick={api.focused ? api.exit : api.enter}
-        aria-label={api.focused ? t.layout.exitFocus : t.layout.focusView}
+        aria-label={label}
         aria-pressed={api.focused}
         className={cn(
-          'size-8 shrink-0 rounded-lg border-border/70 bg-background/80 text-muted-foreground shadow-2xs',
-          'hover:border-primary/40 hover:bg-card hover:text-foreground active:scale-95',
-          api.focused && 'border-primary/50 bg-card text-foreground',
-          className,
+          'absolute end-0 top-0 z-30 grid h-10 w-3.5 cursor-pointer place-items-center rounded-s-lg border border-e-0 border-border/60 bg-card/80 text-muted-foreground/80 sm:w-4',
+          'transition-[width,color,background-color] duration-(--overlay-duration) ease-(--overlay-ease) hover:w-6 hover:bg-card hover:text-foreground focus-visible:w-6 focus-visible:outline-none motion-reduce:transition-none',
+          api.focused && 'text-foreground',
         )}
       >
-        {api.focused ? <IconMinimize className="size-3.5" /> : <IconMaximize className="size-3.5" />}
-      </Button>
+        {api.focused ? <IconMinimize className="size-3" /> : <IconMaximize className="size-3" />}
+      </button>
     </SoftTip>
   );
 }
@@ -136,6 +133,7 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
         <div className="page-fill">
           {content}
         </div>
+        <ViewFocusHandle />
       </div>
     </ViewFocusContext.Provider>
   );

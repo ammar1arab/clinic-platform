@@ -139,7 +139,10 @@ export function summary(
       id: row.doctorId,
       name: row.doctor.name,
       nameAr: row.doctor.nameAr,
+      imageUrl: row.doctor.imageUrl,
     },
+    service: row.service ? { name: row.service.name, nameAr: row.service.nameAr } : null,
+    room: row.room ? { id: row.room.id, name: row.room.name, nameAr: row.room.nameAr } : null,
     mode: row.sessionType,
     scheduledAt: row.scheduledAt.toISOString(),
     durationMins: row.durationMins,
@@ -181,8 +184,6 @@ export function workspaceDto(
           id: visit.note.id,
           visitId: visit.id,
           templateId: visit.note.templateId,
-          templateVersionId: visit.note.templateVersionId,
-          templateVersion: visit.note.templateVersion,
           sectionsSnapshot: visit.note
             .sectionsSnapshot as unknown as ClinicalSection[],
           values: visit.note.values as Record<string, ClinicalValue>,
@@ -232,7 +233,6 @@ export function workspaceDto(
   const visitSummary = summary(row, now);
   return {
     ...visitSummary,
-    practitioner: { ...visitSummary.practitioner, imageUrl: row.doctor.imageUrl },
     serverNow: now.toISOString(),
     clinicTimezone: row.clinic.timezone,
     visitRevision: visit?.revision ?? 0,

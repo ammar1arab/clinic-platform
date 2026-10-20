@@ -151,7 +151,7 @@ export default function PractitionersPage() {
     filters.experience !== 'all';
 
   return (
-    <div className="page-fill gap-4">
+    <div className="page-fill gap-2.5">
       <div className="shrink-0">
         <PractitionerFiltersBlock
           values={filters}

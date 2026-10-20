@@ -56,7 +56,7 @@ export function useHoursFields(control: Control<PractitionerHoursData>) {
         () => availabilityOverrides.remove(index),
       ),
     onAddLeave: () =>
-      timeOffs.append({ startDate: today, endDate: today, reason: '' }),
+      timeOffs.append({ startDate: `${today}T09:00`, endDate: `${today}T17:00`, reason: '' }),
     onRemoveLeave: (index: number) =>
       askRemove(
         t.practitioner.removeLeaveTitle,

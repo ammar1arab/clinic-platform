@@ -3,24 +3,30 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  Footer,
+  ImageRun,
+  PageNumber,
   Packer,
   PageOrientation,
   Paragraph,
   Table,
   TableCell,
   TableRow,
+  TableLayoutType,
   TextRun,
   WidthType,
 } from "docx";
+import { reportLogo } from "../utils/report-logo";
 import { ReportDocument } from "../types/report-document";
 import { ExportedReport, ReportExporter } from "./report-exporter";
 import {
-  REPORT_THEME,
+  reportTheme,
   cellText,
   chunkColumns,
   letterheadLines,
   metaLine,
   useLandscape,
+  proportionalWidths,
 } from "../utils/report-theme";
 
 @Injectable()
@@ -28,6 +34,8 @@ export class WordExporter implements ReportExporter {
   readonly format = "docx" as const;
 
   async export(source: ReportDocument): Promise<ExportedReport> {
+    const logo = await reportLogo(source.letterhead.logoUrl);
+    const theme = reportTheme(source.letterhead.brandColor);
     const landscape = useLandscape(source.columns.length);
     const parts = chunkColumns(source, landscape ? 8 : 6);
 
@@ -42,22 +50,42 @@ export class WordExporter implements ReportExporter {
               top: {
                 style: BorderStyle.SINGLE,
                 size: 6,
-                color: REPORT_THEME.rule.replace("#", ""),
+                color: theme.rule.replace("#", ""),
                 space: 8,
               },
             },
           }),
         );
       }
-      children.push(...this.buildPart(doc, index === 0));
+      children.push(...this.buildPart(doc, index === 0, logo));
     });
 
     const document = new Document({
       creator: "Cureva Clinic",
       title: source.title,
       description: metaLine(source),
+      styles: {
+        default: { document: { run: { font: "DejaVu Sans", size: 18 } } },
+      },
       sections: [
         {
+          footers: {
+            default: new Footer({
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.CENTER,
+                  children: [
+                    new TextRun({
+                      text: `${source.letterhead.footer?.trim() || source.letterhead.clinicName + " · Confidential"}   ·   `,
+                      color: theme.muted.replace("#", ""),
+                      size: 14,
+                    }),
+                    new TextRun({ children: [PageNumber.CURRENT], size: 14 }),
+                  ],
+                }),
+              ],
+            }),
+          },
           properties: {
             page: {
               size: {
@@ -87,9 +115,27 @@ export class WordExporter implements ReportExporter {
     };
   }
 
-  private buildPart(doc: ReportDocument, includeSummary: boolean) {
+  private buildPart(
+    doc: ReportDocument,
+    includeSummary: boolean,
+    logo?: Buffer,
+  ) {
+    const theme = reportTheme(doc.letterhead.brandColor);
     const children: (Paragraph | Table)[] = [];
     const head = letterheadLines(doc);
+    if (logo)
+      children.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new ImageRun({
+              type: "png",
+              data: logo,
+              transformation: { width: 100, height: 50 },
+            }),
+          ],
+        }),
+      );
 
     children.push(
       new Paragraph({
@@ -99,7 +145,7 @@ export class WordExporter implements ReportExporter {
           new TextRun({
             text: head[0] ?? doc.letterhead.clinicName,
             bold: true,
-            color: REPORT_THEME.ink.replace("#", ""),
+            color: theme.ink.replace("#", ""),
             size: 28,
           }),
         ],
@@ -114,7 +160,7 @@ export class WordExporter implements ReportExporter {
           children: [
             new TextRun({
               text: head.slice(1).join("  ·  "),
-              color: REPORT_THEME.muted.replace("#", ""),
+              color: theme.muted.replace("#", ""),
               size: 16,
             }),
           ],
@@ -127,7 +173,7 @@ export class WordExporter implements ReportExporter {
         alignment: AlignmentType.CENTER,
         border: {
           bottom: {
-            color: REPORT_THEME.rule.replace("#", ""),
+            color: theme.rule.replace("#", ""),
             space: 4,
             style: BorderStyle.SINGLE,
             size: 8,
@@ -146,7 +192,7 @@ export class WordExporter implements ReportExporter {
           new TextRun({
             text: doc.title,
             bold: true,
-            color: REPORT_THEME.ink.replace("#", ""),
+            color: theme.ink.replace("#", ""),
             size: 22,
           }),
         ],
@@ -160,7 +206,7 @@ export class WordExporter implements ReportExporter {
         children: [
           new TextRun({
             text: metaLine(doc),
-            color: REPORT_THEME.muted.replace("#", ""),
+            color: theme.muted.replace("#", ""),
             size: 16,
           }),
         ],
@@ -176,7 +222,7 @@ export class WordExporter implements ReportExporter {
               text: "Summary",
               bold: true,
               size: 18,
-              color: REPORT_THEME.ink.replace("#", ""),
+              color: theme.ink.replace("#", ""),
             }),
           ],
         }),
@@ -190,12 +236,12 @@ export class WordExporter implements ReportExporter {
                 text: `${item.label}: `,
                 bold: true,
                 size: 16,
-                color: REPORT_THEME.muted.replace("#", ""),
+                color: theme.muted.replace("#", ""),
               }),
               new TextRun({
                 text: item.value || "—",
                 size: 16,
-                color: REPORT_THEME.ink.replace("#", ""),
+                color: theme.ink.replace("#", ""),
               }),
             ],
           }),
@@ -206,40 +252,15 @@ export class WordExporter implements ReportExporter {
 
     children.push(this.buildTable(doc));
 
-    const footerText =
-      doc.letterhead.footer?.trim() ||
-      `${doc.letterhead.clinicName} · Confidential`;
-
-    children.push(
-      new Paragraph({
-        spacing: { before: 240 },
-        alignment: AlignmentType.CENTER,
-        border: {
-          top: {
-            color: REPORT_THEME.rule.replace("#", ""),
-            space: 8,
-            style: BorderStyle.SINGLE,
-            size: 6,
-          },
-        },
-        children: [
-          new TextRun({
-            text: footerText,
-            size: 14,
-            color: REPORT_THEME.muted.replace("#", ""),
-          }),
-        ],
-      }),
-    );
-
     return children;
   }
 
   private buildTable(doc: ReportDocument): Table {
+    const theme = reportTheme(doc.letterhead.brandColor);
     const border = {
       style: BorderStyle.SINGLE,
       size: 4,
-      color: REPORT_THEME.line.replace("#", ""),
+      color: theme.line.replace("#", ""),
     };
     const borders = {
       top: border,
@@ -248,24 +269,28 @@ export class WordExporter implements ReportExporter {
       right: border,
     };
     const colCount = Math.max(doc.columns.length, 1);
-    const colWidth = Math.floor(9000 / colCount);
-    const fontSize = colCount >= 8 ? 12 : colCount >= 6 ? 14 : 16;
+    const tableWidth = useLandscape(doc.columns.length) ? 15398 : 10466;
+    const colWidths = proportionalWidths(doc).map((fraction) =>
+      Math.floor(fraction * tableWidth),
+    );
+    const fontSize = colCount >= 8 ? 16 : 18;
 
     const headerRow = new TableRow({
       tableHeader: true,
+      cantSplit: true,
       children: doc.columns.map(
-        (col) =>
+        (col, colIndex) =>
           new TableCell({
             borders,
-            width: { size: colWidth, type: WidthType.DXA },
-            shading: { fill: REPORT_THEME.headerBg.replace("#", "") },
+            width: { size: colWidths[colIndex], type: WidthType.DXA },
+            shading: { fill: theme.headerBg.replace("#", "") },
             children: [
               new Paragraph({
                 children: [
                   new TextRun({
                     text: col.header,
                     bold: true,
-                    color: REPORT_THEME.headerFg.replace("#", ""),
+                    color: theme.headerFg.replace("#", ""),
                     size: fontSize,
                   }),
                 ],
@@ -290,7 +315,7 @@ export class WordExporter implements ReportExporter {
                         new TextRun({
                           text: "No records",
                           italics: true,
-                          color: REPORT_THEME.muted.replace("#", ""),
+                          color: theme.muted.replace("#", ""),
                           size: 16,
                         }),
                       ],
@@ -303,14 +328,15 @@ export class WordExporter implements ReportExporter {
         : doc.rows.map(
             (row, index) =>
               new TableRow({
+                cantSplit: true,
                 children: doc.columns.map(
-                  (col) =>
+                  (col, colIndex) =>
                     new TableCell({
                       borders,
-                      width: { size: colWidth, type: WidthType.DXA },
+                      width: { size: colWidths[colIndex], type: WidthType.DXA },
                       shading:
                         index % 2 === 1
-                          ? { fill: REPORT_THEME.stripe.replace("#", "") }
+                          ? { fill: theme.stripe.replace("#", "") }
                           : undefined,
                       children: [
                         new Paragraph({
@@ -318,7 +344,7 @@ export class WordExporter implements ReportExporter {
                             new TextRun({
                               text: cellText(row[col.key]),
                               size: fontSize,
-                              color: REPORT_THEME.ink.replace("#", ""),
+                              color: theme.ink.replace("#", ""),
                             }),
                           ],
                         }),
@@ -329,7 +355,10 @@ export class WordExporter implements ReportExporter {
           );
 
     return new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
+      width: { size: tableWidth, type: WidthType.DXA },
+      layout: TableLayoutType.FIXED,
+      columnWidths: colWidths,
+      margins: { top: 60, bottom: 60, left: 70, right: 70 },
       rows: [headerRow, ...dataRows],
     });
   }

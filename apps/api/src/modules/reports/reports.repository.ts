@@ -12,8 +12,9 @@ export class ReportsRepository {
         id: true,
         name: true,
         address: true,
-        phone: true,
         logoUrl: true,
+        brandColor: true,
+        timezone: true,
         letterheadFooter: true,
       },
     });

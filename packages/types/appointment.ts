@@ -38,12 +38,13 @@ export interface Appointment {
   updatedAt?: string;
   patient: {
     id: string;
+    imageUrl?: string | null;
     firstNameEn: string;
     lastNameEn: string;
     firstNameAr?: string | null;
     lastNameAr?: string | null;
   };
-  doctor: { id: string; name: string; nameAr?: string | null };
+  doctor: { id: string; name: string; nameAr?: string | null; imageUrl?: string | null };
   room: { id: string; name: string; nameAr?: string | null } | null;
   service: { id: string; name: string; nameAr?: string | null; fee: string } | null;
   department?: { id: string; name: string; nameAr?: string | null } | null;
@@ -93,3 +94,13 @@ export interface UpdateAppointmentInput {
   discountCodeId?: string | null;
   meetingUrl?: string;
 }
+
+export const APPOINTMENT_EDITABLE_STATUSES = ['unconfirmed', 'confirmed', 'no_show', 'cancelled'] as const;
+
+export const APPOINTMENT_STATUS_GROUPS = {
+  booked: ['unconfirmed', 'confirmed'],
+  arrived: ['checked_in', 'waiting'],
+  inProgress: ['in_progress'],
+  completed: ['completed'],
+  closed: ['no_show', 'cancelled'],
+} as const satisfies Record<string, readonly AppointmentStatus[]>;

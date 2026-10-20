@@ -81,15 +81,6 @@ export const STATUS_OPTIONS: AppointmentStatus[] = [
   APPOINTMENT_STATUS.CANCELLED,
 ];
 
-export const SCHEDULE_FILTER_STATUSES: AppointmentStatus[] = [
-  APPOINTMENT_STATUS.UNCONFIRMED,
-  APPOINTMENT_STATUS.CONFIRMED,
-  APPOINTMENT_STATUS.IN_PROGRESS,
-  APPOINTMENT_STATUS.COMPLETED,
-  APPOINTMENT_STATUS.NO_SHOW,
-  APPOINTMENT_STATUS.CANCELLED,
-];
-
 export const TIMELINE_START_HOUR = 7;
 export const TIMELINE_END_HOUR = 21;
 export const TIMELINE_PX_PER_MIN = 2;
@@ -121,6 +112,7 @@ export const QUEUE_STAGE = {
   IN_PROGRESS: 'in_progress',
   UPCOMING: 'upcoming',
   COMPLETED: 'completed',
+  CLOSED: 'closed',
 } as const;
 export type QueueStage = (typeof QUEUE_STAGE)[keyof typeof QUEUE_STAGE];
 

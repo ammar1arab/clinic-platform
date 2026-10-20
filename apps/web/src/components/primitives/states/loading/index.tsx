@@ -1,28 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { IconSpinner } from '@/constants/icons';
-import { LoadingDots } from '@/components/primitives/display/brand-mark';
-import { useClinicLogo } from '@/hooks/api/use-clinic';
-
-function ClinicLoadingLogo({ size }: { size: 'md' | 'lg' }) {
-  const logoUrl = useClinicLogo();
-  const box = size === 'lg' ? 'size-20' : 'size-14';
-  const px = size === 'lg' ? 64 : 48;
-
-  if (!logoUrl) return <Spinner size="lg" />;
-
-  return (
-    <span className={cn('relative grid place-items-center', box)}>
-      <span className="absolute inset-0 rounded-[1.4rem] border border-primary/15 bg-primary/5 animate-clinic-ripple" aria-hidden />
-      <span className="absolute inset-1 rounded-[1.15rem] border border-border/70 bg-card" aria-hidden />
-      <span className="relative grid size-[calc(100%-0.75rem)] place-items-center overflow-hidden rounded-2xl p-1.5 animate-clinic-breathe">
-        <Image key={logoUrl} src={logoUrl} alt="" width={px} height={px} unoptimized className="max-h-full max-w-full object-contain" priority />
-      </span>
-    </span>
-  );
-}
+import { LoadingMark } from '@/components/primitives/display/loading-mark';
 
 export function Spinner({
   size = 'default',
@@ -73,13 +53,8 @@ export function SectionLoader({
       role="status"
       aria-live="polite"
     >
-      <ClinicLoadingLogo size="md" />
-      {label && (
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <LoadingDots />
-        </div>
-      )}
+      <LoadingMark size="md" />
+      {label && <p className="text-sm text-muted-foreground">{label}</p>}
     </div>
   );
 }
@@ -102,7 +77,8 @@ export function PageLoadingState({
         className,
       )}
     >
-      <ClinicLoadingLogo size="lg" />
+      <LoadingMark size="lg" />
+      {title || description ? (
       <div className="flex flex-col items-center gap-1.5">
         {title && (
           <h3 className="text-sm font-semibold tracking-tight text-foreground">
@@ -112,8 +88,8 @@ export function PageLoadingState({
         {description && (
           <p className="max-w-xs text-xs text-muted-foreground">{description}</p>
         )}
-        <LoadingDots className="mt-1" />
       </div>
+      ) : null}
     </div>
   );
 }

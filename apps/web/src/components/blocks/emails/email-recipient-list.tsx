@@ -168,10 +168,10 @@ export function EmailRecipientList({
   }
 
   return (
-    <div className="@container space-y-2">
+    <div className="@container space-y-2 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:space-y-0 lg:gap-2">
       {onExcludeMany && (
         <div
-          className={`flex items-center justify-between gap-2 ${chosen.length ? "" : "@[40rem]:hidden"}`}
+          className={`flex shrink-0 items-center justify-between gap-2 ${chosen.length ? "" : "@[40rem]:hidden"}`}
         >
           <div className="@[40rem]:hidden">{selectAll}</div>
           {chosen.length > 0 && (
@@ -208,42 +208,45 @@ export function EmailRecipientList({
           )}
         </div>
       )}
-      <div className="grid grid-cols-1 gap-4 @[40rem]:hidden">
-        {rows.map((row) => {
-          const name = getBilingualName(row.name, row.nameAr, lang) || "—";
-          return (
-            <EntityMobileCard
-              key={row.email}
-              title={name}
-              subtitle={<EmailLink value={row.email} className="text-xs" />}
-              actions={
-                <div className="flex items-center gap-2">
-                  {onExcludeMany && selectRow(row)}
-                  {removeAction(row)}
-                </div>
-              }
-              meta={
-                <DirectoryMeta
-                  columns={columns}
-                  item={row}
-                  ids={["audience", "phone", "department"]}
-                />
-              }
-            />
-          );
-        })}
+      <div className="space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-y-contain lg:card-aura lg:rounded-xl lg:border">
+        <div className="grid grid-cols-1 gap-4 @[40rem]:hidden">
+          {rows.map((row) => {
+            const name = getBilingualName(row.name, row.nameAr, lang) || "—";
+            return (
+              <EntityMobileCard
+                key={row.email}
+                title={name}
+                subtitle={<EmailLink value={row.email} className="text-xs" />}
+                actions={
+                  <div className="flex items-center gap-2">
+                    {onExcludeMany && selectRow(row)}
+                    {removeAction(row)}
+                  </div>
+                }
+                meta={
+                  <DirectoryMeta
+                    columns={columns}
+                    item={row}
+                    ids={["audience", "phone", "department"]}
+                  />
+                }
+              />
+            );
+          })}
+        </div>
+        <DirectoryTable
+          rows={rows}
+          columns={columns}
+          rowKey={(row) => row.email}
+          className="hidden @[40rem]:flex"
+          tableClassName={onExcludeMany ? "min-w-[36rem]" : "min-w-[32rem]"}
+          scroll={false}
+        />
+
       </div>
-      <DirectoryTable
-        rows={rows}
-        columns={columns}
-        rowKey={(row) => row.email}
-        className="hidden @[40rem]:flex"
-        tableClassName={onExcludeMany ? "min-w-[36rem]" : "min-w-[32rem]"}
-        scroll={false}
-      />
 
       {pageCount > 1 && (
-        <div className="sticky bottom-0 z-20 bg-background">
+        <div className="sticky bottom-0 z-20 bg-background lg:static lg:shrink-0">
           <Pagination
             page={currentPage}
             pageCount={pageCount}

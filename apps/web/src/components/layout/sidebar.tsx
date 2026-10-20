@@ -23,6 +23,7 @@ import {
   IconSchedule,
   IconTimer,
   IconService,
+  IconNoteTemplate,
   IconSettings,
   IconClinicalRecord,
   IconSidebarCollapse,
@@ -52,7 +53,9 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
       { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'violet' },
       { label: t.queue.waitingQueue, href: ROUTES.HOME_QUEUE, icon: IconTimer, accent: 'warning' },
       { label: t.layout.sidebar.visits, href: ROUTES.VISITS, icon: IconClinicalRecord, accent: 'teal' },
+      { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
       { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'orange' },
+      { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings, accent: 'cyan' },
     ];
   }
   const items: NavItem[] = [
@@ -62,6 +65,7 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
       { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer, accent: 'warning' },
       { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconService, accent: 'violet' },
       { label: t.layout.sidebar.visits, href: ROUTES.VISITS, icon: IconClinicalRecord, accent: 'teal' },
+    { label: t.layout.titles.noteTemplates, href: ROUTES.NOTE_TEMPLATES, icon: IconNoteTemplate, accent: 'indigo' },
     { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
     { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner, accent: 'indigo' },
     { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'orange' },
@@ -111,7 +115,7 @@ function NavLink({
       )}
     >
       {avatar ? (
-        <EntityAvatar src={avatar.src} seed={avatar.seed} size={collapsed ? 'default' : 'sm'} className="bg-transparent ring-0" />
+        <EntityAvatar priority src={avatar.src} seed={avatar.seed} size={collapsed ? 'default' : 'sm'} className="bg-transparent ring-0" />
       ) : Icon ? (
         <Icon className={cn('shrink-0', collapsed ? 'size-5' : 'size-4')} />
       ) : null}
@@ -164,7 +168,7 @@ function SideMenuLink({
         className="card-aura group flex w-full items-center gap-4 rounded-xl border-0 bg-card px-4 py-3.5 transition-colors duration-200 md:border md:hover:border-primary/40"
       >
         {avatar ? (
-          <EntityAvatar src={avatar.src} seed={avatar.seed} size="lg" className="bg-transparent ring-0" />
+          <EntityAvatar priority src={avatar.src} seed={avatar.seed} size="lg" className="bg-transparent ring-0" />
         ) : icon ? (
           <IconWell icon={icon} size="lg" accent={accent} />
         ) : null}

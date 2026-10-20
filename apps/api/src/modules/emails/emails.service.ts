@@ -202,15 +202,16 @@ export class EmailsService {
     let recipients: EmailRecipientPreview[];
 
     if (isTest) {
-      if (!brand.email?.trim()) {
-        throw new BadRequestException(emailError("emailClinicAddressRequired"));
+      const member = await this.repo.testRecipient(user.clinicId, user.clinicUserId);
+      if (!member?.user.email?.trim()) {
+        throw new BadRequestException(emailError("emailActiveUserNotFound"));
       }
 
       recipients = await this.audience.resolve(user.clinicId, {
         externalRecipients: [
           {
-            email: brand.email,
-            name: brand.name,
+            email: member.user.email,
+            name: member.name,
           },
         ],
       });
@@ -296,6 +297,7 @@ export class EmailsService {
       instagramUrl: row?.instagramUrl ?? undefined,
       facebookUrl: row?.facebookUrl ?? undefined,
       linkedinUrl: row?.linkedinUrl ?? undefined,
+      phone: row?.phone ?? undefined,
       footerEn: row?.footerEn ?? undefined,
       footerAr: row?.footerAr ?? undefined,
     };

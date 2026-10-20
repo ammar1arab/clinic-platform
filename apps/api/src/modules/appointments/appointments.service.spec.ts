@@ -5,6 +5,7 @@ import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { PrismaService } from "@/prisma/prisma.service";
 import { DiscountCodesService } from "@/modules/discount-codes/discount-codes.service";
 import { PatientPackagesService } from "@/modules/patient-packages/patient-packages.service";
+import { NotificationsService } from "@/modules/notifications/notifications.service";
 import { BadRequestException, HttpException } from "@nestjs/common";
 import { AppointmentStatusDto } from "./dto";
 import { Role, type SessionType } from "@prisma/client";
@@ -89,6 +90,7 @@ describe("AppointmentsService", () => {
         { provide: DashboardGateway, useValue: gateway },
         { provide: PrismaService, useValue: prismaService },
         { provide: DiscountCodesService, useValue: discountCodesService },
+        { provide: NotificationsService, useValue: { notifyDoctor: jest.fn() } },
         {
           provide: PatientPackagesService,
           useValue: { ensureEnrollment: jest.fn(), summary: jest.fn() },

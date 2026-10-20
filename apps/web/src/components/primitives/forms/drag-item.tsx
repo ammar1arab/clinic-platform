@@ -16,6 +16,7 @@ export function DragItem({ label, children, disabled, onPick, onDrop, className,
 }) {
   const origin = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const target = useRef<HTMLElement | null>(null);
+  const sourceTarget = useRef<string | undefined>(undefined);
   const frame = useRef<number | null>(null);
   const scope = useRef<HTMLElement | null>(null);
   const suppressClick = useRef(false);
@@ -46,6 +47,7 @@ export function DragItem({ label, children, disabled, onPick, onDrop, className,
           if (event.button !== 0 || disabled) return;
           suppressClick.current = false;
           scope.current = event.currentTarget.closest<HTMLElement>('[data-drag-scope]');
+          sourceTarget.current = event.currentTarget.closest<HTMLElement>('[data-drop-target]')?.dataset.dropTarget;
           origin.current = { x: event.clientX, y: event.clientY, moved: false };
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
@@ -60,7 +62,7 @@ export function DragItem({ label, children, disabled, onPick, onDrop, className,
           frame.current = null;
           setPosition({ x, y });
           const found = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop-target]') ?? null;
-          const next = !scope.current || (found && scope.current.contains(found)) ? found : null;
+          const next = found && found.dataset.dropTarget !== sourceTarget.current && (!scope.current || scope.current.contains(found)) ? found : null;
           let scrollArea: HTMLElement | null = next;
           while (scrollArea) {
             if (scrollArea.scrollHeight > scrollArea.clientHeight && /auto|scroll/.test(getComputedStyle(scrollArea).overflowY)) {
@@ -82,7 +84,7 @@ export function DragItem({ label, children, disabled, onPick, onDrop, className,
           if (!origin.current) return;
           const moved = origin.current?.moved;
           const found = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-drop-target]');
-          const destination = found && (!scope.current || scope.current.contains(found)) ? found.dataset.dropTarget : undefined;
+          const destination = found && found.dataset.dropTarget !== sourceTarget.current && (!scope.current || scope.current.contains(found)) ? found.dataset.dropTarget : undefined;
           suppressClick.current = !!moved;
           clear();
           if (moved) {

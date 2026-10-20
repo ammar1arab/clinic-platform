@@ -24,6 +24,7 @@ export const QUERY_KEYS = {
     list: (clinicId: string) => ['services', clinicId] as const,
   },
   practitioners: {
+    requests: (clinicId: string, doctorId?: string, group = 'pending', page = 1) => ['practitioners', 'schedule-requests', clinicId, doctorId ?? null, group, page] as const,
     all: ['practitioners'] as const,
     list: (clinicId: string) => ['practitioners', clinicId] as const,
     directory: (filters: object) => ['practitioners', 'directory', filters] as const,
@@ -69,6 +70,8 @@ export const QUERY_KEYS = {
     available: (appointmentId: string) => ['clinical-note-templates', 'available', appointmentId] as const,
   },
   notePreference: ['note-preference'] as const,
+  notificationPrefs: ['notification-prefs'] as const,
+  notifications: ['notifications'] as const,
   appointments: {
     all: ['appointments'] as const,
     list: (filters: object) => ['appointments', filters] as const,
@@ -78,6 +81,7 @@ export const QUERY_KEYS = {
     all: ['referrals'] as const,
     list: (filters: object) => ['referrals', filters] as const,
   },
+  weather: (zone: string, lang: string) => ['local-weather', zone, lang] as const,
   dashboard: {
     kpisAll: ['dashboard-kpis'] as const,
     kpis: (clinicId: string, practitionerId?: string) => ['dashboard-kpis', clinicId, practitionerId ?? null] as const,

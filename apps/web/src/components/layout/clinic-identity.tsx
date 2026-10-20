@@ -24,7 +24,7 @@ export function ProfileLink({ onClick, mobile = false, collapsed = true }: { onC
         mobile ? 'size-8' : compact ? 'size-10' : '',
         pathname === ROUTES.PROFILE && !compact && 'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground')}
     >
-      <EntityAvatar src={user.imageUrl} seed={user.clinicUserId} size={mobile || !compact ? 'default' : 'lg'} className="bg-transparent ring-0" />
+      <EntityAvatar priority src={user.imageUrl} seed={user.clinicUserId} size={mobile || !compact ? 'default' : 'lg'} className="bg-transparent ring-0" />
       {!compact && <span>{t.common.accountProfile}</span>}
     </Link>
   );

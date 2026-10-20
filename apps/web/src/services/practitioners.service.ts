@@ -1,3 +1,4 @@
+import type { CreateScheduleRequestInput, ReviewScheduleRequestInput, ScheduleRequestPage } from "@clinic/types";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/constants/endpoints";
 import type {
@@ -27,6 +28,10 @@ export type {
 };
 
 export const practitionersService = {
+  scheduleRequests: (doctorId?: string, group = 'pending', page = 1) => api.get<ScheduleRequestPage>(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUESTS, { params: { doctorId, group, page } }).then((r) => r.data),
+  requestSchedule: (data: CreateScheduleRequestInput) => api.post(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUESTS, data).then((r) => r.data),
+  reviewSchedule: (id: string, data: ReviewScheduleRequestInput) => api.patch(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUEST(id), data).then((r) => r.data),
+
   getAll: () =>
     api
       .get<

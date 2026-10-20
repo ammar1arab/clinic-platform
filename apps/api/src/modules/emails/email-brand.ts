@@ -25,6 +25,7 @@ export async function loadEmailBrand(prisma: PrismaService, clinicId: string) {
     ...brandInfo,
     ...emailSettings,
     email: contact,
+    phone: emailSettings?.phone?.trim() || brandInfo.phone,
     replyTo: contact || undefined,
     websiteUrl: emailSettings?.websiteUrl ?? undefined,
     instagramUrl: emailSettings?.instagramUrl ?? undefined,

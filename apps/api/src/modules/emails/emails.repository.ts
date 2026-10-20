@@ -7,6 +7,7 @@ import {
 import { Prisma, EmailRecipientStatus } from "@prisma/client";
 import {
   LOCALE,
+  EMAIL_DELIVERY_GROUPS,
   type EmailBrandDetails,
   type EmailMessageSummary,
   type EmailMessageDetail,
@@ -39,6 +40,13 @@ export class EmailsRepository {
     return brand;
   }
 
+  testRecipient(clinicId: string, clinicUserId: string) {
+    return this.prisma.clinicUser.findFirst({
+      where: { id: clinicUserId, clinicId, isActive: true },
+      select: { name: true, user: { select: { email: true } } },
+    });
+  }
+
   findRequest(clinicId: string, requestId: string) {
     return this.prisma.emailMessage.findUnique({
       where: {
@@ -67,7 +75,7 @@ export class EmailsRepository {
       ...(query.search && {
         subject: { contains: query.search, mode: "insensitive" as const },
       }),
-      ...(query.status && { recipients: { some: { status: query.status } } }),
+      ...((query.group || query.status) && { recipients: { some: { status: query.group ? { in: [...EMAIL_DELIVERY_GROUPS[query.group]] } : query.status } } }),
       ...(query.isTest !== undefined && { isTest: query.isTest }),
       ...(query.from || query.to
         ? {
@@ -257,6 +265,7 @@ export class EmailsRepository {
       instagramUrl: dto.instagramUrl ?? null,
       facebookUrl: dto.facebookUrl ?? null,
       linkedinUrl: dto.linkedinUrl ?? null,
+      phone: dto.phone ?? null,
       footerEn: dto.footerEn ?? null,
       footerAr: dto.footerAr ?? null,
     };

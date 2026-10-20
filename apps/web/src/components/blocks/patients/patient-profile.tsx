@@ -32,10 +32,13 @@ import { useDeletePatient, usePatient, useTogglePatientStatus } from '@/hooks/ap
 import { useDownloadPatientReport } from '@/hooks/api/use-reports';
 import { calcAge } from '@/lib/age';
 import { formatDate, formatDateTime, formatMonthYear } from '@/lib/datetime';
-import { useLanguage } from '@/providers';
+import { useAuth, useLanguage } from '@/providers';
+import { ROLE } from '@clinic/types';
 
 export function PatientProfile({ patientId }: { patientId: string }) {
   const router = useRouter();
+  const { user } = useAuth();
+  const canManage = user?.role !== ROLE.PRACTITIONER;
   const clinicId = useClinicId();
   const { t, lang } = useLanguage();
   const { data: patient, isLoading } = usePatient(patientId);
@@ -72,37 +75,41 @@ export function PatientProfile({ patientId }: { patientId: string }) {
       backHref={ROUTES.PATIENTS}
       actions={
         <div className="flex items-center gap-2">
-          <ExportFormatButton
-            pending={downloadReport.isPending}
-            onSelect={(reportFormat) =>
-              downloadReport.mutate({ patientId, format: reportFormat })
-            }
-          />
-          <RowActionsMenu
-            items={[
-              {
-                label: t.common.edit,
-                icon: IconEdit,
-                href: `${ROUTES.PATIENT_DETAIL(patient.id)}/edit`,
-              },
-              {
-                label: patient.isActive ? t.common.deactivate : t.common.reactivate,
-                icon: patient.isActive ? IconDeactivate : IconActivate,
-                disabled: toggleStatus.isPending,
-                onSelect: () =>
-                  toggleStatus.mutate({
-                    id: patient.id,
-                    isActive: !patient.isActive,
-                  }),
-              },
-              {
-                label: t.common.delete,
-                icon: IconDelete,
-                variant: 'destructive',
-                onSelect: () => del.ask({ id: patient.id, name: fullName }),
-              },
-            ]}
-          />
+          {canManage ? (
+            <ExportFormatButton
+              pending={downloadReport.isPending}
+              onSelect={(reportFormat) =>
+                downloadReport.mutate({ patientId, format: reportFormat })
+              }
+            />
+          ) : null}
+          {canManage ? (
+            <RowActionsMenu
+              items={[
+                {
+                  label: t.common.edit,
+                  icon: IconEdit,
+                  href: `${ROUTES.PATIENT_DETAIL(patient.id)}/edit`,
+                },
+                {
+                  label: patient.isActive ? t.common.deactivate : t.common.reactivate,
+                  icon: patient.isActive ? IconDeactivate : IconActivate,
+                  disabled: toggleStatus.isPending,
+                  onSelect: () =>
+                    toggleStatus.mutate({
+                      id: patient.id,
+                      isActive: !patient.isActive,
+                    }),
+                },
+                {
+                  label: t.common.delete,
+                  icon: IconDelete,
+                  variant: 'destructive',
+                  onSelect: () => del.ask({ id: patient.id, name: fullName }),
+                },
+              ]}
+            />
+          ) : null}
         </div>
       }
     >

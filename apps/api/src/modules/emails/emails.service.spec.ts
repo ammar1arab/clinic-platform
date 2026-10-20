@@ -7,7 +7,6 @@ import { randomUUID } from "node:crypto";
 import { EMAIL_AUDIENCE, LOCALE, ROLE } from "@clinic/types";
 import type { AuthUser } from "@/modules/auth/types";
 import { EmailService } from "@/infrastructure/email.service";
-import { PrismaService } from "@/prisma/prisma.service";
 import { RateLimitService } from "@/security/services/rate-limit.service";
 import { emailSelectionHash, EmailsService } from "./emails.service";
 import { EmailsRepository } from "./emails.repository";
@@ -47,6 +46,7 @@ describe("EmailsService", () => {
     create: jest.fn(),
     detail: jest.fn(),
     brand: jest.fn(),
+    testRecipient: jest.fn(),
   };
 
   const audience = {
@@ -60,12 +60,6 @@ describe("EmailsService", () => {
 
   const limits = {
     consume: jest.fn(),
-  };
-
-  const prisma = {
-    clinicUser: {
-      findFirst: jest.fn(),
-    },
   };
 
   let service: EmailsService;
@@ -97,7 +91,6 @@ describe("EmailsService", () => {
       repo as Partial<EmailsRepository> as EmailsRepository,
       audience as Partial<EmailAudienceRepository> as EmailAudienceRepository,
       email as Partial<EmailService> as EmailService,
-      prisma as Partial<PrismaService> as PrismaService,
       limits as Partial<RateLimitService> as RateLimitService,
     );
   });
@@ -188,7 +181,7 @@ describe("EmailsService", () => {
   });
 
   it("sends tests only to the current member", async () => {
-    prisma.clinicUser.findFirst.mockResolvedValue({
+    repo.testRecipient.mockResolvedValue({
       id: user.clinicUserId,
       name: "Owner",
       user: {
@@ -199,12 +192,8 @@ describe("EmailsService", () => {
     await service.test(user, payload());
 
     expect(
-      prisma.clinicUser.findFirst.mock.calls[0][0].where,
-    ).toEqual({
-      id: user.clinicUserId,
-      clinicId: user.clinicId,
-      isActive: true,
-    });
+      repo.testRecipient.mock.calls[0],
+    ).toEqual([user.clinicId, user.clinicUserId]);
 
     expect(
       audience.resolve.mock.calls[0][1],

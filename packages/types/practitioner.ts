@@ -186,3 +186,33 @@ export interface PractitionerFilters {
 }
 
 export type { OwnerResetPasswordInput as ResetPractitionerPasswordInput } from './auth-security';
+
+export type ScheduleRequestKind = 'extra' | 'leave' | 'vacation';
+export type ScheduleRequestStatus = 'pending' | 'approved' | 'declined' | 'withdrawn';
+export interface CreateScheduleRequestInput {
+  kind: ScheduleRequestKind;
+  startAt: string;
+  endAt: string;
+  reason: string;
+}
+export interface ReviewScheduleRequestInput {
+  decision: 'approved' | 'declined' | 'withdrawn';
+  reviewNote?: string;
+}
+export interface ScheduleRequest extends CreateScheduleRequestInput {
+  id: string;
+  clinicId: string;
+  doctorId: string;
+  status: ScheduleRequestStatus;
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  doctor: { name: string; nameAr: string | null; imageUrl: string | null };
+}
+
+export interface ScheduleRequestPage {
+  items: ScheduleRequest[];
+  total: number;
+  page: number;
+  pageSize: number;
+}

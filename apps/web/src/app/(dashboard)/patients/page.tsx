@@ -41,7 +41,6 @@ export default function PatientsPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const isPractitioner = user?.role === ROLE.PRACTITIONER;
-  const practitionerId = isPractitioner ? user.clinicUserId : undefined;
   const [filters, setFilters] = useSessionStorageState<PatientFilterState>(
     `patients-filters:${clinicId || 'none'}`,
     INITIAL_FILTERS,
@@ -57,7 +56,7 @@ export default function PatientsPage() {
     isActive: filters.status === 'all' ? undefined : filters.status === 'active',
     gender: filters.gender || undefined,
     bloodType: filters.bloodType || undefined,
-    primaryDoctorId: practitionerId ?? (filters.primaryDoctorId || undefined),
+    primaryDoctorId: filters.primaryDoctorId || undefined,
     departmentId: filters.departmentId || undefined,
     visitFrom: filters.visitFrom || undefined,
     visitTo: filters.visitTo || undefined,
@@ -116,7 +115,7 @@ export default function PatientsPage() {
     Boolean(filters.dobTo);
 
   return (
-    <div className="page-fill gap-4">
+    <div className="page-fill gap-2.5">
       <div className="shrink-0">
         <PatientFiltersBlock
           values={filters}

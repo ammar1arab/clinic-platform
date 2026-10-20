@@ -17,12 +17,15 @@ export function formatDisplayDate(date: Date | string): string {
   });
 }
 
-export function formatDisplayDateTime(date: Date | string): string {
-  const d = new Date(date);
-  return `${formatDisplayDate(d)} ${d.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })}`;
+export function formatDisplayDateTime(
+  date: Date | string,
+  timeZone = "UTC",
+): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(date));
 }
 
 export const WEEKDAY_NAMES = [

@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+import { unwrapResponse } from '../query/query-normalize';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import type {
@@ -33,10 +35,15 @@ function useWorkspaceMutation<TVariables>(
   const queryClient = useQueryClient();
   return useApiMutation<VisitWorkspace, TResponseError, TVariables>({
     request,
-    invalidateQueries: [...INVALIDATE.visitWrite],
+    invalidateQueries: INVALIDATE.visitWrite.filter((key) => key[0] !== QUERY_KEYS.visits.all[0]),
     successMessage,
     onSuccess: (workspace) => {
+      void queryClient.cancelQueries({ queryKey: QUERY_KEYS.visits.workspace(appointmentId), exact: true });
       queryClient.setQueryData(QUERY_KEYS.visits.workspace(appointmentId), workspace);
+      void queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.visits.all,
+        predicate: ({ queryKey }) => !(queryKey[1] === "workspace" && queryKey[2] === appointmentId),
+      });
     },
   });
 }
@@ -47,6 +54,17 @@ export function useVisits(query: VisitListQuery, enabled = true) {
     request: () => visitsService.list(query),
     options: { ...LIVE_LIST_OPTIONS, enabled },
   });
+}
+
+export function usePrefetchVisitWorkspace() {
+  const client = useQueryClient();
+  return useCallback((appointmentId: string) => {
+    void client.prefetchQuery({
+      queryKey: QUERY_KEYS.visits.workspace(appointmentId),
+      queryFn: async () => unwrapResponse<VisitWorkspace>(await visitsService.workspace(appointmentId)),
+      staleTime: BILLING_OPTIONS.staleTime,
+    });
+  }, [client]);
 }
 
 export function useVisitWorkspace(appointmentId: string) {

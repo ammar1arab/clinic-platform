@@ -176,6 +176,7 @@ export function PractitionersList({
   const columns: DirectoryColumn<Practitioner>[] = [
     {
       id: "practitioner",
+      className: "w-[20%]",
       label: t.practitioner.practitioner,
       render: (p) => (
         <DirectoryIdentity
@@ -188,36 +189,36 @@ export function PractitionersList({
     },
     {
       id: "specialty",
+      className: "w-[16%]",
       label: t.practitioner.specialty,
-      className: "w-40",
       render: (p) => (
         <TruncatedText lines={2}>{specialtyFor(p) || "-"}</TruncatedText>
       ),
     },
     {
       id: "department",
+      className: "w-[11%]",
       label: t.practitioner.department,
-      className: "w-32",
       render: (p) => <CellBadge value={departmentFor(p)} variant="outline" />,
     },
     {
       id: "phone",
+      className: "w-[13%]",
       label: t.practitioner.phone,
-      className: "w-36",
       cellClassName: "text-muted-foreground",
       render: (p) => <PhoneLink copyable value={p.phone} className="block" />,
     },
     {
       id: "experience",
+      className: "w-[7%]",
       label: t.practitioner.experience,
-      className: "w-24",
       cellClassName: "text-muted-foreground",
       render: experienceFor,
     },
     {
       id: "languages",
+      className: "w-[10%]",
       label: t.practitioner.languages,
-      className: "w-32",
       cellClassName: "text-xs text-muted-foreground",
       render: (p) => (
         <TruncatedText lines={2}>
@@ -227,21 +228,21 @@ export function PractitionersList({
     },
     {
       id: "room",
+      className: "w-[9%]",
       label: t.entities.room,
-      className: "w-28",
       render: (p) => <CellBadge value={roomFor(p)} variant="outline" />,
     },
     {
       id: "services",
+      className: "w-[6%]",
       label: t.practitioner.services,
-      className: "w-20",
       cellClassName: "tabular-nums",
       render: (p) => p.serviceIds.length,
     },
     {
       id: "actions",
+      className: "w-[8%]",
       label: t.practitioner.active,
-      className: "w-20",
       render: controls,
     },
   ];
@@ -250,7 +251,7 @@ export function PractitionersList({
     return (
       <TableSkeleton
         className="page-fill"
-        rows={8}
+        rows={20}
         cols={10}
         hasHeader={false}
       />

@@ -1,13 +1,13 @@
 import { computePayable } from "@/modules/appointments/payable";
-import { formatPhoneDisplay } from "@/infrastructure";
 import { ReportDocument, ReportType } from "./types/report-document";
 import { blank, slugFilename } from "./utils/report-format";
 
 export type ClinicLetterheadRow = {
   name: string;
   address: string | null;
-  phone: string | null;
   logoUrl: string | null;
+  brandColor?: string | null;
+  timezone?: string;
   letterheadFooter: string | null;
 };
 
@@ -15,8 +15,9 @@ export function letterhead(clinic: ClinicLetterheadRow) {
   return {
     clinicName: clinic.name,
     address: clinic.address,
-    phone: formatPhoneDisplay(clinic.phone) || clinic.phone,
     logoUrl: clinic.logoUrl,
+    brandColor: clinic.brandColor,
+    timezone: clinic.timezone,
     footer: clinic.letterheadFooter,
   };
 }

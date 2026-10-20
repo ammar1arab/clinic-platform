@@ -158,6 +158,7 @@ export function PatientsList({
     {
       id: "patient",
       label: t.patient.patient,
+      className: "w-[20%]",
       render: (p) => (
         <DirectoryIdentity
           copyContacts
@@ -171,14 +172,14 @@ export function PatientsList({
     {
       id: "phone",
       label: t.patient.phone,
-      className: "w-36",
+      className: "w-[12%]",
       cellClassName: "text-muted-foreground",
       render: (p) => <PhoneLink copyable value={p.phone} className="block" />,
     },
     {
       id: "doctor",
       label: t.patient.practitioner,
-      className: "w-40",
+      className: "w-[13%]",
       render: (p) => (
         <TruncatedText>{p.primaryDoctorName ?? "-"}</TruncatedText>
       ),
@@ -186,33 +187,33 @@ export function PatientsList({
     {
       id: "lastVisit",
       label: t.patient.lastVisit,
-      className: "w-44",
+      className: "w-[14%]",
       cellClassName: "text-xs text-muted-foreground",
       render: (p) => formatDateTime(p.lastVisit, undefined, lang),
     },
     {
       id: "sessions",
       label: t.patient.sessions,
-      className: "w-20",
+      className: "w-[8%]",
       cellClassName: "tabular-nums",
       render: (p) => p.totalSessions,
     },
     {
       id: "age",
       label: t.patient.age,
-      className: "w-20",
+      className: "w-[8%]",
       render: (p) => patientAgeLabel(p.dob, t) || "-",
     },
     {
       id: "gender",
       label: t.patient.gender,
-      className: "w-24",
+      className: "w-[8%]",
       render: gender,
     },
     {
       id: "nationalId",
       label: t.patient.nationalId,
-      className: "w-32",
+      className: "w-[9%]",
       cellClassName: "text-muted-foreground tabular-nums",
       render: (p) => <TruncatedText>{p.nationalId ?? "-"}</TruncatedText>,
     },
@@ -220,7 +221,7 @@ export function PatientsList({
       ? [{
           id: "actions",
           label: t.common.active,
-          className: "w-20",
+          className: "w-[8%]",
           render: controls,
         }]
       : []),
@@ -230,7 +231,7 @@ export function PatientsList({
     return (
       <TableSkeleton
         className="page-fill"
-        rows={8}
+        rows={20}
         cols={6}
         hasHeader={false}
       />
@@ -264,7 +265,7 @@ export function PatientsList({
         onPrefetch={(p) => prefetchPatient(p.id)}
         inactive={(p) => !p.isActive}
         className="hidden lg:flex"
-        tableClassName="min-w-[72rem]"
+        tableClassName="min-w-[64rem]"
       />
       <div className="page-fill overflow-y-auto overscroll-y-contain lg:hidden">
         <div className="grid grid-cols-1 gap-3">

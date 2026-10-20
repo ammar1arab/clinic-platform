@@ -23,13 +23,14 @@ export function validateSections(
     JSON.stringify(value).length > 250000
   )
     visitError("clinicalTemplateInvalid");
-  const ids = new Set<string>();
+  const sectionIds = new Set<string>();
+  const fieldIds = new Set<string>();
   const fields: Record<string, unknown>[] = [];
   for (const section of value) {
     if (
       !object(section) ||
       !id(section.id) ||
-      ids.has(section.id) ||
+      sectionIds.has(section.id) ||
       !text(section.title) ||
       (section.titleAr !== undefined &&
         (typeof section.titleAr !== "string" ||
@@ -45,12 +46,12 @@ export function validateSections(
       )
     )
       visitError("clinicalTemplateInvalid");
-    ids.add(section.id);
+    sectionIds.add(section.id);
     for (const field of section.fields) {
       if (
         !object(field) ||
         !id(field.id) ||
-        ids.has(field.id) ||
+        fieldIds.has(field.id) ||
         !text(field.label) ||
         typeof field.required !== "boolean" ||
         ![
@@ -64,6 +65,9 @@ export function validateSections(
           "boolean",
           "date",
           "measurement",
+          "time",
+          "scale",
+          "medications",
         ].includes(String(field.type))
       )
         visitError("clinicalTemplateInvalid");
@@ -131,7 +135,7 @@ export function validateSections(
       } else if (field.options !== undefined)
         visitError("clinicalTemplateInvalid");
       fields.push(field);
-      ids.add(field.id);
+      fieldIds.add(field.id);
     }
   }
   if (fields.length > 300) visitError("clinicalTemplateInvalid");
@@ -152,7 +156,7 @@ export function validateSections(
         !dependency ||
         dependency.id === field.id ||
         dependency.visibility !== undefined ||
-        ["measurement", "multi_select", "checkboxes"].includes(String(dependency.type))
+        ["measurement", "multi_select", "checkboxes", "medications"].includes(String(dependency.type))
       )
         visitError("clinicalTemplateInvalid");
     }
@@ -226,6 +230,25 @@ export function validateValues(
           new Set(value).size === value.length &&
           value.every(
             (item) => typeof item === "string" && choices.includes(item),
+          );
+        break;
+      case "scale":
+        valid = typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 10;
+        break;
+      case "time":
+        valid = typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+        break;
+      case "medications":
+        valid =
+          Array.isArray(value) &&
+          value.length <= 30 &&
+          value.every(
+            (row) =>
+              object(row) &&
+              Object.keys(row).every((key) => ["drug", "dose", "frequency"].includes(key)) &&
+              text(row.drug) &&
+              (row.dose === undefined || (typeof row.dose === "string" && row.dose.length <= 60)) &&
+              (row.frequency === undefined || (typeof row.frequency === "string" && row.frequency.length <= 60)),
           );
         break;
       case "date":

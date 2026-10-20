@@ -1,3 +1,4 @@
+import { APPOINTMENT_EDITABLE_STATUSES, NOTIFICATION_TYPE } from "@clinic/types";
 import { visitError } from "@/modules/visits/visit-errors";
 import {
   Injectable,
@@ -19,6 +20,7 @@ import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { PrismaService } from "@/prisma/prisma.service";
 import { DiscountCodesService } from "@/modules/discount-codes/discount-codes.service";
 import { PatientPackagesService } from "@/modules/patient-packages/patient-packages.service";
+import { NotificationsService } from "@/modules/notifications/notifications.service";
 import { computePayable } from "./payable";
 import type { AuthUser } from "@/modules/auth/types";
 import { securityError } from "@/security/security-error";
@@ -96,6 +98,8 @@ type ValidateEntitiesInput = {
   roomId?: string | null;
 };
 
+type DoctorEventPatient = { firstNameEn: string; lastNameEn: string; firstNameAr?: string | null; lastNameAr?: string | null };
+
 @Injectable()
 export class AppointmentsService {
   constructor(
@@ -104,6 +108,7 @@ export class AppointmentsService {
     private prisma: PrismaService,
     private discountCodesService: DiscountCodesService,
     private patientPackagesService: PatientPackagesService,
+    private notificationsService: NotificationsService,
   ) {}
 
   private async resolveDiscountCode(
@@ -329,8 +334,8 @@ export class AppointmentsService {
     const timeOff = await this.prisma.doctorTimeOff.findFirst({
       where: {
         doctorId,
-        startDate: { lte: endAt },
-        endDate: { gte: scheduledAt },
+        startDate: { lt: endAt },
+        endDate: { gt: scheduledAt },
       },
     });
 
@@ -395,6 +400,13 @@ export class AppointmentsService {
     });
 
     this.dashboardGateway.emitAppointmentChanged(clinicId);
+    await this.notificationsService.notifyDoctor(NOTIFICATION_TYPE.APPOINTMENT_BOOKED, {
+      clinicId,
+      doctorId: appointment.doctorId,
+      appointmentId: appointment.id,
+      scheduledAt: appointment.scheduledAt,
+      patient: appointment.patient,
+    });
     return appointment;
   }
 
@@ -439,7 +451,7 @@ export class AppointmentsService {
     );
     if (denied.length) securityError("clinicUnavailable", 403);
     const existing = await this.findOne(clinicId, id, practitionerId);
-    if (dto.status && ['checked_in','waiting','in_progress','completed'].includes(dto.status)) visitError('visitUseCommands', 409);
+    if (dto.status && !(APPOINTMENT_EDITABLE_STATUSES as readonly string[]).includes(dto.status)) visitError('visitUseCommands', 409);
     const visit = await this.prisma.visit.findFirst({ where: { appointmentId: id, clinicId }, select: { id: true } });
     if (visit && Object.keys(dto).some(key => !['notes','statusReason'].includes(key))) visitError('visitScheduleFrozen', 409);
     if (practitionerId && dto.notes !== undefined) visitError('visitUseClinicalNote', 403);
@@ -629,7 +641,32 @@ export class AppointmentsService {
       existing.updatedAt,
     );
     this.dashboardGateway.emitAppointmentChanged(clinicId);
+    await this.notifyScheduleChange(existing, appointment, actor?.clinicUserId);
     return appointment;
+  }
+
+  private async notifyScheduleChange(
+    before: { status: string; doctorId: string; scheduledAt: Date },
+    after: { id: string; clinicId: string; status: string; doctorId: string; scheduledAt: Date; patient: DoctorEventPatient },
+    actorId?: string,
+  ) {
+    const event = (doctorId: string) => ({
+      clinicId: after.clinicId,
+      doctorId,
+      appointmentId: after.id,
+      scheduledAt: after.scheduledAt,
+      patient: after.patient,
+      actorId,
+    });
+    const cancelled = NOTIFICATION_TYPE.APPOINTMENT_CANCELLED;
+    if (after.status === "cancelled" && before.status !== "cancelled") {
+      await this.notificationsService.notifyDoctor(cancelled, event(after.doctorId));
+    } else if (before.doctorId !== after.doctorId) {
+      await this.notificationsService.notifyDoctor(cancelled, event(before.doctorId));
+      await this.notificationsService.notifyDoctor(NOTIFICATION_TYPE.APPOINTMENT_BOOKED, event(after.doctorId));
+    } else if (before.scheduledAt.getTime() !== after.scheduledAt.getTime()) {
+      await this.notificationsService.notifyDoctor(NOTIFICATION_TYPE.APPOINTMENT_RESCHEDULED, event(after.doctorId));
+    }
   }
 
   async markPaid(

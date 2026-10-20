@@ -1,20 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ComponentProps, type ReactNode } from 'react';
 import { APPOINTMENT_STATUS, NOTE_STATUS, PRESENCE_SOURCE, ROLE, SESSION_TYPE } from '@clinic/types';
-import { Badge, Button, Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
+import { Badge, Button, Card, CardContent, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 import {
   EmptyState,
   ErrorState,
+  FormSkeleton,
   VisitWorkspaceSkeleton,
   PageBack,
+  OverflowActions,
   PhoneLink,
   PreviewableAvatar,
   ReasonDialog,
   VisitTimer,
 } from '@/components/primitives';
-import { IconClinicalRecord, IconInPerson, IconOnline, IconPhone } from '@/constants/icons';
+import { IconCheck, IconCheckCircle, IconChevronDown, IconChevronUp, IconClinicalRecord, IconInPerson, IconLock, IconOnline, IconPhone, IconPlay, IconUnlock } from '@/constants/icons';
 import { ROUTES } from '@/constants/routes';
+import { useClinicRealtime } from '@/hooks/api/use-clinic-realtime';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { StatusBadgeBlock } from '@/components/blocks/appointments/shared/status-badge';
+import { ageLabel } from '@/lib/age';
+import { cn } from '@/lib/utils';
 import { formatDate, formatTime } from '@/lib/datetime';
 import { useAuth, useLanguage } from '@/providers';
 import { useAvailableNoteTemplates } from '@/hooks/api/use-clinical-note-templates';
@@ -27,6 +34,8 @@ import { MedicalReportEditor } from './medical-report-editor';
 export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
   const { lang, t } = useLanguage();
   const { user } = useAuth();
+  const clinicId = useClinicId();
+  useClinicRealtime(clinicId);
   const workspace = useVisitWorkspace(appointmentId);
   const data = workspace.data;
   const templates = useAvailableNoteTemplates(user?.role === ROLE.PRACTITIONER && data?.allowedActions.editNote ? appointmentId : '');
@@ -36,13 +45,14 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
   const unlock = useUnlockNote(appointmentId);
   const revoke = useRevokeUnlock(appointmentId);
   const [reasonMode, setReasonMode] = useState<'unlock' | 'revoke' | null>(null);
+  const [factsOpen, setFactsOpen] = useState(true);
 
   if (workspace.isLoading) {
     return (
-      <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-3">
-        <PageBack backHref={ROUTES.VISITS} />
+      <Tabs defaultValue="note" className="min-h-full w-full min-w-0 shrink-0 gap-3">
+        <VisitWorkspaceHeader actions={<Skeleton className="h-8 w-24 rounded-lg" />} />
         <VisitWorkspaceSkeleton />
-      </div>
+      </Tabs>
     );
   }
   if (workspace.isError || !data) {
@@ -63,31 +73,31 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
   ));
 
   return (
-    <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-3">
-      <PageBack backHref={ROUTES.VISITS} className="flex-wrap" actions={showActions ? (<div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+    <Tabs defaultValue="note" className="min-h-full w-full min-w-0 shrink-0 gap-3">
+      <VisitWorkspaceHeader closed={closed} actions={showActions ? (<div className="flex items-center justify-end gap-2 sm:gap-3">
             {data.startedAt ? <VisitTimer serverNow={data.serverNow} startedAt={data.startedAt} finishedAt={data.finishedAt} durationMins={data.durationMins} compact /> : null}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2">
             {!closed && data.allowedActions.confirmPresence && !data.presenceConfirmedAt ? (
-              <Button type="button" disabled={checkIn.isPending} onClick={() => checkIn.mutate(presenceSource)}>{t.visits.confirmPresence}</Button>
+              <ActionButton icon={IconCheckCircle} label={t.visits.confirmPresence} disabled={checkIn.isPending} onClick={() => checkIn.mutate(presenceSource)} />
             ) : null}
             {!closed && data.allowedActions.start ? (
-              <Button type="button" disabled={start.isPending} onClick={() => start.mutate(data.appointmentRevision)}>{data.startedAt ? t.visits.resume : t.visits.start}</Button>
+              <ActionButton icon={IconPlay} label={data.startedAt ? t.visits.resume : t.visits.start} disabled={start.isPending} onClick={() => start.mutate(data.appointmentRevision)} />
             ) : null}
             {!closed && data.allowedActions.finish && data.visitId ? (
-              <Button type="button" disabled={finish.isPending} onClick={() => finish.mutate({ visitId: data.visitId!, expectedRevision: data.visitRevision })}>{t.visits.finish}</Button>
+              <ActionButton icon={IconCheck} label={t.visits.finish} disabled={finish.isPending} onClick={() => finish.mutate({ visitId: data.visitId!, expectedRevision: data.visitRevision })} />
             ) : null}
             {data.allowedActions.unlockNote && data.visitId ? (
-              <Button type="button" variant="outline" onClick={() => setReasonMode('unlock')}>{t.visits.unlock}</Button>
+              <ActionButton icon={IconUnlock} label={t.visits.unlock} variant="outline" onClick={() => setReasonMode('unlock')} />
             ) : null}
             {data.allowedActions.revokeUnlock && data.visitId ? (
-              <Button type="button" variant="outline" onClick={() => setReasonMode('revoke')}>{t.visits.revokeUnlock}</Button>
+              <ActionButton icon={IconLock} label={t.visits.revokeUnlock} variant="outline" onClick={() => setReasonMode('revoke')} />
             ) : null}
             </div>
           </div>) : undefined} />
 
       <Card className="gap-0 py-0">
-        <CardContent className="space-y-3 p-3 sm:p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
+        <CardContent className="flex flex-col p-3 sm:p-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <PreviewableAvatar src={data.patient.imageUrl} seed={data.patient.id} size="lg" />
               <div className="min-w-0">
@@ -97,7 +107,7 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
               </p>
             </div>
               </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex max-w-40 flex-col items-end gap-1.5 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
             {data.mode === SESSION_TYPE.IN_PERSON ? (
               <Badge variant="outline"><IconInPerson className="size-4" />{t.visits.inPerson}{data.room ? ` · ${roomName}` : ''}</Badge>
             ) : data.meetingUrl ? (
@@ -107,23 +117,36 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
             ) : (
               <Badge variant="warning"><IconOnline className="size-4" />{t.visits.joinMissing}</Badge>
             )}
-              <Badge variant="muted">{t.constants.status[data.appointmentStatus].label}</Badge>
+              <StatusBadgeBlock status={data.appointmentStatus} tip={false} />
             </div>
           </div>
 
-          <dl className="grid grid-cols-2 items-start gap-x-4 gap-y-3 text-xs sm:text-sm lg:grid-cols-4">
-            <div className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{t.patient.practitioner}</dt><dd className="flex items-center gap-2 font-medium"><PreviewableAvatar src={data.practitioner.imageUrl} seed={data.practitioner.id} size="sm" />{getBilingualName(data.practitioner.name, data.practitioner.nameAr, lang)}</dd></div>
-            {data.patientContext?.phone ? <div className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{t.patient.phone}</dt><dd className="flex items-center gap-2"><IconPhone className="size-4 shrink-0 text-muted-foreground" /><PhoneLink copyable value={data.patientContext.phone} /></dd></div> : null}
-              {data.patientContext?.allergies ? <div className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{t.patient.allergies}</dt><dd className="whitespace-pre-wrap break-words font-medium text-warning">{data.patientContext.allergies}</dd></div> : null}
-              {data.patientContext?.bloodType ? <div className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{t.patient.bloodType}</dt><dd><bdi dir="ltr">{data.patientContext.bloodType}</bdi></dd></div> : null}
-          </dl>
+          <div className={cn('grid transition-[grid-template-rows] duration-[var(--overlay-duration)] ease-[var(--overlay-ease)] motion-reduce:transition-none', factsOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
+            <div className="min-h-0 overflow-hidden">
+              <div className="pt-2 sm:pt-3">
+              <dl className="grid grid-cols-2 items-start gap-x-4 gap-y-3 text-xs sm:text-sm lg:grid-cols-3 xl:grid-cols-6">
+              <div className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{t.patient.practitioner}</dt><dd className="flex items-center gap-2 font-medium"><PreviewableAvatar src={data.practitioner.imageUrl} seed={data.practitioner.id} size="sm" />{getBilingualName(data.practitioner.name, data.practitioner.nameAr, lang)}</dd></div>
+              {data.patientContext?.dob ? <div className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{t.patient.age}</dt><dd>{ageLabel(data.patientContext.dob, new Date(data.scheduledAt), t)}</dd></div> : null}
+              {data.patientContext?.phone ? <div className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{t.patient.phone}</dt><dd className="flex items-center gap-2"><IconPhone className="size-4 shrink-0 text-muted-foreground" /><PhoneLink copyable value={data.patientContext.phone} /></dd></div> : null}
+                {data.patientContext?.allergies ? <div className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{t.patient.allergies}</dt><dd className="whitespace-pre-wrap break-words font-medium text-warning">{data.patientContext.allergies}</dd></div> : null}
+                {data.patientContext?.bloodType ? <div className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{t.patient.bloodType}</dt><dd><bdi dir="ltr">{data.patientContext.bloodType}</bdi></dd></div> : null}
+              {data.service ? <div className="min-w-0 space-y-1"><dt className="text-xs text-muted-foreground">{t.entities.service}</dt><dd className="break-words font-medium">{getBilingualName(data.service.name, data.service.nameAr, lang)}</dd></div> : null}
+            </dl>
+              </div>
+            </div>
+          </div>
 
-          {data.documentationUnlock || (data.documentationDeadlineAt && !data.documentationUnlock && data.noteStatus !== NOTE_STATUS.SIGNED) ? <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm">
+          <div className="mt-2 flex items-center justify-between gap-3 sm:mt-3">
+  {data.documentationUnlock || (data.documentationDeadlineAt && !data.documentationUnlock && data.noteStatus !== NOTE_STATUS.SIGNED) ? <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-sm">
             {data.documentationUnlock ? <p>{t.visits.unlocked}: {data.documentationUnlock.reason}</p> : null}
             {data.documentationDeadlineAt && !data.documentationUnlock && data.noteStatus !== NOTE_STATUS.SIGNED ? (
               <p>{data.noteStatus === NOTE_STATUS.LOCKED ? t.visits.lockedNote : t.visits.documentationDeadline} · {formatDate(data.documentationDeadlineAt, undefined, lang)} · {formatTime(data.documentationDeadlineAt, undefined, lang)}</p>
             ) : null}
           </div> : null}
+            <Button type="button" variant="ghost" size="icon-xs" className="ms-auto shrink-0" aria-expanded={factsOpen} aria-label={factsOpen ? t.layout.sidebar.collapse : t.layout.sidebar.expand} onClick={() => setFactsOpen((open) => !open)}>
+              {factsOpen ? <IconChevronUp className="size-4" /> : <IconChevronDown className="size-4" />}
+            </Button>
+          </div>
 
 
         </CardContent>
@@ -132,17 +155,15 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
       {closed ? (
         <EmptyState icon={IconClinicalRecord} title={t.visits.closedVisit} description={t.visits.closedVisitDesc} />
       ) : (
-        <Tabs defaultValue="note" className="min-w-0 flex-1 gap-3">
-          <TabsList variant="document" className="shrink-0">
-            <TabsTrigger value="note"><span className="max-w-full truncate">{t.visits.note}</span><span className="max-w-full truncate text-xs font-normal text-muted-foreground">{t.visits.noteStatuses[data.noteStatus]}</span></TabsTrigger>
-            <TabsTrigger value="report"><span className="max-w-full truncate">{t.visits.report}</span><span className="max-w-full truncate text-xs font-normal text-muted-foreground">{t.visits.reportStatuses[data.reportStatus]}</span></TabsTrigger>
-            <TabsTrigger value="invoice"><span className="max-w-full truncate">{t.visits.billing}</span><span className="max-w-full truncate text-xs font-normal text-muted-foreground">{t.visits.invoiceStatuses[data.invoiceStatus]}</span></TabsTrigger>
-          </TabsList>
           <Card className="min-w-0 flex-1 gap-0 py-0">
             <CardContent className="flex flex-1 flex-col p-3 sm:p-4">
               <TabsContent value="note" className="flex flex-1 flex-col [&>[role=status]]:flex-1">
                 {data.note || user?.role === ROLE.PRACTITIONER ? (
-                  <ClinicalNoteEditor appointmentId={appointmentId} workspace={data} templates={templates.data ?? []} />
+                  data.allowedActions.editNote && !data.note && templates.isPending ? (
+                    <FormSkeleton fields={1} cols={1} hasActions={false} />
+                  ) : data.allowedActions.editNote && templates.isError ? (
+                    <ErrorState onRetry={() => void templates.refetch()} />
+                  ) : <ClinicalNoteEditor appointmentId={appointmentId} workspace={data} templates={templates.data ?? []} />
                 ) : (
                   <EmptyState icon={IconClinicalRecord} title={t.visits.note} description={t.visits.noteHidden} className="py-6" />
                 )}
@@ -155,7 +176,6 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
               </TabsContent>
             </CardContent>
           </Card>
-        </Tabs>
       )}
 
       <ReasonDialog
@@ -169,6 +189,44 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
           mutation.mutate({ visitId: data.visitId, reason }, { onSuccess: () => setReasonMode(null) });
         }}
       />
+    </Tabs>
+  );
+}
+
+function VisitTabs({ variant }: { variant: 'pill' | 'fill' }) {
+  const { t } = useLanguage();
+  return (
+    <TabsList variant={variant} className={variant === 'pill' ? 'w-full' : undefined}>
+      <TabsTrigger value="note" className="flex-1">{t.visits.note}</TabsTrigger>
+      <TabsTrigger value="report" className="flex-1">{t.visits.report}</TabsTrigger>
+      <TabsTrigger value="invoice" className="flex-1">{t.visits.billing}</TabsTrigger>
+    </TabsList>
+  );
+}
+
+function VisitWorkspaceHeader({ closed = false, actions }: { closed?: boolean; actions?: ReactNode }) {
+  const { t } = useLanguage();
+  return (
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+      <PageBack backHref={ROUTES.VISITS} />
+      {!closed ? (
+        <div className="order-last col-span-2 min-w-0 lg:order-none lg:col-span-1">
+          <div className="lg:hidden"><VisitTabs variant="fill" /></div>
+          <div className="hidden lg:block">
+            <OverflowActions label={t.layout.titles.visit}><VisitTabs variant="pill" /></OverflowActions>
+          </div>
+        </div>
+      ) : <div className="hidden lg:block" />}
+      <div className="min-w-0 justify-self-end">{actions}</div>
     </div>
+  );
+}
+
+function ActionButton({ icon: Icon, label, ...props }: { icon: typeof IconPlay; label: string } & Omit<ComponentProps<typeof Button>, 'children'>) {
+  return (
+    <Button type="button" aria-label={label} className="max-sm:size-8 max-sm:px-0" {...props}>
+      <Icon className="size-4" />
+      <span className="max-sm:sr-only">{label}</span>
+    </Button>
   );
 }

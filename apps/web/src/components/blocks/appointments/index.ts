@@ -7,7 +7,6 @@ export { ScheduleToolbar } from './schedule/schedule-toolbar';
 export { WaitingQueueBoard } from './schedule/waiting-queue-board';
 export {
   ViewFocus,
-  ViewFocusToggle,
   useViewFocusControls,
   useViewFocused,
 } from './schedule/view-focus';

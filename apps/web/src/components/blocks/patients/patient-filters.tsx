@@ -3,10 +3,7 @@
 import Link from 'next/link';
 import {
   Button,
-  Badge,
   Popover,
-  PopoverContent,
-  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -16,6 +13,8 @@ import {
 import {
   DatePicker,
   DirectoryToolbar,
+  FilterPanel,
+  FilterTrigger,
   DIRECTORY_ACTION_CLASS,
   FormField,
   FilterSelect,
@@ -24,12 +23,10 @@ import {
 import { ExportFormatButton } from '@/components/blocks/reports';
 import { getGenders, BLOOD_TYPES, getPatientSorts } from '@/constants/patient';
 import { ROUTES } from '@/constants/routes';
-import { keepNestedPortals } from '@/lib/overlay';
-import { cn } from '@/lib/utils';
 import type { ClinicStaffMember } from '@/services/clinics.service';
 import type { Department } from '@/services/departments.service';
 import type { ReportFormat } from '@/services/reports.service';
-import { IconClose, IconFilters, IconNewPatient } from '@/constants/icons';
+import { IconNewPatient } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 
 export type PatientFilterState = {
@@ -91,42 +88,8 @@ export function PatientFiltersBlock({
       actions={
         <>
           <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  aria-label={t?.common?.filters}
-                  className={cn(
-                    DIRECTORY_ACTION_CLASS,
-                    'border-border/70 bg-background/50',
-                    activeCount > 0 && 'border-primary/35 bg-primary/5',
-                  )}
-                >
-                  <IconFilters className="size-3.5 shrink-0 text-muted-foreground" />
-                  <span className="hidden font-semibold sm:inline">{t?.common?.filters}</span>
-                  {activeCount > 0 ? (
-                    <Badge variant="info" className="ms-0 h-5 min-w-5 justify-center px-1 text-xs">
-                      {activeCount}
-                    </Badge>
-                  ) : null}
-                </Button>
-              </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-80 max-h-[min(32rem,calc(100dvh-var(--app-header-height)-2rem))] space-y-3 overflow-y-auto"
-              onInteractOutside={keepNestedPortals}
-              onFocusOutside={keepNestedPortals}
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{t?.common?.filters}</p>
-                {activeCount > 0 ? (
-                  <Button variant="ghost" size="xs" onClick={onReset}>
-                    <IconClose className="size-3.5" />
-                    {t?.common?.clear}
-                  </Button>
-                ) : null}
-              </div>
+              <FilterTrigger count={activeCount} />
+            <FilterPanel count={activeCount} onClear={onReset}>
 
               <FormField label={t?.common?.sort} labelClassName="text-xs">
                 <Select
@@ -251,7 +214,7 @@ export function PatientFiltersBlock({
                   />
                 </FormField>
               </div>
-            </PopoverContent>
+            </FilterPanel>
           </Popover>
 
           {canManage && onExport ? (

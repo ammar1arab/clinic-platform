@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import type {
   CreatePractitionerInput,
   PractitionerDetail,
@@ -87,13 +88,13 @@ export function toPractitionerFormValues(
       effectiveUntil: a.effectiveUntil?.slice(0, 10) ?? '',
     })),
     timeOffs: p.timeOffs.map((t) => ({
-      startDate: t.startDate.slice(0, 10),
-      endDate: t.endDate.slice(0, 10),
+      startDate: format(new Date(t.startDate), "yyyy-MM-dd'T'HH:mm"),
+      endDate: format(new Date(t.endDate), "yyyy-MM-dd'T'HH:mm"),
       reason: t.reason ?? '',
     })),
     availabilityOverrides: p.availabilityOverrides.map((entry) => ({
-      startAt: entry.startAt.slice(0, 16),
-      endAt: entry.endAt.slice(0, 16),
+      startAt: format(new Date(entry.startAt), "yyyy-MM-dd'T'HH:mm"),
+      endAt: format(new Date(entry.endAt), "yyyy-MM-dd'T'HH:mm"),
       reason: entry.reason ?? '',
     })),
   };
@@ -145,13 +146,13 @@ export function toPractitionerPayload(data: PractitionerFormData) {
       effectiveUntil: clean(a.effectiveUntil),
     })),
     timeOffs: data.timeOffs.map((t) => ({
-      startDate: t.startDate,
-      endDate: t.endDate,
+      startDate: new Date(t.startDate).toISOString(),
+      endDate: new Date(t.endDate).toISOString(),
       reason: clean(t.reason),
     })),
     availabilityOverrides: data.availabilityOverrides.map((entry) => ({
-      startAt: entry.startAt,
-      endAt: entry.endAt,
+      startAt: new Date(entry.startAt).toISOString(),
+      endAt: new Date(entry.endAt).toISOString(),
       reason: clean(entry.reason),
     })),
   } satisfies Omit<CreatePractitionerInput, 'clinicId' | 'email'> &
@@ -177,13 +178,13 @@ export function toHoursPayload(data: PractitionerHoursData) {
       effectiveUntil: clean(a.effectiveUntil),
     })),
     timeOffs: data.timeOffs.map((t) => ({
-      startDate: t.startDate,
-      endDate: t.endDate,
+      startDate: new Date(t.startDate).toISOString(),
+      endDate: new Date(t.endDate).toISOString(),
       reason: clean(t.reason),
     })),
     availabilityOverrides: data.availabilityOverrides.map((entry) => ({
-      startAt: entry.startAt,
-      endAt: entry.endAt,
+      startAt: new Date(entry.startAt).toISOString(),
+      endAt: new Date(entry.endAt).toISOString(),
       reason: clean(entry.reason),
     })),
   };

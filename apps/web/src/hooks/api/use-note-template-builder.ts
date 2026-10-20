@@ -33,7 +33,7 @@ import {
 
 export type BuilderSelection = { sectionId: string; fieldId?: string };
 
-export function useNoteTemplateBuilder(template?: TemplateDTO) {
+export function useNoteTemplateBuilder(template?: TemplateDTO, readOnly = false) {
   const router = useRouter();
   const { t } = useLanguage();
   const [draft, setDraft] = useState<ClinicalTemplateInput>(() => templateToDraft(template));
@@ -54,7 +54,7 @@ export function useNoteTemplateBuilder(template?: TemplateDTO) {
   const scheduleMutation = useScheduleClinicalNoteTemplate();
   const archiveMutation = useArchiveClinicalNoteTemplate();
   const cloneMutation = useCloneClinicalNoteTemplate();
-  const locked = record?.status === TEMPLATE_STATUS.ARCHIVED;
+  const locked = readOnly || record?.status === TEMPLATE_STATUS.ARCHIVED;
   const pending = create.isPending || update.isPending || autosave.isPending;
 
   if (!settingsDirty && !schemaDirty && template && record && template.revision > record.revision) {
@@ -78,7 +78,7 @@ export function useNoteTemplateBuilder(template?: TemplateDTO) {
     const snapshot = draftRef.current;
     const next = draftToTemplateInput(snapshot);
     const found = templateProblems(next);
-    setProblems(found);
+    if (notify || !found.length) setProblems(found);
     if (found.length) {
       if (notify) toast.error(t.visits.templateIncomplete);
       return null;
@@ -90,7 +90,7 @@ export function useNoteTemplateBuilder(template?: TemplateDTO) {
           ? await (notify ? update : autosave).mutateAsync({ ...next, revision: current.revision })
           : await create.mutateAsync(next);
         applySaved(saved, snapshot);
-        if (!current) router.push(ROUTES.SETTINGS_NOTE_TEMPLATE(saved.id));
+        if (!current) router.push(ROUTES.NOTE_TEMPLATE(saved.id));
         return saved;
       } catch { return null; }
     })();
@@ -105,23 +105,16 @@ export function useNoteTemplateBuilder(template?: TemplateDTO) {
     timer.current = window.setTimeout(() => { void persist(false); }, DEBOUNCE_MS);
   };
 
-  const writeSettings = (next: ClinicalTemplateInput) => {
+  const writeDraft = (next: ClinicalTemplateInput, markDirty: (dirty: boolean) => void) => {
     if (locked) return;
     recordRef.current = record;
     setDraft(next);
     draftRef.current = next;
-    setSettingsDirty(true);
+    markDirty(true);
     scheduleSchemaSave();
   };
-
-  const writeSchema = (next: ClinicalTemplateInput) => {
-    if (locked) return;
-    recordRef.current = record;
-    setDraft(next);
-    draftRef.current = next;
-    setSchemaDirty(true);
-    scheduleSchemaSave();
-  };
+  const writeSettings = (next: ClinicalTemplateInput) => writeDraft(next, setSettingsDirty);
+  const writeSchema = (next: ClinicalTemplateInput) => writeDraft(next, setSchemaDirty);
 
   const patchSection = (sectionId: string, patch: Partial<ClinicalTemplateInput['sections'][number]>) => {
     writeSchema({
@@ -269,14 +262,14 @@ export function useNoteTemplateBuilder(template?: TemplateDTO) {
     clone: () => {
       if (!record) return;
       cloneMutation.mutate(record.id, {
-        onSuccess: (saved) => router.push(ROUTES.SETTINGS_NOTE_TEMPLATE(saved.id)),
+        onSuccess: (saved) => router.push(ROUTES.NOTE_TEMPLATE(saved.id)),
       });
     },
     publishing: publishMutation.isPending || update.isPending || autosave.isPending,
     scheduling: scheduleMutation.isPending || update.isPending || autosave.isPending,
     archiving: archiveMutation.isPending,
     cloning: cloneMutation.isPending,
-    cancel: () => router.push(ROUTES.SETTINGS_NOTE_TEMPLATES),
+    cancel: () => router.push(ROUTES.NOTE_TEMPLATES),
   };
 
   async function withSavedRecord(run: (id: string, revision: number) => void) {

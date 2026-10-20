@@ -1,16 +1,18 @@
 import {
   Controller,
+  Delete,
   Get,
   Param,
+  Body,
   Patch,
-  Query,
+  Put,
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth } from "@nestjs/swagger";
 import { JwtAuthGuard } from "@/modules/auth/guards";
 import { CurrentUser, type AuthUser } from "@/modules/auth/decorators";
 import { NotificationsService } from "./notifications.service";
-import { NotificationFiltersDto } from "./dto";
+import { NotificationPrefsDto } from "./dto";
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
@@ -19,15 +21,26 @@ export class NotificationsController {
   constructor(private notificationsService: NotificationsService) {}
 
   @Get()
-  findAll(
-    @CurrentUser() user: AuthUser,
-    @Query() filters: NotificationFiltersDto,
-  ) {
+  findAll(@CurrentUser() user: AuthUser) {
     return this.notificationsService.findAll({
-      ...filters,
       clinicId: user.clinicId,
       userId: user.clinicUserId,
     });
+  }
+
+  @Get("preferences")
+  preferences(@CurrentUser() user: AuthUser) {
+    return this.notificationsService.preferences(user.clinicId, user.clinicUserId);
+  }
+
+  @Put("preferences")
+  setPreferences(@CurrentUser() user: AuthUser, @Body() dto: NotificationPrefsDto) {
+    return this.notificationsService.setPreferences(user.clinicId, user.clinicUserId, dto);
+  }
+
+  @Delete()
+  clear(@CurrentUser() user: AuthUser) {
+    return this.notificationsService.clear(user.clinicId, user.clinicUserId);
   }
 
   @Patch("read-all")

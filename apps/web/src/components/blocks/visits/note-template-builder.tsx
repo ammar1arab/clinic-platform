@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CLINICAL_FIELD_TYPE, TEMPLATE_STATUS, VISIBILITY_OPERATOR, type ClinicalField, type ClinicalValue, type ClinicalSection, type TemplateDTO } from '@clinic/types';
+import { CLINICAL_FIELD_TYPE, TEMPLATE_STATUS, type ClinicalField, type ClinicalValue, type ClinicalSection, type TemplateDTO } from '@clinic/types';
 import {
   Badge,
   Button,
@@ -23,19 +23,21 @@ import {
   BilingualNameFields,
   DatePicker,
   EmptyState,
+  ChoiceField,
   FormField,
-  MultiSelect,
+  OptionList,
   OverflowActions,
   PageBack,
   RowActionsMenu,
   SelectionToggle,
   SidePanel,
   SoftTip,
+  TargetAudience,
   DragItem,
 } from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import { TEMPLATE_STATUS_VARIANT } from '@/constants/status';
-import { IconFieldText, IconFieldParagraph, IconFieldNumber, IconFieldSelect, IconFieldMultiSelect, IconFieldBoolean, IconFieldMeasurement, IconCalendar, IconGrip, IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconFileText, IconArchive, IconCopy, IconClose, IconCheck, IconFilters } from '@/constants/icons';
+import { IconFieldText, IconFieldParagraph, IconFieldNumber, IconFieldSelect, IconFieldMultiSelect, IconFieldBoolean, IconFieldMeasurement, IconFieldScale, IconFieldMedication, IconTime, IconCalendar, IconGrip, IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconFileText, IconArchive, IconCopy, IconClose, IconCheck, IconFilters } from '@/constants/icons';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useServices } from '@/hooks/api/use-services';
 import { usePractitionerDirectory } from '@/hooks/api/use-practitioners';
@@ -45,12 +47,14 @@ import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
 import { cn } from '@/lib/utils';
 import { ClinicalFields } from './clinical-fields';
-import { MEDICAL_NOTE_PALETTE, VISIBILITY_ALWAYS, clinicalId, decodeVisibility, encodeVisibility, isChoiceType, previewSections } from './note-template-form';
+import { AUDIENCE_ASSIGNMENT, MEDICAL_NOTE_PALETTE, TEMPLATE_AUDIENCE, clinicalId, isChoiceType, previewSections, type TemplateAudience } from './note-template-form';
 
-export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
+type PickKind = Exclude<TemplateAudience, typeof TEMPLATE_AUDIENCE.ALL>;
+
+export function NoteTemplateBuilder({ template, readOnly = false }: { template?: TemplateDTO; readOnly?: boolean }) {
   const { lang, t } = useLanguage();
   const clinicId = useClinicId();
-  const { bind, ...builder } = useNoteTemplateBuilder(template);
+  const { bind, ...builder } = useNoteTemplateBuilder(template, readOnly);
   const practitioners = usePractitionerDirectory({ clinicId });
   const departments = useDepartments(clinicId);
   const services = useServices(clinicId);
@@ -59,75 +63,100 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
   const statusVariant = TEMPLATE_STATUS_VARIANT[status];
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduling, setScheduling] = useState(false);
+  const [pickKind, setPickKind] = useState<PickKind>(TEMPLATE_AUDIENCE.PRACTITIONERS);
+  const audienceLabel = {
+    [TEMPLATE_AUDIENCE.DEPARTMENTS]: t.visits.departments,
+    [TEMPLATE_AUDIENCE.SERVICES]: t.visits.services,
+    [TEMPLATE_AUDIENCE.PRACTITIONERS]: t.visits.practitioners,
+  } as const;
+  const audienceSource = {
+    [TEMPLATE_AUDIENCE.DEPARTMENTS]: (departments.data ?? []).map((item) => ({ value: item.id, label: getBilingualName(item.name, item.nameAr, lang) })),
+    [TEMPLATE_AUDIENCE.SERVICES]: (services.data ?? []).map((item) => ({ value: item.id, label: getBilingualName(item.name, item.nameAr, lang) })),
+    [TEMPLATE_AUDIENCE.PRACTITIONERS]: (practitioners.data ?? []).map((item) => ({ value: item.id, label: getBilingualName(item.name, item.nameAr, lang) })),
+  } as const;
+  const audienceLoading = {
+    [TEMPLATE_AUDIENCE.DEPARTMENTS]: departments.isLoading,
+    [TEMPLATE_AUDIENCE.SERVICES]: services.isLoading,
+    [TEMPLATE_AUDIENCE.PRACTITIONERS]: practitioners.isLoading,
+  } as const;
+  const pickedGroups = (Object.keys(AUDIENCE_ASSIGNMENT) as PickKind[])
+    .map((kind) => ({ kind, ids: draft.assignments[AUDIENCE_ASSIGNMENT[kind]] }))
+    .filter((group) => group.ids.length);
+  const audienceSummary = pickedGroups.length === 0
+    ? t.ui.select
+    : pickedGroups
+        .map((group) => group.ids.length === 1
+          ? audienceSource[group.kind].find((option) => option.value === group.ids[0])?.label ?? `1 ${audienceLabel[group.kind]}`
+          : `${group.ids.length} ${audienceLabel[group.kind]}`)
+        .join(' · ');
 
   return (
-    <Tabs ref={bind} defaultValue="settings" className="page-fill gap-2">
-      <PageBack
-        backHref={ROUTES.SETTINGS_NOTE_TEMPLATES}
-        search={
-          <div className="hidden md:block">
-            <OverflowActions label={t.visits.builderSettings}>
-              <BuilderTabsList variant="pill" />
-            </OverflowActions>
-          </div>
-        }
-        actions={
-          <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-2">
-            {builder.schemaSaving ? <span role="status" className="text-xs text-muted-foreground">{t.visits.saving}</span> : null}
-            {!record ? (
-              <Button type="button" size="sm" disabled={builder.pending} onClick={builder.saveSettings}>{t.common.save}</Button>
-            ) : (
-              <>
+    <Tabs ref={bind} defaultValue={readOnly ? 'publish' : 'settings'} className="page-fill gap-2">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+        <PageBack backHref={ROUTES.NOTE_TEMPLATES} />
+        <div className="hidden md:block">
+          <OverflowActions label={t.visits.builderSettings}>
+            <BuilderTabsList variant="pill" />
+          </OverflowActions>
+        </div>
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-1 sm:gap-2 max-md:justify-self-end">
+          {!record ? (
+            <Button type="button" size="sm" disabled={builder.pending} onClick={builder.saveSettings}>{t.common.save}</Button>
+          ) : (
+            <>
+              {status === TEMPLATE_STATUS.ARCHIVED || readOnly ? (
+                <Badge variant={statusVariant}>{t.visits.templateStatuses[status]}</Badge>
+              ) : (
                 <Select
                   value={status}
                   disabled={locked || builder.publishing || builder.archiving}
                   onValueChange={(value) => {
-                    if (value === TEMPLATE_STATUS.PUBLISHED) { setScheduling(false); builder.publish(); }
-                    else if (value === TEMPLATE_STATUS.SCHEDULED) setScheduling(true);
-                    else if (value === TEMPLATE_STATUS.ARCHIVED) { setScheduling(false); builder.archive(); }
+                    setScheduling(value === TEMPLATE_STATUS.SCHEDULED);
+                    if (value === TEMPLATE_STATUS.DRAFT) builder.saveSettings();
+                    else if (value === TEMPLATE_STATUS.PUBLISHED) builder.publish();
                   }}
                 >
                   <SelectTrigger size="sm" className="h-7 w-auto gap-1 border-transparent bg-transparent px-1.5 sm:h-8 sm:gap-1.5 sm:px-2">
                     <Badge variant={statusVariant}><SelectValue /></Badge>
                   </SelectTrigger>
                   <SelectContent>
-                    {([TEMPLATE_STATUS.DRAFT, TEMPLATE_STATUS.PUBLISHED, TEMPLATE_STATUS.SCHEDULED, TEMPLATE_STATUS.ARCHIVED] as const).map((value) => (
-                      <SelectItem key={value} value={value} disabled={value === TEMPLATE_STATUS.DRAFT}>{t.visits.templateStatuses[value]}</SelectItem>
+                    {([TEMPLATE_STATUS.DRAFT, TEMPLATE_STATUS.PUBLISHED, TEMPLATE_STATUS.SCHEDULED] as const).map((value) => (
+                      <SelectItem key={value} value={value} disabled={value === TEMPLATE_STATUS.DRAFT && status === TEMPLATE_STATUS.DRAFT}>{t.visits.templateStatuses[value]}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {scheduling ? (
-                  <>
-                    <DatePicker value={scheduleDate} onChange={setScheduleDate} placeholder={t.visits.schedulePlaceholder} fromDate={new Date()} className="h-7 w-auto sm:h-8" />
-                    <SoftTip label={t.visits.scheduleConfirm}>
-                      <Button type="button" size="icon" variant="outline" className="size-7 sm:size-8" disabled={builder.scheduling || !scheduleDate} aria-label={t.visits.scheduleConfirm} onClick={() => { builder.schedule(new Date(`${scheduleDate}T00:00:00`).toISOString()); setScheduling(false); }}>
-                        <IconCheck className="size-4" />
-                      </Button>
-                    </SoftTip>
-                    <SoftTip label={t.common.close}>
-                      <Button type="button" size="icon" variant="ghost" className="size-7 sm:size-8" aria-label={t.common.close} onClick={() => setScheduling(false)}>
-                        <IconClose className="size-4" />
-                      </Button>
-                    </SoftTip>
-                  </>
-                ) : null}
-                {status !== TEMPLATE_STATUS.ARCHIVED ? (
-                  <SoftTip label={t.visits.archive}>
-                    <Button type="button" size="icon" variant="ghost" className="size-7 sm:size-8" disabled={builder.archiving} aria-label={t.visits.archive} onClick={builder.archive}>
-                      <IconArchive className="size-4" />
+              )}
+              {scheduling ? (
+                <>
+                  <DatePicker value={scheduleDate} onChange={setScheduleDate} placeholder={t.visits.schedulePlaceholder} fromDate={new Date()} className="h-7 w-auto sm:h-8" />
+                  <SoftTip label={t.visits.scheduleConfirm}>
+                    <Button type="button" size="icon" variant="outline" className="size-7 sm:size-8" disabled={builder.scheduling || !scheduleDate} aria-label={t.visits.scheduleConfirm} onClick={() => { builder.schedule(new Date(`${scheduleDate}T00:00:00`).toISOString()); setScheduling(false); }}>
+                      <IconCheck className="size-4" />
                     </Button>
                   </SoftTip>
-                ) : null}
-                <SoftTip label={t.visits.clone}>
-                  <Button type="button" size="icon" variant="ghost" className="size-7 sm:size-8" disabled={builder.cloning} aria-label={t.visits.clone} onClick={builder.clone}>
-                    <IconCopy className="size-4" />
+                  <SoftTip label={t.common.close}>
+                    <Button type="button" size="icon" variant="ghost" className="size-7 sm:size-8" aria-label={t.common.close} onClick={() => setScheduling(false)}>
+                      <IconClose className="size-4" />
+                    </Button>
+                  </SoftTip>
+                </>
+              ) : null}
+              {status !== TEMPLATE_STATUS.ARCHIVED && !readOnly ? (
+                <SoftTip label={t.visits.archive}>
+                  <Button type="button" size="icon" variant="ghost" className="size-7 sm:size-8" disabled={builder.archiving} aria-label={t.visits.archive} onClick={builder.archive}>
+                    <IconArchive className="size-4" />
                   </Button>
                 </SoftTip>
-              </>
-            )}
-          </div>
-        }
-      />
+              ) : null}
+              <SoftTip label={t.visits.clone}>
+                <Button type="button" size="icon" variant="ghost" className="size-7 sm:size-8" disabled={builder.cloning} aria-label={t.visits.clone} onClick={builder.clone}>
+                  <IconCopy className="size-4" />
+                </Button>
+              </SoftTip>
+            </>
+          )}
+        </div>
+      </div>
 
       <div className="md:hidden">
         <BuilderTabsList variant="fill" />
@@ -139,6 +168,7 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
             <p className="text-sm font-semibold">{t.visits.template}</p>
           </CardHeader>
           <CardContent className="space-y-4">
+            <fieldset disabled={locked} className="min-w-0 border-0 p-0">
             <BilingualNameFields
               name={draft.name}
               nameAr={draft.nameAr ?? ''}
@@ -147,23 +177,35 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
               englishError={builder.problems.includes('name') ? t.validation.required : undefined}
               maxLength={80}
             />
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <SelectionToggle label={t.visits.availableToAll} checked={draft.availableToAll} disabled={locked} onChange={(availableToAll) => builder.writeSettings({ ...draft, availableToAll })} />
-              {t.visits.availableToAll}
-            </label>
-            {!draft.availableToAll ? (
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                <FormField label={t.visits.practitioners}>
-                  <MultiSelect options={(practitioners.data ?? []).map((item) => ({ value: item.id, label: getBilingualName(item.name, item.nameAr, lang) }))} value={draft.assignments.practitionerIds} onChange={(practitionerIds) => builder.writeSettings({ ...draft, assignments: { ...draft.assignments, practitionerIds } })} />
-                </FormField>
-                <FormField label={t.visits.departments}>
-                  <MultiSelect options={(departments.data ?? []).map((item) => ({ value: item.id, label: getBilingualName(item.name, item.nameAr, lang) }))} value={draft.assignments.departmentIds} onChange={(departmentIds) => builder.writeSettings({ ...draft, assignments: { ...draft.assignments, departmentIds } })} />
-                </FormField>
-                <FormField label={t.visits.services}>
-                  <MultiSelect options={(services.data ?? []).map((item) => ({ value: item.id, label: getBilingualName(item.name, item.nameAr, lang) }))} value={draft.assignments.serviceIds} onChange={(serviceIds) => builder.writeSettings({ ...draft, assignments: { ...draft.assignments, serviceIds } })} />
-                </FormField>
-              </div>
-            ) : null}
+            </fieldset>
+            <TargetAudience
+              everyoneLabel={t.visits.audienceAll}
+              specificLabel={t.common.audienceSpecific}
+              specific={!draft.availableToAll}
+              onSpecificChange={(specific) => builder.writeSettings({ ...draft, availableToAll: !specific })}
+              summary={audienceSummary}
+              disabled={locked}
+              error={builder.problems.includes('assignments') ? t.visits.audienceRequired : undefined}
+            >
+              <ChoiceField
+                label={t.common.targetAudience}
+                value={pickKind}
+                options={[
+                  { value: TEMPLATE_AUDIENCE.PRACTITIONERS, label: t.visits.practitioners },
+                  { value: TEMPLATE_AUDIENCE.DEPARTMENTS, label: t.visits.departments },
+                  { value: TEMPLATE_AUDIENCE.SERVICES, label: t.visits.services },
+                ]}
+                onChange={(next) => setPickKind(next as PickKind)}
+              />
+              <OptionList
+                multiple
+                label={audienceLabel[pickKind]}
+                loading={audienceLoading[pickKind]}
+                options={audienceSource[pickKind]}
+                value={draft.assignments[AUDIENCE_ASSIGNMENT[pickKind]]}
+                onChange={(ids) => builder.writeSettings({ ...draft, assignments: { ...draft.assignments, [AUDIENCE_ASSIGNMENT[pickKind]]: ids } })}
+              />
+            </TargetAudience>
           </CardContent>
         </Card>
         {builder.problems.includes('sections') ? <p className="text-sm text-destructive">{t.visits.emptyCanvas}</p> : null}
@@ -171,21 +213,20 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
 
       <TabsContent value="build" className="flex min-h-0 flex-col gap-4">
         <PaletteStrip locked={locked} onPick={builder.addFromPalette} onDrop={(type, target) => builder.addField(target.split('|')[0], type, target.split('|')[1])} />
-        <div data-drag-scope className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-1 md:overflow-hidden md:grid-cols-[minmax(10rem,0.9fr)_minmax(0,2.2fr)_minmax(10rem,0.9fr)] lg:grid-cols-[minmax(12rem,0.85fr)_minmax(0,2.8fr)_minmax(12rem,0.85fr)] xl:grid-cols-[minmax(14rem,0.8fr)_minmax(0,2.8fr)_minmax(14rem,0.8fr)]">
-          <SidePanel title={t.visits.palette} className="hidden md:flex" contentClassName="grid content-start gap-2">
+        <div data-drag-scope className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-1 md:overflow-hidden md:grid-cols-[minmax(10rem,1fr)_minmax(0,2.4fr)_minmax(10rem,1fr)] lg:grid-cols-[minmax(12rem,1fr)_minmax(0,3fr)_minmax(12rem,1fr)] xl:grid-cols-[minmax(14rem,1fr)_minmax(0,3fr)_minmax(14rem,1fr)] [&>*]:min-w-0">
+          <SidePanel title={t.visits.palette} className="hidden md:flex" contentClassName="grid content-start gap-1.5">
             <PaletteItems locked={locked} onPick={builder.addFromPalette} onDrop={(type, target) => builder.addField(target.split('|')[0], type, target.split('|')[1])} />
           </SidePanel>
 
-          <Card className="min-h-0 min-w-0 overflow-visible">
-            <CardHeader className="shrink-0"><p className="text-sm font-semibold">{t.visits.canvas}</p></CardHeader>
-            <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pt-1 pb-2">
+          <Card size="sm" className="min-h-0 min-w-0 overflow-visible">
+            <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">
             {!draft.sections.length ? (
               <EmptyState icon={IconFileText} title={t.visits.emptyCanvas} description={t.visits.emptyCanvasCta} action={<Button type="button" disabled={locked} onClick={builder.addSection}><IconAdd className="size-4" />{t.visits.addSection}</Button>} />
             ) : null}
             {draft.sections.map((section, sectionIndex) => (
-              <Card key={section.id} data-drop-target={section.id} className={cn('group/drop overflow-visible transition-[border-color,background-color] duration-200 motion-reduce:transition-none data-[drag-over=true]:bg-primary/5 data-[drag-over=true]:ring-2 data-[drag-over=true]:ring-primary', selected?.sectionId === section.id && !selected.fieldId && 'ring-1 ring-primary')}>
-                <CardHeader className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-3 px-4">
-                  <DragItem label={t.visits.section} variant="ghost" className="size-9 shrink-0 justify-center p-0" disabled={locked} onDrop={(target) => builder.dropSection(section.id, target.split('|')[0])}>
+              <Card key={section.id} data-drop-target={section.id} className={cn('group/drop overflow-visible transition-[border-color,background-color] duration-200 motion-reduce:transition-none data-[drag-over=true]:bg-primary/5', selected?.sectionId === section.id && !selected.fieldId && 'ring-1 ring-primary')}>
+                <CardHeader className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 px-4">
+                  <DragItem label={t.visits.section} variant="ghost" className="size-8 shrink-0 justify-center p-0" disabled={locked} onDrop={(target) => builder.dropSection(section.id, target.split('|')[0])}>
                     <IconGrip className="size-4" />
                   </DragItem>
                   <div className="grid min-w-0 flex-1 gap-2 xl:grid-cols-2">
@@ -196,6 +237,7 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
                       <Input id={`${section.id}-title-ar`} dir="rtl" value={section.titleAr ?? ''} disabled={locked} onFocus={() => builder.setSelected({ sectionId: section.id })} onChange={(event) => builder.patchSection(section.id, { titleAr: event.target.value })} />
                     </FormField>
                   </div>
+                  <div>
                   <RowActionsMenu
                     items={[
                       { label: t.visits.moveUp, icon: IconArrowUp, disabled: locked || sectionIndex === 0, onSelect: () => builder.moveSection(sectionIndex, -1) },
@@ -203,18 +245,20 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
                       { label: t.common.remove, icon: IconDelete, variant: 'destructive', disabled: locked, onSelect: () => builder.removeSection(section.id) },
                     ]}
                   />
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3 px-4 pb-1">
                   {!section.fields.length ? <p role="alert" className="text-xs text-destructive">{t.visits.emptySection}</p> : null}
                   {section.fields.map((field) => (
-                    <div key={field.id} data-drop-target={`${section.id}|${field.id}`} className="flex items-center gap-2 rounded-lg data-[drag-over=true]:bg-primary/10 data-[drag-over=true]:ring-2 data-[drag-over=true]:ring-primary">
-                      <DragItem label={field.label || t.visits.field} variant="ghost" className="size-9 shrink-0 justify-center p-0" disabled={locked} onDrop={(target) => builder.dropField(section.id, field.id, target.split('|')[0], target.split('|')[1])}>
-                        <IconGrip className="size-4 text-muted-foreground" />
-                      </DragItem>
-                      <button type="button" onClick={() => builder.setSelected({ sectionId: section.id, fieldId: field.id })} className={cn('flex min-w-0 flex-1 items-center justify-between gap-2 rounded-lg border px-3 py-3 text-start text-sm transition-colors motion-reduce:transition-none', selected?.fieldId === field.id ? 'border-primary bg-primary/5' : 'border-border bg-muted/30')}>
-                        <span className="min-w-0 truncate">{field.label || t.visits.field}</span>
+                    <div key={field.id} data-drop-target={`${section.id}|${field.id}`} className="flex items-center gap-2 rounded-lg data-[drag-over=true]:shadow-[inset_0_2px_0_var(--color-primary)]">
+                      <DragItem label={field.label || t.visits.field} variant="ghost" disabled={locked}
+                        onPick={() => builder.setSelected({ sectionId: section.id, fieldId: field.id })}
+                        onDrop={(target) => builder.dropField(section.id, field.id, target.split('|')[0], target.split('|')[1])}
+                        className={cn('h-auto w-full min-w-0 justify-start rounded-lg border px-3 py-3 text-start text-sm', selected?.fieldId === field.id ? 'border-primary bg-primary/5' : 'border-border bg-muted/30')}>
+                        <IconGrip className="size-4 shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 flex-1 truncate">{field.label || t.visits.field}</span>
                         <span className="shrink-0 text-xs text-muted-foreground">{t.visits.fieldTypes[field.type]}</span>
-                      </button>
+                      </DragItem>
                     </div>
                   ))}
                   <Button type="button" variant="outline" size="sm" disabled={locked} onClick={() => builder.addField(section.id)}>
@@ -233,6 +277,15 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
 
           <SidePanel
             title={t.visits.fieldSettings}
+            headerActions={selectedField && selectedSection ? (
+              <RowActionsMenu
+                items={[
+                  { label: t.visits.moveUp, icon: IconArrowUp, disabled: locked || selectedSection.fields[0]?.id === selectedField.id, onSelect: () => builder.moveField(selectedSection.id, selectedSection.fields.findIndex((item) => item.id === selectedField.id), -1) },
+                  { label: t.visits.moveDown, icon: IconArrowDown, disabled: locked || selectedSection.fields.at(-1)?.id === selectedField.id, onSelect: () => builder.moveField(selectedSection.id, selectedSection.fields.findIndex((item) => item.id === selectedField.id), 1) },
+                  { label: t.common.remove, icon: IconDelete, variant: 'destructive', disabled: locked || selectedSection.fields.length === 1, onSelect: () => builder.removeField(selectedSection.id, selectedField.id) },
+                ]}
+              />
+            ) : undefined}
             mobileSheet
             open={!!selectedField}
             onClose={() => builder.setSelected(selectedSection ? { sectionId: selectedSection.id } : null)}
@@ -240,21 +293,13 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
             {selectedField && selectedSection ? (
               <FieldSettings
                 field={selectedField}
-                siblings={selectedSection.fields}
                 locked={locked}
                 problems={builder.problems}
                 onPatch={(patch) => builder.patchField(selectedSection.id, selectedField.id, patch)}
                 onType={(type) => builder.setType(selectedSection.id, selectedField, type)}
-                onMove={(direction) => {
-                  const index = selectedSection.fields.findIndex((item) => item.id === selectedField.id);
-                  builder.moveField(selectedSection.id, index, direction);
-                }}
-                onRemove={() => builder.removeField(selectedSection.id, selectedField.id)}
-                canMoveUp={selectedSection.fields[0]?.id !== selectedField.id}
-                canMoveDown={selectedSection.fields.at(-1)?.id !== selectedField.id}
               />
             ) : (
-              <EmptyState icon={IconFilters} title={t.visits.selectField} size="compact" />
+              <div className="panel-swap"><EmptyState icon={IconFilters} title={t.visits.selectField} size="compact" /></div>
             )}
           </SidePanel>
         </div>
@@ -262,7 +307,6 @@ export function NoteTemplateBuilder({ template }: { template?: TemplateDTO }) {
 
       <TabsContent value="publish" className="min-h-0 space-y-4 overflow-y-auto p-1">
         <TemplatePreview key={JSON.stringify(previewSections(draft))} sections={previewSections(draft)} title={getBilingualName(draft.name, draft.nameAr, lang)} />
-        {record ? <p className="text-xs text-muted-foreground">{t.visits.version.replace('{version}', String(record.version))}</p> : null}
         {record?.status === TEMPLATE_STATUS.SCHEDULED && record.scheduledAt ? (
           <p className="text-xs text-muted-foreground">{t.visits.scheduleAt} {new Date(record.scheduledAt).toLocaleDateString(lang === 'ar' ? 'ar' : 'en')}</p>
         ) : null}
@@ -322,6 +366,9 @@ const FIELD_ICONS = {
   boolean: IconFieldBoolean,
   date: IconCalendar,
   measurement: IconFieldMeasurement,
+  scale: IconFieldScale,
+  time: IconTime,
+  medications: IconFieldMedication,
 };
 
 function PaletteItems({ locked, onPick, onDrop, compact = false }: {
@@ -334,7 +381,7 @@ function PaletteItems({ locked, onPick, onDrop, compact = false }: {
   return MEDICAL_NOTE_PALETTE.map((type) => {
     const Icon = FIELD_ICONS[type];
     return <DragItem key={type} label={t.visits.fieldTypes[type]} disabled={locked}
-      className={cn('group/palette h-auto justify-start rounded-xl border-border/50 bg-muted/20 text-start font-normal hover:border-primary/40 hover:bg-primary/5', compact ? 'min-h-9 shrink-0 gap-1.5 px-2.5 py-1.5' : 'min-h-12 w-full px-3 py-3')}
+      className={cn('group/palette h-auto justify-start rounded-xl border-border/50 bg-muted/20 text-start font-normal hover:border-primary/40 hover:bg-primary/5', compact ? 'min-h-9 shrink-0 gap-1.5 px-2.5 py-1.5' : 'min-h-10 w-full px-2.5 py-2')}
       onPick={() => onPick(type)} onDrop={(target) => onDrop(type, target)}>
       <span className={cn('grid shrink-0 place-items-center rounded-lg bg-background text-muted-foreground group-hover/palette:text-primary', compact ? 'size-6' : 'size-7')}><Icon className={compact ? 'size-3.5' : 'size-4'} aria-hidden /></span>
       <span className={cn('min-w-0 flex-1 whitespace-normal leading-snug', compact ? 'text-xs' : 'text-sm')}>{t.visits.fieldTypes[type]}</span>
@@ -345,40 +392,20 @@ function PaletteItems({ locked, onPick, onDrop, compact = false }: {
 
 function FieldSettings({
   field,
-  siblings,
   locked,
   problems,
   onPatch,
   onType,
-  onMove,
-  onRemove,
-  canMoveUp,
-  canMoveDown,
 }: {
   field: ClinicalField;
-  siblings: ClinicalField[];
   locked: boolean;
   problems: string[];
   onPatch: (patch: Partial<ClinicalField>) => void;
   onType: (type: ClinicalField['type']) => void;
-  onMove: (direction: -1 | 1) => void;
-  onRemove: () => void;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
 }) {
   const { t } = useLanguage();
-  const visibilityOptions = siblings.filter((item) => item.id !== field.id && !item.visibility && item.type !== CLINICAL_FIELD_TYPE.MEASUREMENT && item.type !== CLINICAL_FIELD_TYPE.MULTI_SELECT && item.type !== CLINICAL_FIELD_TYPE.CHECKBOXES);
   return (
-    <div className="space-y-3">
-      <div className="flex justify-end">
-        <RowActionsMenu
-          items={[
-            { label: t.visits.moveUp, icon: IconArrowUp, disabled: locked || !canMoveUp, onSelect: () => onMove(-1) },
-            { label: t.visits.moveDown, icon: IconArrowDown, disabled: locked || !canMoveDown, onSelect: () => onMove(1) },
-            { label: t.common.remove, icon: IconDelete, variant: 'destructive', disabled: locked || siblings.length === 1, onSelect: onRemove },
-          ]}
-        />
-      </div>
+    <div key={field.id} className="panel-swap space-y-3">
       <FormField label={t.visits.field} htmlFor={`${field.id}-label`} required error={problems.includes(field.id) ? t.validation.required : undefined}>
         <Input id={`${field.id}-label`} value={field.label} disabled={locked} onChange={(event) => onPatch({ label: event.target.value })} />
       </FormField>
@@ -425,32 +452,6 @@ function FieldSettings({
             <IconAdd className="size-4" />{t.visits.addOption}
           </Button>
         </div>
-      ) : null}
-      {visibilityOptions.length ? (
-        <FormField label={t.visits.visibility}>
-          <Select
-            value={encodeVisibility(field)}
-            disabled={locked}
-            onValueChange={(value) => onPatch({ visibility: decodeVisibility(value) })}
-          >
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={VISIBILITY_ALWAYS}>{t.visits.alwaysVisible}</SelectItem>
-              {visibilityOptions.flatMap((item) => {
-                if (item.type === CLINICAL_FIELD_TYPE.BOOLEAN) {
-                  return [true, false].map((value) => {
-                    const next = JSON.stringify({ fieldId: item.id, operator: VISIBILITY_OPERATOR.EQUALS, value });
-                    return <SelectItem key={next} value={next}>{item.label} = {value ? t.visits.yes : t.visits.no}</SelectItem>;
-                  });
-                }
-                return (item.options ?? []).map((option) => {
-                  const next = JSON.stringify({ fieldId: item.id, operator: VISIBILITY_OPERATOR.EQUALS, value: option.value });
-                  return <SelectItem key={next} value={next}>{item.label || item.id} = {option.label || option.value}</SelectItem>;
-                });
-              })}
-            </SelectContent>
-          </Select>
-        </FormField>
       ) : null}
     </div>
   );

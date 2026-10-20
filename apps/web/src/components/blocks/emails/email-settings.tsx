@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { EmailSettingsInput } from "@clinic/types";
 import { ROLE } from "@clinic/types";
@@ -18,6 +18,7 @@ import {
   ErrorState,
   FormField,
   FormPageSkeleton,
+  PhoneInputField,
 } from "@/components/primitives";
 import { useEmailSettings, useSaveEmailSettings } from "@/hooks/api/use-emails";
 import { useClinic } from "@/hooks/api/use-clinic";
@@ -45,6 +46,7 @@ function EmailSettingsForm({
   const clinic = useClinic(clinicId);
   const {
     register,
+    control,
     handleSubmit,
     setValue,
     trigger,
@@ -59,6 +61,7 @@ function EmailSettingsForm({
       instagramUrl: settings.instagramUrl ?? "",
       facebookUrl: settings.facebookUrl ?? "",
       linkedinUrl: settings.linkedinUrl ?? "",
+      phone: settings.phone ?? "",
       footerEn: settings.footerEn ?? "",
       footerAr: settings.footerAr ?? "",
     },
@@ -72,6 +75,7 @@ function EmailSettingsForm({
       instagramUrl: httpsUrl(values.instagramUrl),
       facebookUrl: httpsUrl(values.facebookUrl),
       linkedinUrl: httpsUrl(values.linkedinUrl),
+      phone: values.phone || undefined,
       footerEn: values.footerEn || undefined,
       footerAr: values.footerAr || undefined,
     };
@@ -94,7 +98,6 @@ function EmailSettingsForm({
               label={t.emails.replyTo}
               htmlFor="replyTo"
               error={errors.replyTo?.message}
-              className="sm:col-span-2"
             >
               <Input
                 id="replyTo"
@@ -145,6 +148,19 @@ function EmailSettingsForm({
                 </FormField>
               );
             })}
+            <FormField
+              label={t.emails.contactPhone}
+              htmlFor="phone"
+              error={errors.phone?.message}
+            >
+              <Controller
+                control={control}
+                name="phone"
+                render={({ field }) => (
+                  <PhoneInputField value={field.value ?? ""} onChange={field.onChange} />
+                )}
+              />
+            </FormField>
             {(["footerEn", "footerAr"] as const).map((name) => (
               <FormField
                 key={name}

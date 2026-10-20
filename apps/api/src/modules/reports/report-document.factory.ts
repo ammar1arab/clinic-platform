@@ -203,7 +203,7 @@ export class ReportDocumentFactory {
         { key: "duration", header: "Duration" },
       ],
       rows: appointments.map((row) => ({
-        date: formatDisplayDateTime(row.scheduledAt),
+        date: formatDisplayDateTime(row.scheduledAt, clinic.timezone),
         status: row.status,
         doctor: row.doctor.name,
         service: row.service?.name ?? null,
@@ -243,7 +243,7 @@ export class ReportDocumentFactory {
         { key: "appointmentAt", header: "Appointment" },
       ],
       rows: referrals.map((row) => ({
-        createdAt: formatDisplayDateTime(row.createdAt),
+        createdAt: formatDisplayDateTime(row.createdAt, clinic.timezone),
         patient: patientName(row.appointment.patient),
         nationalId: row.appointment.patient.nationalId,
         type: row.type,
@@ -253,7 +253,10 @@ export class ReportDocumentFactory {
         toDoctor: row.toDoctor.name,
         reason: row.reason,
         opinion: row.opinion,
-        appointmentAt: formatDisplayDateTime(row.appointment.scheduledAt),
+        appointmentAt: formatDisplayDateTime(
+          row.appointment.scheduledAt,
+          clinic.timezone,
+        ),
       })),
     });
   }
@@ -285,7 +288,7 @@ export class ReportDocumentFactory {
       }
 
       return {
-        date: formatDisplayDateTime(row.scheduledAt),
+        date: formatDisplayDateTime(row.scheduledAt, clinic.timezone),
         patient: patientName(row.patient),
         nationalId: row.patient.nationalId,
         doctor: row.doctor.name,
@@ -296,7 +299,9 @@ export class ReportDocumentFactory {
         payable: pricing.payable,
         paid: row.isPaid ? "Paid" : "Unpaid",
         paymentMethod: methodName,
-        paidAt: row.paidAt ? formatDisplayDateTime(row.paidAt) : null,
+        paidAt: row.paidAt
+          ? formatDisplayDateTime(row.paidAt, clinic.timezone)
+          : null,
         isPaid: row.isPaid,
         methodName,
         doctorName: row.doctor.name,
@@ -582,14 +587,14 @@ export class ReportDocumentFactory {
       rows: [
         ...timeOffs.map((entry) => ({
           kind: "Leave",
-          start: formatDisplayDate(entry.startDate),
-          end: formatDisplayDate(entry.endDate),
+          start: formatDisplayDateTime(entry.startDate, clinic.timezone),
+          end: formatDisplayDateTime(entry.endDate, clinic.timezone),
           reason: cell(entry.reason),
         })),
         ...overrides.map((entry) => ({
           kind: "Extra hours",
-          start: formatDisplayDateTime(entry.startAt),
-          end: formatDisplayDateTime(entry.endAt),
+          start: formatDisplayDateTime(entry.startAt, clinic.timezone),
+          end: formatDisplayDateTime(entry.endAt, clinic.timezone),
           reason: cell(entry.reason),
         })),
       ],
@@ -628,7 +633,7 @@ export class ReportDocumentFactory {
         { key: "duration", header: "Duration" },
       ],
       rows: input.appointments.map((row) => ({
-        date: formatDisplayDateTime(row.scheduledAt),
+        date: formatDisplayDateTime(row.scheduledAt, input.clinic.timezone),
         patient: patientName(row.patient),
         doctor: row.doctor.name,
         service: row.service?.name ?? null,

@@ -3,20 +3,23 @@ import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import type { AuthUser } from "@/modules/auth/types";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
-import type {
-  ClinicalSection,
-  InvoiceLine,
-  ReportSections,
-  VisitListResponse,
+import { NotificationsService } from "@/modules/notifications/notifications.service";
+import {
+  NOTIFICATION_TYPE,
+  type ClinicalSection,
+  type InvoiceLine,
+  type ReportSections,
+  type VisitListResponse,
 } from "@clinic/types";
 import {
   VisitsRepository,
   type VisitRow,
+  type SummaryRow,
   type VisitTx,
   type WorkspaceRow,
   summaryInclude,
 } from "./visits.repository";
-import { TemplatesService, toJson, versionSnapshot } from "./templates.service";
+import { TemplatesService, publishedSnapshot, toJson } from "./templates.service";
 import {
   VisitDocumentsService,
   type VisitDocumentSnapshot,
@@ -50,6 +53,7 @@ export class VisitsService {
     private readonly templates: TemplatesService,
     private readonly documents: VisitDocumentsService,
     private readonly gateway: DashboardGateway,
+    private readonly notifications: NotificationsService,
   ) {}
   private permit(actor: AuthUser, capability: "clinical" | "billing" | "read") {
     if (
@@ -63,6 +67,16 @@ export class VisitsService {
   private changed(clinicId: string) {
     this.gateway.emitAppointmentChanged(clinicId);
     this.gateway.emitVisitChanged(clinicId);
+  }
+  private notifyArrival(actor: AuthUser, row: WorkspaceRow) {
+    return this.notifications.notifyDoctor(NOTIFICATION_TYPE.QUEUE_PATIENT_WAITING, {
+      clinicId: actor.clinicId,
+      doctorId: row.doctorId,
+      appointmentId: row.id,
+      scheduledAt: row.scheduledAt,
+      patient: row.patient,
+      actorId: actor.clinicUserId,
+    });
   }
   private revision(current: number, expected: number) {
     if (current !== expected) visitError("visitRevisionConflict", 409);
@@ -259,18 +273,35 @@ export class VisitsService {
       }),
     };
     return this.repo.transaction(async (tx) => {
-      const [rows, total] = await Promise.all([
-        tx.appointment.findMany({
-          where,
-          include: summaryInclude,
-          orderBy: [{ scheduledAt: "desc" }, { id: "desc" }],
-          skip: (filters.page - 1) * filters.limit,
-          take: filters.limit,
-        }),
-        tx.appointment.count({ where }),
-      ]);
+      const priorities: SummaryRow["status"][][] = [
+        ["in_progress"],
+        ["checked_in", "waiting"],
+        ["confirmed", "unconfirmed"],
+      ];
+      const counts = await tx.appointment.groupBy({ by: ["status"], where, _count: { _all: true } });
+      const total = counts.reduce((sum, group) => sum + group._count._all, 0);
+      const ids: string[] = [];
+      let offset = (filters.page - 1) * filters.limit;
+      for (let index = 0; index <= priorities.length && ids.length < filters.limit; index++) {
+        const statuses = priorities[index];
+        const matches = (status: SummaryRow["status"]) => statuses ? statuses.includes(status) : !priorities.some((group) => group.includes(status));
+        const count = counts.reduce((sum, group) => sum + (matches(group.status) ? group._count._all : 0), 0);
+        if (offset >= count) { offset -= count; continue; }
+        const direction = statuses ? "asc" : "desc";
+        const page = await tx.appointment.findMany({
+          where: { AND: [where, { status: statuses ? { in: statuses } : { notIn: priorities.flat() } }] },
+          select: { id: true },
+          orderBy: [{ scheduledAt: direction }, { id: direction }],
+          skip: offset,
+          take: Math.min(count - offset, filters.limit - ids.length),
+        });
+        ids.push(...page.map((item) => item.id));
+        offset = 0;
+      }
+      const rows = ids.length ? await tx.appointment.findMany({ where: { clinicId: actor.clinicId, id: { in: ids } }, include: summaryInclude }) : [];
+      const byId = new Map(rows.map((row) => [row.id, row]));
       return {
-        items: rows.map((row) => summary(row, now)),
+        items: ids.flatMap((id) => { const row = byId.get(id); return row ? [summary(row, now)] : []; }),
         total,
         page: filters.page,
         limit: filters.limit,
@@ -281,6 +312,7 @@ export class VisitsService {
   async presence(actor: AuthUser, id: string, source: string, waiting = false) {
     if (!["owner", "admin", "practitioner"].includes(actor.role))
       visitError("visitForbidden", 403);
+    let arrival: WorkspaceRow | null = null;
     const result = await this.repo.withAppointment(
       actor,
       id,
@@ -320,10 +352,12 @@ export class VisitsService {
             revision: { increment: 1 },
           },
         });
+        if (row.status !== (waiting ? "waiting" : "checked_in")) arrival = row;
         return this.read(tx, actor, id);
       },
     );
     this.changed(actor.clinicId);
+    if (arrival) await this.notifyArrival(actor, arrival);
     return result;
   }
   async start(actor: AuthUser, appointmentId: string, expected?: number) {
@@ -347,6 +381,7 @@ export class VisitsService {
         const end = new Date(
           row.scheduledAt.getTime() + row.durationMins * 60_000,
         );
+        const template = await this.templates.defaultForVisit(tx, row);
         await tx.visit.create({
           data: {
             clinicId: actor.clinicId,
@@ -354,6 +389,15 @@ export class VisitsService {
             startedAt: now,
             scheduledEndAt: end,
             documentationDeadlineAt: new Date(end.getTime() + 48 * 3600_000),
+            ...(template ? {
+              noteStatus: "draft",
+              note: { create: {
+                templateId: template.id,
+                sectionsSnapshot: toJson(template.sections),
+                values: {},
+                authorId: actor.clinicUserId,
+              } },
+            } : {}),
             context: toJson({
               patientName: `${row.patient.firstNameEn} ${row.patient.lastNameEn}`,
               patientNameAr: [row.patient.firstNameAr, row.patient.lastNameAr]
@@ -447,18 +491,10 @@ export class VisitsService {
       async (tx, row, visit) => {
         this.editable(row, visit);
         this.revision(visit.note?.revision ?? 0, input.revision);
-        const version = await tx.clinicalTemplateVersion.findFirst({
-          where: { id: input.templateVersionId, clinicId: actor.clinicId },
-        });
-        if (!version) visitError("clinicalTemplateNotFound", 404);
-        const switching = visit.note?.templateVersionId !== version.id;
+        const switching = visit.note?.templateId !== input.templateId;
         if (switching) {
           const allowed = await this.templates.allowed(tx, row);
-          if (
-            !allowed.some(
-              (template) => template.publishedVersionId === version.id,
-            )
-          )
+          if (!allowed.some((template) => template.id === input.templateId))
             visitError("clinicalTemplateUnavailable", 403);
           if (
             visit.note &&
@@ -467,12 +503,17 @@ export class VisitsService {
           )
             visitError("clinicalTemplateChangeConfirmationRequired", 409);
         }
-        const sections = versionSnapshot(version).sections;
+        const template = await tx.clinicalNoteTemplate.findFirst({
+          where: { id: input.templateId, clinicId: actor.clinicId },
+        });
+        if (!template) visitError("clinicalTemplateNotFound", 404);
+        const sections =
+          !switching && visit.note
+            ? (visit.note.sectionsSnapshot as unknown as ClinicalSection[])
+            : publishedSnapshot(template).sections;
         validateValues(sections, input.values);
         const data = {
-          templateId: version.templateId,
-          templateVersionId: version.id,
-          templateVersion: version.version,
+          templateId: template.id,
           sectionsSnapshot: toJson(sections),
           values: toJson(input.values),
           authorId: actor.clinicUserId,
@@ -523,7 +564,7 @@ export class VisitsService {
           revision,
           values: visit.note.values,
           sectionsSnapshot: visit.note.sectionsSnapshot,
-          templateVersionId: visit.note.templateVersionId,
+          templateId: visit.note.templateId,
         });
         await tx.clinicalNote.update({
           where: { id: visit.note.id },
@@ -735,6 +776,9 @@ export class VisitsService {
       clinicName: arabic
         ? context.clinicNameAr || context.clinicName
         : context.clinicName,
+      brandColor: row.clinic.brandColor,
+      logoUrl: row.clinic.logoUrl,
+      footer: row.clinic.letterheadFooter,
       patientName: arabic
         ? context.patientNameAr || context.patientName
         : context.patientName,

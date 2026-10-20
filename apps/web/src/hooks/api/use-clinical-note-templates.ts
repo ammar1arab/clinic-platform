@@ -20,14 +20,6 @@ export function useClinicalNoteTemplate(id: string) {
   });
 }
 
-export function useStarterNoteTemplate(enabled = true) {
-  return useFetchData<ClinicalTemplateInput>({
-    queryKey: [...QUERY_KEYS.clinicalNoteTemplates.all, 'starter'],
-    request: () => clinicalNoteTemplatesService.starter(),
-    options: { enabled },
-  });
-}
-
 export function useMyNoteTemplates(enabled = true) {
   return useFetchData<TemplateDTO[]>({
     queryKey: [...QUERY_KEYS.clinicalNoteTemplates.all, 'mine'],
@@ -48,7 +40,7 @@ export function useCreateClinicalNoteTemplate() {
   const { t } = useLanguage();
   return useApiMutation<TemplateDTO, TResponseError, ClinicalTemplateInput>({
     request: (body) => clinicalNoteTemplatesService.create(body),
-    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all],
+    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all, QUERY_KEYS.notePreference],
     successMessage: t.visits.templateSaved,
   });
 }
@@ -73,7 +65,7 @@ export function usePublishClinicalNoteTemplate() {
   const { t } = useLanguage();
   return useApiMutation({
     request: (input: { id: string; revision: number }) => clinicalNoteTemplatesService.publish(input.id, input.revision),
-    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all],
+    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all, QUERY_KEYS.notePreference],
     successMessage: t.visits.templatePublished,
   });
 }
@@ -83,7 +75,7 @@ export function useScheduleClinicalNoteTemplate() {
   return useApiMutation({
     request: (input: { id: string; revision: number; scheduledAt: string }) =>
       clinicalNoteTemplatesService.schedule(input.id, input.revision, input.scheduledAt),
-    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all],
+    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all, QUERY_KEYS.notePreference],
     successMessage: t.visits.templateScheduled,
   });
 }
@@ -92,8 +84,17 @@ export function useArchiveClinicalNoteTemplate() {
   const { t } = useLanguage();
   return useApiMutation({
     request: (input: { id: string; revision: number }) => clinicalNoteTemplatesService.archive(input.id, input.revision),
-    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all],
+    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all, QUERY_KEYS.notePreference],
     successMessage: t.visits.templateArchived,
+  });
+}
+
+export function useDeleteClinicalNoteTemplate() {
+  const { t } = useLanguage();
+  return useApiMutation({
+    request: (id: string) => clinicalNoteTemplatesService.remove(id),
+    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all, QUERY_KEYS.notePreference],
+    successMessage: t.visits.templateDeleted,
   });
 }
 
@@ -101,7 +102,18 @@ export function useCloneClinicalNoteTemplate() {
   const { t } = useLanguage();
   return useApiMutation({
     request: (id: string) => clinicalNoteTemplatesService.clone(id),
-    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all],
+    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all, QUERY_KEYS.notePreference],
     successMessage: t.visits.templateCloned,
   });
+}
+
+export function useClinicNoteDefault() {
+  return useFetchData({ queryKey: [...QUERY_KEYS.clinicalNoteTemplates.all, 'default'], request: () => clinicalNoteTemplatesService.clinicDefault() });
+}
+export function useSetClinicNoteDefault() {
+  return useApiMutation({ request: (templateId: string) => clinicalNoteTemplatesService.setClinicDefault(templateId), invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all, QUERY_KEYS.notePreference] });
+}
+
+export function useStarterNoteTemplates() {
+  return useFetchData({ queryKey: [...QUERY_KEYS.clinicalNoteTemplates.all, 'starters'], request: () => clinicalNoteTemplatesService.starters() });
 }

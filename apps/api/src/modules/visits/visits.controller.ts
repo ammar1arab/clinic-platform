@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   Param,
@@ -329,6 +330,16 @@ export class VisitsController {
 @Roles(Role.owner, Role.practitioner)
 export class ClinicalTemplatesController {
   constructor(private readonly templates: TemplatesService) {}
+  @Get("default")
+  clinicDefault(@CurrentUser() actor: AuthUser) {
+    return this.templates.clinicDefault(actor);
+  }
+  @Put("default")
+  setClinicDefault(@CurrentUser() actor: AuthUser, @Body() body: NotePreferenceDto) {
+    return this.templates.clinicDefault(actor, body.templateId);
+  }
+  @Get("starters")
+  starters(@CurrentUser() actor: AuthUser) { return this.templates.starters(actor); }
   @Get("starter") @Header("Cache-Control", "no-store") starter(
     @CurrentUser() actor: AuthUser,
   ) {
@@ -356,12 +367,6 @@ export class ClinicalTemplatesController {
     @Param("id", ParseUUIDPipe) id: string,
   ) {
     return this.templates.get(actor, id);
-  }
-  @Get(":id/versions") @Header("Cache-Control", "no-store") versions(
-    @CurrentUser() actor: AuthUser,
-    @Param("id", ParseUUIDPipe) id: string,
-  ) {
-    return this.templates.versions(actor, id);
   }
   @Patch(":id") @Header("Cache-Control", "no-store") update(
     @CurrentUser() actor: AuthUser,
@@ -395,6 +400,12 @@ export class ClinicalTemplatesController {
     @Body() body: SignDto,
   ) {
     return this.templates.archive(actor, id, body.revision);
+  }
+  @Delete(":id") @Header("Cache-Control", "no-store") remove(
+    @CurrentUser() actor: AuthUser,
+    @Param("id", ParseUUIDPipe) id: string,
+  ) {
+    return this.templates.remove(actor, id);
   }
   @Post(":id/clone") @Header("Cache-Control", "no-store") clone(
     @CurrentUser() actor: AuthUser,

@@ -116,6 +116,10 @@ export const renderEmail = (
     const url = secureUrl(href);
     return url ? [{ id, label, url }] : [];
   });
+  const phone = brand.phone?.trim() ?? "";
+  const phoneLine = /^\+?[0-9\s().-]{6,25}$/.test(phone)
+    ? `<p style="margin:0 0 16px;font-size:13px;line-height:1.6"><a href="tel:${phone.replace(/[^+\d]/g, "")}" style="color:${accent};text-decoration:none" dir="ltr">${escapeHtml(phone)}</a></p>`
+    : "";
   const socialLinks = links
     .map(
       ({ id, label, url }) =>
@@ -165,6 +169,7 @@ export const renderEmail = (
                   ? `<p style="margin:0 0 16px;font-size:13px;line-height:1.6;color:#6b7280">${escapeHtml(footer).replace(/\r?\n/g, "<br>")}</p>`
                   : ""
               }
+              ${phoneLine}
               ${socialLinks ? `<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt"><tr>${socialLinks}</tr></table>` : ""}
             </td>
           </tr>
@@ -184,6 +189,7 @@ export const renderEmail = (
       subject,
       body,
       footer,
+      phone,
       ...links.map(({ label, url }) => `${label}: ${url}`),
     ]
       .filter(Boolean)

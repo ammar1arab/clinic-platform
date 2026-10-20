@@ -1,18 +1,8 @@
-import {
-  PageHeaderSkeleton,
-  StatGridSkeleton,
-  TableSkeleton,
-} from '@/components/primitives';
+import { LoadingState } from '@/components/primitives';
 import { Skeleton } from '@/components/ui';
 
 export function DashboardMainFallback() {
-  return (
-    <div className="space-y-6">
-      <PageHeaderSkeleton />
-      <StatGridSkeleton count={4} />
-      <TableSkeleton rows={6} />
-    </div>
-  );
+  return <LoadingState variant="page" className="min-h-0 flex-1" />;
 }
 
 export function DashboardShellFallback() {

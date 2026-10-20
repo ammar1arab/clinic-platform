@@ -29,6 +29,8 @@ export function useClinicRealtime(
 
       const join = () => {
         socket.emit('join-clinic', clinicId);
+        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.visits.all }, { cancelRefetch: false });
+        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.practitioners.all }, { cancelRefetch: false });
         log.debug('joined', { clinicId });
         onStoreChange();
       };
@@ -48,7 +50,7 @@ export function useClinicRealtime(
       const refreshAppointments = () => {
         log.debug('appointment_changed', { clinicId });
         for (const key of INVALIDATE.appointmentWrite) {
-          void queryClient.invalidateQueries({ queryKey: key });
+          void queryClient.invalidateQueries({ queryKey: key }, { cancelRefetch: false });
         }
         void queryClient.invalidateQueries({
           queryKey: QUERY_KEYS.patientPackages.all,
@@ -70,9 +72,16 @@ export function useClinicRealtime(
       };
 
       const refreshVisits = () => {
-        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.visits.all });
+        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.visits.all }, { cancelRefetch: false });
       };
 
+      const refreshRequests = (event?: { availabilityChanged?: boolean }) => {
+        if (event?.availabilityChanged) {
+          for (const queryKey of INVALIDATE.appointmentWrite) void queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false });
+        }
+        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.practitioners.all }, { cancelRefetch: false });
+      };
+      socket.on('schedule-request-changed', refreshRequests);
       socket.on('appointment-changed', refreshAppointments);
       socket.on('visit-changed', refreshVisits);
       socket.on('referral-changed', refreshReferrals);
@@ -82,6 +91,7 @@ export function useClinicRealtime(
         socket.off('connect', join);
         socket.off('disconnect', onDisconnect);
         socket.off('connect_error', onConnectError);
+        socket.off('schedule-request-changed', refreshRequests);
         socket.off('appointment-changed', refreshAppointments);
         socket.off('visit-changed', refreshVisits);
         socket.off('referral-changed', refreshReferrals);

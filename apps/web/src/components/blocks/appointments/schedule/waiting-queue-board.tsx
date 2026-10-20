@@ -1,15 +1,25 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import React, { useMemo, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { useNow } from '@/hooks/shared/use-now';
+import { useDragDrop, type DragSize } from '@/hooks/shared/use-drag-drop';
+import { useUpdateAppointment } from '@/hooks/api/use-appointments';
+import { extractErrorMessage, type ApiErrorLike } from '@/lib/api';
 import {
   Button,
   Badge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Skeleton,
   type BadgeVariant,
 } from '@/components/ui';
-import { Appointment } from '@/services/appointments.service';
+import { Appointment, type AppointmentStatus } from '@/services/appointments.service';
 import { AppointmentStatusSelect } from '../shared/appointment-status-select';
 import { doctorDisplayName, formatApptTimeRange, patientDisplayName } from '../shared/appointment-display';
 import { STATUS_COLORS } from '../shared/status-badge';
@@ -19,10 +29,9 @@ import {
   type AppointmentPopoverState,
 } from './appointment-popovers';
 import { cn } from '@/lib/utils';
-import { EmptyState, QueueColumnSkeleton, SoftTip } from '@/components/primitives';
-import { ViewFocusToggle } from './view-focus';
+import { EmptyState, PreviewableAvatar, QueueColumnSkeleton, SoftTip } from '@/components/primitives';
 import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
-import { IconActivate, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
+import { IconActivate, IconBan, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
 import { APPOINTMENT_STATUS, PRESENCE_SOURCE, SESSION_TYPE } from '@clinic/types';
@@ -31,9 +40,40 @@ import { ROUTES } from '@/constants/routes';
 import { visitsService } from '@/services/visits.service';
 import { INVALIDATE, useApiMutation } from '@/hooks/query';
 
+const STAGE_OF: Record<AppointmentStatus, QueueStage> = {
+  [APPOINTMENT_STATUS.UNCONFIRMED]: QUEUE_STAGE.UPCOMING,
+  [APPOINTMENT_STATUS.CONFIRMED]: QUEUE_STAGE.UPCOMING,
+  [APPOINTMENT_STATUS.CHECKED_IN]: QUEUE_STAGE.WAITING,
+  [APPOINTMENT_STATUS.WAITING]: QUEUE_STAGE.WAITING,
+  [APPOINTMENT_STATUS.IN_PROGRESS]: QUEUE_STAGE.IN_PROGRESS,
+  [APPOINTMENT_STATUS.COMPLETED]: QUEUE_STAGE.COMPLETED,
+  [APPOINTMENT_STATUS.NO_SHOW]: QUEUE_STAGE.CLOSED,
+  [APPOINTMENT_STATUS.CANCELLED]: QUEUE_STAGE.CLOSED,
+};
+
+type DropReason = 'dropLocked' | 'dropClosed' | 'dropConfirmFirst' | 'dropArriveFirst' | 'dropFinishInVisit' | 'dropInSession' | 'dropUseStatusMenu';
+
+/** `null` means the move is allowed, `'same'` means the card is already there. */
+function dropVerdict(status: AppointmentStatus, stage: QueueStage): DropReason | 'same' | null {
+  if (STAGE_OF[status] === stage) return 'same';
+  if (status === APPOINTMENT_STATUS.COMPLETED) return 'dropLocked';
+  if (STAGE_OF[status] === QUEUE_STAGE.CLOSED) return 'dropClosed';
+  if (stage === QUEUE_STAGE.CLOSED) return 'dropUseStatusMenu';
+  if (stage === QUEUE_STAGE.COMPLETED) return 'dropFinishInVisit';
+  if (status === APPOINTMENT_STATUS.IN_PROGRESS) return 'dropInSession';
+  const arrived = STAGE_OF[status] === QUEUE_STAGE.WAITING;
+  if (stage === QUEUE_STAGE.UPCOMING) return null;
+  if (status === APPOINTMENT_STATUS.UNCONFIRMED) return 'dropConfirmFirst';
+  if (stage === QUEUE_STAGE.IN_PROGRESS && !arrived) return 'dropArriveFirst';
+  return null;
+}
+
+type PendingMove = DragSize & { id: string; from: AppointmentStatus; stage: QueueStage };
+
 interface Props {
   appointments: Appointment[] | undefined;
   isLoading: boolean;
+  toolbarSlot?: HTMLElement | null;
   focused?: boolean;
   canManagePayments?: boolean;
   onEventClick: (appointment: Appointment) => void;
@@ -42,6 +82,7 @@ interface Props {
 export function WaitingQueueBoard({
   appointments,
   isLoading,
+  toolbarSlot,
   focused = false,
   canManagePayments = true,
   onEventClick,
@@ -61,6 +102,44 @@ export function WaitingQueueBoard({
     successMessage: t.visits.presenceSaved,
   });
 
+  const updateAppointment = useUpdateAppointment();
+  const startVisit = useApiMutation({
+    request: (appointmentId: string) => visitsService.start(appointmentId),
+    invalidateQueries: [...INVALIDATE.visitWrite],
+  });
+  const [pending, setPending] = useState<PendingMove | null>(null);
+  const moving = pending && appointments?.find((a) => a.id === pending.id)?.status === pending.from ? pending : null;
+  const movingId = moving?.id;
+
+  const { drag, bind, zoneProps } = useDragDrop<Appointment>({
+    canDrop: (appt, stage) => dropVerdict(appt.status, stage as QueueStage) === null,
+    onReject: (appt, stage) => {
+      const verdict = dropVerdict(appt.status, stage as QueueStage);
+      if (verdict && verdict !== 'same') toast.error(t.queue[verdict]);
+    },
+    onDrop: (appt, zone, size) => {
+      const stage = zone as QueueStage;
+      const onError = (error: ApiErrorLike) => {
+        setPending(null);
+        toast.error(extractErrorMessage(error) || t.appointments.statusUpdateFailed);
+      };
+      setPending({ id: appt.id, from: appt.status, stage, ...size });
+      if (stage === QUEUE_STAGE.WAITING) markWaiting.mutate(appt, { onError });
+      else if (stage === QUEUE_STAGE.IN_PROGRESS) startVisit.mutate(appt.id, { onError });
+      else updateAppointment.mutate({ id: appt.id, data: { status: APPOINTMENT_STATUS.CONFIRMED } }, { onError });
+    },
+  });
+
+  const slotFor = (stage: QueueStage) => {
+    const size = drag?.zone === stage ? drag : moving?.stage === stage ? moving : null;
+    return size ? (
+      <Skeleton
+        className="drop-slot shrink-0 rounded-xl border-2 border-dashed border-primary/40"
+        style={{ '--slot-h': `${size.height}px`, height: size.height } as React.CSSProperties}
+      />
+    ) : null;
+  };
+
   const dayAppointments = useMemo(() => {
     if (!appointments) return [];
     const today = new Date();
@@ -69,9 +148,9 @@ export function WaitingQueueBoard({
     endOfDay.setHours(23, 59, 59, 999);
     return appointments.filter((appt) => {
       const apptDate = new Date(appt.scheduledAt);
-      return apptDate >= today && apptDate <= endOfDay;
+      return appt.id !== movingId && apptDate >= today && apptDate <= endOfDay;
     });
-  }, [appointments]);
+  }, [appointments, movingId]);
 
   const waitingList = useMemo(
     () =>
@@ -108,7 +187,15 @@ export function WaitingQueueBoard({
   const completedList = useMemo(
     () =>
       dayAppointments
-        .filter((a) => a.status === APPOINTMENT_STATUS.COMPLETED || a.status === APPOINTMENT_STATUS.NO_SHOW || a.status === APPOINTMENT_STATUS.CANCELLED)
+        .filter((a) => a.status === APPOINTMENT_STATUS.COMPLETED)
+        .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
+    [dayAppointments],
+  );
+
+  const closedList = useMemo(
+    () =>
+      dayAppointments
+        .filter((a) => STAGE_OF[a.status] === QUEUE_STAGE.CLOSED)
         .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
     [dayAppointments],
   );
@@ -120,6 +207,8 @@ export function WaitingQueueBoard({
 
   const loading = isLoading && !appointments?.length;
 
+  const withCount = (name: string, count: number) => (loading ? name : `${name} (${count})`);
+
   const stageTabs: {
     key: QueueStage;
     label: string;
@@ -130,33 +219,42 @@ export function WaitingQueueBoard({
     { key: QUEUE_STAGE.ALL, label: t.common.all, short: t.common.all, icon: null, variant: 'default' },
     {
       key: QUEUE_STAGE.WAITING,
-      label: `${t.queue.waiting} (${waitingList.length})`,
-      short: `${t.queue.waiting} (${waitingList.length})`,
+      label: withCount(t.queue.waiting, waitingList.length),
+      short: withCount(t.queue.waiting, waitingList.length),
       icon: <IconTimer className="size-3" />,
       variant: 'warning',
     },
     {
       key: QUEUE_STAGE.IN_PROGRESS,
-      label: `${t.queue.inSession} (${inProgressList.length})`,
-      short: `${t.queue.inSession} (${inProgressList.length})`,
+      label: withCount(t.queue.inSession, inProgressList.length),
+      short: withCount(t.queue.inSession, inProgressList.length),
       icon: <IconService className="size-3" />,
       variant: 'info',
     },
     {
       key: QUEUE_STAGE.UPCOMING,
-      label: `${t.queue.upcomingToday} (${upcomingList.length})`,
-      short: `${t.queue.upcomingToday} (${upcomingList.length})`,
+      label: withCount(t.queue.upcomingToday, upcomingList.length),
+      short: withCount(t.queue.upcomingToday, upcomingList.length),
       icon: <IconPatients className="size-3" />,
       variant: 'muted',
     },
     {
       key: QUEUE_STAGE.COMPLETED,
-      label: `${t.queue.completed} (${completedList.length})`,
-      short: `${t.queue.completed} (${completedList.length})`,
+      label: withCount(t.queue.completed, completedList.length),
+      short: withCount(t.queue.completed, completedList.length),
       icon: <IconCheckCircle className="size-3" />,
       variant: 'success',
     },
+    {
+      key: QUEUE_STAGE.CLOSED,
+      label: withCount(t.queue.cancelledStage, closedList.length),
+      short: withCount(t.queue.cancelledStage, closedList.length),
+      icon: <IconBan className="size-3" />,
+      variant: 'destructive',
+    },
   ];
+
+  const slot = focused ? null : toolbarSlot;
 
   return (
     <div
@@ -167,8 +265,19 @@ export function WaitingQueueBoard({
         focused ? 'rounded-none border-0' : 'card-aura rounded-xl sm:rounded-2xl',
       )}
     >
-      <div className="flex shrink-0 items-center justify-between gap-1.5 border-b bg-muted/20 px-2 py-1.5 sm:gap-2 sm:px-3 sm:py-2">
-        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none sm:gap-1.5">
+      {slot ? createPortal(
+        <Select value={stageTab} onValueChange={(value) => setStageTab(value as QueueStage)}>
+          <SelectTrigger size="sm" aria-label={t.queue.waitingQueue} className="h-8 min-w-[9rem] flex-1 bg-background/50 max-sm:hidden sm:w-52 sm:max-w-56 sm:flex-none">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {stageTabs.map(({ key, label }) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
+          </SelectContent>
+        </Select>,
+        slot,
+      ) : null}
+      {focused ? null : <div className={cn("flex shrink-0 items-center gap-1.5 border-b bg-muted/20 px-2 py-1.5", slot && "sm:hidden")}>
+        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
           {stageTabs.map(({ key, label, short, icon, variant }) => {
             const selected = stageTab === key;
             const showMobileLabel = selected || !icon;
@@ -180,49 +289,51 @@ export function WaitingQueueBoard({
                 >
                   <button
                     type="button"
-                    disabled={loading}
                     onClick={() => setStageTab(key)}
-                    aria-label={loading ? t.common.loading : label}
+                    aria-label={label}
                     aria-pressed={selected}
                     className={cn(
                       'relative cursor-pointer py-1.5 shadow-2xs active:scale-95',
                       !showMobileLabel && 'gap-0 px-2 sm:gap-1.5 sm:px-2.5',
                     )}
                   >
-                    {loading ? <Skeleton className="absolute inset-x-2 inset-y-1.5 rounded-full" /> : null}
-                    {icon ? <span aria-hidden={loading} className={cn("inline-flex items-center gap-1.5", loading && "invisible")}>{icon}</span> : null}
-                    <span className={cn(showMobileLabel ? 'sm:hidden' : 'hidden', loading && 'invisible')}>
+                    {icon ? <span aria-hidden className="inline-flex items-center gap-1.5">{icon}</span> : null}
+                    <span className={showMobileLabel ? 'sm:hidden' : 'hidden'}>
                       {short}
                     </span>
-                    <span className={cn("hidden sm:inline", loading && "invisible")}>{label}</span>
+                    <span className="hidden sm:inline">{label}</span>
                   </button>
                 </Badge>
               </SoftTip>
             );
           })}
         </div>
-        <ViewFocusToggle />
-      </div>
+      </div>}
 
       <div
         className={cn(
           'grid min-h-0 flex-1 grid-cols-1 gap-2.5 overflow-y-auto overscroll-y-contain p-2.5',
           focused && 'h-0',
-          'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
-          stageTab === QUEUE_STAGE.ALL ? 'lg:grid-cols-4' : 'lg:grid-cols-1',
-          'lg:grid-rows-[minmax(0,1fr)] lg:items-stretch lg:overflow-hidden',
+          focused ? 'px-2 pb-2 pt-0 sm:gap-2 md:gap-2' : 'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
+          stageTab === QUEUE_STAGE.ALL
+            ? 'lg:grid-flow-col lg:auto-cols-[minmax(14rem,1fr)] lg:overflow-x-auto lg:overflow-y-hidden'
+            : 'lg:grid-cols-1 lg:overflow-hidden',
+          'lg:grid-rows-[minmax(0,1fr)] lg:items-stretch',
         )}
       >
         {isVisible(QUEUE_STAGE.WAITING) && (
           <StageColumn
             roomy={stageTab === QUEUE_STAGE.ALL}
+            zoneProps={zoneProps(QUEUE_STAGE.WAITING)}
+            over={drag?.zone === QUEUE_STAGE.WAITING}
+            placeholder={slotFor(QUEUE_STAGE.WAITING)}
             title={t.queue.waiting}
             count={loading ? undefined : waitingList.length}
             accentClass="bg-warning"
             badgeVariant="warning"
             icon={<IconTimer className="size-4 text-warning" />}
           >
-            {loading ? <QueueColumnSkeleton /> : waitingList.length === 0 ? (
+            {loading ? <QueueColumnSkeleton /> : waitingList.length === 0 && !slotFor(QUEUE_STAGE.WAITING) ? (
               <EmptyState
                 icon={IconTimer}
                 title={t.queue.noPatientsWaiting}
@@ -239,7 +350,7 @@ export function WaitingQueueBoard({
                 const waitLabel = waitMins >= 25 ? t.queue.longWait : waitMins >= 12 ? t.queue.moderateWait : t.queue.onTrack;
 
                 return (
-                  <QueueCard key={appt.id} appointment={appt} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
+                  <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant={timerVariant} className={cn('font-semibold', waitMins >= 25 && 'animate-pulse')}>
                         <IconTime className="size-3" />
@@ -269,13 +380,16 @@ export function WaitingQueueBoard({
         {isVisible(QUEUE_STAGE.IN_PROGRESS) && (
           <StageColumn
             roomy={stageTab === QUEUE_STAGE.ALL}
+            zoneProps={zoneProps(QUEUE_STAGE.IN_PROGRESS)}
+            over={drag?.zone === QUEUE_STAGE.IN_PROGRESS}
+            placeholder={slotFor(QUEUE_STAGE.IN_PROGRESS)}
             title={t.queue.inSession}
             count={loading ? undefined : inProgressList.length}
             accentClass="bg-primary"
             badgeVariant="info"
             icon={<IconService className="size-4 text-primary" />}
           >
-            {loading ? <QueueColumnSkeleton /> : inProgressList.length === 0 ? (
+            {loading ? <QueueColumnSkeleton /> : inProgressList.length === 0 && !slotFor(QUEUE_STAGE.IN_PROGRESS) ? (
               <EmptyState
                 icon={IconService}
                 title={t.queue.noConsultationsInSession}
@@ -290,7 +404,7 @@ export function WaitingQueueBoard({
                 const isLong = sessionMins > appt.durationMins;
 
                 return (
-                  <QueueCard key={appt.id} appointment={appt} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
+                  <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                     <div className="flex items-center justify-between gap-2">
                       <Badge
                         variant={isLong ? 'destructive' : 'info'}
@@ -323,13 +437,16 @@ export function WaitingQueueBoard({
         {isVisible(QUEUE_STAGE.UPCOMING) && (
           <StageColumn
             roomy={stageTab === QUEUE_STAGE.ALL}
+            zoneProps={zoneProps(QUEUE_STAGE.UPCOMING)}
+            over={drag?.zone === QUEUE_STAGE.UPCOMING}
+            placeholder={slotFor(QUEUE_STAGE.UPCOMING)}
             title={t.queue.upcomingToday}
             count={loading ? undefined : upcomingList.length}
             accentClass="bg-muted-foreground"
             badgeVariant="muted"
             icon={<IconCalendarClock className="size-4 text-muted-foreground" />}
           >
-            {loading ? <QueueColumnSkeleton /> : upcomingList.length === 0 ? (
+            {loading ? <QueueColumnSkeleton /> : upcomingList.length === 0 && !slotFor(QUEUE_STAGE.UPCOMING) ? (
               <EmptyState
                 icon={IconCalendarClock}
                 title={t.queue.noUpcomingVisitsToday}
@@ -337,7 +454,7 @@ export function WaitingQueueBoard({
               />
             ) : (
               upcomingList.map((appt) => (
-                <QueueCard key={appt.id} appointment={appt} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
+                <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="muted" className="font-semibold">
                       <IconTime className="size-3" />
@@ -368,13 +485,16 @@ export function WaitingQueueBoard({
         {isVisible(QUEUE_STAGE.COMPLETED) && (
           <StageColumn
             roomy={stageTab === QUEUE_STAGE.ALL}
+            zoneProps={zoneProps(QUEUE_STAGE.COMPLETED)}
+            over={drag?.zone === QUEUE_STAGE.COMPLETED}
+            placeholder={slotFor(QUEUE_STAGE.COMPLETED)}
             title={t.queue.completed}
             count={loading ? undefined : completedList.length}
             accentClass="bg-success"
             badgeVariant="success"
             icon={<IconCheckCircle className="size-4 text-success" />}
           >
-            {loading ? <QueueColumnSkeleton /> : completedList.length === 0 ? (
+            {loading ? <QueueColumnSkeleton /> : completedList.length === 0 && !slotFor(QUEUE_STAGE.COMPLETED) ? (
               <EmptyState
                 icon={IconCheckCircle}
                 title={t.queue.noCompletedVisitsToday}
@@ -382,7 +502,7 @@ export function WaitingQueueBoard({
               />
             ) : (
               completedList.map((appt) => (
-                <QueueCard key={appt.id} appointment={appt} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
+                <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="success" className="font-semibold">
                       <IconCheckCircle className="size-3" />
@@ -420,6 +540,42 @@ export function WaitingQueueBoard({
             )}
           </StageColumn>
         )}
+
+        {isVisible(QUEUE_STAGE.CLOSED) && (
+          <StageColumn
+            roomy={stageTab === QUEUE_STAGE.ALL}
+            zoneProps={zoneProps(QUEUE_STAGE.CLOSED)}
+            over={drag?.zone === QUEUE_STAGE.CLOSED}
+            placeholder={slotFor(QUEUE_STAGE.CLOSED)}
+            title={t.queue.cancelledStage}
+            count={loading ? undefined : closedList.length}
+            accentClass="bg-destructive"
+            badgeVariant="destructive"
+            icon={<IconBan className="size-4 text-destructive" />}
+          >
+            {loading ? <QueueColumnSkeleton /> : closedList.length === 0 && !slotFor(QUEUE_STAGE.CLOSED) ? (
+              <EmptyState
+                icon={IconBan}
+                title={t.queue.noClosedVisitsToday}
+                className="min-h-72 px-3 py-8"
+              />
+            ) : (
+              closedList.map((appt) => (
+                <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="muted" className="font-semibold">
+                      <IconTime className="size-3" />
+                      {formatApptTimeRange(appt, lang)}
+                    </Badge>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <AppointmentStatusSelect appointment={appt} compact />
+                    </div>
+                  </div>
+                </QueueCard>
+              ))
+            )}
+          </StageColumn>
+        )}
       </div>
 
       {appointmentPopover ? (
@@ -439,6 +595,9 @@ export function WaitingQueueBoard({
 
 function StageColumn({
   roomy,
+  zoneProps,
+  over,
+  placeholder,
   title,
   count,
   accentClass,
@@ -447,6 +606,9 @@ function StageColumn({
   children,
 }: {
   roomy: boolean;
+  zoneProps: { 'data-drop-zone': string };
+  over: boolean;
+  placeholder: React.ReactNode;
   title: string;
   count: number | undefined;
   accentClass: string;
@@ -455,7 +617,7 @@ function StageColumn({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn('card-aura flex max-h-(--app-queue-col-max) min-h-0 flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs sm:rounded-2xl lg:h-full lg:max-h-none', roomy && 'h-[min(78dvh,38rem)] max-h-none sm:h-auto sm:max-h-(--app-queue-col-max)')}>
+    <div {...zoneProps} className={cn('card-aura flex max-h-(--app-queue-col-max) min-h-0 flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs transition-shadow sm:rounded-2xl lg:h-full lg:max-h-none', over && 'ring-2 ring-primary/40', roomy && 'h-[min(78dvh,38rem)] max-h-none sm:h-auto sm:max-h-(--app-queue-col-max)')}>
       <div className="flex shrink-0 items-center justify-between border-b bg-muted/25 p-2.5 sm:p-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className={cn('size-2 rounded-full ring-2 ring-background', accentClass)} />
@@ -467,7 +629,7 @@ function StageColumn({
         </Badge>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-3 touch-pan-y">
-        <div className="flex flex-col gap-2.5">{children}</div>
+        <div className="flex flex-col gap-2.5">{children}{placeholder}</div>
       </div>
     </div>
   );
@@ -476,22 +638,25 @@ function StageColumn({
 function QueueCard({
   appointment: appt,
   onClick,
+  dragging = false,
   children,
+  ...dragProps
 }: {
   appointment: Appointment;
   onClick: (event: React.MouseEvent<HTMLDivElement>) => void;
+  dragging?: boolean;
   children: React.ReactNode;
-}) {
+} & Pick<React.ComponentProps<'div'>, 'onPointerDown' | 'onClickCapture'>) {
   const { t, lang } = useLanguage();
   const accent = STATUS_COLORS[appt.status];
   const docLabel = doctorDisplayName(appt.doctor, lang);
-  const docInitials = docLabel.substring(0, 2).toUpperCase() || 'DR';
 
   return (
     <div
+      {...dragProps}
       onClick={onClick}
       data-queue-card=""
-      className="group relative flex flex-col rounded-xl border-2 bg-card p-3 shadow-xs transition-colors duration-200 hover:shadow-md cursor-pointer sm:p-3.5"
+      className={cn('group relative flex flex-col rounded-xl border-2 bg-card p-3 shadow-xs transition-[color,opacity] duration-200 hover:shadow-md cursor-pointer sm:p-3.5', dragging && 'opacity-40')}
       style={{ borderColor: accent }}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
@@ -504,8 +669,8 @@ function QueueCard({
             {formatApptTimeRange(appt, lang)}
           </p>
         </div>
-        <div className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-[9px] font-bold text-muted-foreground ring-2 ring-background">
-          {docInitials}
+        <div onClick={(event) => event.stopPropagation()}>
+          <PreviewableAvatar src={appt.doctor.imageUrl} seed={appt.doctor.id} size="sm" className="size-7" />
         </div>
       </div>
 

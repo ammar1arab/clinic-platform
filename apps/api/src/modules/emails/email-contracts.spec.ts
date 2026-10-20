@@ -1,3 +1,4 @@
+import { EMAIL_DELIVERY_GROUPS, EMAIL_DELIVERY_STATUS } from "@clinic/types";
 import {
   ValidationPipe,
   type ExecutionContext,
@@ -272,5 +273,17 @@ describe("Resend raw webhook signatures", () => {
         "invalid",
       ),
     ).rejects.toThrow();
+  });
+});
+
+describe("Simplified delivery groups", () => {
+  it("covers every provider status exactly once", () => {
+    const statuses = Object.values(EMAIL_DELIVERY_GROUPS).flat();
+    expect([...statuses].sort()).toEqual(Object.values(EMAIL_DELIVERY_STATUS).sort());
+    expect(new Set(statuses).size).toBe(statuses.length);
+  });
+  it("accepts known groups and rejects unknown groups", async () => {
+    await expect(pipe.transform({ group: "attention" }, { type: "query", metatype: EmailHistoryDto })).resolves.toMatchObject({ group: "attention" });
+    await expect(pipe.transform({ group: "unknown" }, { type: "query", metatype: EmailHistoryDto })).rejects.toThrow();
   });
 });

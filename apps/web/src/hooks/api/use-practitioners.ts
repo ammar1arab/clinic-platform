@@ -1,3 +1,4 @@
+import type { CreateScheduleRequestInput, ReviewScheduleRequestInput, ScheduleRequestPage } from "@clinic/types";
 import type { Translations } from '@/i18n';
 import { practitionersService } from '@/services/practitioners.service';
 import type {
@@ -94,3 +95,20 @@ export {
   useDeactivatePractitioner,
   useReactivatePractitioner,
 };
+
+export function useScheduleRequests(clinicId: string, doctorId?: string, group = 'pending', page = 1, connected = false) {
+  return useFetchData<ScheduleRequestPage>({
+    queryKey: QUERY_KEYS.practitioners.requests(clinicId, doctorId, group, page),
+    request: () => practitionersService.scheduleRequests(doctorId, group, page),
+    options: { enabled: !!clinicId, refetchInterval: connected ? false : 30_000, refetchOnWindowFocus: true },
+  });
+}
+
+export function useScheduleRequestMutation(clinicId: string) {
+  const { t } = useLanguage();
+  return useApiMutation<unknown, Error, CreateScheduleRequestInput | { id: string; data: ReviewScheduleRequestInput }>({
+    request: (input) => 'id' in input ? practitionersService.reviewSchedule(input.id, input.data) : practitionersService.requestSchedule(input),
+    invalidateQueries: [...writeKeys(clinicId), QUERY_KEYS.dashboard.kpisAll, QUERY_KEYS.dashboard.roomUtilizationAll],
+    successMessage: t.scheduleRequests.saved,
+  });
+}

@@ -77,6 +77,10 @@ export class AppointmentsRepository {
     durationMins: number,
     excludeId?: string,
   ) {
+    const endAt = new Date(scheduledAt.getTime() + durationMins * 60_000);
+    if (await tx.doctorTimeOff.findFirst({ where: { doctorId, startDate: { lt: endAt }, endDate: { gt: scheduledAt } } })) {
+      throw new ConflictException("Doctor is on time off during this period");
+    }
     if (
       roomId &&
       (await this.findConflict(

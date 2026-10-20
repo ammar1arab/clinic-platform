@@ -65,6 +65,15 @@ const copyTones: Tone[] = [
   [1174.66, 0.045, 0.075, 'sine', 0.12],
 ];
 
+const notificationTones: Tone[] = [
+  [1318.51, 0, 0.55, 'sine', 0.2],
+  [2637.02, 0, 0.3, 'sine', 0.05],
+  [1760, 0.12, 0.6, 'sine', 0.18],
+  [3520, 0.12, 0.32, 'sine', 0.045],
+  [2093, 0.25, 0.9, 'sine', 0.16],
+  [4186, 0.25, 0.4, 'sine', 0.04],
+];
+
 function playTones(ctx: AudioContext, notes: Tone[], volume = 1) {
   const master = ctx.createGain();
   master.gain.value = volume;
@@ -102,4 +111,8 @@ export function playRefreshSound() {
 
 export function playCopySound() {
   play(copyTones, 0.65);
+}
+
+export function playNotificationSound() {
+  play(notificationTones, 0.7);
 }

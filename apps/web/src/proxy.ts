@@ -48,5 +48,6 @@ export const config = {
     '/practitioners/:path*',
     '/reports/:path*',
     '/settings/:path*',
+    '/note-templates/:path*',
   ],
 };

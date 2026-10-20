@@ -1,7 +1,8 @@
 'use client';
 
-import { ErrorState, SearchablePicker } from '@/components/primitives';
+import { EmptyState, ErrorState, SearchablePicker } from '@/components/primitives';
 import { Skeleton } from '@/components/ui';
+import { IconFileText } from '@/constants/icons';
 import { useMyNoteTemplates } from '@/hooks/api/use-clinical-note-templates';
 import { useNotePreference, useSetNotePreference } from '@/hooks/api/use-visits';
 import { getBilingualName } from '@/i18n';
@@ -29,13 +30,15 @@ export function NotePreference() {
     return <Skeleton className="h-9 w-full rounded-lg" />;
   }
 
+  if (!published.length) return <EmptyState size="compact" icon={IconFileText} title={t.visits.noTemplate} description={t.visits.noTemplateDesc} />;
+
   return (
     <fieldset disabled={busy} className="min-w-0 border-0 p-0 disabled:opacity-70" aria-busy={busy}>
       <SearchablePicker
-        options={[{ value: '', label: t.visits.noPreference }, ...published.map((item) => ({ value: item.id, label: getBilingualName(item.name, item.nameAr, lang) }))]}
-        value={preference.data?.templateId ?? ''}
+        options={published.map((item) => ({ value: item.id, label: getBilingualName(item.name, item.nameAr, lang) }))}
+        value={preference.data?.effectiveTemplateId ?? ''}
         onChange={(templateId) => {
-          if (!busy && templateId !== (preference.data?.templateId ?? '')) save.mutate(templateId || null);
+          if (!busy && templateId !== preference.data?.effectiveTemplateId) save.mutate(templateId === preference.data?.clinicTemplateId ? null : templateId);
         }}
         placeholder={t.visits.preference}
       />

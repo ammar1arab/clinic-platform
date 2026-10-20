@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Button,
   DropdownMenu,
@@ -25,11 +24,8 @@ import {
   StatusMenuItems,
   StatusPickerTrigger,
 } from './status-menu';
-import { useAuth, useLanguage } from '@/providers';
-import { ROUTES } from '@/constants/routes';
-import { APPOINTMENT_STATUS, PRESENCE_SOURCE, ROLE, SESSION_TYPE } from '@clinic/types';
-import { visitsService } from '@/services/visits.service';
-import { INVALIDATE, useApiMutation } from '@/hooks/query';
+import { useLanguage } from '@/providers';
+import { APPOINTMENT_EDITABLE_STATUSES, APPOINTMENT_STATUS } from '@clinic/types';
 
 interface Props {
   appointment: Appointment;
@@ -47,16 +43,6 @@ export function AppointmentStatusSelect({
   disabled = false,
 }: Props) {
   const { t } = useLanguage();
-  const { user } = useAuth();
-  const router = useRouter();
-  const presence = useApiMutation({
-    request: (input: { id: string; kind: 'check-in' | 'waiting' }) =>
-      input.kind === 'waiting'
-        ? visitsService.markWaiting(input.id)
-        : visitsService.checkIn(input.id, appt.sessionType === SESSION_TYPE.ONLINE ? PRESENCE_SOURCE.ONLINE_MANUAL : user?.role === ROLE.PRACTITIONER ? PRESENCE_SOURCE.PRACTITIONER : PRESENCE_SOURCE.FRONT_DESK),
-    invalidateQueries: [...INVALIDATE.visitWrite],
-    successMessage: t.visits.presenceSaved,
-  });
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelError, setCancelError] = useState(false);
@@ -64,25 +50,11 @@ export function AppointmentStatusSelect({
   const updateMutation = useUpdateAppointment();
   const isCancelled = appt.status === APPOINTMENT_STATUS.CANCELLED;
   const isPending = updateMutation.isPending;
-  const isDisabled = disabled || isPending || isCancelled;
+  const isDisabled = disabled || isPending || isCancelled || !(APPOINTMENT_EDITABLE_STATUSES as readonly string[]).includes(appt.status);
 
   const handleSelectStatus = (newStatus: AppointmentStatus) => {
     if (newStatus === appt.status) return;
     if (isCancelled) return;
-
-    if (newStatus === APPOINTMENT_STATUS.IN_PROGRESS || newStatus === APPOINTMENT_STATUS.COMPLETED) {
-      router.push(ROUTES.VISIT(appt.id));
-      return;
-    }
-
-    if (newStatus === APPOINTMENT_STATUS.CHECKED_IN || newStatus === APPOINTMENT_STATUS.WAITING) {
-      const online = appt.sessionType === SESSION_TYPE.ONLINE;
-      presence.mutate(
-        { id: appt.id, kind: !online && newStatus === APPOINTMENT_STATUS.WAITING ? 'waiting' : 'check-in' },
-        { onError: (err) => toast.error(extractErrorMessage(err) || t.appointments.statusUpdateFailed) },
-      );
-      return;
-    }
 
     if (newStatus === APPOINTMENT_STATUS.CANCELLED) {
       setCancelReason('');

@@ -12,11 +12,10 @@ import {
 import { useUpdatePractitionerSelfProfile } from '@/hooks/api/use-practitioners';
 import { IconCalendarClock, IconEdit, IconService } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
-import { formatDate } from '@/lib/datetime';
+import { formatDate, formatDateTime } from '@/lib/datetime';
 import type { PractitionerDetail, PractitionerSelfProfileInput } from '@/services/practitioners.service';
 import { useAuth, useLanguage } from '@/providers';
 import { ROUTES } from '@/constants/routes';
-import { NotePreference } from '@/components/blocks/visits/note-preference';
 
 const WEEKDAY_KEYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 
@@ -138,16 +137,12 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
           {practitioner.availabilities.length ? <div className="space-y-2">{practitioner.availabilities.map((slot) => <div key={slot.id ?? `${slot.dayOfWeek}-${slot.startTime}`} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{t.constants.weekdays[WEEKDAY_KEYS[slot.dayOfWeek]]}</span><span className="font-medium">{slot.startTime} - {slot.endTime}</span></div>)}</div> : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noWeeklyPatterns} />}
         </ProfileSection>
         <ProfileSection title={t.practitioner.extraAvailability} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
-          {practitioner.availabilityOverrides.length ? practitioner.availabilityOverrides.map((entry) => <div key={entry.id ?? entry.startAt} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.extraAvailability}</span><span className="font-medium">{entry.startAt.slice(0, 10)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noExtraAvailability} />}
+          {practitioner.availabilityOverrides.length ? practitioner.availabilityOverrides.map((entry) => <div key={entry.id ?? entry.startAt} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.extraAvailability}</span><span className="font-medium">{formatDateTime(entry.startAt, undefined, lang)} - {formatDateTime(entry.endAt, undefined, lang)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noExtraAvailability} />}
         </ProfileSection>
         <ProfileSection title={t.practitioner.leave} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
-          {practitioner.timeOffs.length ? practitioner.timeOffs.map((entry) => <div key={entry.id ?? entry.startDate} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.leave}</span><span className="font-medium">{entry.startDate.slice(0, 10)} - {entry.endDate.slice(0, 10)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noLeaveBlocks} />}
+          {practitioner.timeOffs.length ? practitioner.timeOffs.map((entry) => <div key={entry.id ?? entry.startDate} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{entry.reason || t.practitioner.leave}</span><span className="font-medium">{formatDateTime(entry.startDate, undefined, lang)} - {formatDateTime(entry.endDate, undefined, lang)}</span></div>) : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noLeaveBlocks} />}
         </ProfileSection>
       </div>
-
-      <ProfileSection title={t.visits.preference}>
-        <NotePreference />
-      </ProfileSection>
     </ProfileShell>
   );
 }

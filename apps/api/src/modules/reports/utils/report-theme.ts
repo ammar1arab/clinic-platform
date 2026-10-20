@@ -1,5 +1,4 @@
-import { formatDisplayDate } from "./report-format";
-import { formatPhoneDisplay } from "@/infrastructure";
+import { formatDisplayDateTime } from "./report-format";
 import type { ReportDocument } from "../types/report-document";
 
 export const REPORT_THEME = {
@@ -21,29 +20,21 @@ export function letterheadLines(doc: ReportDocument): string[] {
   const { letterhead } = doc;
   const lines: string[] = [letterhead.clinicName];
   if (letterhead.address) lines.push(letterhead.address);
-  if (letterhead.phone) {
-    lines.push(formatPhoneDisplay(letterhead.phone) || letterhead.phone);
-  }
   return lines;
 }
 
 export function metaLine(doc: ReportDocument): string {
-  return `${doc.title}  ·  Generated ${formatDisplayDate(doc.generatedAt)}`;
+  return `${doc.title}  ·  Generated ${formatDisplayDateTime(doc.generatedAt, doc.letterhead.timezone)}`;
 }
 
 export function csvPreface(doc: ReportDocument): string[] {
   const lines = [
     `# ${doc.letterhead.clinicName}`,
     `# ${doc.title}`,
-    `# Generated ${formatDisplayDate(doc.generatedAt)}`,
+    `# Generated ${formatDisplayDateTime(doc.generatedAt, doc.letterhead.timezone)}`,
   ];
   if (doc.letterhead.address)
     lines.push(`# Address: ${doc.letterhead.address}`);
-  if (doc.letterhead.phone) {
-    lines.push(
-      `# Phone: ${formatPhoneDisplay(doc.letterhead.phone) || doc.letterhead.phone}`,
-    );
-  }
   if (doc.summary?.length) {
     for (const item of doc.summary) {
       lines.push(`# ${item.label}: ${item.value}`);
@@ -82,8 +73,12 @@ export function chunkColumns(
   if (doc.columns.length <= maxCols) return [doc];
 
   const chunks: ReportDocument[] = [];
-  for (let i = 0; i < doc.columns.length; i += maxCols) {
-    const columns = doc.columns.slice(i, i + maxCols);
+  for (let i = 0; i < doc.columns.length;) {
+    const columns =
+      i === 0
+        ? doc.columns.slice(0, maxCols)
+        : [doc.columns[0], ...doc.columns.slice(i, i + maxCols - 1)];
+    i += i === 0 ? maxCols : maxCols - 1;
     const keys = new Set(columns.map((c) => c.key));
     chunks.push({
       ...doc,
@@ -97,8 +92,42 @@ export function chunkColumns(
         for (const key of keys) next[key] = row[key] ?? null;
         return next;
       }),
-      summary: i === 0 ? doc.summary : undefined,
+      summary: chunks.length === 0 ? doc.summary : undefined,
     });
   }
   return chunks;
+}
+
+export function reportTheme(color?: string | null) {
+  const accent = /^#[0-9a-f]{6}$/i.test(color ?? "") ? color! : "#2563EB";
+  const rgb = [1, 3, 5].map((start) =>
+    parseInt(accent.slice(start, start + 2), 16),
+  );
+  const luminance = rgb
+    .map((value) => {
+      const channel = value / 255;
+      return channel <= 0.04045
+        ? channel / 12.92
+        : ((channel + 0.055) / 1.055) ** 2.4;
+    })
+    .reduce(
+      (sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index],
+      0,
+    );
+  const stripe =
+    "#" +
+    rgb
+      .map((value) =>
+        Math.round(value * 0.05 + 255 * 0.95)
+          .toString(16)
+          .padStart(2, "0"),
+      )
+      .join("");
+  return {
+    ...REPORT_THEME,
+    headerBg: accent,
+    headerFg: luminance > 0.179 ? "#111827" : "#FFFFFF",
+    rule: accent,
+    stripe,
+  };
 }

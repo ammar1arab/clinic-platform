@@ -1,5 +1,5 @@
 import { visitError } from "@/modules/visits/visit-errors";
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
 import { AppointmentStatus, Prisma, Role } from "@prisma/client";
 import { PrismaService } from "@/prisma/prisma.service";
 import {
@@ -42,6 +42,41 @@ const include = {
 @Injectable()
 export class PractitionersRepository {
   constructor(private prisma: PrismaService) {}
+
+  async scheduleRequests(clinicId: string, doctorId?: string, group: 'pending' | 'history' = 'pending', page = 1) {
+    const where = { clinicId, ...(doctorId ? { doctorId } : {}), status: group === 'pending' ? 'pending' : { not: 'pending' } };
+    const pageSize = 20;
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.practitionerScheduleRequest.findMany({ where, include: { doctor: { select: { name: true, nameAr: true, imageUrl: true } } }, orderBy: { createdAt: group === 'pending' ? 'asc' : 'desc' }, skip: (page - 1) * pageSize, take: pageSize }),
+      this.prisma.practitionerScheduleRequest.count({ where }),
+    ]);
+    return { items, total, page, pageSize };
+  }
+
+  scheduleReviewers(tx: Prisma.TransactionClient, clinicId: string) {
+    return tx.clinicUser.findMany({ where: { clinicId, isActive: true, role: { in: [Role.owner, Role.admin] } }, select: { id: true } });
+  }
+
+  scheduleWrite<T>(clinicId: string, operation: (tx: Prisma.TransactionClient) => Promise<T>) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${clinicId}, 0))`;
+      return operation(tx);
+    });
+  }
+
+  async assertLeaveAvailable(tx: Prisma.TransactionClient, clinicId: string, doctorId: string, startAt: Date, endAt: Date) {
+    const appointments = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT "id" FROM "Appointment" WHERE "clinicId" = ${clinicId} AND "doctorId" = ${doctorId}
+        AND "status" NOT IN ('cancelled', 'no_show', 'completed') AND "scheduledAt" < ${endAt}
+        AND "scheduledAt" + "durationMins" * interval '1 minute' > ${startAt} LIMIT 1`;
+    if (appointments.length) throw new ConflictException({ code: "scheduleRequestAppointments", message: "Reschedule or cancel conflicting appointments before approving leave" });
+  }
+
+  private async lockSchedule(tx: Prisma.TransactionClient, doctorId: string) {
+    const doctor = await tx.clinicUser.findUniqueOrThrow({ where: { id: doctorId }, select: { clinicId: true } });
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${doctor.clinicId}, 0))`;
+    return doctor.clinicId;
+  }
 
   emailExists(email: string) {
     return this.prisma.user.findUnique({ where: { email } }).then(Boolean);
@@ -391,6 +426,13 @@ export class PractitionersRepository {
     doctorId: string,
     entries: TimeOffEntryDto[],
   ) {
+    const clinicId = await this.lockSchedule(tx, doctorId);
+    for (const entry of entries) {
+      const startAt = new Date(entry.startDate);
+      const endAt = new Date(entry.endDate);
+      const existing = await tx.doctorTimeOff.findFirst({ where: { doctorId, startDate: startAt, endDate: endAt }, select: { id: true } });
+      if (!existing) await this.assertLeaveAvailable(tx, clinicId, doctorId, startAt, endAt);
+    }
     await tx.doctorTimeOff.deleteMany({ where: { doctorId } });
     if (!entries.length) return;
     await tx.doctorTimeOff.createMany({
@@ -408,6 +450,7 @@ export class PractitionersRepository {
     doctorId: string,
     entries: AvailabilityOverrideEntryDto[],
   ) {
+    await this.lockSchedule(tx, doctorId);
     await tx.doctorAvailabilityOverride.deleteMany({ where: { doctorId } });
     if (!entries.length) return;
     await tx.doctorAvailabilityOverride.createMany({

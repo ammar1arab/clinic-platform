@@ -3,11 +3,12 @@ import { PatientPackagesModule } from "@/modules/patient-packages/patient-packag
 import { AppointmentsController } from "./appointments.controller";
 import { AppointmentsService } from "./appointments.service";
 import { AppointmentsRepository } from "./appointments.repository";
+import { NotificationsModule } from "@/modules/notifications/notifications.module";
 import { DashboardModule } from "@/modules/dashboard/dashboard.module";
 import { DiscountCodesModule } from "@/modules/discount-codes/discount-codes.module";
 
 @Module({
-  imports: [DashboardModule, DiscountCodesModule, PatientPackagesModule],
+  imports: [NotificationsModule, DashboardModule, DiscountCodesModule, PatientPackagesModule],
   controllers: [AppointmentsController],
   providers: [AppointmentsService, AppointmentsRepository],
   exports: [AppointmentsService],

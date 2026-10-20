@@ -54,7 +54,7 @@ export class PresenceDto {
   source: (typeof PRESENCE_SOURCE)[keyof typeof PRESENCE_SOURCE];
 }
 export class NoteDraftDto extends SignDto {
-  @IsUUID() templateVersionId: string;
+  @IsUUID() templateId: string;
   @IsObject() values: Record<string, ClinicalValue>;
   @ValidateIf(optional) @IsBoolean() acknowledgeTemplateChange?: boolean;
 }

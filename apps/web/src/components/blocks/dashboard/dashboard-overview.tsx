@@ -27,8 +27,8 @@ export function DashboardOverview() {
   };
 
   return (
-    <div className="page-fill gap-5">
-      <div data-focus-hide="" className="grid shrink-0 grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4 xl:grid-cols-6">
+    <div className="page-fill gap-2.5">
+      <div data-focus-hide="" className="grid shrink-0 grid-cols-2 gap-2.5 lg:grid-cols-3 xl:grid-cols-6">
         <KpiCardBlock label={t.dashboard.todaysAppointments} value={kpis.data?.total ?? 0} icon={IconTodaysAppointments} accent="default" isLoading={kpis.isLoading} />
         <KpiCardBlock label={t.dashboard.waiting} value={kpis.data?.waitingCount ?? 0} icon={IconTimer} accent="warning" isLoading={kpis.isLoading} />
         <KpiCardBlock label={t.dashboard.inProgress} value={kpis.data?.inProgress ?? 0} icon={IconTime} accent="teal" isLoading={kpis.isLoading} />

@@ -13,16 +13,15 @@ export const MEDICAL_NOTE_PALETTE = [
   FORM_FIELD_TYPE.TEXT,
   FORM_FIELD_TYPE.TEXTAREA,
   FORM_FIELD_TYPE.NUMBER,
+  FORM_FIELD_TYPE.MEASUREMENT,
+  FORM_FIELD_TYPE.SCALE,
   FORM_FIELD_TYPE.RADIO,
   FORM_FIELD_TYPE.CHECKBOXES,
-  FORM_FIELD_TYPE.SELECT,
-  FORM_FIELD_TYPE.MULTI_SELECT,
   FORM_FIELD_TYPE.BOOLEAN,
   FORM_FIELD_TYPE.DATE,
-  FORM_FIELD_TYPE.MEASUREMENT,
+  FORM_FIELD_TYPE.TIME,
+  FORM_FIELD_TYPE.MEDICATIONS,
 ] as const satisfies readonly FormFieldType[];
-
-export const CLINICAL_FIELD_TYPES = MEDICAL_NOTE_PALETTE;
 
 const choiceTypes = new Set<ClinicalFieldType>([
   CLINICAL_FIELD_TYPE.RADIO,
@@ -136,18 +135,39 @@ export function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
   return next;
 }
 
+export const TEMPLATE_AUDIENCE = {
+  ALL: 'all',
+  DEPARTMENTS: 'departments',
+  SERVICES: 'services',
+  PRACTITIONERS: 'practitioners',
+} as const;
+export type TemplateAudience = (typeof TEMPLATE_AUDIENCE)[keyof typeof TEMPLATE_AUDIENCE];
+export const AUDIENCE_ASSIGNMENT = {
+  departments: 'departmentIds',
+  services: 'serviceIds',
+  practitioners: 'practitionerIds',
+} as const;
+
+export function matchesAudience(draft: ClinicalTemplateInput, audience: TemplateAudience): boolean {
+  return audience === TEMPLATE_AUDIENCE.ALL
+    ? draft.availableToAll
+    : !draft.availableToAll && draft.assignments[AUDIENCE_ASSIGNMENT[audience]].length > 0;
+}
+
 export function templateProblems(input: ClinicalTemplateInput): string[] {
   const problems: string[] = [];
   if (!input.name.trim()) problems.push('name');
   if (!input.sections.length) problems.push('sections');
-  const ids = new Set<string>();
+  if (!input.availableToAll && !Object.values(input.assignments).some((ids) => ids.length)) problems.push('assignments');
+  const sectionIds = new Set<string>();
+  const fieldIds = new Set<string>();
   for (const section of input.sections) {
-    if (!section.title.trim() || ids.has(section.id)) problems.push(section.id);
-    ids.add(section.id);
+    if (!section.title.trim() || sectionIds.has(section.id)) problems.push(section.id);
+    sectionIds.add(section.id);
     if (!section.fields.length) problems.push(`${section.id}-fields`);
     for (const field of section.fields) {
-      if (!field.label.trim() || ids.has(field.id)) problems.push(field.id);
-      ids.add(field.id);
+      if (!field.label.trim() || fieldIds.has(field.id)) problems.push(field.id);
+      fieldIds.add(field.id);
       if (field.min !== undefined && field.max !== undefined && field.min > field.max) problems.push(`${field.id}-range`);
       if (field.type === CLINICAL_FIELD_TYPE.MEASUREMENT && !field.unit?.trim()) problems.push(`${field.id}-unit`);
       if (isChoiceType(field.type) && (!(field.options ?? []).length || (field.options ?? []).some((option) => !option.label.trim() || !option.value.trim()))) {
@@ -162,18 +182,6 @@ export function previewSections(draft: ClinicalTemplateInput) {
   return draft.sections
     .filter((section) => section.title || section.fields.some((field) => field.label))
     .map((section) => ({ ...section, fields: section.fields.filter((field) => field.label) }));
-}
-
-export const VISIBILITY_ALWAYS = 'always';
-
-export function encodeVisibility(field: ClinicalField) {
-  if (!field.visibility) return VISIBILITY_ALWAYS;
-  return JSON.stringify(field.visibility);
-}
-
-export function decodeVisibility(value: string): ClinicalField['visibility'] {
-  if (value === VISIBILITY_ALWAYS) return undefined;
-  return JSON.parse(value) as ClinicalField['visibility'];
 }
 
 export type { ClinicalSection };

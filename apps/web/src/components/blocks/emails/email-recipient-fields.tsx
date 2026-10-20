@@ -2,30 +2,26 @@
 
 import { Controller, useFormContext } from "react-hook-form";
 import {
-  Badge,
-  Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Popover,
-  PopoverContent,
-  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Skeleton,
 } from "@/components/ui";
 import {
   DatePicker,
   ErrorState,
   FormField,
-  MultiSelect,
+  ChoiceField,
+  OptionList,
   SearchablePicker,
   SearchInput,
-  OverflowActions,
+  TargetAudience,
+  FilterPanel,
+  FilterTrigger,
 } from "@/components/primitives";
 import { useEmailAudiences } from "@/hooks/api/use-emails";
 import { useDepartments } from "@/hooks/api/use-departments";
@@ -36,8 +32,6 @@ import { useLanguage } from "@/providers";
 import { getBilingualName, getStaffName } from "@/i18n";
 import { EMAIL_AUDIENCE, ROLE } from "@clinic/types";
 import { getStatusConfig, STATUS_OPTIONS } from "@/constants/appointment";
-import { IconFilters } from "@/constants/icons";
-import { keepNestedPortals } from "@/lib/overlay";
 import type { EmailComposerValues } from "@/lib/validations";
 
 const AUDIENCE = {
@@ -92,6 +86,13 @@ export function EmailRecipientFields({
     setValue("appointmentTo", "");
     setValue("isPaid", PAYMENT.ALL);
   };
+  const audienceKeys = (audiences.data?.audiences ?? []).filter((key) => key !== AUDIENCE.ALL);
+  const changeAudience = (apply: (key: string) => void, key: string) => {
+    apply(key);
+    setValue("ids", []);
+    clearFilters();
+    setValue("search", "");
+  };
   const pickers = [
     {
       name: "departmentId" as const,
@@ -133,46 +134,27 @@ export function EmailRecipientFields({
   ];
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">{t.emails.recipients}</CardTitle>
-      </CardHeader>
       <CardContent className="space-y-4">
-        <FormField>
-          <Controller
-            control={control}
-            name="audience"
-            render={({ field }) => (
-              <OverflowActions label={t.emails.audience}>
-                {audiences.isLoading
-                  ? Array.from({ length: 7 }, (_, index) => (
-                      <Skeleton
-                        key={index}
-                        className="h-7 w-20 shrink-0 rounded-md"
-                      />
-                    ))
-                  : (audiences.data?.audiences ?? []).map((key) => (
-                      <Button
-                        key={key}
-                        type="button"
-                        size="sm"
-                        className="shrink-0"
-                        variant={field.value === key ? "default" : "outline"}
-                        aria-pressed={field.value === key}
-                        onClick={() => {
-                          if (field.value === key) return;
-                          field.onChange(key);
-                          setValue("ids", []);
-                          clearFilters();
-                          setValue("search", "");
-                        }}
-                      >
-                        {t.emails[key]}
-                      </Button>
-                    ))}
-              </OverflowActions>
-            )}
-          />
-        </FormField>
+        <Controller
+          control={control}
+          name="audience"
+          render={({ field }) => (
+            <TargetAudience
+              everyoneLabel={t.common.audienceEveryone}
+              specificLabel={t.common.audienceSpecific}
+              specific={field.value !== AUDIENCE.ALL}
+              onSpecificChange={(specific) => changeAudience(field.onChange, specific ? audienceKeys[0] ?? AUDIENCE.ALL : AUDIENCE.ALL)}
+              summary={field.value === AUDIENCE.ALL ? t.ui.select : t.emails[field.value]}
+            >
+              <OptionList
+                label={t.common.targetAudience}
+                value={[field.value]}
+                options={audienceKeys.map((key) => ({ value: key, label: t.emails[key] }))}
+                onChange={([key]) => key && changeAudience(field.onChange, key)}
+              />
+            </TargetAudience>
+          )}
+        />
         {audiences.isError && (
           <ErrorState onRetry={() => void audiences.refetch()} />
         )}
@@ -207,34 +189,8 @@ export function EmailRecipientFields({
             />
           </FormField>
           <Popover>
-            <PopoverTrigger asChild>
-              <Button type="button" variant="outline" className="gap-2">
-                <IconFilters className="size-4" />
-                {t.common.filters}
-                {activeFilters > 0 && (
-                  <Badge variant="info">{activeFilters}</Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-80 max-h-[min(32rem,calc(100dvh-8rem))] space-y-3 overflow-y-auto"
-              onInteractOutside={keepNestedPortals}
-              onFocusOutside={keepNestedPortals}
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">{t.common.filters}</p>
-                {activeFilters > 0 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                  >
-                    {t.common.clear}
-                  </Button>
-                )}
-              </div>
+            <FilterTrigger count={activeFilters} />
+            <FilterPanel count={activeFilters} onClear={clearFilters}>
               {pickers.map((picker) => (
                 <FormField key={picker.name} label={picker.label}>
                   <Controller
@@ -258,7 +214,9 @@ export function EmailRecipientFields({
                     control={control}
                     name="roles"
                     render={({ field }) => (
-                      <MultiSelect
+                      <ChoiceField
+                        multiple
+                        label={t.emails.roles}
                         value={field.value}
                         onChange={field.onChange}
                         options={Object.entries(t.emails.roleLabels).map(
@@ -276,7 +234,9 @@ export function EmailRecipientFields({
                       control={control}
                       name="appointmentStatuses"
                       render={({ field }) => (
-                        <MultiSelect
+                        <ChoiceField
+                          multiple
+                          label={t.emails.appointmentStatuses}
                           value={field.value}
                           onChange={field.onChange}
                           options={STATUS_OPTIONS.map((status) => ({
@@ -292,58 +252,49 @@ export function EmailRecipientFields({
                       control={control}
                       name="isPaid"
                       render={({ field }) => (
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="h-8 w-full rounded-lg"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={PAYMENT.ALL}>
-                              {t.emails.anyPayment}
-                            </SelectItem>
-                            <SelectItem value={PAYMENT.YES}>
-                              {t.emails.paidYes}
-                            </SelectItem>
-                            <SelectItem value={PAYMENT.NO}>
-                              {t.emails.paidNo}
-                            </SelectItem>
+                            <SelectItem value={PAYMENT.ALL}>{t.emails.anyPayment}</SelectItem>
+                            <SelectItem value={PAYMENT.YES}>{t.emails.paidYes}</SelectItem>
+                            <SelectItem value={PAYMENT.NO}>{t.emails.paidNo}</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
                     />
                   </FormField>
-                  <FormField label={t.emails.appointmentFrom}>
-                    <Controller
-                      control={control}
-                      name="appointmentFrom"
-                      render={({ field }) => (
-                        <DatePicker
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
-                      )}
-                    />
-                  </FormField>
-                  <FormField
-                    label={t.emails.appointmentTo}
-                    error={errors.appointmentTo?.message}
-                  >
-                    <Controller
-                      control={control}
-                      name="appointmentTo"
-                      render={({ field }) => (
-                        <DatePicker
-                          value={field.value}
-                          onChange={field.onChange}
-                        />
-                      )}
-                    />
-                  </FormField>
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField label={t.emails.appointmentFrom}>
+                      <Controller
+                        control={control}
+                        name="appointmentFrom"
+                        render={({ field }) => (
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        )}
+                      />
+                    </FormField>
+                    <FormField
+                      label={t.emails.appointmentTo}
+                      error={errors.appointmentTo?.message}
+                    >
+                      <Controller
+                        control={control}
+                        name="appointmentTo"
+                        render={({ field }) => (
+                          <DatePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        )}
+                      />
+                    </FormField>
+                  </div>
                 </>
               )}
-            </PopoverContent>
+            </FilterPanel>
           </Popover>
         </div>
       </CardContent>

@@ -3,31 +3,6 @@
 import { Card, CardContent, Skeleton } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
-export function StatGridSkeleton({
-  count = 4,
-  className,
-}: {
-  count?: number;
-  className?: string;
-}) {
-  return (
-    <div className={cn('grid grid-cols-2 gap-3 sm:grid-cols-4', className)}>
-      {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-3 rounded-xl border bg-card p-3.5 shadow-xs"
-        >
-          <Skeleton className="size-10 shrink-0 rounded-xl" />
-          <div className="flex-1 space-y-1.5">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-6 w-12" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function TableSkeleton({
   rows = 6,
   cols = 5,
@@ -214,111 +189,90 @@ export function FormPageSkeleton({
   );
 }
 
+export const NOTE_TEMPLATE_GRID = 'grid grid-cols-1 gap-2 min-[26rem]:grid-cols-2 sm:gap-3 lg:grid-cols-3';
+
+export function NoteTemplateCardSkeleton() {
+  return (
+    <Card className="card-aura gap-0 py-0">
+      <CardContent className="flex items-center gap-2.5 p-2.5 sm:gap-3 sm:p-3.5">
+        <Skeleton className="size-9 shrink-0 rounded-xl sm:size-10" />
+        <Skeleton className="h-4 min-w-0 flex-1" />
+        <Skeleton className="h-5 w-16 shrink-0 rounded-full max-sm:hidden" />
+        <Skeleton className="size-7 shrink-0 rounded-lg" />
+        <Skeleton className="size-8 shrink-0 rounded-lg" />
+      </CardContent>
+    </Card>
+  );
+}
+
 export function NoteTemplateBuilderSkeleton({ className }: { className?: string }) {
   return (
     <div className={cn('page-fill gap-2', className)} aria-busy="true">
-      <div className="flex shrink-0 items-center justify-between"><Skeleton className="h-8 w-16" /><Skeleton className="h-5 w-16 rounded-full" /></div>
-      <div className="flex h-11 shrink-0 items-center gap-6 border-b border-border/60">{[0, 1, 2].map((step) => <Skeleton key={step} className="h-4 w-24" />)}</div>
-      <div className="space-y-4 p-1">
-        <div className="space-y-4 rounded-xl border border-border bg-card p-4">
-          <Skeleton className="h-5 w-28" />
-          <div className="grid gap-4 xl:grid-cols-2">{[0, 1].map((field) => <div key={field} className="space-y-1.5"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-full rounded-lg" /></div>)}</div>
-          <div className="space-y-1.5"><Skeleton className="h-4 w-32" /><Skeleton className="size-6 rounded-full" /></div>
+      <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+        <Skeleton className="h-8 w-16" />
+        <Skeleton className="hidden h-9 w-72 justify-self-center rounded-full md:block" />
+        <div className="flex items-center justify-end gap-1 justify-self-end sm:gap-2">
+          <Skeleton className="h-8 w-44 rounded-full" />
+          <Skeleton className="size-8 rounded-lg" />
+          <Skeleton className="size-8 rounded-lg" />
         </div>
-        <div className="flex gap-2"><Skeleton className="h-8 w-20 rounded-lg" /><Skeleton className="h-8 w-20 rounded-lg" /></div>
+      </div>
+      <Skeleton className="h-12 w-full shrink-0 rounded-xl md:hidden" />
+      <div className="min-h-0 flex-1 space-y-4 overflow-hidden p-1">
+        <Card className="overflow-visible">
+          <CardContent className="space-y-4">
+            <Skeleton className="h-5 w-24" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[0, 1].map((field) => (
+                <div key={field} className="space-y-1.5"><Skeleton className="h-4 w-28" /><Skeleton className="h-8 w-full rounded-lg" /></div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-9 w-44 rounded-full" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
 
-export function TimelineSkeleton({
-  hours = 8,
-  columns = 3,
-  className,
-}: {
-  hours?: number;
-  columns?: number;
-  className?: string;
-}) {
+export function TimelineSkeleton({ hours = 14, className }: { hours?: number; className?: string }) {
   return (
-    <div
-      className={cn(
-        'rounded-xl border bg-card shadow-xs overflow-hidden',
-        className,
-      )}
-    >
-      <div className="flex items-center justify-between border-b bg-muted/20 p-3">
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-8 w-16 rounded-md" />
-          <Skeleton className="h-8 w-16 rounded-md" />
-          <Skeleton className="h-5 w-32 ms-2" />
+    <div className={cn('page-fill card-aura relative overflow-hidden rounded-xl border bg-card p-2 sm:p-2.5', className)} role="status" aria-busy="true">
+      <div className="mb-2 grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-3">
+        <div className="flex items-center gap-0.5">
+          <Skeleton className="size-6 rounded-md" />
+          <Skeleton className="size-6 rounded-md" />
         </div>
-        <Skeleton className="h-4 w-28" />
+        <Skeleton className="hidden h-4 w-36 sm:block" />
+        <div className="flex items-center justify-end gap-1 max-sm:col-start-3 sm:gap-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="size-6 rounded-md" />
+          <Skeleton className="size-6 rounded-md" />
+        </div>
       </div>
-
-      <div className="grid grid-cols-[76px_repeat(3,1fr)] divide-x divide-y border-t">
-        <div className="p-2 bg-muted/30" />
-        {Array.from({ length: columns }).map((_, c) => (
-          <div key={c} className="p-3 bg-card flex items-center gap-2">
-            <Skeleton className="size-8 rounded-full" />
-            <div className="space-y-1 flex-1">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-2.5 w-12" />
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-border/60">
+        {Array.from({ length: hours }).map((_, hour) => (
+          <div key={hour} className="relative flex h-20 border-t border-border/30 first:border-t-0">
+            <div className="flex w-12 shrink-0 items-start justify-end border-e pe-1.5 pt-1"><Skeleton className="h-2.5 w-7" /></div>
+            <div className="relative flex-1 px-2 py-1.5">
+              {hour % 3 === 1 ? (
+                <div className="w-[85%] max-w-md space-y-1.5 rounded-lg border bg-muted/30 p-2">
+                  <Skeleton className="h-3.5 w-1/2" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              ) : null}
             </div>
           </div>
         ))}
-
-        {Array.from({ length: hours }).map((_, h) => (
-          <div key={h} className="contents">
-            <div className="p-2 h-24 flex items-start justify-end">
-              <Skeleton className="h-3 w-10" />
-            </div>
-            {Array.from({ length: columns }).map((_, c) => (
-              <div key={c} className="p-2 h-24 bg-background/50 space-y-1.5">
-                {(h + c) % 2 === 0 && (
-                  <div className="rounded-lg border bg-card p-2 space-y-1 shadow-2xs">
-                    <Skeleton className="h-3 w-3/4" />
-                    <Skeleton className="h-2.5 w-1/2" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ))}
       </div>
     </div>
   );
 }
 
-export function PageHeaderSkeleton({
-  hasActions = true,
-  className,
-}: {
-  hasActions?: boolean;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        'flex flex-wrap items-center justify-between gap-3 mb-4',
-        className,
-      )}
-    >
-      <div className="space-y-1.5">
-        <Skeleton className="h-6 w-44" />
-        <Skeleton className="h-3.5 w-64" />
-      </div>
-      {hasActions && (
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-9 w-24 rounded-lg" />
-          <Skeleton className="h-9 w-32 rounded-lg" />
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function QueueColumnSkeleton({ count = 2 }: { count?: number }) {
+export function QueueColumnSkeleton({ count = 6 }: { count?: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, index) => (
@@ -341,18 +295,15 @@ export function VisitWorkspaceSkeleton() {
     <div className="space-y-3" aria-busy="true">
       <Card className="gap-0 py-0">
         <CardContent className="space-y-3 p-3 sm:p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="flex min-w-0 items-center gap-3"><Skeleton className="size-10 shrink-0 rounded-full" /><div className="min-w-0 space-y-2"><Skeleton className="h-7 w-40 max-w-full" /><Skeleton className="h-4 w-56 max-w-full" /></div></div>
-            <div className="flex gap-2"><Skeleton className="h-5 w-24 rounded-full" /><Skeleton className="h-5 w-16 rounded-full" /></div>
+            <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:gap-2"><Skeleton className="h-5 w-24 rounded-full" /><Skeleton className="h-5 w-16 rounded-full" /></div>
           </div>
-          <div className="grid grid-cols-2 items-start gap-x-4 gap-y-3 lg:grid-cols-4">
-            {[0, 1, 2, 3].map((item) => <div key={item} className="space-y-1"><Skeleton className="h-4 w-16" /><Skeleton className="h-6 w-28 max-w-full" /></div>)}
+          <div className="grid grid-cols-2 items-start gap-x-4 gap-y-3 lg:grid-cols-3 xl:grid-cols-6">
+            {[0, 1, 2, 3, 4, 5].map((item) => <div key={item} className="space-y-1"><Skeleton className="h-4 w-16" /><Skeleton className="h-6 w-28 max-w-full" /></div>)}
           </div>
         </CardContent>
       </Card>
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
-        {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-16 w-full rounded-lg" />)}
-      </div>
       <Card className="gap-0 py-0"><CardContent className="space-y-4 p-3 sm:p-4"><Skeleton className="h-4 w-32" /><Skeleton className="h-32 w-full" /></CardContent></Card>
     </div>
   );

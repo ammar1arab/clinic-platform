@@ -54,7 +54,7 @@ export function SearchInput({
   return (
     <div
       className={cn(
-        'flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-input bg-background/50 px-2 focus-within:border-primary',
+        'flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg border border-input bg-background/50 px-2 focus-within:border-primary',
         className,
       )}
     >

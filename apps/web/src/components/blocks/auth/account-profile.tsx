@@ -7,6 +7,7 @@ import { compressImageToJpeg } from "@/lib/upload-local";
 import { Button, Card, CardContent, Input } from "@/components/ui";
 import {
   AvatarUpload,
+  SensitiveInput,
   ContactLine,
   EmailLink,
   FormField,
@@ -122,7 +123,7 @@ export function AccountProfile() {
                   <Input id="account-phone" dir="ltr" type="tel" maxLength={40} {...register("phone")} />
                 </FormField>
                 <FormField label={t.common.signInEmail} htmlFor="account-email" required error={errors.email?.message}>
-                  <Input id="account-email" dir="ltr" type="email" maxLength={254} {...register("email", { required: t.validation.required })} />
+                  <SensitiveInput id="account-email" dir="ltr" type="email" maxLength={254} {...register("email", { required: t.validation.required })} />
                 </FormField>
               </div>
               <FormActions className="mt-5" onCancel={cancel} submitLabel={t.common.save} pending={mutation.isPending || isSubmitting} />

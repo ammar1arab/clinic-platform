@@ -1,4 +1,5 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { resolveNotificationPrefs } from "@clinic/types";
 import { VisitsRepository } from "./visits.repository";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { createLogger } from "@/infrastructure/logger";
@@ -66,12 +67,19 @@ export class DocumentationRemindersWorker
             where: { clinicId: row.clinicId, role: "owner", isActive: true },
             select: { id: true },
           });
-          const ids = [
+          const candidates = [
             ...new Set([
               visit.appointment.doctorId,
               ...owners.map((owner) => owner.id),
             ]),
           ];
+          const prefRows = await tx.clinicUser.findMany({
+            where: { id: { in: candidates }, clinicId: row.clinicId },
+            select: { id: true, notificationPrefs: true },
+          });
+          const ids = prefRows
+            .filter((user) => resolveNotificationPrefs(user.notificationPrefs).documentation)
+            .map((user) => user.id);
           await tx.visitEvent.create({
             data: {
               clinicId: row.clinicId,

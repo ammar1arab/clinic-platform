@@ -37,7 +37,8 @@ export class PatientsService {
     if (!clinicId) securityError("clinicUnavailable", 403);
     const patients = await this.patientsRepository.findAllByClinic(
       clinicId,
-      practitionerId ? { ...filters, primaryDoctorId: practitionerId } : filters,
+      filters,
+      practitionerId,
     );
 
     return patients.map((patient) => {
@@ -82,15 +83,18 @@ export class PatientsService {
     });
   }
 
-  async findOne(id: string, clinicId: string) {
+  async findOne(id: string, clinicId: string, practitionerId?: string) {
     if (!clinicId) securityError("clinicUnavailable", 403);
-    const patient = await this.patientsRepository.findById(id, clinicId);
+    if (practitionerId && !(await this.patientsRepository.hasCareRelationship(id, clinicId, practitionerId))) {
+      throw new NotFoundException("Patient not found");
+    }
+    const patient = await this.patientsRepository.findById(id, clinicId, practitionerId);
     if (!patient) {
       throw new NotFoundException("Patient not found");
     }
 
     const referrals =
-      await this.patientsRepository.findReferralsByPatientId(id);
+      await this.patientsRepository.findReferralsByPatientId(id, clinicId, practitionerId);
     const completed = patient.appointments.filter(
       (appointment) => appointment.status === "completed",
     );

@@ -17,6 +17,7 @@ export interface IconCardProps extends Omit<
   active?: boolean;
   endContent?: React.ReactNode;
   orientation?: "horizontal" | "vertical";
+  compact?: boolean;
 }
 
 export const IconCard = forwardRef<HTMLButtonElement, IconCardProps>(
@@ -30,6 +31,7 @@ export const IconCard = forwardRef<HTMLButtonElement, IconCardProps>(
       active,
       endContent,
       orientation = "horizontal",
+      compact = false,
       className,
       onClick,
       ...props
@@ -43,7 +45,7 @@ export const IconCard = forwardRef<HTMLButtonElement, IconCardProps>(
       <>
         <IconWell
           icon={icon}
-          size={isHorizontal ? "lg" : "md"}
+          size={isHorizontal && !compact ? "lg" : "md"}
           accent={active ? "default" : accent}
         />
         <span
@@ -82,7 +84,7 @@ export const IconCard = forwardRef<HTMLButtonElement, IconCardProps>(
       "border-0 md:border",
       isInteractive && "md:hover:border-primary/40",
       isHorizontal
-        ? "items-center justify-start gap-4 px-4 py-3.5 h-auto"
+        ? compact ? "items-center justify-start gap-3 px-3 py-2.5 h-auto" : "items-center justify-start gap-4 px-4 py-3.5 h-auto"
         : "h-auto flex-col items-start gap-4 p-4 sm:p-5",
       className,
     );

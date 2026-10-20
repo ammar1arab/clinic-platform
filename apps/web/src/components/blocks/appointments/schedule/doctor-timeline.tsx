@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
-import { Button } from '@/components/ui';
+import { Button, Skeleton } from '@/components/ui';
 import { Appointment } from '@/services/appointments.service';
 import { ClinicStaffMember } from '@/services/clinics.service';
 import { STATUS_COLORS, getStatusConfig, StatusBadgeBlock } from '../shared/status-badge';
 import { AppointmentStatusSelect } from '../shared/appointment-status-select';
+import { createPortal } from 'react-dom';
 import { DoctorCombobox } from '../shared/doctor-combobox';
 import {
   patientDisplayName,
@@ -41,8 +42,7 @@ import {
 } from '@/components/primitives';
 import { cn } from '@/lib/utils';
 import { useNow } from '@/hooks/shared/use-now';
-import { ViewFocusToggle } from './view-focus';
-import { IconAdd, IconChevronLeft, IconChevronRight, IconOnline, IconPatients, IconRoom, IconService, IconVisit } from '@/constants/icons';
+import { IconAdd, IconCalendar, IconChevronLeft, IconChevronRight, IconOnline, IconPatients, IconRoom, IconService } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
 
@@ -51,6 +51,7 @@ interface Props {
   doctors: ClinicStaffMember[] | undefined;
   isLoading: boolean;
   focused?: boolean;
+  toolbarSlot?: HTMLElement | null;
   onSelectSlot: (date: Date, doctorId?: string) => void;
   onEventClick: (appointment: Appointment) => void;
 }
@@ -222,10 +223,11 @@ export function DoctorTimeline({
   doctors,
   isLoading,
   focused = false,
+  toolbarSlot,
   onSelectSlot,
   onEventClick,
 }: Props) {
-  const { t, lang, dir } = useLanguage();
+  const { t, lang } = useLanguage();
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d;
   });
@@ -359,7 +361,28 @@ export function DoctorTimeline({
     [selectedDate, activeDoctorId, onSelectSlot],
   );
 
-  if (isLoading) return <TimelineSkeleton columns={3} />;
+  const slot = focused ? null : toolbarSlot;
+  const doctorPicker = (
+    <DoctorCombobox
+      doctors={allDoctors}
+      value={activeDoctorId}
+      onChange={setActiveDoctorId}
+      counts={doctorDayCounts}
+      extraOption={{ value: 'all', label: t.appointments.allDoctors }}
+      placeholder={t.appointments.selectDoctor}
+      className={slot ? 'h-8 min-w-[9rem] flex-1 sm:w-52 sm:max-w-56 sm:flex-none' : 'w-full max-w-md'}
+      size="sm"
+    />
+  );
+
+  if (isLoading) {
+    return (
+      <>
+        {slot ? createPortal(<Skeleton className="h-8 min-w-[9rem] flex-1 rounded-lg sm:w-52 sm:max-w-56 sm:flex-none" />, slot) : null}
+        <TimelineSkeleton />
+      </>
+    );
+  }
 
   if (allDoctors.length === 0) {
     return (
@@ -387,66 +410,43 @@ export function DoctorTimeline({
     <div
       data-schedule-host=""
       className={cn(
-        'relative page-fill overflow-hidden border bg-card shadow-xs',
-        focused ? 'rounded-none border-0' : 'card-aura rounded-2xl',
+        'relative page-fill overflow-hidden bg-card',
+        focused ? 'rounded-none border-0 px-1.5 pb-1.5 pt-0 sm:px-2 sm:pb-2' : 'card-aura rounded-xl border p-2 sm:p-2.5',
       )}
     >
 
-      <div className="flex shrink-0 flex-col gap-2 border-b bg-muted/20 px-2.5 py-2 sm:px-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-
-          <div className="flex min-w-0 items-center gap-1.5">
-            <Button variant="outline" size="sm" onClick={goToday} disabled={isToday}
-              className="h-8 px-2.5 text-xs font-semibold active:scale-95">
-              <IconVisit className="size-3.5" />
-              <span className="ms-1 hidden sm:inline">{t.appointments.today}</span>
-            </Button>
-            <div className="flex items-center overflow-hidden rounded-lg border bg-background/60">
-              <button type="button" onClick={() => shiftDate(-1)} aria-label={t.appointments.previousDay}
-                className="flex h-8 w-8 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95">
-                {dir === 'rtl' ? <IconChevronRight className="size-4" /> : <IconChevronLeft className="size-4" />}
-              </button>
-              <button type="button" onClick={() => shiftDate(1)} aria-label={t.appointments.nextDay}
-                className="flex h-8 w-8 cursor-pointer items-center justify-center text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-95">
-                {dir === 'rtl' ? <IconChevronLeft className="size-4" /> : <IconChevronRight className="size-4" />}
-              </button>
-            </div>
-            <span className="truncate text-xs font-bold text-foreground sm:text-sm">{dateLabel}</span>
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground sm:gap-3">
-              <span className="flex items-center gap-1">
-                <IconPatients className="size-3.5 text-primary" />
-                {allDoctors.length} {t.appointments.doctorsCount}
-              </span>
-              <span className="hidden h-3 w-px bg-border sm:block" />
-              <span className="hidden sm:inline">
-                {dayAppts.length} {t.appointments.appts}
-              </span>
-            </div>
-            <ViewFocusToggle />
-          </div>
+      {slot ? createPortal(doctorPicker, slot) : focused ? null : <div className="mb-2 shrink-0">{doctorPicker}</div>}
+      <div className="mb-2 grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-3">
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon-xs" aria-label={t.appointments.previousDay} onClick={() => shiftDate(-1)}>
+            <IconChevronLeft className="size-4 rtl:rotate-180" />
+          </Button>
+          <Button variant="ghost" size="icon-xs" aria-label={t.appointments.nextDay} onClick={() => shiftDate(1)}>
+            <IconChevronRight className="size-4 rtl:rotate-180" />
+          </Button>
         </div>
-
-        {allDoctors.length > 0 && (
-          <DoctorCombobox
-            doctors={allDoctors}
-            value={activeDoctorId}
-            onChange={setActiveDoctorId}
-            counts={doctorDayCounts}
-            extraOption={{ value: 'all', label: t.appointments.allDoctors }}
-            placeholder={t.appointments.selectDoctor}
-            className="w-full max-w-md"
-            size="sm"
-          />
-        )}
+        <div className="hidden items-center gap-2 text-xs font-medium text-muted-foreground sm:flex">
+          <span className="flex items-center gap-1">
+            <IconPatients className="size-3.5 text-primary" />
+            {allDoctors.length} {t.appointments.doctorsCount}
+          </span>
+          <span className="h-3 w-px bg-border" />
+          <span>{dayAppts.length} {t.appointments.appts}</span>
+        </div>
+        <div className="flex min-w-0 items-center justify-end gap-1 max-sm:col-start-3 sm:gap-2">
+          <h2 className="min-w-0 truncate text-xs font-semibold sm:text-sm" title={dateLabel}>{dateLabel}</h2>
+          <SoftTip label={t.appointments.today}>
+            <Button type="button" variant="ghost" size="icon-xs" onClick={goToday} disabled={isToday} aria-label={t.appointments.today}>
+              <IconCalendar className="size-3.5" />
+            </Button>
+          </SoftTip>
+        </div>
       </div>
 
       <div
         ref={attachTimelineScroll}
         onClick={handleGridClick}
-        className="relative page-fill cursor-pointer overflow-auto overscroll-contain"
+        className="relative page-fill cursor-pointer overflow-auto overscroll-contain rounded-lg border border-border/60"
       >
         <div className="relative flex min-w-[20rem]" style={{ height: `${TIMELINE_TOTAL_HEIGHT}px` }}>
 

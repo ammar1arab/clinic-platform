@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Badge,
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -8,7 +9,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { SCHEDULE_FILTER_STATUSES, STATUS_OPTIONS } from '@/constants/appointment';
+import { APPOINTMENT_EDITABLE_STATUSES, APPOINTMENT_STATUS_GROUPS } from '@clinic/types';
 import { cn } from '@/lib/utils';
 import type { AppointmentStatus } from '@/services/appointments.service';
 import { StatusBadgeBlock } from './status-badge';
@@ -18,7 +19,7 @@ import { useLanguage } from '@/providers';
 export const STATUS_MENU_CONTENT_CLASS = 'min-w-56 w-56';
 
 export function StatusMenuItems({
-  options = STATUS_OPTIONS,
+  options,
   value,
   onChange,
   title,
@@ -36,10 +37,11 @@ export function StatusMenuItems({
       value={value}
       onValueChange={(next) => onChange(next as AppointmentStatus)}
     >
-      {options.map((status) => (
+      {(options ?? APPOINTMENT_EDITABLE_STATUSES).map((status) => (
         <DropdownMenuRadioItem
           key={status}
           value={status}
+          disabled={status === value}
           className="cursor-pointer rounded-md px-2 py-1.5"
         >
           <StatusBadgeBlock status={status} tip={false} />
@@ -50,29 +52,25 @@ export function StatusMenuItems({
 }
 
 export function StatusFilterItems({
-  options = SCHEDULE_FILTER_STATUSES,
   active,
   onToggle,
 }: {
-  options?: AppointmentStatus[];
   active: Set<AppointmentStatus>;
   onToggle: (status: AppointmentStatus) => void;
 }) {
-  return (
-    <>
-      {options.map((status) => (
-        <DropdownMenuCheckboxItem
-          key={status}
-          checked={active.has(status)}
-          onCheckedChange={() => onToggle(status)}
-          onSelect={(event) => event.preventDefault()}
-          className="gap-2 rounded-md px-2 py-1.5"
-        >
-          <StatusBadgeBlock status={status} tip={false} />
-        </DropdownMenuCheckboxItem>
-      ))}
-    </>
-  );
+  const { t } = useLanguage();
+  return Object.entries(APPOINTMENT_STATUS_GROUPS).map(([group, statuses]) => {
+    const selected = statuses.filter((status) => active.has(status)).length;
+    return <DropdownMenuCheckboxItem
+      key={group}
+      checked={selected === statuses.length ? true : selected ? 'indeterminate' : false}
+      onCheckedChange={(checked) => statuses.filter((status) => active.has(status) !== Boolean(checked)).forEach(onToggle)}
+      onSelect={(event) => event.preventDefault()}
+      className="gap-2 rounded-md px-2 py-1.5"
+    >
+      <Badge variant={group === 'inProgress' ? 'info' : group === 'completed' ? 'success' : 'muted'}>{t.appointments.statusGroups[group as keyof typeof APPOINTMENT_STATUS_GROUPS]}</Badge>
+    </DropdownMenuCheckboxItem>;
+  });
 }
 
 export function StatusPickerTrigger({

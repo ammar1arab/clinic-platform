@@ -219,14 +219,14 @@ export function EmailComposer() {
               void state.send({ selection, recipients: recipientsQuery.data });
             }
           }}
-          className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto overscroll-y-contain"
+          className="min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto overscroll-y-contain lg:[container-type:size]"
         >
           <fieldset
             disabled={state.working || feedback.open}
             className="m-0 grid items-start gap-4 border-0 p-0 disabled:opacity-70 lg:grid-cols-[minmax(0,7fr)_minmax(0,13fr)]"
             dir="ltr"
           >
-            <div className="min-w-0 self-start lg:sticky lg:top-0">
+            <div className="min-w-0 self-start lg:sticky lg:top-0.5">
               <EmailPreviewPane
                 dir={dir}
                 empty={!canPreview}
@@ -344,7 +344,7 @@ export function EmailComposer() {
                   <ErrorState title={state.error} className="py-6" />
                 )}
               </div>
-              <div dir={dir}>
+              <div dir={dir} className="lg:sticky lg:top-0.5 lg:h-[calc(100cqh-4px)]">
                 {recipientsQuery.isError && (
                   <ErrorState onRetry={() => void recipientsQuery.refetch()} />
                 )}

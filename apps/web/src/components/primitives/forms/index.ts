@@ -6,3 +6,5 @@ export * from './otp-input';
 export { SelectionToggle } from './selection-toggle';
 
 export { DragItem } from './drag-item';
+
+export { SensitiveInput } from './sensitive-input';

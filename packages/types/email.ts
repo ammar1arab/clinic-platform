@@ -51,11 +51,12 @@ export interface EmailSettingsInput {
   instagramUrl?: string;
   facebookUrl?: string;
   linkedinUrl?: string;
+  phone?: string;
   footerEn?: string;
   footerAr?: string;
 }
 
-export interface EmailBrandDetails extends EmailSettingsInput {
+export interface EmailBrandDetails extends Omit<EmailSettingsInput, "phone"> {
   name: string;
   nameAr: string | null;
   logoUrl: string | null;
@@ -149,6 +150,7 @@ export interface EmailPaginationInput {
 }
 
 export interface EmailHistoryInput extends EmailPaginationInput {
+  group?: EmailDeliveryGroup;
   from?: string;
   to?: string;
   search?: string;
@@ -170,3 +172,11 @@ export interface EmailVariablesResponse {
 export interface EmailAudiencesResponse {
   audiences: EmailRecipientFilters['audience'][];
 }
+
+export const EMAIL_DELIVERY_GROUPS = {
+  pending: ['queued', 'processing', 'delayed'],
+  sent: ['accepted', 'delivered'],
+  attention: ['bounced', 'complained', 'failed'],
+  skipped: ['suppressed'],
+} as const satisfies Record<string, readonly EmailDeliveryStatus[]>;
+export type EmailDeliveryGroup = keyof typeof EMAIL_DELIVERY_GROUPS;

@@ -1,5 +1,7 @@
 'use client';
 
+import { APPOINTMENT_STATUS_GROUPS } from '@clinic/types';
+
 import {
   Button,
   DropdownMenu,
@@ -34,6 +36,7 @@ interface Props {
   onClearStatuses: () => void;
   onNewPatient?: () => void;
   onNewAppointment?: () => void;
+  pickerSlotRef?: (element: HTMLDivElement | null) => void;
 }
 
 function StatusFilterDropdown({
@@ -46,7 +49,7 @@ function StatusFilterDropdown({
   onClear: () => void;
 }) {
   const { t } = useLanguage();
-  const count = active.size;
+  const count = Object.values(APPOINTMENT_STATUS_GROUPS).filter((statuses) => statuses.some((status) => active.has(status))).length;
 
   return (
     <DropdownMenu>
@@ -56,7 +59,7 @@ function StatusFilterDropdown({
           variant="outline"
           size="sm"
           className={cn(
-            'h-9 shrink-0 gap-1 border-border/70 bg-background/50 px-2.5 text-xs font-semibold shadow-2xs sm:text-[0.8rem]',
+            'h-8 shrink-0 gap-1 border-border/70 bg-background/50 px-2.5 text-xs font-semibold shadow-2xs sm:text-[0.8rem]',
             count > 0 && 'border-primary/35 bg-primary/5 text-foreground',
           )}
         >
@@ -103,6 +106,7 @@ export function ScheduleToolbar({
   onClearStatuses,
   onNewPatient,
   onNewAppointment,
+  pickerSlotRef,
 }: Props) {
   const { t, lang } = useLanguage();
 
@@ -115,7 +119,7 @@ export function ScheduleToolbar({
   return (
     <div
       data-schedule-toolbar=""
-      className="card-aura flex flex-col gap-2 rounded-xl border bg-card/90 p-2 shadow-xs backdrop-blur-md sm:rounded-2xl sm:p-2.5"
+      className="card-aura flex flex-col gap-1.5 rounded-xl border bg-card/90 p-1.5 shadow-xs backdrop-blur-md sm:rounded-xl sm:p-2"
     >
       <div className="flex items-center gap-1.5 sm:gap-2">
         <SearchInput
@@ -133,7 +137,7 @@ export function ScheduleToolbar({
                 size="sm"
                 onClick={onNewPatient}
                 aria-label={t.appointments.addPatient}
-                className="size-9 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-9 sm:w-auto sm:gap-1.5 sm:px-2.5"
+                className="size-8 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
               >
                 <IconNewPatient className="size-3.5 shrink-0 text-muted-foreground" />
                 <span className="hidden font-semibold sm:inline">{t.appointments.patient}</span>
@@ -146,7 +150,7 @@ export function ScheduleToolbar({
                 size="sm"
                 onClick={onNewAppointment}
                 aria-label={t.appointments.addAppointment}
-                className="size-9 shrink-0 px-0 active:scale-95 sm:h-9 sm:w-auto sm:gap-1.5 sm:px-2.5"
+                className="size-8 shrink-0 px-0 active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
               >
                 <IconAdd className="size-3.5 shrink-0" />
                 <span className="hidden font-semibold sm:inline">{t.appointments.appointment}</span>
@@ -156,8 +160,8 @@ export function ScheduleToolbar({
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 border-t border-border/40 pt-2 sm:gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      <div className="flex items-center gap-1.5 border-t border-border/40 pt-1.5 sm:gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           <SearchablePicker
             size="sm"
             options={(departments ?? []).map((dept) => ({
@@ -169,8 +173,9 @@ export function ScheduleToolbar({
             extraOption={{ value: FORM_ALL, label: t.appointments.departments }}
             placeholder={t.appointments.departments}
             searchPlaceholder={t.appointments.searchPlaceholder}
-            className="h-9 min-w-0 flex-1 bg-background/50 sm:w-52 sm:max-w-56 sm:flex-none"
+            className="h-8 min-w-[9rem] flex-1 bg-background/50 sm:w-52 sm:max-w-56 sm:flex-none"
           />
+          {view === 'doctors' || view === 'queue' ? <div ref={pickerSlotRef} className="contents" /> : null}
         </div>
         <StatusFilterDropdown
           active={statusFilters}

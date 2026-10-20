@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { Select as SelectPrimitive } from "radix-ui"
+import { RadioGroup as RadioGroupPrimitive, Select as SelectPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { Button } from "./button"
 import {
   OVERLAY_COLLISION_PADDING,
   OVERLAY_POP_CLASS,
@@ -11,10 +12,68 @@ import {
 } from "@/lib/overlay"
 import { IconCheck, IconChevronDown, IconChevronUp } from '@/constants/icons'
 
-function Select({
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />
+type SelectProps = React.ComponentProps<typeof SelectPrimitive.Root> & {
+  asChips?: boolean
+}
+
+type ChipItem = { value: string; label: React.ReactNode; disabled?: boolean }
+
+const MAX_CHIP_OPTIONS = 12
+
+function collect(children: React.ReactNode, items: ChipItem[], trigger: { current?: Record<string, unknown> }) {
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement<{ children?: React.ReactNode; value?: string; disabled?: boolean }>(child)) return
+    if (child.type === SelectItem) {
+      items.push({ value: String(child.props.value), label: child.props.children, disabled: child.props.disabled })
+      return
+    }
+    if (child.type === SelectTrigger) trigger.current = child.props as Record<string, unknown>
+    collect(child.props.children, items, trigger)
+  })
+}
+
+function Select({ asChips = false, children, value, onValueChange, disabled, ...props }: SelectProps) {
+  const [localValue, setLocalValue] = React.useState(props.defaultValue)
+  const selected = value ?? localValue
+  const items: ChipItem[] = []
+  const trigger: { current?: Record<string, unknown> } = {}
+  if (asChips && props.open === undefined && !props.onOpenChange) collect(children, items, trigger)
+  if (!items.length || items.length > MAX_CHIP_OPTIONS) {
+    return (
+      <SelectPrimitive.Root data-slot="select" value={value} onValueChange={onValueChange} disabled={disabled} {...props}>
+        {children}
+      </SelectPrimitive.Root>
+    )
+  }
+  return (
+    <RadioGroupPrimitive.Root
+      value={selected}
+      onValueChange={(next) => { if (value === undefined) setLocalValue(next); onValueChange?.(next) }}
+      name={props.name}
+      required={props.required}
+      disabled={disabled}
+      dir={props.dir}
+      id={trigger.current?.id as string | undefined}
+      aria-label={trigger.current?.["aria-label"] as string | undefined}
+      aria-invalid={trigger.current?.["aria-invalid"] as boolean | undefined}
+      data-slot="select"
+      className="flex flex-wrap gap-1.5"
+    >
+      {items.map((item) => (
+        <RadioGroupPrimitive.Item key={item.value} value={item.value} disabled={disabled || item.disabled} asChild>
+        <Button
+          type="button"
+          size="sm"
+          variant={selected === item.value ? "default" : "outline"}
+          disabled={disabled || item.disabled}
+          className="max-w-full"
+        >
+          <span className="truncate">{item.label}</span>
+        </Button>
+        </RadioGroupPrimitive.Item>
+      ))}
+    </RadioGroupPrimitive.Root>
+  )
 }
 
 function SelectGroup({

@@ -1,3 +1,5 @@
+import { ScheduleRequestsService } from "./schedule-requests.service";
+import { CreateScheduleRequestDto, ReviewScheduleRequestDto, ScheduleRequestFiltersDto } from "./dto/schedule-request.dto";
 import {
   Body,
   Controller,
@@ -31,7 +33,28 @@ import { ConfirmPasswordChangeDto } from "@/modules/auth/dto/auth-flow.dto";
 @UseGuards(JwtAuthGuard)
 @Controller("practitioners")
 export class PractitionersController {
-  constructor(private practitionersService: PractitionersService) {}
+  constructor(private practitionersService: PractitionersService, private scheduleRequests: ScheduleRequestsService) {}
+
+  @Get("schedule-requests")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.practitioner)
+  listScheduleRequests(@CurrentUser() user: AuthUser, @Query() filters: ScheduleRequestFiltersDto) {
+    return this.scheduleRequests.list(user, filters);
+  }
+
+  @Post("schedule-requests")
+  @UseGuards(RolesGuard)
+  @Roles(Role.practitioner)
+  createScheduleRequest(@CurrentUser() user: AuthUser, @Body() dto: CreateScheduleRequestDto) {
+    return this.scheduleRequests.create(user, dto);
+  }
+
+  @Patch("schedule-requests/:requestId")
+  @UseGuards(RolesGuard)
+  @Roles(Role.owner, Role.admin, Role.practitioner)
+  reviewScheduleRequest(@CurrentUser() user: AuthUser, @Param("requestId") id: string, @Body() dto: ReviewScheduleRequestDto) {
+    return this.scheduleRequests.review(user, id, dto);
+  }
 
   @Post(":id/reset-password")
   @Header("Cache-Control", "no-store")

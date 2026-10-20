@@ -90,7 +90,11 @@ export class PatientsController {
 
   @Get(":id")
   findOne(@CurrentUser() user: AuthUser, @Param("id") id: string) {
-    return this.patientsService.findOne(id, user.clinicId);
+    return this.patientsService.findOne(
+      id,
+      user.clinicId,
+      user.role === Role.practitioner ? user.clinicUserId : undefined,
+    );
   }
 
   @Patch(":id")

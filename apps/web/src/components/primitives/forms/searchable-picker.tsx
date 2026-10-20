@@ -101,7 +101,7 @@ export function SearchablePicker({
           size={size === 'sm' ? 'sm' : 'default'}
           className={cn(
             'w-full min-w-0 justify-between gap-1.5 overflow-hidden font-normal',
-            size === 'sm' ? 'h-9 text-xs' : 'h-9 text-sm',
+            size === 'sm' ? 'h-8 text-xs' : 'h-8 text-sm',
             className,
           )}
         >
@@ -158,10 +158,8 @@ export function SearchablePicker({
                   {option.label}
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5">
+                  <IconCheck className={cn('size-4 shrink-0 text-primary', option.value !== value && 'invisible')} />
                   {option.end}
-                  {option.value === value ? (
-                    <IconCheck className="size-4 shrink-0 text-primary" />
-                  ) : null}
                 </span>
               </button>
             ))

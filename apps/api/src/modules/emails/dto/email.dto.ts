@@ -27,6 +27,8 @@ import {
 import { AppointmentStatus, Role, EmailRecipientStatus } from "@prisma/client";
 import {
   EMAIL_AUDIENCE,
+  EMAIL_DELIVERY_GROUPS,
+  type EmailDeliveryGroup,
   LOCALE,
   type EmailAudience,
   type Locale,
@@ -214,6 +216,10 @@ export class EmailPaginationDto {
 
 export class EmailHistoryDto extends EmailPaginationDto {
   @IsOptional()
+  @IsIn(Object.keys(EMAIL_DELIVERY_GROUPS))
+  group?: EmailDeliveryGroup;
+
+  @IsOptional()
   @IsString()
   @MaxLength(200)
   search?: string;
@@ -263,6 +269,10 @@ export class EmailSettingsDto {
   @IsUrl({ protocols: ["https"], require_protocol: true })
   @MaxLength(2048)
   linkedinUrl?: string;
+
+  @IsOptional()
+  @Matches(/^\+[1-9]\d{6,14}$/)
+  phone?: string;
 
   @IsOptional()
   @IsString()

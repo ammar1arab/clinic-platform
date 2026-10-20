@@ -33,7 +33,7 @@ export function DirectoryToolbar({
   searchLoading?: boolean;
 }) {
   return (
-    <div className="card-aura flex items-center gap-1.5 rounded-xl border bg-card/90 p-2 shadow-xs backdrop-blur-md sm:gap-2 sm:rounded-2xl sm:p-2.5">
+    <div className="card-aura flex items-center gap-1.5 rounded-xl border bg-card/90 p-1.5 shadow-xs backdrop-blur-md sm:gap-2 sm:rounded-xl sm:p-2">
       <SearchInput
         value={search}
         onChange={onSearchChange}

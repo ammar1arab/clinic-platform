@@ -1,15 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import {
-  Prisma,
-  type ClinicalNoteTemplate,
-  type ClinicalTemplateVersion,
-} from "@prisma/client";
+import { HttpException, Injectable } from "@nestjs/common";
+import { Prisma, type ClinicalNoteTemplate } from "@prisma/client";
 import type { AuthUser } from "@/modules/auth/types";
-import type {
-  ClinicalTemplateInput,
-  TemplateDTO,
-  TemplateVersionDTO,
-} from "@clinic/types";
+import type { ClinicalTemplateInput, TemplateDTO } from "@clinic/types";
 import {
   VisitsRepository,
   type VisitTx,
@@ -18,6 +10,7 @@ import {
 import { TemplateDto, UpdateTemplateDto } from "./visits.dto";
 import { validateSections } from "./clinical-validation";
 import { visitError } from "./visit-errors";
+import { SEED_TEMPLATES } from "./seed-templates";
 export const toJson = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 export const snapshotOf = (
@@ -30,18 +23,16 @@ export const snapshotOf = (
     row.assignments as unknown as ClinicalTemplateInput["assignments"],
   sections: row.sections as unknown as ClinicalTemplateInput["sections"],
 });
-export const versionSnapshot = (version: ClinicalTemplateVersion) =>
-  version.snapshot as unknown as ClinicalTemplateInput;
+export const publishedSnapshot = (row: ClinicalNoteTemplate) =>
+  row.published as unknown as ClinicalTemplateInput;
+const isPublished = { publishedAt: { not: null } } satisfies Prisma.ClinicalNoteTemplateWhereInput;
 @Injectable()
 export class TemplatesService {
   constructor(private readonly repo: VisitsRepository) {}
   private owner(actor: AuthUser) {
     if (actor.role !== "owner") visitError("visitForbidden", 403);
   }
-  private dto(
-    row: ClinicalNoteTemplate,
-    latest?: ClinicalTemplateVersion | null,
-  ): TemplateDTO {
+  private dto(row: ClinicalNoteTemplate): TemplateDTO {
     return {
       id: row.id,
       clinicId: row.clinicId,
@@ -49,128 +40,38 @@ export class TemplatesService {
       status: row.status as TemplateDTO["status"],
       scheduledAt: row.scheduledAt?.toISOString() ?? null,
       revision: row.revision,
-      version: row.version,
-      publishedVersionId: latest?.id ?? null,
+      publishedAt: row.publishedAt?.toISOString() ?? null,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     };
   }
   starter(actor: AuthUser): ClinicalTemplateInput {
     this.owner(actor);
-    return {
-      name: "Clinical consultation",
-      nameAr: "توثيق المعاينة",
-      availableToAll: true,
-      assignments: { practitionerIds: [], departmentIds: [], serviceIds: [] },
-      sections: [
-        {
-          id: "presentation",
-          title: "Presentation",
-          titleAr: "سبب الزيارة",
-          fields: [
-            {
-              id: "reason",
-              label: "Reason for visit",
-              labelAr: "سبب الزيارة",
-              type: "textarea",
-              required: true,
-            },
-          ],
-        },
-        {
-          id: "history",
-          title: "History and examination",
-          titleAr: "التاريخ والفحص",
-          fields: [
-            {
-              id: "history",
-              label: "Relevant history",
-              labelAr: "التاريخ المرضي",
-              type: "textarea",
-              required: false,
-            },
-            {
-              id: "examination",
-              label: "Examination findings",
-              labelAr: "نتائج الفحص",
-              type: "textarea",
-              required: false,
-            },
-          ],
-        },
-        {
-          id: "assessment_plan",
-          title: "Assessment and plan",
-          titleAr: "التقييم والخطة",
-          fields: [
-            {
-              id: "assessment",
-              label: "Assessment",
-              labelAr: "التقييم",
-              type: "textarea",
-              required: true,
-            },
-            {
-              id: "plan",
-              label: "Plan",
-              labelAr: "الخطة",
-              type: "textarea",
-              required: true,
-            },
-            {
-              id: "followUp",
-              label: "Follow-up",
-              labelAr: "المتابعة",
-              type: "textarea",
-              required: false,
-            },
-            {
-              id: "summary",
-              label: "Patient-facing summary",
-              labelAr: "الخلاصة الموجهة للمريض",
-              type: "textarea",
-              required: false,
-            },
-          ],
-        },
-      ],
-    };
+    return structuredClone(SEED_TEMPLATES[0]);
+  }
+  starters(actor: AuthUser): ClinicalTemplateInput[] {
+    this.owner(actor);
+    return structuredClone(SEED_TEMPLATES);
   }
   async list(actor: AuthUser) {
     this.owner(actor);
     const rows = await this.repo.db.clinicalNoteTemplate.findMany({
       where: { clinicId: actor.clinicId },
-      include: { versions: { orderBy: { version: "desc" }, take: 1 } },
       orderBy: { updatedAt: "desc" },
     });
-    return rows.map((row) => this.dto(row, row.versions[0]));
+    return rows.map((row) => this.dto(row));
   }
   async get(actor: AuthUser, id: string) {
     this.owner(actor);
     const row = await this.repo.db.clinicalNoteTemplate.findFirst({
       where: { id, clinicId: actor.clinicId },
-      include: { versions: { orderBy: { version: "desc" }, take: 1 } },
     });
     if (!row) visitError("clinicalTemplateNotFound", 404);
-    return this.dto(row, row.versions[0]);
-  }
-  async versions(actor: AuthUser, id: string): Promise<TemplateVersionDTO[]> {
-    await this.get(actor, id);
-    return (
-      await this.repo.db.clinicalTemplateVersion.findMany({
-        where: { templateId: id, clinicId: actor.clinicId },
-        orderBy: { version: "desc" },
-      })
-    ).map((row) => ({
-      id: row.id,
-      templateId: row.templateId,
-      version: row.version,
-      snapshot: versionSnapshot(row),
-      createdAt: row.createdAt.toISOString(),
-    }));
+    return this.dto(row);
   }
   private async validate(tx: VisitTx, clinicId: string, input: TemplateDto) {
     if (!input.name.trim()) visitError("clinicalTemplateInvalid");
+    if (!input.availableToAll && !Object.values(input.assignments).some((ids) => ids.length)) visitError("clinicalTemplateAssignmentInvalid");
     validateSections(input.sections);
     const refs = input.assignments;
     const counts = await Promise.all([
@@ -240,36 +141,28 @@ export class TemplatesService {
         },
       });
       if (!result.count) visitError("visitRevisionConflict", 409);
-      const updated = await tx.clinicalNoteTemplate.findUniqueOrThrow({
-        where: { id },
-        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-      });
-      return this.dto(updated, updated.versions[0]);
+      return this.dto(await tx.clinicalNoteTemplate.findUniqueOrThrow({ where: { id } }));
     });
   }
   async publishNow(tx: VisitTx, clinicId: string, row: ClinicalNoteTemplate) {
     const updated = await tx.clinicalNoteTemplate.updateMany({
       where: { id: row.id, clinicId, revision: row.revision },
       data: {
-        version: { increment: 1 },
         revision: { increment: 1 },
         status: "published",
         scheduledAt: null,
+        published: toJson(snapshotOf(row)),
+        publishedAt: new Date(),
       },
     });
     if (!updated.count) visitError("visitRevisionConflict", 409);
-    const version = await tx.clinicalTemplateVersion.create({
-      data: {
-        clinicId,
-        templateId: row.id,
-        version: row.version + 1,
-        snapshot: toJson(snapshotOf(row)),
-      },
+    if (!row.availableToAll) await tx.clinic.updateMany({
+      where: { id: clinicId, defaultNoteTemplateId: row.id }, data: { defaultNoteTemplateId: null },
     });
-    return this.dto(
-      await tx.clinicalNoteTemplate.findUniqueOrThrow({ where: { id: row.id } }),
-      version,
-    );
+    if (row.availableToAll) await tx.clinic.updateMany({
+      where: { id: clinicId, defaultNoteTemplateId: null }, data: { defaultNoteTemplateId: row.id },
+    });
+    return this.dto(await tx.clinicalNoteTemplate.findUniqueOrThrow({ where: { id: row.id } }));
   }
   async publish(actor: AuthUser, id: string, revision: number) {
     this.owner(actor);
@@ -316,11 +209,7 @@ export class TemplatesService {
         },
       });
       if (!updated.count) visitError("visitRevisionConflict", 409);
-      const scheduled = await tx.clinicalNoteTemplate.findUniqueOrThrow({
-        where: { id, clinicId: actor.clinicId },
-        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-      });
-      return this.dto(scheduled, scheduled.versions[0]);
+      return this.dto(await tx.clinicalNoteTemplate.findUniqueOrThrow({ where: { id, clinicId: actor.clinicId } }));
     });
   }
   async promoteScheduled(now: Date) {
@@ -330,25 +219,49 @@ export class TemplatesService {
       take: 100,
     });
     for (const row of due) {
-      await this.repo.transaction(async (tx) => {
-        const current = await tx.clinicalNoteTemplate.findFirst({
-          where: { id: row.id, clinicId: row.clinicId, status: "scheduled", scheduledAt: { lte: now } },
+      try {
+        await this.repo.transaction(async (tx) => {
+          const current = await tx.clinicalNoteTemplate.findFirst({
+            where: { id: row.id, clinicId: row.clinicId, status: "scheduled", scheduledAt: { lte: now } },
+          });
+          if (!current) return;
+          validateSections(current.sections);
+          await this.publishNow(tx, current.clinicId, current);
         });
-        if (!current) return;
-        validateSections(current.sections);
-        await this.publishNow(tx, current.clinicId, current);
-      });
+      } catch (error) {
+        if (!(error instanceof HttpException) || error.getStatus() !== 400) throw error;
+        await this.repo.db.clinicalNoteTemplate.updateMany({
+          where: { id: row.id, clinicId: row.clinicId, status: "scheduled", revision: row.revision, scheduledAt: { lte: now } },
+          data: { status: "draft", scheduledAt: null, revision: { increment: 1 } },
+        });
+      }
     }
     return due.length;
   }
   async archive(actor: AuthUser, id: string, revision: number) {
     this.owner(actor);
-    const result = await this.repo.db.clinicalNoteTemplate.updateMany({
-      where: { id, clinicId: actor.clinicId, revision },
-      data: { status: "archived", scheduledAt: null, revision: { increment: 1 } },
+    await this.repo.transaction(async (tx) => {
+      const result = await tx.clinicalNoteTemplate.updateMany({
+        where: { id, clinicId: actor.clinicId, revision },
+        data: { status: "archived", scheduledAt: null, revision: { increment: 1 } },
+      });
+      if (!result.count) visitError("visitRevisionConflict", 409);
+      await tx.clinic.updateMany({ where: { id: actor.clinicId, defaultNoteTemplateId: id }, data: { defaultNoteTemplateId: null } });
+      await tx.clinicUser.updateMany({ where: { clinicId: actor.clinicId, defaultNoteTemplateId: id }, data: { defaultNoteTemplateId: null } });
     });
-    if (!result.count) visitError("visitRevisionConflict", 409);
     return this.get(actor, id);
+  }
+  async remove(actor: AuthUser, id: string) {
+    this.owner(actor);
+    await this.repo.transaction(async (tx) => {
+      const row = await tx.clinicalNoteTemplate.findFirst({ where: { id, clinicId: actor.clinicId }, select: { id: true } });
+      if (!row) visitError("clinicalTemplateNotFound", 404);
+      if (await tx.clinicalNote.count({ where: { templateId: id, clinicId: actor.clinicId } })) visitError("clinicalTemplateInUse", 409);
+      await tx.clinic.updateMany({ where: { id: actor.clinicId, defaultNoteTemplateId: id }, data: { defaultNoteTemplateId: null } });
+      await tx.clinicUser.updateMany({ where: { clinicId: actor.clinicId, defaultNoteTemplateId: id }, data: { defaultNoteTemplateId: null } });
+      await tx.clinicalNoteTemplate.delete({ where: { id_clinicId: { id, clinicId: actor.clinicId } } });
+    });
+    return { id };
   }
   async clone(actor: AuthUser, id: string) {
     const row = await this.get(actor, id);
@@ -360,132 +273,98 @@ export class TemplatesService {
       sections: row.sections,
     });
   }
-  async allowed(tx: VisitTx, row: WorkspaceRow) {
-    const versions = await tx.clinicalNoteTemplate.findMany({
-      where: {
-        clinicId: row.clinicId,
-        status: { not: "archived" },
-        version: { gt: 0 },
-      },
-      include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-    });
-    return versions.flatMap((template) => {
-      const version = template.versions[0];
-      if (!version) return [];
-      const snapshot = versionSnapshot(version);
-      const refs = snapshot.assignments;
-      const matches =
-        snapshot.availableToAll ||
-        refs.practitionerIds.includes(row.doctorId) ||
-        (!!row.departmentId && refs.departmentIds.includes(row.departmentId)) ||
-        (!!row.serviceId && refs.serviceIds.includes(row.serviceId));
-      return matches
-        ? [
-            {
-              ...this.dto(template, version),
-              ...snapshot,
-              status: "published" as const,
-            },
-          ]
-        : [];
+  private live(row: ClinicalNoteTemplate) {
+    return { ...this.dto(row), ...publishedSnapshot(row), status: "published" as const };
+  }
+  private publishedRows(db: Pick<VisitTx, "clinicalNoteTemplate">, clinicId: string) {
+    return db.clinicalNoteTemplate.findMany({
+      where: { clinicId, status: { not: "archived" }, ...isPublished },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     });
   }
-  async available(actor: AuthUser, appointmentId?: string) {
+  async allowed(tx: VisitTx, row: Pick<WorkspaceRow, "clinicId" | "doctorId" | "departmentId" | "serviceId">) {
+    const rows = await this.publishedRows(tx, row.clinicId);
+    return rows
+      .filter((template) => {
+        const refs = publishedSnapshot(template);
+        return (
+          refs.availableToAll ||
+          refs.assignments.practitionerIds.includes(row.doctorId) ||
+          (!!row.departmentId && refs.assignments.departmentIds.includes(row.departmentId)) ||
+          (!!row.serviceId && refs.assignments.serviceIds.includes(row.serviceId))
+        );
+      })
+      .map((template) => this.live(template));
+  }
+  async available(actor: AuthUser, appointmentId?: string, membership?: { id: string; departmentId: string | null; services: { serviceId: string }[] }) {
     if (appointmentId)
       return this.repo.transaction(async (tx) =>
-        this.allowed(tx, await this.repo.appointment(tx, actor, appointmentId)),
+        this.allowed(tx, await this.repo.templateScope(tx, actor, appointmentId)),
       );
+    const rows = await this.publishedRows(this.repo.db, actor.clinicId);
     if (actor.role !== "practitioner") {
       this.owner(actor);
-      const rows = await this.repo.db.clinicalNoteTemplate.findMany({
-        where: {
-          clinicId: actor.clinicId,
-          version: { gt: 0 },
-          status: { not: "archived" },
-        },
-        include: { versions: { take: 1, orderBy: { version: "desc" } } },
-      });
-      return rows.flatMap((row) =>
-        row.versions[0]
-          ? [
-              {
-                ...this.dto(row, row.versions[0]),
-                ...versionSnapshot(row.versions[0]),
-                status: "published" as const,
-              },
-            ]
-          : [],
-      );
+      return rows.map((row) => this.live(row));
     }
-    const practitioner = await this.repo.db.clinicUser.findFirstOrThrow({
+    const practitioner = membership ?? await this.repo.db.clinicUser.findFirstOrThrow({
       where: { id: actor.clinicUserId, clinicId: actor.clinicId },
       include: { services: true },
     });
-    const rows = await this.repo.db.clinicalNoteTemplate.findMany({
-      where: {
-        clinicId: actor.clinicId,
-        status: { not: "archived" },
-        version: { gt: 0 },
-      },
-      include: { versions: { take: 1, orderBy: { version: "desc" } } },
-    });
-    return rows.flatMap((row) => {
-      const version = row.versions[0];
-      if (!version) return [];
-      const snap = versionSnapshot(version);
-      const matches =
-        snap.availableToAll ||
-        snap.assignments.practitionerIds.includes(practitioner.id) ||
-        snap.assignments.departmentIds.includes(
-          practitioner.departmentId ?? "",
-        ) ||
-        practitioner.services.some((service) =>
-          snap.assignments.serviceIds.includes(service.serviceId),
+    return rows
+      .filter((row) => {
+        const snap = publishedSnapshot(row);
+        return (
+          snap.availableToAll ||
+          snap.assignments.practitionerIds.includes(practitioner.id) ||
+          snap.assignments.departmentIds.includes(practitioner.departmentId ?? "") ||
+          practitioner.services.some((service) => snap.assignments.serviceIds.includes(service.serviceId))
         );
-      return matches
-        ? [{ ...this.dto(row, version), ...snap, status: "published" as const }]
-        : [];
+      })
+      .map((row) => this.live(row));
+  }
+  async clinicDefault(actor: AuthUser, templateId?: string | null) {
+    this.owner(actor);
+    return this.repo.transaction(async (tx) => {
+      if (templateId !== undefined) {
+        if (!templateId) visitError("clinicalTemplateInvalid");
+        const row = await tx.clinicalNoteTemplate.findFirst({
+          where: { id: templateId, clinicId: actor.clinicId, status: "published", ...isPublished },
+        });
+        if (!row || !publishedSnapshot(row).availableToAll) visitError("clinicalTemplateUnavailable", 403);
+        await tx.clinic.update({ where: { id: actor.clinicId }, data: { defaultNoteTemplateId: templateId } });
+      }
+      const clinic = await tx.clinic.findUniqueOrThrow({ where: { id: actor.clinicId }, select: { defaultNoteTemplateId: true } });
+      if (clinic.defaultNoteTemplateId) return { templateId: clinic.defaultNoteTemplateId };
+      const fallback = (await this.publishedRows(tx, actor.clinicId)).find((item) => publishedSnapshot(item).availableToAll);
+      return { templateId: fallback?.id ?? null };
     });
+  }
+  async defaultForVisit(tx: VisitTx, row: Pick<WorkspaceRow, "clinicId" | "doctorId" | "departmentId" | "serviceId">) {
+    const doctor = await tx.clinicUser.findFirstOrThrow({
+      where: { id: row.doctorId, clinicId: row.clinicId },
+      select: { defaultNoteTemplateId: true, clinic: { select: { defaultNoteTemplateId: true } } },
+    });
+    const available = await this.allowed(tx, row);
+    return available.find((item) => item.id === doctor.defaultNoteTemplateId)
+      ?? available.find((item) => item.id === doctor.clinic.defaultNoteTemplateId)
+      ?? available.find((item) => item.availableToAll) ?? available[0];
   }
   async preference(actor: AuthUser, templateId?: string | null) {
     if (actor.role !== "practitioner") visitError("visitForbidden", 403);
-    if (templateId !== undefined) {
-      if (templateId) {
-        const row = await this.repo.db.clinicalNoteTemplate.findFirst({
-          where: {
-            id: templateId,
-            clinicId: actor.clinicId,
-            version: { gt: 0 },
-            status: { not: "archived" },
-          },
-          include: { versions: { orderBy: { version: "desc" }, take: 1 } },
-        });
-        if (!row?.versions[0]) visitError("clinicalTemplateNotFound", 404);
-        const snap = versionSnapshot(row.versions[0]);
-        const practitioner = await this.repo.db.clinicUser.findFirstOrThrow({
-          where: { id: actor.clinicUserId, clinicId: actor.clinicId },
-          include: { services: true },
-        });
-        if (
-          !snap.availableToAll &&
-          !snap.assignments.practitionerIds.includes(practitioner.id) &&
-          !snap.assignments.departmentIds.includes(
-            practitioner.departmentId ?? "",
-          ) &&
-          !practitioner.services.some((service) =>
-            snap.assignments.serviceIds.includes(service.serviceId),
-          )
-        )
-          visitError("clinicalTemplateUnavailable", 403);
-      }
-      await this.repo.db.clinicUser.updateMany({
-        where: { id: actor.clinicUserId, clinicId: actor.clinicId },
-        data: { defaultNoteTemplateId: templateId },
-      });
-    }
-    const row = await this.repo.db.clinicUser.findFirstOrThrow({
+    const membership = await this.repo.db.clinicUser.findFirstOrThrow({
       where: { id: actor.clinicUserId, clinicId: actor.clinicId },
+      select: { id: true, departmentId: true, defaultNoteTemplateId: true,
+        services: { select: { serviceId: true } }, clinic: { select: { defaultNoteTemplateId: true } } },
     });
-    return { templateId: row.defaultNoteTemplateId };
+    const available = await this.available(actor, undefined, membership);
+    if (templateId && !available.some((item) => item.id === templateId)) visitError("clinicalTemplateUnavailable", 403);
+    if (templateId !== undefined) await this.repo.db.clinicUser.updateMany({
+      where: { id: actor.clinicUserId, clinicId: actor.clinicId }, data: { defaultNoteTemplateId: templateId },
+    });
+    const personal = templateId === undefined ? membership.defaultNoteTemplateId : templateId;
+    const clinic = available.find((item) => item.id === membership.clinic.defaultNoteTemplateId)
+      ?? available.find((item) => item.availableToAll);
+    const effective = available.find((item) => item.id === personal) ?? clinic ?? available[0];
+    return { templateId: personal, effectiveTemplateId: effective?.id ?? null, clinicTemplateId: clinic?.id ?? null };
   }
 }

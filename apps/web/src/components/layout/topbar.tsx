@@ -1,31 +1,17 @@
 'use client';
 
 import { ROUTES } from '@/constants/routes';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
 import type { Translations } from '@/i18n';
 import { useSidebar } from '@/providers/sidebar-provider';
-import {
-  Button,
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogMedia,
-  AlertDialogTitle,
-} from '@/components/ui';
-import { ThemeToggle } from '@/components/primitives/display/theme-toggle';
-import { LanguageSwitcher } from '@/components/primitives/display/language-switcher';
 import { SoftTip } from '@/components/primitives';
-import { IconLogout, IconRotateCcw } from '@/constants/icons';
 import { MobileActionsMenu } from '@/components/layout/mobile-actions-menu';
+import { NotificationBell } from '@/components/layout/notification-bell';
 import { MobileMenuToggle } from '@/components/layout/mobile-menu-toggle';
 import { ClinicLockup } from '@/components/layout/clinic-identity';
-import { REFRESH_PARAM, useAppRefresh } from '@/hooks/shared/use-app-refresh';
+import { REFRESH_PARAM } from '@/hooks/shared/use-app-refresh';
 
 function resolveTitle(pathname: string, scheduleView: string | null, t: Translations): string {
   if (pathname === ROUTES.EMAIL_NEW) return t.emails.compose;
@@ -50,8 +36,10 @@ function resolveTitle(pathname: string, scheduleView: string | null, t: Translat
   if (pathname === ROUTES.PRACTITIONERS_NEW) return t.layout.titles.newPractitioner;
   if (pathname === ROUTES.VISITS) return t.layout.titles.visits;
   if (pathname.startsWith(`${ROUTES.VISITS}/`)) return t.layout.titles.visit;
-  if (pathname === ROUTES.SETTINGS_NOTE_TEMPLATES || pathname.startsWith(`${ROUTES.SETTINGS_NOTE_TEMPLATES}/`)) return t.layout.titles.noteTemplates;
+  if (pathname === ROUTES.NOTE_TEMPLATES || pathname.startsWith(`${ROUTES.NOTE_TEMPLATES}/`)) return t.layout.titles.noteTemplates;
   if (pathname === ROUTES.REPORTS) return t.layout.titles.reports;
+  if (pathname === ROUTES.SETTINGS_SCHEDULE_REQUESTS) return t.scheduleRequests.title;
+  if (pathname === ROUTES.SETTINGS_NOTIFICATIONS) return t.settings.notifications;
   if (pathname === ROUTES.SETTINGS) return t.layout.titles.settings;
   if (pathname === ROUTES.SETTINGS_DEPARTMENTS) return t.layout.titles.departments;
   if (pathname === ROUTES.SETTINGS_ROOMS) return t.layout.titles.rooms;
@@ -76,10 +64,8 @@ function resolveTitle(pathname: string, scheduleView: string | null, t: Translat
 export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { logout } = useAuth();
+  const { user } = useAuth();
   const { setMobileOpen, mobileOpen } = useSidebar();
-  const [signOutOpen, setSignOutOpen] = useState(false);
-  const { refreshing: desktopRefreshing, refreshApp: refreshDesktop } = useAppRefresh();
   const { t } = useLanguage();
   const title = resolveTitle(pathname, searchParams.get('view'), t);
 
@@ -90,10 +76,6 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
     url.searchParams.delete(REFRESH_PARAM);
     window.history.replaceState(window.history.state, '', url);
   }, []);
-
-  const handleSignOut = () => {
-    logout();
-  };
 
   return (
     <>
@@ -119,56 +101,11 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
           </h1>
         </div>
 
-        <div className="hidden shrink-0 items-center gap-1 md:flex">
-          <SoftTip label={t.emails.refresh}>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={t.emails.refresh}
-              disabled={desktopRefreshing}
-              onClick={() => void refreshDesktop()}
-            >
-              <IconRotateCcw className="size-4" />
-            </Button>
-          </SoftTip>
-          <LanguageSwitcher />
-          <ThemeToggle />
-          <SoftTip label={t.auth.logout}>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={t.auth.logout}
-              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setSignOutOpen(true)}
-            >
-              <IconLogout className="size-4" />
-            </Button>
-          </SoftTip>
+        <div className="flex shrink-0 items-center gap-0.5">
+          {user ? <NotificationBell /> : null}
+          <MobileActionsMenu />
         </div>
-        <div className="md:hidden"><MobileActionsMenu /></div>
       </header>
-
-      <AlertDialog open={signOutOpen} onOpenChange={setSignOutOpen}>
-        <AlertDialogContent size="default">
-          <AlertDialogHeader>
-            <AlertDialogMedia className="bg-destructive/10 text-destructive">
-              <IconLogout />
-            </AlertDialogMedia>
-            <AlertDialogTitle>{t.auth.logout}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t.auth.logoutConfirmDescription}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={handleSignOut}>
-              {t.auth.logout}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

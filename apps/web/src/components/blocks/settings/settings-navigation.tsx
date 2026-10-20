@@ -1,9 +1,13 @@
 'use client';
 
+import type { Role } from '@clinic/types';
+import { canSeeNavHref } from '@/constants/nav-access';
 import type { ReactNode } from 'react';
 import { ROUTES } from '@/constants/routes';
 import {
   IconBadgePercent,
+  IconBell,
+  IconCalendarClock,
   IconHospital,
   IconMail,
   IconNetwork,
@@ -11,7 +15,6 @@ import {
   IconPayment,
   IconRoom,
   IconService,
-  IconFileText,
 } from '@/constants/icons';
 import type { IconWellAccent } from '@/components/primitives';
 import { PageBack } from '@/components/primitives';
@@ -67,12 +70,19 @@ const SETTINGS_SECTIONS = {
     title: (t: Translations) => t.settings.promocodes,
     description: (t: Translations) => t.settings.promocodesDesc,
   },
-  noteTemplates: {
-    href: ROUTES.SETTINGS_NOTE_TEMPLATES,
-    icon: IconFileText,
+  requests: {
+    href: ROUTES.SETTINGS_SCHEDULE_REQUESTS,
+    icon: IconCalendarClock,
     accent: 'teal',
-    title: (t: Translations) => t.settings.noteTemplates,
-    description: (t: Translations) => t.settings.noteTemplatesDesc,
+    title: (t: Translations) => t.scheduleRequests.title,
+    description: (t: Translations) => t.scheduleRequests.navigationDescription,
+  },
+  notifications: {
+    href: ROUTES.SETTINGS_NOTIFICATIONS,
+    icon: IconBell,
+    accent: 'cyan',
+    title: (t: Translations) => t.settings.notifications,
+    description: (t: Translations) => t.settings.notificationsDescription,
   },
   email: {
     href: ROUTES.EMAIL_SETTINGS,
@@ -97,12 +107,13 @@ const SECTION_ORDER: (keyof typeof SETTINGS_SECTIONS)[] = [
   'paymentMethods',
   'packages',
   'discountCodes',
-  'noteTemplates',
   'email',
+  'requests',
+  'notifications',
 ];
 
-export function getSettingsSections(t: Translations) {
-  return SECTION_ORDER.map((key) => {
+export function getSettingsSections(t: Translations, role?: Role) {
+  return SECTION_ORDER.filter((key) => canSeeNavHref(SETTINGS_SECTIONS[key].href, role)).map((key) => {
     const section = SETTINGS_SECTIONS[key];
     return {
       key,

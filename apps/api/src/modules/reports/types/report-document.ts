@@ -25,8 +25,9 @@ export interface ReportDocument {
   letterhead: {
     clinicName: string;
     address?: string | null;
-    phone?: string | null;
     logoUrl?: string | null;
+    brandColor?: string | null;
+    timezone?: string;
     footer?: string | null;
   };
 

@@ -36,7 +36,6 @@ import {
 } from "./appointment-popovers";
 import { FC_TO_VIEW, ScheduleView, VIEW_TO_FC } from "./schedule-nav";
 import { CalendarSkeleton } from "./calendar-skeleton";
-import { ViewFocusToggle } from "./view-focus";
 import { useUpdateAppointment } from "@/hooks/api/use-appointments";
 import { useResizeObserver } from "@/hooks/shared/use-resize-observer";
 import { useIsMobile } from "@/hooks/shared/use-media-query";
@@ -476,7 +475,7 @@ export function AppointmentCalendar({
       className={cn(
         "relative page-fill bg-card [&_.fc]:text-sm",
         focused
-          ? "rounded-none border-0 p-1.5 sm:p-2"
+          ? "rounded-none border-0 px-1.5 pb-1.5 pt-0 sm:px-2 sm:pb-2"
           : "card-aura rounded-xl border p-2 sm:p-2.5",
       )}
       aria-busy={isFetching || undefined}
@@ -506,7 +505,6 @@ export function AppointmentCalendar({
               <IconCalendar className="size-3.5" />
             </Button>
           </SoftTip>
-          <ViewFocusToggle />
         </div>
       </div>
       <div

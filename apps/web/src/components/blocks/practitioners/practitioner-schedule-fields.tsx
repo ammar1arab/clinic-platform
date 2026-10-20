@@ -109,7 +109,7 @@ function joinDateTime(date: string, time: string) {
   return `${date}T${time || '09:00'}`;
 }
 
-function DateTimeFields({
+export function DateTimeFields({
   value,
   onChange,
   dateError,
@@ -227,20 +227,16 @@ export function LeaveBlocksFields({
             onRemove={() => void onRemove(index)}
           >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <FormField label={t.common.from} error={errors.timeOffs?.[index]?.startDate?.message}>
-                <Controller
-                  control={control}
-                  name={`timeOffs.${index}.startDate`}
-                  render={({ field: f }) => <DatePicker value={f.value} onChange={f.onChange} />}
-                />
-              </FormField>
-              <FormField label={t.common.to} error={errors.timeOffs?.[index]?.endDate?.message}>
-                <Controller
-                  control={control}
-                  name={`timeOffs.${index}.endDate`}
-                  render={({ field: f }) => <DatePicker value={f.value} onChange={f.onChange} />}
-                />
-              </FormField>
+              <Controller
+                control={control}
+                name={`timeOffs.${index}.startDate`}
+                render={({ field: f }) => <DateTimeFields value={f.value} onChange={f.onChange} dateError={errors.timeOffs?.[index]?.startDate?.message} dateLabel={t.common.from} timeLabel={t.common.selectTime} />}
+              />
+              <Controller
+                control={control}
+                name={`timeOffs.${index}.endDate`}
+                render={({ field: f }) => <DateTimeFields value={f.value} onChange={f.onChange} dateError={errors.timeOffs?.[index]?.endDate?.message} dateLabel={t.common.to} timeLabel={t.common.selectTime} />}
+              />
               <FormField label={t.practitioner.leaveReason} className="sm:col-span-2">
                 <Input placeholder={t.common.optional} {...register(`timeOffs.${index}.reason`)} />
               </FormField>

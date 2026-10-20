@@ -2,12 +2,13 @@
 import { NotificationsController } from "./notifications.controller";
 import { NotificationsService } from "./notifications.service";
 import { NotificationsRepository } from "./notifications.repository";
+import { NotificationsRetentionWorker } from "./notifications-retention.worker";
 import { DashboardModule } from "@/modules/dashboard/dashboard.module";
 
 @Module({
   imports: [DashboardModule],
   controllers: [NotificationsController],
-  providers: [NotificationsService, NotificationsRepository],
+  providers: [NotificationsService, NotificationsRepository, NotificationsRetentionWorker],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}

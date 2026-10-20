@@ -27,10 +27,11 @@ export function SidePanel({
   const { t } = useLanguage();
   return (
     <Card
+      size="sm"
       className={cn(
         'min-h-0 overflow-visible',
         mobileSheet && (open
-          ? 'max-md:order-first max-md:ring-2 max-md:ring-primary max-md:shadow-lg'
+          ? 'max-md:order-first max-md:border max-md:border-primary/50'
           : 'max-md:hidden'),
         className,
       )}
@@ -46,7 +47,7 @@ export function SidePanel({
           ) : null}
         </div>
       </CardHeader>
-      <CardContent className={cn('min-h-0 space-y-4 overflow-y-auto pt-1 pb-2', contentClassName)}>
+      <CardContent className={cn('min-h-0 space-y-4 overflow-y-auto', contentClassName)}>
         {children}
       </CardContent>
     </Card>

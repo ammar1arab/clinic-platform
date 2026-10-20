@@ -64,6 +64,7 @@ enum EmploymentType {
 }
 
 model Clinic {
+  scheduleRequests PractitionerScheduleRequest[]
   id                   String       @id @default(uuid())
   name                 String
   nameAr               String?
@@ -77,6 +78,8 @@ model Clinic {
   workingHoursEnd      String       @default("20:00")
   defaultCalendarView  CalendarView @default(month)
   defaultSessionType   SessionType  @default(in_person)
+  defaultNoteTemplateId String?
+  defaultNoteTemplate ClinicalNoteTemplate? @relation("ClinicDefaultNote", fields: [defaultNoteTemplateId, id], references: [id, clinicId], onDelete: Restrict, onUpdate: NoAction)
   defaultDepartmentId  String?
   timezone             String       @default("UTC")
   isActive             Boolean      @default(true)
@@ -145,7 +148,10 @@ model AuthRateLimit {
 }
 
 model ClinicUser {
+  scheduleRequests PractitionerScheduleRequest[] @relation("ScheduleRequester")
+  reviewedScheduleRequests PractitionerScheduleRequest[] @relation("ScheduleReviewer")
   defaultNoteTemplateId String?
+  notificationPrefs Json?
   id               String          @id @default(uuid())
   userId           String
   clinicId         String
@@ -379,6 +385,28 @@ model Referral {
   toDoctor    ClinicUser  @relation("ReferralTo", fields: [toDoctorId], references: [id])
 }
 
+model PractitionerScheduleRequest {
+  id           String   @id @default(uuid())
+  clinicId     String
+  doctorId     String
+  kind         String
+  status       String   @default("pending")
+  startAt      DateTime
+  endAt        DateTime
+  reason       String
+  reviewNote   String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime @default(now())
+
+  doctor ClinicUser @relation("ScheduleRequester", fields: [doctorId], references: [id], onDelete: Cascade)
+  reviewer ClinicUser? @relation("ScheduleReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId, status, createdAt])
+  @@index([doctorId, createdAt])
+}
+
 model DoctorAvailability {
   id             String  @id @default(uuid())
   doctorId       String
@@ -531,6 +559,7 @@ model EmailSettings {
   instagramUrl String?
   facebookUrl  String?
   linkedinUrl  String?
+  phone        String?
   footerEn     String?
   footerAr     String?
   updatedAt    DateTime @updatedAt
@@ -617,29 +646,17 @@ model ClinicalNoteTemplate {
   status         String                    @default("draft")
   scheduledAt    DateTime?
   revision       Int                       @default(0)
-  version        Int                       @default(0)
   availableToAll Boolean                   @default(true)
   assignments    Json
   sections       Json
+  published      Json?
+  publishedAt    DateTime?
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
-  versions       ClinicalTemplateVersion[]
+  defaultForClinics Clinic[] @relation("ClinicDefaultNote")
 
   @@unique([id, clinicId])
   @@index([clinicId, status])
-}
-
-model ClinicalTemplateVersion {
-  id         String               @id @default(uuid())
-  templateId String
-  clinicId   String
-  version    Int
-  snapshot   Json
-  createdAt  DateTime             @default(now())
-  template   ClinicalNoteTemplate @relation(fields: [templateId, clinicId], references: [id, clinicId], onDelete: Restrict)
-
-  @@unique([templateId, version])
-  @@index([clinicId])
 }
 
 model Visit {
@@ -679,8 +696,6 @@ model ClinicalNote {
   visitId           String    @unique
   clinicId          String
   templateId        String
-  templateVersionId String
-  templateVersion   Int
   sectionsSnapshot  Json
   values            Json
   revision          Int       @default(1)
