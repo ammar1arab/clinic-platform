@@ -4,10 +4,12 @@ import { useMemo, useRef, useState } from 'react';
 import type { NotificationDTO } from '@clinic/types';
 import { Badge, Button, Popover, SelectItem, Skeleton } from '@/components/ui';
 import {
-  DatePicker, DirectorySortMenu, DirectoryToolbar, EmptyState, ErrorState,
+  DatePicker, DirectoryToolbar, EmptyState, ErrorState,
   FilterPanel, FilterSelect, FilterTrigger, FormField, Pagination, SoftTip,
 } from '@/components/primitives';
-import { IconBell, IconCheckCheck, IconChevronRight } from '@/constants/icons';
+import { IconBell, IconCheckCheck, IconChevronRight, IconSettings } from '@/constants/icons';
+import { ROUTES } from '@/constants/routes';
+import { useRouter } from 'next/navigation';
 import { useNotifications } from '@/hooks/api/use-notifications';
 import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import { useNow } from '@/hooks/shared/use-now';
@@ -22,6 +24,7 @@ const DEFAULT_FILTERS = { search: '', status: '', type: '', from: '', to: '', so
 
 export function NotificationsPage() {
   const { t, lang } = useLanguage();
+  const router = useRouter();
   const { user } = useAuth();
   const { query, items, unread, markRead, markAllRead } = useNotifications({ realtime: false });
   const [filters, setFilters] = useSessionStorageState(
@@ -84,13 +87,19 @@ export function NotificationsPage() {
               <IconCheckCheck className="size-4" />
             </Button>
           </SoftTip>
-          <DirectorySortMenu value={filters.sort} onChange={(value) => updateFilter('sort', value)} options={[
-            { value: 'newest', label: t.notifications.newest },
-            { value: 'oldest', label: t.notifications.oldest },
-          ]} />
+          <SoftTip label={t.settings.notifications}>
+            <Button type="button" variant="outline" size="icon-sm" aria-label={t.settings.notifications}
+              onClick={() => router.push(ROUTES.SETTINGS_NOTIFICATIONS)}>
+              <IconSettings className="size-4" />
+            </Button>
+          </SoftTip>
           <Popover>
             <FilterTrigger count={activeCount} />
             <FilterPanel count={activeCount} onClear={clearFilters}>
+              <FilterSelect label={t.common.sort} value={filters.sort} onChange={(value) => updateFilter('sort', value)}>
+                <SelectItem value="newest">{t.notifications.newest}</SelectItem>
+                <SelectItem value="oldest">{t.notifications.oldest}</SelectItem>
+              </FilterSelect>
               <FilterSelect label={t.common.status} value={filters.status} onChange={(value) => updateFilter('status', value)}>
                 <SelectItem value="unread">{t.notifications.unread}</SelectItem>
                 <SelectItem value="read">{t.notifications.read}</SelectItem>
