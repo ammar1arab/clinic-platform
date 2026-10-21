@@ -51,6 +51,7 @@ export interface AuthMe {
   role: Role;
   name: string;
   email: string;
+  lastSignInAt?: string | null;
   clinic: ClinicSummary;
 }
 

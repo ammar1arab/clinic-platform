@@ -315,6 +315,7 @@ export class AuthService {
       nameAr: member.nameAr,
       phone: member.phone,
       email: user.email,
+      lastSignInAt: user.lastSignInAt?.toISOString() ?? null,
       clinic: {
         id: member.clinic.id,
         name: member.clinic.name,
@@ -325,10 +326,12 @@ export class AuthService {
     };
   }
 
-  private ready(user: Account): AuthSessionReady {
+  private async ready(user: Account): Promise<AuthSessionReady> {
     if (!user.emailVerifiedAt || user.mustChangePassword)
       securityError("invalidToken", 401);
     const member = this.membership(user);
+    const lastSignInAt = new Date();
+    await this.repo.recordSignIn(user.id, lastSignInAt);
     return {
       next: "ready",
       accessToken: this.tokens.sign({
@@ -337,7 +340,7 @@ export class AuthService {
         clinicId: member.clinicId,
         clinicUserId: member.id,
       }),
-      user: this.toMe(user, member.id),
+      user: this.toMe({ ...user, lastSignInAt }, member.id),
     };
   }
 
