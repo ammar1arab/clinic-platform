@@ -73,7 +73,7 @@ function StatusFilterDropdown({
       </DropdownMenuTrigger>
       <StatusMenuContent
         align="start"
-        className="z-80"
+        className="z-80 status-menu-flat"
       >
         <StatusFilterItems active={active} onToggle={onToggle} />
         {count > 0 && (

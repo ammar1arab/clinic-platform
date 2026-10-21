@@ -536,6 +536,15 @@ th, td {
     pointer-events: none;
   }
 
+  /* Filter menus list independent statuses: no flow connectors and no extra gaps. */
+  .status-menu.status-menu-flat [role^='menuitem']:has(+ [role^='menuitem']) {
+    margin-bottom: 0;
+  }
+
+  .status-menu.status-menu-flat [role^='menuitem']:has(+ [role^='menuitem'])::after {
+    display: none;
+  }
+
   .status-menu[data-state='open'] [role^='menuitem'] {
     animation: status-menu-step 180ms ease-out both;
   }
