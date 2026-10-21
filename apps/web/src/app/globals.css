@@ -538,7 +538,16 @@ th, td {
 
   /* Filter menus list independent statuses: no flow connectors and no extra gaps. */
   .status-menu.status-menu-flat [role^='menuitem'] {
-    padding-inline: 0.25rem 1.25rem;
+    padding-inline: 0.25rem;
+  }
+
+  /* Filter check mark sits inside the status badge, at its end edge. */
+  .status-menu.status-menu-flat [role^='menuitem'] [data-slot='badge'] {
+    padding-inline-end: 1.5rem;
+  }
+
+  .status-menu.status-menu-flat [role^='menuitem'] > [data-slot$='indicator'] {
+    inset-inline-end: 0.5rem;
   }
 
   .status-menu.status-menu-flat [role^='menuitem']:has(+ [role^='menuitem']) {
