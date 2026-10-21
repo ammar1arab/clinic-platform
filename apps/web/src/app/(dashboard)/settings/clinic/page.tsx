@@ -32,6 +32,7 @@ import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useLanguage } from '@/providers';
 import { FORM_NONE } from '@/constants/form';
 import { SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
+import { PhoneInputField } from '@/components/primitives/forms/phone-input';
 import { applyClinicBrandChrome, stripSolidBackdrop, writeClinicBrand } from '@/lib/clinic-logo';
 import type { Clinic } from '@/services/clinics.service';
 
@@ -193,7 +194,7 @@ function ClinicSettingsForm({ clinic, clinicId }: FormProps) {
               />
             </FormField>
             <FormField label={t.exports.phone} htmlFor="clinic-phone">
-              <Input id="clinic-phone" type="tel" dir="ltr" value={phone} onChange={event => setPhone(event.target.value)} maxLength={40} />
+              <PhoneInputField value={phone} onChange={setPhone} />
             </FormField>
             <FormField label={t.emails.clinicAddress} htmlFor="clinic-address">
               <Input id="clinic-address" value={address} onChange={event => setAddress(event.target.value)} maxLength={500} />
