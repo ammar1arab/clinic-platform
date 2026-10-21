@@ -486,7 +486,8 @@ export function AppointmentCalendar({
       )}
       aria-busy={isFetching || undefined}
     >
-      <div className="mb-2 grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-3">
+      <div className="mb-2 flex shrink-0 items-center gap-1 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3">
+        <div className="flex min-w-0 items-center gap-1 sm:contents">
         <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon-xs" aria-label={t.common.previous} onClick={() => calendarRef.current?.getApi().prev()}>
             <IconChevronLeft className="size-4 rtl:rotate-180" />
@@ -504,7 +505,8 @@ export function AppointmentCalendar({
             <TabsTrigger value="month" className="px-1.5 sm:px-4">{t.appointments.month}</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
+        </div>
+        <div className="ms-auto flex min-w-0 items-center justify-end gap-1 sm:ms-0 sm:gap-2">
           <h2 className="min-w-0 truncate text-xs font-semibold sm:text-sm" title={calendarTitle}>{calendarTitle}</h2>
           <SoftTip label={t.appointments.today}>
             <Button type="button" variant="ghost" size="icon-xs" onClick={() => calendarRef.current?.getApi().today()} aria-label={t.appointments.today}>
