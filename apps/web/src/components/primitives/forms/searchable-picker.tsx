@@ -150,7 +150,7 @@ export function SearchablePicker({
                 type="button"
                 onClick={() => pick(option.value)}
                 className={cn(
-                  'flex w-full touch-pan-y items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-start text-sm hover:bg-muted',
+                  'flex w-full touch-pan-y items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-start text-xs sm:text-sm hover:bg-muted',
                   option.value === value && 'bg-muted',
                 )}
               >

@@ -2,7 +2,6 @@
 
 import { Badge } from '@/components/ui';
 import { SearchablePicker } from '@/components/primitives';
-import { IconPractitioner } from '@/constants/icons';
 import { formatDoctorLabel, staffRoleLabel } from './appointment-display';
 import { useLanguage } from '@/providers';
 
@@ -62,7 +61,6 @@ export function DoctorCombobox({
             }
           : undefined
       }
-      leading={<IconPractitioner className="size-4 shrink-0 opacity-70" />}
       className={className}
       size={size}
     />
