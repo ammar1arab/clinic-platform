@@ -27,6 +27,7 @@ import { ROLE } from "@clinic/types";
 import { ROUTES } from "@/constants/routes";
 import { getBilingualName } from "@/i18n";
 import { extractErrorMessage } from "@/lib/api";
+import { formatClock } from "@/lib/datetime";
 import { AccountVerificationDialog } from "./account-verification-dialog";
 import { AccountPasswordReset } from "./account-password-reset";
 
@@ -144,7 +145,7 @@ export function AccountProfile() {
             <ProfileInfoField label={t.common.signInEmail} value={user.email}>
               <EmailLink value={user.email} copyable className="text-sm font-medium" />
             </ProfileInfoField>
-            <ProfileInfoField label={t.emails.roles} value={t.appointments.roleOwner} />
+            <ProfileInfoField label={t.common.staffRole} value={t.appointments.roleOwner} />
           </ProfileInfoGrid>
         </ProfileSection>
       )}
@@ -161,7 +162,7 @@ export function AccountProfile() {
             </ProfileInfoField>
             <ProfileInfoField label={t.common.clinicAddressLabel} value={clinic.address} />
             <ProfileInfoField label={t.common.clinicTimezone} value={clinic.timezone} dir="ltr" />
-            <ProfileInfoField label={t.common.clinicWorkingHours} value={`${clinic.workingHoursStart} - ${clinic.workingHoursEnd}`} dir="ltr" />
+            <ProfileInfoField label={t.common.clinicWorkingHours} value={`${formatClock(clinic.workingHoursStart, "", lang)} - ${formatClock(clinic.workingHoursEnd, "", lang)}`} />
           </ProfileInfoGrid>
         </ProfileSection>
       ) : null}

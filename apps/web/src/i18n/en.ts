@@ -409,6 +409,7 @@ export const en = {
     clinicTimezone: "Timezone",
     clinicWorkingHours: "Working hours",
     clinicNotSet: "Not set",
+    staffRole: "Staff role",
     clinicContactEmail: "Clinic contact email",
     chooseAccount: "Search",
     resetAccountPassword: "Reset account password",

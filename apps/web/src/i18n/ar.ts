@@ -416,6 +416,7 @@ export const ar: Translations = {
     clinicTimezone: "المنطقة الزمنية",
     clinicWorkingHours: "ساعات العمل",
     clinicNotSet: "غير محدد",
+    staffRole: "الدور",
     clinicContactEmail: "بريد التواصل للعيادة",
     chooseAccount: "ابحث",
     resetAccountPassword: "إعادة تعيين كلمة مرور الحساب",
