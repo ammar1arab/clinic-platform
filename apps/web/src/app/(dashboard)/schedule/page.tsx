@@ -246,7 +246,7 @@ function SchedulePageInner() {
 
 function ScheduleFallback() {
   return (
-    <div className="space-y-2">
+    <div className="page-fill flex-1 min-h-0 gap-2">
       <div className="card-aura space-y-1.5 rounded-xl border bg-card/90 p-1.5 sm:p-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="h-8 w-full rounded-lg bg-muted/60 sm:w-64" />
