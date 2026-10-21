@@ -67,11 +67,11 @@ function DropdownMenuContent({
         avoidCollisions={avoidCollisions}
         collisionPadding={collisionPadding}
         className={cn(
-          variant === 'status' ? 'overlay-pop status-menu' : OVERLAY_POP_CLASS,
+          OVERLAY_POP_CLASS,
           'z-50 max-h-(--radix-dropdown-menu-content-available-height)',
           'w-[min(100vw-1.5rem,var(--radix-dropdown-menu-trigger-width))] min-w-36 max-w-[calc(100vw-1.5rem)]',
           'overflow-y-auto overscroll-contain p-1.5',
-          variant === 'status' && 'w-max min-w-0 bg-transparent p-1',
+          variant === 'status' && 'status-menu w-max min-w-0 p-1.5',
           className,
         )}
         {...props}

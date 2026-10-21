@@ -30,6 +30,12 @@ export const clinicalNoteTemplatesService = {
   archive: (id: string, revision: number) =>
     api.post<TemplateDTO>(ENDPOINTS.CLINICAL_NOTE_TEMPLATES.ARCHIVE(id), { revision }).then((r) => r.data),
 
+  draft: (id: string, revision: number) =>
+    api.post<TemplateDTO>(ENDPOINTS.CLINICAL_NOTE_TEMPLATES.DRAFT(id), { revision }).then((r) => r.data),
+
+  restore: (id: string, revision: number) =>
+    api.post<TemplateDTO>(ENDPOINTS.CLINICAL_NOTE_TEMPLATES.RESTORE(id), { revision }).then((r) => r.data),
+
   remove: (id: string) =>
     api.delete(ENDPOINTS.CLINICAL_NOTE_TEMPLATES.BY_ID(id)).then((r) => r.data),
 

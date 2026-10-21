@@ -401,6 +401,20 @@ export class ClinicalTemplatesController {
   ) {
     return this.templates.archive(actor, id, body.revision);
   }
+  @Post(":id/draft") @Header("Cache-Control", "no-store") draft(
+    @CurrentUser() actor: AuthUser,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: SignDto,
+  ) {
+    return this.templates.draft(actor, id, body.revision);
+  }
+  @Post(":id/restore") @Header("Cache-Control", "no-store") restore(
+    @CurrentUser() actor: AuthUser,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: SignDto,
+  ) {
+    return this.templates.draft(actor, id, body.revision, true);
+  }
   @Delete(":id") @Header("Cache-Control", "no-store") remove(
     @CurrentUser() actor: AuthUser,
     @Param("id", ParseUUIDPipe) id: string,

@@ -505,9 +505,18 @@ th, td {
   }
 
   .status-menu [role^='menuitem'] {
-    justify-content: center;
+    justify-content: flex-start;
     padding-inline: 0.5rem 1.75rem;
     background: transparent;
+  }
+
+  .status-menu [role^='menuitem'] > :not([data-slot$='indicator']) {
+    flex: 1;
+  }
+
+  .status-menu [role^='menuitem'] [data-slot='badge'] {
+    width: 100%;
+    justify-content: center;
   }
 
   .status-menu [role^='menuitem']:has(+ [role^='menuitem']) {

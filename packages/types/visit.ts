@@ -352,6 +352,10 @@ export const VISIT_ERROR_MESSAGES = {
     en: "This template is used by saved visit notes and cannot be deleted. Archive it instead.",
     ar: "هذا القالب مستخدم في ملاحظات زيارات محفوظة ولا يمكن حذفه. يمكنك أرشفته بدلًا من ذلك.",
   },
+  clinicalTemplateDefaultProtected: {
+    en: "Choose another published template for all practitioners as the clinic default before changing this template's audience, making it a draft, scheduling, archiving, or deleting it.",
+    ar: "اختر قالباً منشوراً آخر لجميع الممارسين كقالب افتراضي للعيادة قبل تغيير جمهور هذا القالب أو تحويله لمسودة أو جدولته أو أرشفته أو حذفه.",
+  },
   clinicalTemplateNotFound: {
     en: "Clinical template not found.",
     ar: "القالب الطبي غير موجود.",

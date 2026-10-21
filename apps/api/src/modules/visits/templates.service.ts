@@ -32,6 +32,15 @@ export class TemplatesService {
   private owner(actor: AuthUser) {
     if (actor.role !== "owner") visitError("visitForbidden", 403);
   }
+  private async defaultId(tx: VisitTx, clinicId: string) {
+    const clinic = await tx.clinic.findUniqueOrThrow({ where: { id: clinicId }, select: { defaultNoteTemplateId: true } });
+    if (clinic.defaultNoteTemplateId) return clinic.defaultNoteTemplateId;
+    const fallback = (await this.publishedRows(tx, clinicId)).find((row) => row.status === "published" && row.availableToAll && publishedSnapshot(row).availableToAll);
+    return fallback?.id ?? null;
+  }
+  private async requireNonDefault(tx: VisitTx, clinicId: string, id: string) {
+    if (await this.defaultId(tx, clinicId) === id) visitError("clinicalTemplateDefaultProtected", 409);
+  }
   private dto(row: ClinicalNoteTemplate): TemplateDTO {
     return {
       id: row.id,
@@ -121,6 +130,8 @@ export class TemplatesService {
   async update(actor: AuthUser, id: string, input: UpdateTemplateDto) {
     this.owner(actor);
     return this.repo.transaction(async (tx) => {
+      const isDefault = await this.defaultId(tx, actor.clinicId) === id;
+      if (isDefault && !input.availableToAll) visitError("clinicalTemplateDefaultProtected", 409);
       await this.validate(tx, actor.clinicId, input);
       const { revision, ...data } = input;
       const result = await tx.clinicalNoteTemplate.updateMany({
@@ -135,7 +146,8 @@ export class TemplatesService {
           name: data.name.trim(),
           assignments: toJson(data.assignments),
           sections: toJson(data.sections),
-          status: "draft",
+          status: isDefault ? "published" : "draft",
+          ...(isDefault ? { published: toJson({ ...data, name: data.name.trim() }), publishedAt: new Date() } : {}),
           scheduledAt: null,
           revision: { increment: 1 },
         },
@@ -145,6 +157,7 @@ export class TemplatesService {
     });
   }
   async publishNow(tx: VisitTx, clinicId: string, row: ClinicalNoteTemplate) {
+    if (!row.availableToAll) await this.requireNonDefault(tx, clinicId, row.id);
     const updated = await tx.clinicalNoteTemplate.updateMany({
       where: { id: row.id, clinicId, revision: row.revision },
       data: {
@@ -156,9 +169,6 @@ export class TemplatesService {
       },
     });
     if (!updated.count) visitError("visitRevisionConflict", 409);
-    if (!row.availableToAll) await tx.clinic.updateMany({
-      where: { id: clinicId, defaultNoteTemplateId: row.id }, data: { defaultNoteTemplateId: null },
-    });
     if (row.availableToAll) await tx.clinic.updateMany({
       where: { id: clinicId, defaultNoteTemplateId: null }, data: { defaultNoteTemplateId: row.id },
     });
@@ -190,6 +200,7 @@ export class TemplatesService {
     if (!(scheduledAt.getTime() > Date.now()))
       visitError("clinicalTemplateInvalid");
     return this.repo.transaction(async (tx) => {
+      await this.requireNonDefault(tx, actor.clinicId, id);
       const row = await tx.clinicalNoteTemplate.findFirst({
         where: {
           id,
@@ -241,12 +252,12 @@ export class TemplatesService {
   async archive(actor: AuthUser, id: string, revision: number) {
     this.owner(actor);
     await this.repo.transaction(async (tx) => {
+      await this.requireNonDefault(tx, actor.clinicId, id);
       const result = await tx.clinicalNoteTemplate.updateMany({
-        where: { id, clinicId: actor.clinicId, revision },
+        where: { id, clinicId: actor.clinicId, revision, status: { not: "archived" } },
         data: { status: "archived", scheduledAt: null, revision: { increment: 1 } },
       });
       if (!result.count) visitError("visitRevisionConflict", 409);
-      await tx.clinic.updateMany({ where: { id: actor.clinicId, defaultNoteTemplateId: id }, data: { defaultNoteTemplateId: null } });
       await tx.clinicUser.updateMany({ where: { clinicId: actor.clinicId, defaultNoteTemplateId: id }, data: { defaultNoteTemplateId: null } });
     });
     return this.get(actor, id);
@@ -254,14 +265,27 @@ export class TemplatesService {
   async remove(actor: AuthUser, id: string) {
     this.owner(actor);
     await this.repo.transaction(async (tx) => {
+      await this.requireNonDefault(tx, actor.clinicId, id);
       const row = await tx.clinicalNoteTemplate.findFirst({ where: { id, clinicId: actor.clinicId }, select: { id: true } });
       if (!row) visitError("clinicalTemplateNotFound", 404);
       if (await tx.clinicalNote.count({ where: { templateId: id, clinicId: actor.clinicId } })) visitError("clinicalTemplateInUse", 409);
-      await tx.clinic.updateMany({ where: { id: actor.clinicId, defaultNoteTemplateId: id }, data: { defaultNoteTemplateId: null } });
       await tx.clinicUser.updateMany({ where: { clinicId: actor.clinicId, defaultNoteTemplateId: id }, data: { defaultNoteTemplateId: null } });
       await tx.clinicalNoteTemplate.delete({ where: { id_clinicId: { id, clinicId: actor.clinicId } } });
     });
     return { id };
+  }
+  async draft(actor: AuthUser, id: string, revision: number, restore = false) {
+    this.owner(actor);
+    return this.repo.transaction(async (tx) => {
+      await this.requireNonDefault(tx, actor.clinicId, id);
+      const result = await tx.clinicalNoteTemplate.updateMany({
+        where: { id, clinicId: actor.clinicId, revision, status: restore ? "archived" : { not: "archived" } },
+        data: { status: "draft", scheduledAt: null, publishedAt: null, published: Prisma.DbNull, revision: { increment: 1 } },
+      });
+      if (!result.count) visitError("visitRevisionConflict", 409);
+      await tx.clinicUser.updateMany({ where: { clinicId: actor.clinicId, defaultNoteTemplateId: id }, data: { defaultNoteTemplateId: null } });
+      return this.dto(await tx.clinicalNoteTemplate.findUniqueOrThrow({ where: { id, clinicId: actor.clinicId } }));
+    });
   }
   async clone(actor: AuthUser, id: string) {
     const row = await this.get(actor, id);
@@ -330,13 +354,10 @@ export class TemplatesService {
         const row = await tx.clinicalNoteTemplate.findFirst({
           where: { id: templateId, clinicId: actor.clinicId, status: "published", ...isPublished },
         });
-        if (!row || !publishedSnapshot(row).availableToAll) visitError("clinicalTemplateUnavailable", 403);
+        if (!row || !row.availableToAll || !publishedSnapshot(row).availableToAll) visitError("clinicalTemplateUnavailable", 403);
         await tx.clinic.update({ where: { id: actor.clinicId }, data: { defaultNoteTemplateId: templateId } });
       }
-      const clinic = await tx.clinic.findUniqueOrThrow({ where: { id: actor.clinicId }, select: { defaultNoteTemplateId: true } });
-      if (clinic.defaultNoteTemplateId) return { templateId: clinic.defaultNoteTemplateId };
-      const fallback = (await this.publishedRows(tx, actor.clinicId)).find((item) => publishedSnapshot(item).availableToAll);
-      return { templateId: fallback?.id ?? null };
+      return { templateId: await this.defaultId(tx, actor.clinicId) };
     });
   }
   async defaultForVisit(tx: VisitTx, row: Pick<WorkspaceRow, "clinicId" | "doctorId" | "departmentId" | "serviceId">) {

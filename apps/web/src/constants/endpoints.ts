@@ -146,6 +146,8 @@ export const ENDPOINTS = {
     PUBLISH: (id: string) => `/clinical-note-templates/${id}/publish`,
     SCHEDULE: (id: string) => `/clinical-note-templates/${id}/schedule`,
     ARCHIVE: (id: string) => `/clinical-note-templates/${id}/archive`,
+    DRAFT: (id: string) => `/clinical-note-templates/${id}/draft`,
+    RESTORE: (id: string) => `/clinical-note-templates/${id}/restore`,
     CLONE: (id: string) => `/clinical-note-templates/${id}/clone`,
     AVAILABLE: "/clinical-note-templates/available",
     STARTERS: "/clinical-note-templates/starters",
