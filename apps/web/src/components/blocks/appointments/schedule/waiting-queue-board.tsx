@@ -254,7 +254,7 @@ export function WaitingQueueBoard({
     },
   ];
 
-  const slot = focused ? null : toolbarSlot;
+  const slot = toolbarSlot;
 
   return (
     <div

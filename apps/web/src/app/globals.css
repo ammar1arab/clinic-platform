@@ -1005,7 +1005,7 @@ html[data-view-focus='true'] {
   --app-queue-col-max: none;
 }
 
-html[data-view-focus='true'] [data-schedule-toolbar],
+
 html[data-view-focus='true'] [data-focus-hide] {
   display: none;
 }

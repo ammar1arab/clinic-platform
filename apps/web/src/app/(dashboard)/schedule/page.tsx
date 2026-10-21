@@ -158,83 +158,85 @@ function SchedulePageInner() {
     [activeView, isPractitioner, router],
   );
 
-  return (
-    <div className="page-fill gap-2.5">
-      <div className="shrink-0">
-      <ScheduleToolbar
-        view={activeView}
-        search={search}
-        onSearchChange={setSearch}
-        departmentId={departmentId}
-        onDepartmentChange={setDepartmentId}
-        departments={departments}
-        statusFilters={new Set(statusFilters)}
-        onToggleStatus={toggleStatus}
-        onClearStatuses={clearStatuses}
-        pickerSlotRef={setPickerSlot}
-        {...(!isPractitioner && {
-          onNewPatient: () =>
-            router.push(
-              `${ROUTES.PATIENT_NEW}?returnTo=${encodeURIComponent(returnTo)}`,
-            ),
-          onNewAppointment: () => goNewAppointment(),
-        })}
-      />
-      </div>
+  const toolbar = (
+    <ScheduleToolbar
+      view={activeView}
+      search={search}
+      onSearchChange={setSearch}
+      departmentId={departmentId}
+      onDepartmentChange={setDepartmentId}
+      departments={departments}
+      statusFilters={new Set(statusFilters)}
+      onToggleStatus={toggleStatus}
+      onClearStatuses={clearStatuses}
+      pickerSlotRef={setPickerSlot}
+      {...(!isPractitioner && {
+        onNewPatient: () =>
+          router.push(
+            `${ROUTES.PATIENT_NEW}?returnTo=${encodeURIComponent(returnTo)}`,
+          ),
+        onNewAppointment: () => goNewAppointment(),
+      })}
+    />
+  );
 
-      {isError && !appointments ? (
-        <ErrorState onRetry={() => void refetch()} className="page-fill" />
-      ) : activeView === "doctors" ? (
-        <ViewFocus label={t.appointments.doctorTimeline} storageKey={`${clinicId || "none"}:schedule-timeline`}>
-          {(focused) => (
-            <DoctorTimeline
-              appointments={filteredAppointments}
-              doctors={practitioners}
-              isLoading={isLoading}
-              focused={focused}
-              canManageAppointments={!isPractitioner}
-              onSelectSlot={goNewAppointment}
-              onEventClick={handleEventClick}
-              toolbarSlot={pickerSlot}
-            />
-          )}
-        </ViewFocus>
-      ) : activeView === "queue" ? (
-        <ViewFocus label={t.queue.waitingQueue} storageKey={`${clinicId || "none"}:schedule-queue`}>
-          {(focused) => (
-            <WaitingQueueBoard
-              appointments={filteredAppointments}
-              isLoading={isLoading}
-              focused={focused}
-              canManagePayments={!isPractitioner}
-              onEventClick={handleEventClick}
-              toolbarSlot={pickerSlot}
-            />
-          )}
-        </ViewFocus>
-      ) : (
-        <ViewFocus label={t.appointments.calendar} storageKey={`${clinicId || "none"}:schedule-calendar`}>
-          {(focused) => (
-            <AppointmentCalendar
-              appointments={filteredAppointments}
-              isLoading={isLoading}
-              isFetching={isFetching}
-              view={activeView}
-              focused={focused}
-              canManageAppointments={!isPractitioner}
-              onViewChange={setView}
-              onVisibleRangeChange={handleVisibleRangeChange}
-              onEventClick={handleEventClick}
-              onSelectSlot={goNewAppointment}
-              hours={
-                clinic
-                  ? { start: clinic.workingHoursStart, end: clinic.workingHoursEnd }
-                  : undefined
-              }
-            />
-          )}
-        </ViewFocus>
-      )}
+  const focusLabel =
+    activeView === "doctors"
+      ? t.appointments.doctorTimeline
+      : activeView === "queue"
+        ? t.queue.waitingQueue
+        : t.appointments.calendar;
+
+  return (
+    <div className="page-fill">
+      <ViewFocus label={focusLabel} storageKey={`${clinicId || "none"}:schedule-${activeView}`}>
+        {(focused) => (
+          <>
+            {toolbar}
+            {isError && !appointments ? (
+              <ErrorState onRetry={() => void refetch()} className="page-fill" />
+            ) : activeView === "doctors" ? (
+              <DoctorTimeline
+                appointments={filteredAppointments}
+                doctors={practitioners}
+                isLoading={isLoading}
+                focused={focused}
+                canManageAppointments={!isPractitioner}
+                onSelectSlot={goNewAppointment}
+                onEventClick={handleEventClick}
+                toolbarSlot={pickerSlot}
+              />
+            ) : activeView === "queue" ? (
+              <WaitingQueueBoard
+                appointments={filteredAppointments}
+                isLoading={isLoading}
+                focused={focused}
+                canManagePayments={!isPractitioner}
+                onEventClick={handleEventClick}
+                toolbarSlot={pickerSlot}
+              />
+            ) : (
+              <AppointmentCalendar
+                appointments={filteredAppointments}
+                isLoading={isLoading}
+                isFetching={isFetching}
+                view={activeView}
+                focused={focused}
+                canManageAppointments={!isPractitioner}
+                onViewChange={setView}
+                onVisibleRangeChange={handleVisibleRangeChange}
+                onEventClick={handleEventClick}
+                onSelectSlot={goNewAppointment}
+                hours={
+                  clinic
+                    ? { start: clinic.workingHoursStart, end: clinic.workingHoursEnd }
+                    : undefined
+                }
+              />
+            )}
+          </>
+        )}
+      </ViewFocus>
     </div>
   );
 }

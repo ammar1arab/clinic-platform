@@ -101,7 +101,7 @@ export function SearchablePicker({
           size={size === 'sm' ? 'sm' : 'default'}
           className={cn(
             'w-full min-w-0 justify-between gap-1.5 overflow-hidden font-normal',
-            size === 'sm' ? 'h-8 text-xs' : 'h-8 text-sm',
+            size === 'sm' ? 'h-8 text-xs sm:text-[0.8rem]' : 'h-8 text-sm',
             className,
           )}
         >

@@ -367,7 +367,7 @@ export function DoctorTimeline({
     [canManageAppointments, selectedDate, activeDoctorId, onSelectSlot],
   );
 
-  const slot = focused ? null : toolbarSlot;
+  const slot = toolbarSlot;
   const doctorPicker = (
     <DoctorCombobox
       doctors={allDoctors}

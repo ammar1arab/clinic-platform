@@ -132,7 +132,7 @@ export function ViewFocus({ label, storageKey, children, className }: ViewFocusP
           className,
         )}
       >
-        <div className={cn('page-fill flex-1 min-h-0', focused && 'md:min-h-0 md:flex-1')}>
+        <div className={cn('page-fill flex-1 min-h-0 gap-2.5', focused && 'md:min-h-0 md:flex-1')}>
           {content}
         </div>
         <ViewFocusHandle />

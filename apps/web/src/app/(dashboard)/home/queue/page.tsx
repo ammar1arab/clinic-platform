@@ -59,32 +59,36 @@ export default function PractitionerQueuePage() {
     return <ErrorState onRetry={() => void appointments.refetch()} className="page-fill" />;
   }
 
+  const toolbar = (
+    <ScheduleToolbar
+      view="queue"
+      search={search}
+      onSearchChange={setSearch}
+      departmentId={departmentId}
+      onDepartmentChange={setDepartmentId}
+      departments={departments}
+      statusFilters={new Set(statusFilters)}
+      onToggleStatus={toggleStatus}
+      onClearStatuses={() => setStatusFilters([])}
+      pickerSlotRef={setPickerSlot}
+    />
+  );
+
   return (
-    <div className="page-fill gap-2.5">
-      <div className="shrink-0">
-        <ScheduleToolbar
-          view="queue"
-          search={search}
-          onSearchChange={setSearch}
-          departmentId={departmentId}
-          onDepartmentChange={setDepartmentId}
-          departments={departments}
-          statusFilters={new Set(statusFilters)}
-          onToggleStatus={toggleStatus}
-          onClearStatuses={() => setStatusFilters([])}
-          pickerSlotRef={setPickerSlot}
-        />
-      </div>
+    <div className="page-fill">
       <ViewFocus label={t.queue.waitingQueue} storageKey={`${clinicId || 'none'}:practitioner-queue`}>
         {(focused) => (
-          <WaitingQueueBoard
-            appointments={filtered}
-            isLoading={appointments.isLoading}
-            focused={focused}
-            toolbarSlot={pickerSlot}
-            canManagePayments={false}
-            onEventClick={(appointment) => router.push(`${ROUTES.SCHEDULE_EDIT(appointment.id)}?view=queue`)}
-          />
+          <>
+            {toolbar}
+            <WaitingQueueBoard
+              appointments={filtered}
+              isLoading={appointments.isLoading}
+              focused={focused}
+              toolbarSlot={pickerSlot}
+              canManagePayments={false}
+              onEventClick={(appointment) => router.push(`${ROUTES.SCHEDULE_EDIT(appointment.id)}?view=queue`)}
+            />
+          </>
         )}
       </ViewFocus>
     </div>
