@@ -110,7 +110,6 @@ model User {
   mustChangePassword Boolean  @default(false)
   emailVerifiedAt    DateTime?
   passwordChangedAt  DateTime?
-  lastSignInAt       DateTime?
   createdAt          DateTime @default(now())
 
   clinicUsers ClinicUser[]

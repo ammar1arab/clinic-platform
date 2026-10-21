@@ -140,9 +140,6 @@ export class AuthRepository {
       data: { emailVerifiedAt: new Date() },
     });
   }
-  recordSignIn(id: string, at: Date) {
-    return this.prisma.user.update({ where: { id }, data: { lastSignInAt: at } });
-  }
   async openGuest(email: string, passwordHash: string) {
     const existing = await this.byEmail(email);
     if (existing) return this.isGuestAccount(existing) ? existing : null;

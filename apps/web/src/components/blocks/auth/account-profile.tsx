@@ -26,7 +26,6 @@ import type { AccountProfileInput } from "@clinic/types";
 import { ROLE } from "@clinic/types";
 import { ROUTES } from "@/constants/routes";
 import { getBilingualName } from "@/i18n";
-import { formatDateTime } from "@/lib/datetime";
 import { extractErrorMessage } from "@/lib/api";
 import { AccountVerificationDialog } from "./account-verification-dialog";
 import { AccountPasswordReset } from "./account-password-reset";
@@ -108,10 +107,6 @@ export function AccountProfile() {
           <AvatarUpload className="shrink-0" value={editing ? imageUrl : user.imageUrl} onChange={(value) => setValue("imageUrl", value)} fallbackLabel={editing ? name : user.name} showPreviewNotice={false} disabled={!editing} />
           <div className="min-w-0 flex-1 space-y-1">
             <h1 dir="auto" className="truncate text-start font-heading text-base font-semibold tracking-tight sm:text-lg">{getBilingualName(user.name, user.nameAr, lang)}</h1>
-            <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground sm:text-sm">
-              <span className="font-medium">{t.common.lastSignIn}</span>
-              <span dir="ltr">{formatDateTime(user.lastSignInAt, t.common.notRecorded, lang)}</span>
-            </div>
           </div>
         </CardContent>
       </Card>

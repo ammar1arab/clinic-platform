@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger } from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
 import { randomUUID } from "node:crypto";
 import { AuthOtpPurpose, Role, Prisma } from "@prisma/client";
@@ -35,8 +35,6 @@ function compareDummy(password: string) {
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
     private readonly repo: AuthRepository,
     private readonly tokens: TokenService,
@@ -317,7 +315,6 @@ export class AuthService {
       nameAr: member.nameAr,
       phone: member.phone,
       email: user.email,
-      lastSignInAt: user.lastSignInAt?.toISOString() ?? null,
       clinic: {
         id: member.clinic.id,
         name: member.clinic.name,
@@ -332,13 +329,6 @@ export class AuthService {
     if (!user.emailVerifiedAt || user.mustChangePassword)
       securityError("invalidToken", 401);
     const member = this.membership(user);
-    const lastSignInAt = new Date();
-    // Sign-in tracking is best-effort: a failure here must never block login.
-    try {
-      await this.repo.recordSignIn(user.id, lastSignInAt);
-    } catch (error) {
-      this.logger.warn(`Could not record sign-in for user ${user.id}: ${String(error)}`);
-    }
     return {
       next: "ready",
       accessToken: this.tokens.sign({
@@ -347,7 +337,7 @@ export class AuthService {
         clinicId: member.clinicId,
         clinicUserId: member.id,
       }),
-      user: this.toMe({ ...user, lastSignInAt }, member.id),
+      user: this.toMe(user, member.id),
     };
   }
 
