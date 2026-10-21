@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { NotificationDTO } from '@clinic/types';
 import {
   AlertDialog,
@@ -21,7 +21,8 @@ import {
 } from '@/components/ui';
 import { IconBell, IconDelete } from '@/constants/icons';
 import { useNotifications } from '@/hooks/api/use-notifications';
-import { notificationHref } from '@/lib/notification-copy';
+import { ROUTES } from '@/constants/routes';
+import { NotificationDetailDialog } from '@/components/blocks/notifications/notification-detail-dialog';
 import { useLanguage } from '@/providers';
 import { NotificationPanel } from './notification-panel';
 
@@ -29,10 +30,10 @@ const label = (count: number) => (count > 99 ? '99+' : String(count));
 
 export function NotificationBell() {
   const { t } = useLanguage();
-  const router = useRouter();
   const { query, items, unread, markRead, markAllRead, clear } = useNotifications();
   const [open, setOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [selected, setSelected] = useState<NotificationDTO | null>(null);
   const [seen, setSeen] = useState(unread);
   const [from, setFrom] = useState(unread);
   const [pulse, setPulse] = useState(0);
@@ -45,9 +46,8 @@ export function NotificationBell() {
 
   const openItem = (item: NotificationDTO) => {
     if (!item.readAt) markRead.mutate(item.id);
-    const href = notificationHref(item);
     setOpen(false);
-    if (href) router.push(href);
+    setSelected(item);
   };
 
   const askClear = () => {
@@ -94,8 +94,15 @@ export function NotificationBell() {
             onMarkAllRead={() => markAllRead.mutate()}
             onClear={askClear}
           />
+          <div className="border-t p-2">
+            <Button asChild variant="ghost" size="sm" className="w-full">
+              <Link href={ROUTES.NOTIFICATIONS} onClick={() => setOpen(false)}>{t.notifications.viewAll}</Link>
+            </Button>
+          </div>
         </PopoverContent>
       </Popover>
+
+      <NotificationDetailDialog item={items?.find((item) => item.id === selected?.id) ?? selected} onClose={() => setSelected(null)} />
 
       <AlertDialog open={confirmClear} onOpenChange={setConfirmClear}>
         <AlertDialogContent size="default">

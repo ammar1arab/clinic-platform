@@ -9,6 +9,7 @@ const OPS: Role[] = [ROLE.OWNER, ROLE.ADMIN, ROLE.FINANCIAL];
 const PRACTITIONER: Role[] = [ROLE.PRACTITIONER];
 
 const SIDEBAR_PREFIXES = [
+  ROUTES.NOTIFICATIONS,
   ROUTES.EMAILS,
   ROUTES.HOME,
   ROUTES.DASHBOARD,
@@ -22,6 +23,7 @@ const SIDEBAR_PREFIXES = [
 ] as const;
 
 export const NAV_ACCESS: { prefix: string; roles?: Role[] }[] = [
+  { prefix: ROUTES.NOTIFICATIONS },
   { prefix: ROUTES.PROFILE, roles: [ROLE.OWNER, ROLE.PRACTITIONER] },
   { prefix: ROUTES.EMAILS, roles: STAFF },
   { prefix: ROUTES.HOME, roles: PRACTITIONER },

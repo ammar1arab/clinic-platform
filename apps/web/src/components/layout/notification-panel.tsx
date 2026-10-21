@@ -5,28 +5,14 @@ import { Button, Skeleton } from '@/components/ui';
 import { EmptyState, ErrorState, SoftTip } from '@/components/primitives';
 import {
   IconBell,
-  IconCalendar,
   IconCheckCheck,
-  IconClinicalRecord,
   IconDelete,
-  IconPatients,
-  IconReferral,
-  type LucideIcon,
 } from '@/constants/icons';
+import { NotificationTypeIcon } from '@/components/blocks/notifications/notification-detail-dialog';
 import { useNow } from '@/hooks/shared/use-now';
 import { notificationAge, notificationCopy } from '@/lib/notification-copy';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/providers';
-
-const TYPE_ICONS: [string, LucideIcon][] = [
-  ['appointment_', IconCalendar],
-  ['schedule_request_', IconCalendar],
-  ['queue_', IconPatients],
-  ['referral_', IconReferral],
-  ['documentation_', IconClinicalRecord],
-];
-
-const iconFor = (type: string) => TYPE_ICONS.find(([prefix]) => type.startsWith(prefix))?.[1] ?? IconBell;
 
 type Props = {
   items: NotificationDTO[] | undefined;
@@ -85,7 +71,6 @@ export function NotificationPanel({ items, unread, error, onRetry, onOpen, onMar
         ) : (
           <ul className="divide-y divide-border/60">
             {items.map((item) => {
-              const Icon = iconFor(item.type);
               const copy = notificationCopy(item, t, lang);
               const isUnread = !item.readAt;
               return (
@@ -99,7 +84,7 @@ export function NotificationPanel({ items, unread, error, onRetry, onOpen, onMar
                     )}
                   >
                     <span className={cn('mt-0.5 grid size-8 shrink-0 place-items-center rounded-full', isUnread ? 'bg-primary/12 text-primary' : 'bg-muted text-muted-foreground')}>
-                      <Icon className="size-4" />
+                      <NotificationTypeIcon type={item.type} className="size-4" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className={cn('block truncate text-sm', isUnread ? 'font-semibold' : 'font-medium')}>{copy.title}</span>
