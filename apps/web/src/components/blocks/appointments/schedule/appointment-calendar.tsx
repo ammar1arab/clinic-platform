@@ -534,7 +534,7 @@ export function AppointmentCalendar({
         className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0"
       >
         <FullCalendar
-          key={`${view}-${lang}-${hours?.start ?? ''}-${hours?.end ?? ''}`}
+          key={`${view}-${lang}-${focused ? 'focus' : 'page'}-${hours?.start ?? ''}-${hours?.end ?? ''}`}
           ref={calendarRef}
           plugins={PLUGINS}
           initialView={VIEW_TO_FC[view]}
