@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth, useLanguage } from '@/providers';
 import { ROLE } from '@clinic/types';
 import { todayAppointmentRange } from '@/lib/datetime';
+import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 
 export default function PractitionerQueuePage() {
   const { user } = useAuth();
@@ -25,9 +26,9 @@ export default function PractitionerQueuePage() {
   const router = useRouter();
   const clinicId = useClinicId();
   const dayRange = todayAppointmentRange();
-  const [search, setSearch] = useState('');
-  const [departmentId, setDepartmentId] = useState('');
-  const [statusFilters, setStatusFilters] = useState<Set<AppointmentStatus>>(() => new Set());
+  const [search, setSearch] = useSessionStorageState(`${clinicId || 'none'}:practitioner-queue-search`, '');
+  const [departmentId, setDepartmentId] = useSessionStorageState(`${clinicId || 'none'}:practitioner-queue-department`, '');
+  const [statusFilters, setStatusFilters] = useSessionStorageState<AppointmentStatus[]>(`${clinicId || 'none'}:practitioner-queue-status`, []);
   const [pickerSlot, setPickerSlot] = useState<HTMLDivElement | null>(null);
   useClinicRealtime(clinicId);
   const { data: departments } = useDepartments(clinicId);
@@ -42,17 +43,14 @@ export default function PractitionerQueuePage() {
 
   const toggleStatus = useCallback((status: AppointmentStatus) => {
     setStatusFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(status)) next.delete(status);
-      else next.add(status);
-      return next;
+      return prev.includes(status) ? prev.filter((item) => item !== status) : [...prev, status];
     });
-  }, []);
+  }, [setStatusFilters]);
 
   const filtered = useMemo(
     () =>
       appointments.data
-        ?.filter((appt) => statusFilters.size === 0 || statusFilters.has(appt.status))
+        ?.filter((appt) => statusFilters.length === 0 || statusFilters.includes(appt.status))
         .filter((appt) => matchesAppointmentSearch(appt, search)),
     [appointments.data, search, statusFilters],
   );
@@ -71,13 +69,13 @@ export default function PractitionerQueuePage() {
           departmentId={departmentId}
           onDepartmentChange={setDepartmentId}
           departments={departments}
-          statusFilters={statusFilters}
+          statusFilters={new Set(statusFilters)}
           onToggleStatus={toggleStatus}
-          onClearStatuses={() => setStatusFilters(new Set())}
+          onClearStatuses={() => setStatusFilters([])}
           pickerSlotRef={setPickerSlot}
         />
       </div>
-      <ViewFocus label={t.queue.waitingQueue}>
+      <ViewFocus label={t.queue.waitingQueue} storageKey={`${clinicId || 'none'}:practitioner-queue`}>
         {(focused) => (
           <WaitingQueueBoard
             appointments={filtered}

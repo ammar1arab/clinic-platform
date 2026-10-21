@@ -8,7 +8,6 @@ import { Button, Card, CardContent, Input } from "@/components/ui";
 import {
   AvatarUpload,
   SensitiveInput,
-  ContactLine,
   EmailLink,
   FormField,
   FormActions,
@@ -103,7 +102,10 @@ export function AccountProfile() {
           <AvatarUpload className="shrink-0" value={editing ? imageUrl : user.imageUrl} onChange={(value) => setValue("imageUrl", value)} fallbackLabel={editing ? name : user.name} showPreviewNotice={false} disabled={!editing} />
           <div className="min-w-0 flex-1 space-y-1">
             <h1 dir="auto" className="truncate text-start font-heading text-base font-semibold tracking-tight sm:text-lg">{getBilingualName(user.name, user.nameAr, lang)}</h1>
-            <ContactLine phone={user.phone} email={user.email} className="text-xs sm:text-sm" />
+            <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground sm:text-sm">
+              <span className="font-medium">{t.common.lastSignIn}</span>
+              <span>{t.common.notRecorded}</span>
+            </div>
           </div>
         </CardContent>
       </Card>

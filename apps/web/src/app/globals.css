@@ -1017,8 +1017,7 @@ html[data-view-focus='true'] main {
 
 html[data-view-focus='true'] main,
 html[data-view-focus='true'] main > *,
-html[data-view-focus='true'] main > * > *,
-html[data-view-focus='true'] [data-view-focus='true'] {
+html[data-view-focus='true'] main > * > *:not([data-view-focus='true']) {
   min-height: 0;
   height: 100%;
 }

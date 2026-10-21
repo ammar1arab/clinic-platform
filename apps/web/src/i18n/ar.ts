@@ -405,6 +405,8 @@ export const ar: Translations = {
     accountArabicName: "الاسم بالعربية",
     account: "الحساب",
     accountProfile: "حسابي",
+    lastSignIn: "آخر تسجيل دخول",
+    notRecorded: "غير مسجل بعد",
     readOnly: "للقراءة فقط",
     signInEmail: "بريد تسجيل الدخول",
     signInEmailHint: "استخدم هذا البريد لتسجيل الدخول. كلمات المرور مخفية؛ استخدم إعادة تعيين كلمة المرور أدناه لتعيين كلمة جديدة.",

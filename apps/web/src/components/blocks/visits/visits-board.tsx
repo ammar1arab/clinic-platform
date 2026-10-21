@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import {
   APPOINTMENT_STATUS,
   INVOICE_STATUS,
@@ -57,16 +57,17 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
   const clinicId = useClinicId();
   const prefetchWorkspace = usePrefetchVisitWorkspace();
   const staffView = user?.role !== ROLE.PRACTITIONER;
-  const [search, setSearch] = useState('');
-  const [practitionerId, setPractitionerId] = useState('');
-  const [appointmentStatus, setAppointmentStatus] = useState('');
-  const [noteStatus, setNoteStatus] = useState(initialNoteStatus ?? '');
-  const [reportStatus, setReportStatus] = useState(initialReportStatus ?? '');
-  const [invoiceStatus, setInvoiceStatus] = useState(initialInvoiceStatus ?? '');
-  const [queue, setQueue] = useState<VisitQueue | ''>('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [page, setPage] = useState(1);
+  const scope = clinicId || 'none';
+  const [search, setSearch] = useSessionStorageState(`${scope}:visits-search`, '');
+  const [practitionerId, setPractitionerId] = useSessionStorageState(`${scope}:visits-practitioner`, '');
+  const [appointmentStatus, setAppointmentStatus] = useSessionStorageState(`${scope}:visits-appointment-status`, '');
+  const [noteStatus, setNoteStatus] = useSessionStorageState(`${scope}:visits-note-status`, initialNoteStatus ?? '');
+  const [reportStatus, setReportStatus] = useSessionStorageState(`${scope}:visits-report-status`, initialReportStatus ?? '');
+  const [invoiceStatus, setInvoiceStatus] = useSessionStorageState(`${scope}:visits-invoice-status`, initialInvoiceStatus ?? '');
+  const [queue, setQueue] = useSessionStorageState<VisitQueue | ''>(`${scope}:visits-queue`, '');
+  const [from, setFrom] = useSessionStorageState(`${scope}:visits-from`, '');
+  const [to, setTo] = useSessionStorageState(`${scope}:visits-to`, '');
+  const [page, setPage] = useSessionStorageState(`${scope}:visits-page`, 1);
   const practitioners = usePractitionerDirectory({ clinicId });
   const query = {
     search: search || undefined,

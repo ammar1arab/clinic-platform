@@ -27,6 +27,7 @@ import { useScheduleRequestMutation, useScheduleRequests } from '@/hooks/api/use
 import { formatDateTime } from '@/lib/datetime';
 import { getStaffName } from '@/i18n';
 import { useAuth, useLanguage } from '@/providers';
+import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import { DeclineRequestDialog, ScheduleRequestDialog } from './schedule-request-dialogs';
 
 type Group = 'pending' | 'history';
@@ -38,8 +39,9 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
   const practitioner = user?.role === ROLE.PRACTITIONER;
   const clinicId = user?.clinic.id ?? '';
   const { connected } = useClinicRealtime(clinicId);
-  const [view, setView] = useState({ group: initialGroup as Group, kind: '', page: 1 });
-  const [search, setSearch] = useState('');
+  const scope = `${clinicId || 'none'}:schedule-requests:${practitioner ? 'self' : doctorId || 'all'}`;
+  const [view, setView] = useSessionStorageState(`${scope}:view`, { group: initialGroup as Group, kind: '', page: 1 });
+  const [search, setSearch] = useSessionStorageState(`${scope}:search`, '');
   const [creating, setCreating] = useState(false);
   const [declining, setDeclining] = useState<ScheduleRequest | null>(null);
   const query = useScheduleRequests(clinicId, practitioner ? user?.clinicUserId : doctorId, view.group, view.page, connected);

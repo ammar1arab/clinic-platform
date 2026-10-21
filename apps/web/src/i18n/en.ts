@@ -398,6 +398,8 @@ export const en = {
     accountArabicName: "Name in Arabic",
     account: "Account",
     accountProfile: "My account",
+    lastSignIn: "Last sign-in",
+    notRecorded: "Not recorded yet",
     readOnly: "Read-only",
     signInEmail: "Sign-in email",
     signInEmailHint: "Use this email to sign in. Passwords are hidden; use reset password below to set a new one.",

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TEMPLATE_STATUS, type TemplateDTO, type TemplateStatus } from '@clinic/types';
@@ -12,6 +12,7 @@ import { TEMPLATE_STATUS_VARIANT } from '@/constants/status';
 import { useClinicalNoteTemplates, useClinicNoteDefault, useCreateClinicalNoteTemplate, useArchiveClinicalNoteTemplate, useDeleteClinicalNoteTemplate, usePublishClinicalNoteTemplate, useSetClinicNoteDefault, useStarterNoteTemplates } from '@/hooks/api/use-clinical-note-templates';
 import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { cn } from '@/lib/utils';
 import { TEMPLATE_AUDIENCE, matchesAudience, type TemplateAudience } from './note-template-form';
 
@@ -21,6 +22,7 @@ type Sort = (typeof SORT)[keyof typeof SORT];
 
 export function NoteTemplateList() {
   const { lang, t } = useLanguage();
+  const clinicId = useClinicId();
   const router = useRouter();
   const starters = useStarterNoteTemplates();
   const create = useCreateClinicalNoteTemplate();
@@ -32,11 +34,12 @@ export function NoteTemplateList() {
   const archive = useArchiveClinicalNoteTemplate();
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<TemplateStatus | ''>('');
-  const [audience, setAudience] = useState<TemplateAudience | ''>('');
-  const [sort, setSort] = useState<Sort>(SORT.RECENT);
-  const [page, setPage] = useState(1);
+  const scope = clinicId || 'none';
+  const [search, setSearch] = useSessionStorageState(`${scope}:note-templates-search`, '');
+  const [status, setStatus] = useSessionStorageState<TemplateStatus | ''>(`${scope}:note-templates-status`, '');
+  const [audience, setAudience] = useSessionStorageState<TemplateAudience | ''>(`${scope}:note-templates-audience`, '');
+  const [sort, setSort] = useSessionStorageState<Sort>(`${scope}:note-templates-sort`, SORT.RECENT);
+  const [page, setPage] = useSessionStorageState(`${scope}:note-templates-page`, 1);
   const activeFilters = Number(status !== '') + Number(audience !== '') + Number(sort !== SORT.RECENT);
   const resetFilters = () => { setStatus(''); setAudience(''); setSort(SORT.RECENT); setPage(1); };
 

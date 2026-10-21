@@ -157,6 +157,7 @@ export function ProfileInfoField({
 
   return (
     <div
+      dir="ltr"
       className={cn(
         'flex items-center justify-between gap-3 py-2.5',
         'sm:flex-col sm:items-stretch sm:justify-start sm:gap-1 sm:py-0',
@@ -166,16 +167,18 @@ export function ProfileInfoField({
       <p className="w-32 shrink-0 text-xs font-medium text-muted-foreground sm:w-auto">
         {label}
       </p>
-      <div
-        className="flex min-w-0 flex-1 justify-end text-end text-sm font-medium leading-snug text-foreground sm:flex-none sm:justify-start sm:text-start"
-        dir={dir}
-      >
-        {children ??
-          (filled ? (
-            <span className="break-words">{value}</span>
-          ) : (
-            '—'
-          ))}
+      <div className={cn('flex min-w-0 flex-1 justify-end text-end text-sm font-medium leading-snug text-foreground sm:flex-none sm:justify-start sm:text-start', dir === 'rtl' && 'sm:justify-end sm:text-end')}>
+        {children ? (
+          <span dir={dir} className="min-w-0">
+            {children}
+          </span>
+        ) : filled ? (
+          <span dir={dir} className="break-words">
+            {value}
+          </span>
+        ) : (
+          '—'
+        )}
       </div>
     </div>
   );

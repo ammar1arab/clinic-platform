@@ -59,16 +59,16 @@ function SchedulePageInner() {
   const viewParam = searchParams.get("view");
 
   const [view, setCurrentView] = useSessionStorageState<ScheduleView>(
-    "schedule-view",
+    `${clinicId || "none"}:schedule-view`,
     parseScheduleView(clinic?.defaultCalendarView || "month"),
   );
   const [range, setRange] = useSessionStorageState(
-    "schedule-range",
+    `${clinicId || "none"}:schedule-range`,
     initialScheduleRange(),
   );
-  const [search, setSearch] = useSessionStorageState("schedule-search", "");
+  const [search, setSearch] = useSessionStorageState(`${clinicId || "none"}:schedule-search`, "");
   const [departmentId, setDepartmentId] = useSessionStorageState(
-    "schedule-department",
+    `${clinicId || "none"}:schedule-department`,
     "",
   );
 
@@ -79,9 +79,7 @@ function SchedulePageInner() {
     if (viewParam) setCurrentView(parseScheduleView(viewParam));
   }
 
-  const [statusFilters, setStatusFilters] = useState<Set<AppointmentStatus>>(
-    () => new Set(),
-  );
+  const [statusFilters, setStatusFilters] = useSessionStorageState<AppointmentStatus[]>(`${clinicId || "none"}:schedule-status-filters`, []);
   const activeView = isPractitioner && view === "doctors" ? "month" : view;
   useClinicRealtime(clinicId);
 
@@ -112,14 +110,11 @@ function SchedulePageInner() {
 
   const toggleStatus = useCallback((status: AppointmentStatus) => {
     setStatusFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(status)) next.delete(status);
-      else next.add(status);
-      return next;
+      return prev.includes(status) ? prev.filter((item) => item !== status) : [...prev, status];
     });
-  }, []);
+  }, [setStatusFilters]);
 
-  const clearStatuses = useCallback(() => setStatusFilters(new Set()), []);
+  const clearStatuses = useCallback(() => setStatusFilters([]), [setStatusFilters]);
 
   const handleVisibleRangeChange = useCallback((start: Date, end: Date) => {
     const next = rangeFromVisible(start, end);
@@ -132,8 +127,8 @@ function SchedulePageInner() {
 
   const filteredAppointments = useMemo(() => {
     let list = appointments;
-    if (statusFilters.size > 0) {
-      list = list?.filter((appt) => statusFilters.has(appt.status));
+    if (statusFilters.length > 0) {
+      list = list?.filter((appt) => statusFilters.includes(appt.status));
     }
     return list?.filter((appt) =>
       matchesAppointmentSearch(appt, search),
@@ -173,7 +168,7 @@ function SchedulePageInner() {
         departmentId={departmentId}
         onDepartmentChange={setDepartmentId}
         departments={departments}
-        statusFilters={statusFilters}
+        statusFilters={new Set(statusFilters)}
         onToggleStatus={toggleStatus}
         onClearStatuses={clearStatuses}
         pickerSlotRef={setPickerSlot}
@@ -190,7 +185,7 @@ function SchedulePageInner() {
       {isError && !appointments ? (
         <ErrorState onRetry={() => void refetch()} className="page-fill" />
       ) : activeView === "doctors" ? (
-        <ViewFocus label={t.appointments.doctorTimeline}>
+        <ViewFocus label={t.appointments.doctorTimeline} storageKey={`${clinicId || "none"}:schedule-timeline`}>
           {(focused) => (
             <DoctorTimeline
               appointments={filteredAppointments}
@@ -205,7 +200,7 @@ function SchedulePageInner() {
           )}
         </ViewFocus>
       ) : activeView === "queue" ? (
-        <ViewFocus label={t.queue.waitingQueue}>
+        <ViewFocus label={t.queue.waitingQueue} storageKey={`${clinicId || "none"}:schedule-queue`}>
           {(focused) => (
             <WaitingQueueBoard
               appointments={filteredAppointments}
@@ -218,7 +213,7 @@ function SchedulePageInner() {
           )}
         </ViewFocus>
       ) : (
-        <ViewFocus label={t.appointments.calendar}>
+        <ViewFocus label={t.appointments.calendar} storageKey={`${clinicId || "none"}:schedule-calendar`}>
           {(focused) => (
             <AppointmentCalendar
               appointments={filteredAppointments}
