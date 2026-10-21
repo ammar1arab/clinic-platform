@@ -20,6 +20,8 @@ import {
 import { IconEdit } from "@/constants/icons";
 import { useRequestEmailChange, useConfirmEmailChange, useUpdateAccountProfile } from "@/hooks/api/use-auth-mutations";
 import { useAuth, useLanguage } from "@/providers";
+import { useClinic } from "@/hooks/api/use-clinic";
+import { useClinicId } from "@/hooks/shared/use-clinic-id";
 import type { AccountProfileInput } from "@clinic/types";
 import { ROLE } from "@clinic/types";
 import { ROUTES } from "@/constants/routes";
@@ -31,6 +33,8 @@ import { AccountPasswordReset } from "./account-password-reset";
 
 export function AccountProfile() {
   const { user, logout } = useAuth();
+  const clinicId = useClinicId();
+  const { data: clinic } = useClinic(clinicId);
   const { t, lang } = useLanguage();
   const [editing, setEditing] = useState(false);
   const mutation = useUpdateAccountProfile();
@@ -147,6 +151,22 @@ export function AccountProfile() {
           </ProfileInfoGrid>
         </ProfileSection>
       )}
+
+      {clinic ? (
+        <ProfileSection title={t.common.clinicDetails}>
+          <ProfileInfoGrid className="lg:grid-cols-3">
+            <ProfileInfoField label={t.common.clinicEmail} value={clinic.email} dir="ltr">
+              <EmailLink value={clinic.email} copyable className="text-sm font-medium" />
+            </ProfileInfoField>
+            <ProfileInfoField label={t.exports.phone} value={clinic.phone} dir="ltr">
+              <PhoneLink value={clinic.phone} copyable className="text-sm font-medium" />
+            </ProfileInfoField>
+            <ProfileInfoField label={t.common.clinicAddressLabel} value={clinic.address} />
+            <ProfileInfoField label={t.common.clinicTimezone} value={clinic.timezone} dir="ltr" />
+            <ProfileInfoField label={t.common.clinicWorkingHours} value={`${clinic.workingHoursStart} - ${clinic.workingHoursEnd}`} dir="ltr" />
+          </ProfileInfoGrid>
+        </ProfileSection>
+      ) : null}
 
       <AccountPasswordReset id={user.clinicUserId} />
       <AccountVerificationDialog open={!!challenge} pending={confirmEmail.isPending || emailChange.isPending} email={challenge?.email} resendAt={challenge?.resendAt ?? 0} error={verificationError}
