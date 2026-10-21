@@ -5,7 +5,6 @@ import { APPOINTMENT_STATUS_GROUPS } from '@clinic/types';
 import {
   Button,
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Badge,
@@ -21,7 +20,7 @@ import type { ScheduleView } from './schedule-nav';
 import { FORM_ALL } from '@/constants/form';
 import { cn } from '@/lib/utils';
 import { IconAdd, IconChevronDown, IconNewPatient } from '@/constants/icons';
-import { STATUS_MENU_CONTENT_CLASS, StatusFilterItems } from '../shared/status-menu';
+import { StatusMenuContent, StatusFilterItems } from '../shared/status-menu';
 import { useLanguage } from '@/providers';
 
 interface Props {
@@ -72,9 +71,9 @@ function StatusFilterDropdown({
           <IconChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
+      <StatusMenuContent
         align="start"
-        className={cn('z-80', STATUS_MENU_CONTENT_CLASS)}
+        className="z-80"
       >
         <StatusFilterItems active={active} onToggle={onToggle} />
         {count > 0 && (
@@ -89,7 +88,7 @@ function StatusFilterDropdown({
             </button>
           </>
         )}
-      </DropdownMenuContent>
+      </StatusMenuContent>
     </DropdownMenu>
   );
 }

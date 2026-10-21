@@ -1,5 +1,6 @@
 'use client';
 
+import type { ComponentProps } from 'react';
 import {
   Badge,
   DropdownMenu,
@@ -16,7 +17,9 @@ import { StatusBadgeBlock } from './status-badge';
 import { IconChevronDown, IconSpinner } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 
-export const STATUS_MENU_CONTENT_CLASS = 'min-w-56 w-56';
+export function StatusMenuContent({ className, ...props }: ComponentProps<typeof DropdownMenuContent>) {
+  return <DropdownMenuContent {...props} variant="status" className={cn('z-120', className)} />;
+}
 
 export function StatusMenuItems({
   options,
@@ -37,11 +40,12 @@ export function StatusMenuItems({
       value={value}
       onValueChange={(next) => onChange(next as AppointmentStatus)}
     >
-      {(options ?? APPOINTMENT_EDITABLE_STATUSES).map((status) => (
+      {(options ?? APPOINTMENT_EDITABLE_STATUSES).map((status, index) => (
         <DropdownMenuRadioItem
           key={status}
           value={status}
           disabled={status === value}
+          style={{ animationDelay: `${index * 30}ms` }}
           className="cursor-pointer rounded-md px-2 py-1.5"
         >
           <StatusBadgeBlock status={status} tip={false} />
@@ -59,10 +63,11 @@ export function StatusFilterItems({
   onToggle: (status: AppointmentStatus) => void;
 }) {
   const { t } = useLanguage();
-  return Object.entries(APPOINTMENT_STATUS_GROUPS).map(([group, statuses]) => {
+  return Object.entries(APPOINTMENT_STATUS_GROUPS).map(([group, statuses], index) => {
     const selected = statuses.filter((status) => active.has(status)).length;
     return <DropdownMenuCheckboxItem
       key={group}
+      style={{ animationDelay: `${index * 30}ms` }}
       checked={selected === statuses.length ? true : selected ? 'indeterminate' : false}
       onCheckedChange={(checked) => statuses.filter((status) => active.has(status) !== Boolean(checked)).forEach(onToggle)}
       onSelect={(event) => event.preventDefault()}
@@ -120,9 +125,9 @@ export function StatusFieldPicker({
   return (
     <DropdownMenu>
       <StatusPickerTrigger status={status} field />
-      <DropdownMenuContent align="start" className={cn('z-120', STATUS_MENU_CONTENT_CLASS)}>
+      <StatusMenuContent align="start">
         <StatusMenuItems value={status} onChange={onChange} />
-      </DropdownMenuContent>
+      </StatusMenuContent>
     </DropdownMenu>
   );
 }

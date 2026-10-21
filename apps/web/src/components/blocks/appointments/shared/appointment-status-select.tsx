@@ -4,7 +4,6 @@ import { useState } from 'react';
 import {
   Button,
   DropdownMenu,
-  DropdownMenuContent,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -20,7 +19,7 @@ import { toast } from 'sonner';
 import { extractErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
-  STATUS_MENU_CONTENT_CLASS,
+  StatusMenuContent,
   StatusMenuItems,
   StatusPickerTrigger,
 } from './status-menu';
@@ -129,13 +128,13 @@ export function AppointmentStatusSelect({
             className={className}
           />
         </SoftTip>
-        <DropdownMenuContent align="end" className={cn('z-120', STATUS_MENU_CONTENT_CLASS)}>
+        <StatusMenuContent align="end">
           <StatusMenuItems
             value={appt.status}
             onChange={handleSelectStatus}
             title={t.appointments.updateStatus}
           />
-        </DropdownMenuContent>
+        </StatusMenuContent>
       </DropdownMenu>
 
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

@@ -45,6 +45,7 @@ function DropdownMenuTrigger({
 
 function DropdownMenuContent({
   className,
+  variant = 'default',
   align = 'start',
   side = 'bottom',
   sideOffset = 6,
@@ -53,7 +54,9 @@ function DropdownMenuContent({
   onPointerDownOutside,
   onInteractOutside,
   ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & {
+  variant?: 'default' | 'status';
+}) {
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
@@ -64,10 +67,11 @@ function DropdownMenuContent({
         avoidCollisions={avoidCollisions}
         collisionPadding={collisionPadding}
         className={cn(
-          OVERLAY_POP_CLASS,
+          variant === 'status' ? 'overlay-pop status-menu' : OVERLAY_POP_CLASS,
           'z-50 max-h-(--radix-dropdown-menu-content-available-height)',
           'w-[min(100vw-1.5rem,var(--radix-dropdown-menu-trigger-width))] min-w-36 max-w-[calc(100vw-1.5rem)]',
           'overflow-y-auto overscroll-contain p-1.5',
+          variant === 'status' && 'w-max min-w-0 bg-transparent p-1',
           className,
         )}
         {...props}

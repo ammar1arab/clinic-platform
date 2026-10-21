@@ -504,6 +504,44 @@ th, td {
     --overlay-scale-from: 0.98;
   }
 
+  .status-menu [role^='menuitem'] {
+    justify-content: center;
+    padding-inline: 0.5rem 1.75rem;
+    background: transparent;
+  }
+
+  .status-menu [role^='menuitem']:has(+ [role^='menuitem']) {
+    margin-bottom: 0.5rem;
+  }
+
+  .status-menu [role^='menuitem']:has(+ [role^='menuitem'])::after {
+    content: '';
+    position: absolute;
+    bottom: -0.25rem;
+    inset-inline-start: calc(50% - 0.25rem);
+    width: 0.375rem;
+    height: 0.375rem;
+    border-right: 1px solid var(--muted-foreground);
+    border-bottom: 1px solid var(--muted-foreground);
+    transform: rotate(45deg);
+    pointer-events: none;
+  }
+
+  .status-menu[data-state='open'] [role^='menuitem'] {
+    animation: status-menu-step 180ms ease-out both;
+  }
+
+  @keyframes status-menu-step {
+    from { opacity: 0; transform: translateY(-0.25rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status-menu[data-state='open'] [role^='menuitem'] {
+      animation: none;
+    }
+  }
+
   .tip-bubble-body {
     position: relative;
     display: block;
