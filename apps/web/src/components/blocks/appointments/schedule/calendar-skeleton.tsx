@@ -8,7 +8,7 @@ export function CalendarSkeleton() {
 
   return (
     <div
-      className="page-fill card-aura rounded-xl border bg-card p-2 sm:p-2.5"
+      className="page-fill flex-1 min-h-0 card-aura rounded-xl border bg-card p-2 sm:p-2.5"
       role="status"
       aria-label={t.appointments.calendarLoading}
     >

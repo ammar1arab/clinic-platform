@@ -126,12 +126,12 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
         aria-label={focused ? `${label} focus view` : undefined}
         className={cn(
           focused
-            ? 'fixed inset-0 z-40 flex min-h-0 flex-col overflow-y-auto overflow-x-hidden overscroll-y-contain bg-background p-2 sm:p-3 md:overflow-hidden'
-            : 'relative isolate page-fill',
+            ? 'fixed inset-x-0 bottom-0 top-app-header z-40 flex min-h-0 flex-col overflow-y-auto overflow-x-hidden overscroll-y-contain bg-background p-2 sm:p-3 md:overflow-hidden'
+            : 'relative isolate page-fill flex-1 min-h-0',
           className,
         )}
       >
-        <div className={cn('page-fill', focused && 'md:min-h-0 md:flex-1')}>
+        <div className={cn('page-fill flex-1 min-h-0', focused && 'md:min-h-0 md:flex-1')}>
           {content}
         </div>
         <ViewFocusHandle />
