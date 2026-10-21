@@ -59,7 +59,7 @@ export function EmailComposer() {
   const feedback = useFeedbackOverlay(() => {
     if (sentId.current) nav.go(ROUTES.EMAIL_DETAIL(sentId.current));
   });
-  const state = useEmailComposer(
+  const { bindFilters, ...state } = useEmailComposer(
     (id) => {
       sentId.current = id;
       feedback.celebrate(t.emails.queuedSuccess);
@@ -212,6 +212,7 @@ export function EmailComposer() {
       />
       <FormProvider {...form}>
         <form
+          ref={bindFilters}
           id="email-composer-form"
           onSubmit={(event) => {
             event.preventDefault();

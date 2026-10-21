@@ -96,6 +96,7 @@ export function AccountProfile() {
   return (
     <ProfileShell
       backHref={ROUTES.DASHBOARD}
+      onBack={editing ? cancel : undefined}
       actions={!editing ? (
         <Button type="button" variant="outline" onClick={() => setEditing(true)}>
           <IconEdit className="size-3.5" />{t.common.edit}
@@ -148,6 +149,7 @@ export function AccountProfile() {
             <ProfileInfoField label={t.common.signInEmail} value={user.email}>
               <EmailLink value={user.email} copyable className="text-sm font-medium" />
             </ProfileInfoField>
+            <ProfileInfoField label={t.emails.roles} value={t.appointments.roleOwner} />
           </ProfileInfoGrid>
         </ProfileSection>
       )}
@@ -155,6 +157,7 @@ export function AccountProfile() {
       {clinic ? (
         <ProfileSection title={t.common.clinicDetails}>
           <ProfileInfoGrid className="lg:grid-cols-3">
+            <ProfileInfoField label={t.emails.clinicName} value={getBilingualName(clinic.name, clinic.nameAr, lang)} />
             <ProfileInfoField label={t.common.clinicEmail} value={clinic.email} dir="ltr">
               <EmailLink value={clinic.email} copyable className="text-sm font-medium" />
             </ProfileInfoField>

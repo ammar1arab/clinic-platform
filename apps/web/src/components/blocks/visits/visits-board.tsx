@@ -204,13 +204,14 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
                   title={getBilingualName(item.patient.name, item.patient.nameAr, lang)}
                   avatar={<span onClick={(event) => event.stopPropagation()}><PreviewableAvatar src={item.patient.imageUrl} seed={item.patient.id} size="sm" /></span>}
                   subtitle={<div className="space-y-1.5 whitespace-normal">
-                    <p>{formatDate(item.scheduledAt, undefined, lang)} · {formatTime(item.scheduledAt, undefined, lang)}</p>
+                    <p>{formatDate(item.scheduledAt, undefined, lang)}</p>
                     <div className="flex min-w-0 items-center gap-1.5">
                       <span onClick={(event) => event.stopPropagation()}><PreviewableAvatar src={item.practitioner.imageUrl} seed={item.practitioner.id} size="sm" /></span>
                       <span className="min-w-0 break-words">{getBilingualName(item.practitioner.name, item.practitioner.nameAr, lang)}</span>
                     </div>
                   </div>}
                   actions={<div className="flex max-w-36 flex-col items-end gap-1">
+                    <span className="whitespace-nowrap text-xs font-semibold tabular-nums">{formatTime(item.scheduledAt, undefined, lang)}</span>
                     <StatusBadgeBlock status={item.appointmentStatus} tip={false} />
                     <Badge variant="muted">{item.mode === SESSION_TYPE.ONLINE ? t.visits.online : t.visits.inPerson}{item.room ? ` · ${getBilingualName(item.room.name, item.room.nameAr, lang)}` : ''}</Badge>
                   </div>}
@@ -260,6 +261,6 @@ function VisitCardMeta({ item, className }: { item: VisitSummary; className: str
     { label: t.visits.invoice, value: t.visits.invoiceStatuses[item.invoiceStatus], warning: item.invoiceStatus === INVOICE_STATUS.AWAITING_REVIEW },
   ];
   return <dl className={className}>{details.map((detail) => (
-    <div key={detail.label} className="min-w-0 space-y-1 border-s border-border/70 ps-3"><dt className="text-muted-foreground">{detail.label}</dt><dd className={cn('break-words font-medium', detail.warning && 'text-warning')}>{detail.value}</dd></div>
+    <div key={detail.label} className="min-w-0 space-y-1 px-1 text-center"><dt className="text-muted-foreground">{detail.label}</dt><dd className={cn('break-words font-medium', detail.warning && 'text-warning')}>{detail.value}</dd></div>
   ))}</dl>;
 }

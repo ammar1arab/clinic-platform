@@ -107,9 +107,10 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
               </p>
             </div>
               </div>
-            <div className="flex max-w-40 flex-col items-end gap-1.5 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+            <div className="flex max-w-40 flex-col items-end gap-1.5 sm:max-w-none">
+              <StatusBadgeBlock status={data.appointmentStatus} tip={false} />
             {data.mode === SESSION_TYPE.IN_PERSON ? (
-              <Badge variant="outline" className="gap-1 px-2 text-xs leading-tight whitespace-normal text-end">{t.visits.inPerson}{data.room ? ` · ${roomName}` : ''}</Badge>
+              <Badge variant="outline" className="gap-1 px-1.5 text-[11px] leading-tight whitespace-normal text-end">{t.visits.inPerson}{data.room ? ` · ${roomName}` : ''}</Badge>
             ) : data.meetingUrl ? (
               <a href={data.meetingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary underline-offset-2 hover:underline">
                 <IconOnline className="size-4" />{t.visits.join}
@@ -117,7 +118,6 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
             ) : (
               <Badge variant="warning"><IconOnline className="size-4" />{t.visits.joinMissing}</Badge>
             )}
-              <StatusBadgeBlock status={data.appointmentStatus} tip={false} />
             </div>
           </div>
 

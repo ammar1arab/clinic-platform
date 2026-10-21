@@ -76,7 +76,7 @@ export function AuthFlow({ hasSession = false }: { hasSession?: boolean }) {
   if (hasSession && (!isHydrated || isLoading) && !success) {
     return (
       <div ref={bindBrand} className="contents">
-        <LoadingState variant="page" text={t.auth.signingIn} />
+        <LoadingState variant="page" text={t.common.loadingSession} />
       </div>
     );
   }

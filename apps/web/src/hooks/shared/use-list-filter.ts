@@ -1,14 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { useAuth } from '@/providers';
+import { useSessionStorageState } from './use-session-storage-state';
 
 export function useListFilter<T>(
   items: T[] | undefined,
   searchFields: (item: T) => string[],
   pageSize = 10,
 ) {
-  const [search, setSearchRaw] = useState('');
-  const [page, setPage] = useState(1);
+  const pathname = usePathname();
+  const { user } = useAuth();
+  const scope = `${user?.clinicUserId ?? 'none'}:${pathname}:list`;
+  const [search, setSearchRaw] = useSessionStorageState(`${scope}:search`, '');
+  const [page, setPage] = useSessionStorageState(`${scope}:page`, 1);
 
   const term = search.trim().toLowerCase();
   const filtered =

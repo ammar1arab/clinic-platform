@@ -13,16 +13,18 @@ import { cn } from '@/lib/utils';
 
 export function ProfileShell({
   backHref,
+  onBack,
   actions,
   children,
 }: {
   backHref: string;
+  onBack?: () => void;
   actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="page-stack space-y-4">
-      <PageBack backHref={backHref} actions={actions} />
+      <PageBack backHref={backHref} onBack={onBack} actions={actions} />
       {children}
     </div>
   );
@@ -157,7 +159,6 @@ export function ProfileInfoField({
 
   return (
     <div
-      dir="ltr"
       className={cn(
         'flex items-center justify-between gap-3 py-2.5',
         'sm:flex-col sm:items-stretch sm:justify-start sm:gap-1 sm:py-0',

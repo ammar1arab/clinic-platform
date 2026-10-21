@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type {
@@ -13,7 +13,8 @@ import {
   emailComposerSchema,
   type EmailComposerValues,
 } from "@/lib/validations";
-import { useLanguage } from "@/providers";
+import { useAuth, useLanguage } from "@/providers";
+import { readSessionState, writeSessionState } from "../shared/use-session-storage-state";
 import { extractErrorMessage, isHttpStatus } from "@/lib/api";
 import { useSendEmail, useTestEmail } from "./use-emails";
 
@@ -70,12 +71,29 @@ const contentFor = (
   body: body.trim(),
 });
 
+function recipientFilters(values: EmailComposerValues) {
+  return {
+    audience: values.audience,
+    search: values.search,
+    roles: values.roles,
+    doctorId: values.doctorId,
+    departmentId: values.departmentId,
+    serviceId: values.serviceId,
+    appointmentStatuses: values.appointmentStatuses,
+    appointmentFrom: values.appointmentFrom,
+    appointmentTo: values.appointmentTo,
+    isPaid: values.isPaid,
+  };
+}
+
 export function useEmailComposer(
   onSent: (id: string) => void,
   clinicEmail?: string,
   onTestQueued?: () => void,
 ) {
   const { t, lang } = useLanguage();
+  const { user } = useAuth();
+  const filterKey = `${user?.clinicUserId ?? 'none'}:email-recipient-filters`;
   const form = useForm<EmailComposerValues>({
     resolver: zodResolver(emailComposerSchema),
     defaultValues: {
@@ -101,6 +119,16 @@ export function useEmailComposer(
     control: form.control,
     defaultValue: form.getValues(),
   });
+  const bindFilters = useCallback((node: HTMLFormElement | null) => {
+    if (!node) return;
+    const current = form.getValues();
+    const stored = readSessionState(filterKey, recipientFilters(current));
+    form.reset({ ...current, ...recipientFilters({ ...current, ...stored }) });
+    return form.subscribe({
+      formState: { values: true },
+      callback: ({ values }) => writeSessionState(filterKey, recipientFilters(values)),
+    });
+  }, [filterKey, form]);
   const values = form.getValues();
   const sendMutation = useSendEmail();
   const testMutation = useTestEmail();
@@ -207,6 +235,7 @@ export function useEmailComposer(
   };
 
   return {
+    bindFilters,
     form,
     values,
     error,
