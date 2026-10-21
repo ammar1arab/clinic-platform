@@ -268,7 +268,9 @@ export function WaitingQueueBoard({
       {slot ? createPortal(
         <Select value={stageTab} onValueChange={(value) => setStageTab(value as QueueStage)}>
           <SelectTrigger size="sm" aria-label={t.queue.waitingQueue} className="h-8 min-w-[9rem] flex-1 bg-background/50 sm:w-52 sm:max-w-56 sm:flex-none">
-            <SelectValue className="text-xs sm:text-[0.8rem]" />
+            <span className="min-w-0 flex-1 truncate text-start text-xs sm:text-[0.8rem]">
+              <SelectValue />
+            </span>
           </SelectTrigger>
           <SelectContent>
             {stageTabs.map(({ key, label }) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
