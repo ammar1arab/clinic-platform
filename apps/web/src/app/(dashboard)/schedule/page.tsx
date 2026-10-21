@@ -192,7 +192,7 @@ function SchedulePageInner() {
       <ViewFocus label={focusLabel} storageKey={`${clinicId || "none"}:schedule-${activeView === 'doctors' || activeView === 'queue' ? activeView : 'calendar'}`}>
         {(focused) => (
           <>
-            {focused && activeView !== "doctors" && activeView !== "queue" ? null : toolbar}
+            {toolbar}
             {isError && !appointments ? (
               <ErrorState onRetry={() => void refetch()} className="page-fill" />
             ) : activeView === "doctors" ? (

@@ -452,7 +452,7 @@ export function DoctorTimeline({
       <div
         ref={attachTimelineScroll}
         onClick={handleGridClick}
-        className="relative page-fill cursor-pointer overflow-auto overscroll-contain rounded-lg border border-border/60"
+        className="relative page-fill flex-1 min-h-0 cursor-pointer overflow-auto overscroll-contain rounded-lg border border-border/60"
       >
         <div className="relative flex min-w-[20rem]" style={{ height: `${TIMELINE_TOTAL_HEIGHT}px` }}>
 

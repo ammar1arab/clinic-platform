@@ -119,6 +119,7 @@ export function ScheduleToolbar({
   return (
     <div
       data-schedule-toolbar=""
+      data-focus-hide=""
       className="card-aura flex shrink-0 flex-col gap-1.5 rounded-xl border bg-card/90 p-1.5 shadow-xs backdrop-blur-md sm:rounded-xl sm:p-2"
     >
       <div className="flex items-center gap-1.5 sm:gap-2">
