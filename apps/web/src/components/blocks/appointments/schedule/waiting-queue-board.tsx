@@ -261,13 +261,13 @@ export function WaitingQueueBoard({
       data-schedule-host=""
       aria-busy={loading || undefined}
       className={cn(
-        'relative page-fill overflow-hidden border bg-card shadow-xs',
+        'relative page-fill flex-1 min-h-0 overflow-hidden border bg-card shadow-xs',
         focused ? 'rounded-none border-0' : 'card-aura rounded-xl sm:rounded-2xl',
       )}
     >
       {slot ? createPortal(
         <Select value={stageTab} onValueChange={(value) => setStageTab(value as QueueStage)}>
-          <SelectTrigger size="sm" aria-label={t.queue.waitingQueue} className="h-8 min-w-[9rem] flex-1 bg-background/50 max-sm:hidden sm:w-52 sm:max-w-56 sm:flex-none">
+          <SelectTrigger size="sm" aria-label={t.queue.waitingQueue} className="h-8 min-w-[9rem] flex-1 bg-background/50 sm:w-52 sm:max-w-56 sm:flex-none">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -276,45 +276,11 @@ export function WaitingQueueBoard({
         </Select>,
         slot,
       ) : null}
-      {focused ? null : <div className={cn("flex shrink-0 items-center gap-1.5 border-b bg-muted/20 px-2 py-1.5", slot && "sm:hidden")}>
-        <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
-          {stageTabs.map(({ key, label, short, icon, variant }) => {
-            const selected = stageTab === key;
-            const showMobileLabel = selected || !icon;
-            return (
-              <SoftTip key={key} label={label}>
-                <Badge
-                  asChild
-                  variant={selected ? variant : 'secondary'}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setStageTab(key)}
-                    aria-label={label}
-                    aria-pressed={selected}
-                    className={cn(
-                      'relative cursor-pointer py-1.5 shadow-2xs active:scale-95',
-                      !showMobileLabel && 'gap-0 px-2 sm:gap-1.5 sm:px-2.5',
-                    )}
-                  >
-                    {icon ? <span aria-hidden className="inline-flex items-center gap-1.5">{icon}</span> : null}
-                    <span className={showMobileLabel ? 'sm:hidden' : 'hidden'}>
-                      {short}
-                    </span>
-                    <span className="hidden sm:inline">{label}</span>
-                  </button>
-                </Badge>
-              </SoftTip>
-            );
-          })}
-        </div>
-      </div>}
-
       <div
         className={cn(
           'grid min-h-0 flex-1 grid-cols-1 gap-2.5 overflow-y-auto overscroll-y-contain p-2.5',
           focused && 'h-0',
-          focused ? 'px-2 pb-2 pt-0 sm:gap-2 md:gap-2' : 'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
+          focused ? 'px-0 pb-2 pt-0 sm:gap-2 md:gap-2' : 'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
           stageTab === QUEUE_STAGE.ALL
             ? 'lg:grid-flow-col lg:auto-cols-[minmax(14rem,1fr)] lg:overflow-x-auto lg:overflow-y-hidden'
             : 'lg:grid-cols-1 lg:overflow-hidden',

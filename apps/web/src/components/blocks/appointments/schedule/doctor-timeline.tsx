@@ -416,7 +416,7 @@ export function DoctorTimeline({
     <div
       data-schedule-host=""
       className={cn(
-        'relative page-fill overflow-hidden bg-card',
+        'relative page-fill flex-1 min-h-0 overflow-hidden bg-card',
         focused ? 'rounded-none border-0 px-1.5 pb-1.5 pt-0 sm:px-2 sm:pb-2' : 'card-aura rounded-xl border p-2 sm:p-2.5',
       )}
     >
