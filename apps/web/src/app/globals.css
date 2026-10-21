@@ -537,6 +537,10 @@ th, td {
   }
 
   /* Filter menus list independent statuses: no flow connectors and no extra gaps. */
+  .status-menu.status-menu-flat [role^='menuitem'] {
+    padding-inline: 0.25rem 1.25rem;
+  }
+
   .status-menu.status-menu-flat [role^='menuitem']:has(+ [role^='menuitem']) {
     margin-bottom: 0;
   }
