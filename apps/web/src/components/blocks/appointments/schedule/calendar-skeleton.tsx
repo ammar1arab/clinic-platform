@@ -18,15 +18,17 @@ export function CalendarSkeleton({ view = 'month', focused = false }: { view?: S
       role="status"
       aria-label={t.appointments.calendarLoading}
     >
-      <div className="mb-2 grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-3">
-        <div className="flex items-center gap-0.5">
-          <Skeleton className="size-6 rounded-md" />
-          <Skeleton className="size-6 rounded-md" />
+      <div className="mb-2 flex shrink-0 items-center gap-1 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3">
+        <div className="flex min-w-0 items-center gap-1 sm:contents">
+          <div className="flex items-center gap-0.5">
+            <Skeleton className="size-6 rounded-md" />
+            <Skeleton className="size-6 rounded-md" />
+          </div>
+          <div className="flex items-center gap-1 rounded-full bg-muted p-1">
+            {[0, 1, 2].map((item) => <Skeleton key={item} className="h-6 w-9 rounded-full sm:w-14" />)}
+          </div>
         </div>
-        <div className="flex items-center gap-1 rounded-full bg-muted p-1">
-          {[0, 1, 2].map((item) => <Skeleton key={item} className="h-6 w-9 rounded-full sm:w-14" />)}
-        </div>
-        <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
+        <div className="ms-auto flex min-w-0 items-center justify-end gap-1 sm:ms-0 sm:gap-2">
           <Skeleton className="h-4 w-28 min-w-0" />
           <Skeleton className="size-6 shrink-0 rounded-md" />
         </div>
