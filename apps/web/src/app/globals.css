@@ -1027,13 +1027,8 @@ html[data-view-focus='true'] main > * > *:not([data-view-focus='true']) {
   touch-action: manipulation;
 }
 
-[data-schedule-host] .fc,
-[data-schedule-host] .fc .fc-view-harness {
+[data-schedule-host] .fc {
   height: 100% !important;
-}
-
-[data-schedule-host] .fc .fc-scroller {
-  overflow: auto !important;
 }
 
 [data-schedule-host] .fc .fc-col-header-cell-cushion {

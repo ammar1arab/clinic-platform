@@ -101,7 +101,9 @@ export function ViewFocus({ label, storageKey, children, className }: ViewFocusP
   }, [setFocused]);
 
   const bind = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
     applyViewFocus(Boolean(node && focused));
+    return () => applyViewFocus(false);
   }, [focused]);
 
   useKeyboardShortcut(
@@ -127,12 +129,12 @@ export function ViewFocus({ label, storageKey, children, className }: ViewFocusP
         aria-label={focused ? `${label} focus view` : undefined}
         className={cn(
           focused
-            ? 'fixed start-0 end-0 bottom-0 top-[var(--app-header-height)] z-40 flex h-[calc(100dvh-var(--app-header-height))] min-h-0 flex-col overflow-y-auto overflow-x-hidden overscroll-y-contain bg-background p-2 sm:p-3 md:start-[var(--app-sidebar-current-width)] md:overflow-hidden'
+            ? 'fixed start-0 end-0 top-[var(--app-header-height)] z-5 flex h-[calc(100dvh-var(--app-header-height))] min-h-0 flex-col overflow-y-auto overflow-x-hidden overscroll-y-contain bg-background p-2 sm:p-3 md:start-[var(--app-sidebar-current-width)] md:overflow-hidden'
             : 'relative isolate page-fill flex-1 min-h-0',
           className,
         )}
       >
-        <div className={cn('page-fill flex-1 min-h-0 gap-2.5', focused && 'md:min-h-0 md:flex-1')}>
+        <div className={cn('page-fill flex-1 min-h-0 gap-2.5', focused && 'h-0')}>
           {content}
         </div>
         <ViewFocusHandle />

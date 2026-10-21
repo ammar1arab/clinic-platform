@@ -453,28 +453,26 @@ export function AppointmentCalendar({
     ) {
       return;
     }
-    calendarSizeRef.current = { width, height };
     const api = calendarRef.current?.getApi();
     if (!api) return;
-    const scroller = host.querySelector(".fc-scroller");
-    const scrollTop = scroller instanceof HTMLElement ? scroller.scrollTop : 0;
-    const scrollLeft = scroller instanceof HTMLElement ? scroller.scrollLeft : 0;
+    calendarSizeRef.current = { width, height };
+    const positions = Array.from(host.querySelectorAll<HTMLElement>('.fc-scroller'), (element) => ({ element, top: element.scrollTop, left: element.scrollLeft }));
     try {
       api.updateSize();
     } catch {
       return;
     }
-    const next = host.querySelector(".fc-scroller");
-    if (next instanceof HTMLElement) {
-      next.scrollTop = scrollTop;
-      next.scrollLeft = scrollLeft;
+    for (const { element, top, left } of positions) {
+      if (!element.isConnected) continue;
+      element.scrollTop = top;
+      element.scrollLeft = left;
     }
   }, []);
 
   const sizeHostRef = useResizeObserver(syncCalendarSize);
 
   if (isLoading && !appointments) {
-    return <CalendarSkeleton />;
+    return <CalendarSkeleton view={view} focused={focused} />;
   }
 
   return (
@@ -534,7 +532,7 @@ export function AppointmentCalendar({
         className="relative flex h-0 min-h-0 flex-1 flex-col [&_.fc]:h-full [&_.fc-scroller]:min-h-0 [&_.fc-view-harness]:min-h-0"
       >
         <FullCalendar
-          key={`${view}-${lang}-${focused ? 'focus' : 'page'}-${hours?.start ?? ''}-${hours?.end ?? ''}`}
+          key={`${view}-${lang}-${hours?.start ?? ''}-${hours?.end ?? ''}`}
           ref={calendarRef}
           plugins={PLUGINS}
           initialView={VIEW_TO_FC[view]}
@@ -598,6 +596,7 @@ export function AppointmentCalendar({
               eventMaxStack: isMobile ? 2 : 4,
             },
             timeGridWeek: {
+              dayHeaderFormat: { weekday: 'short' },
               eventMaxStack: isMobile ? 2 : 4,
             },
             dayGridMonth: {

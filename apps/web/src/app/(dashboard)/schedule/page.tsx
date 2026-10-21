@@ -188,8 +188,8 @@ function SchedulePageInner() {
         : t.appointments.calendar;
 
   return (
-    <div className="page-fill">
-      <ViewFocus label={focusLabel} storageKey={`${clinicId || "none"}:schedule-${activeView}`}>
+    <div className="page-fill h-0 min-h-0 flex-1 overflow-hidden">
+      <ViewFocus label={focusLabel} storageKey={`${clinicId || "none"}:schedule-${activeView === 'doctors' || activeView === 'queue' ? activeView : 'calendar'}`}>
         {(focused) => (
           <>
             {toolbar}
@@ -243,7 +243,7 @@ function SchedulePageInner() {
 
 function ScheduleFallback() {
   return (
-    <div className="page-fill flex-1 min-h-0 gap-2">
+    <div className="page-fill h-0 flex-1 min-h-0 gap-2 overflow-hidden">
       <div className="card-aura space-y-1.5 rounded-xl border bg-card/90 p-1.5 sm:p-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="h-8 w-full rounded-lg bg-muted/60 sm:w-64" />
