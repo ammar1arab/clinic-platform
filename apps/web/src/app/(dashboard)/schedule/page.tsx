@@ -197,6 +197,7 @@ function SchedulePageInner() {
               doctors={practitioners}
               isLoading={isLoading}
               focused={focused}
+              canManageAppointments={!isPractitioner}
               onSelectSlot={goNewAppointment}
               onEventClick={handleEventClick}
               toolbarSlot={pickerSlot}

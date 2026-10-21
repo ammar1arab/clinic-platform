@@ -41,6 +41,8 @@ import { formatDate, formatTime } from '@/lib/datetime';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { usePractitionerDirectory } from '@/hooks/api/use-practitioners';
 import { usePrefetchVisitWorkspace, useVisits } from '@/hooks/api/use-visits';
+import { useDownloadVisitsReport } from '@/hooks/api/use-reports';
+import { ExportFormatButton } from '@/components/blocks/reports';
 import { useAuth, useLanguage } from '@/providers';
 
 const NOTE_FILTERS = Object.values(NOTE_STATUS);
@@ -80,6 +82,7 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
     limit: 20,
   };
   const visits = useVisits(query, !!user);
+  const downloadVisits = useDownloadVisitsReport(clinicId);
   const resetPage = () => setPage(1);
   const activeCount =
     (queue ? 1 : 0) +
@@ -109,9 +112,27 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
         onSearchChange={(value) => { setSearch(value); resetPage(); }}
         searchPlaceholder={t.common.search}
         actions={
-          <Popover>
-            <FilterTrigger count={activeCount} />
-            <FilterPanel count={activeCount} onClear={resetFilters}>
+          <div className="flex items-center gap-1.5">
+            <ExportFormatButton
+              compact
+              disabled={downloadVisits.isPending || visits.isLoading || !visits.data?.total}
+              pending={downloadVisits.isPending}
+              onSelect={(format) => downloadVisits.mutate({
+                format,
+                from: query.from,
+                to: query.to,
+                practitionerId: staffView ? practitionerId || undefined : undefined,
+                appointmentStatus: appointmentStatus || undefined,
+                noteStatus: noteStatus || undefined,
+                reportStatus: reportStatus || undefined,
+                invoiceStatus: invoiceStatus || undefined,
+                queue: queue || undefined,
+                search: search || undefined,
+              })}
+            />
+            <Popover>
+              <FilterTrigger count={activeCount} />
+              <FilterPanel count={activeCount} onClear={resetFilters}>
               <FilterSelect label={t.visits.workQueue} value={queue} onChange={(value) => { setQueue(value as VisitQueue | ''); setAppointmentStatus(''); setNoteStatus(''); setReportStatus(''); setInvoiceStatus(''); resetPage(); }}>
                 {QUEUE_FILTERS.map((item) => <SelectItem key={item} value={item}>{t.visits.queues[item]}</SelectItem>)}
               </FilterSelect>
@@ -148,8 +169,9 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
                   <DatePicker value={to} onChange={(value) => { setTo(value); resetPage(); }} placeholder={t.visits.to} />
                 </FormField>
               </div>
-            </FilterPanel>
-          </Popover>
+              </FilterPanel>
+            </Popover>
+          </div>
         }
       />
 

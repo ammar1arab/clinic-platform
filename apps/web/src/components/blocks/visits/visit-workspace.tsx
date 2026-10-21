@@ -15,7 +15,7 @@ import {
   ReasonDialog,
   VisitTimer,
 } from '@/components/primitives';
-import { IconCheck, IconCheckCircle, IconChevronDown, IconChevronUp, IconClinicalRecord, IconInPerson, IconLock, IconOnline, IconPhone, IconPlay, IconUnlock } from '@/constants/icons';
+import { IconCheck, IconCheckCircle, IconChevronDown, IconChevronUp, IconClinicalRecord, IconLock, IconOnline, IconPhone, IconPlay, IconUnlock } from '@/constants/icons';
 import { ROUTES } from '@/constants/routes';
 import { useClinicRealtime } from '@/hooks/api/use-clinic-realtime';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
@@ -109,7 +109,7 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
               </div>
             <div className="flex max-w-40 flex-col items-end gap-1.5 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
             {data.mode === SESSION_TYPE.IN_PERSON ? (
-              <Badge variant="outline"><IconInPerson className="size-4" />{t.visits.inPerson}{data.room ? ` · ${roomName}` : ''}</Badge>
+              <Badge variant="outline" className="gap-1 px-2 text-xs leading-tight whitespace-normal text-end">{t.visits.inPerson}{data.room ? ` · ${roomName}` : ''}</Badge>
             ) : data.meetingUrl ? (
               <a href={data.meetingUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary underline-offset-2 hover:underline">
                 <IconOnline className="size-4" />{t.visits.join}
