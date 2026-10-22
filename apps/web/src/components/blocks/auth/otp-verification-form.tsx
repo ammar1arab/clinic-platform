@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AUTH_POLICY } from '@clinic/types';
 import { Button } from '@/components/ui';
 import { ButtonSpinner } from '@/components/primitives';
@@ -24,11 +24,15 @@ export function OtpVerificationForm({
   const now = useNow(1000).getTime();
   const remaining = Math.max(0, Math.ceil((resendAt - now) / 1000));
   const [code, setCode] = useState('');
+  const submitting = useRef(false);
 
   const submit = (next: string) => {
-    if (pending || next.length !== AUTH_POLICY.otpDigits) return;
+    if (pending || submitting.current || next.length !== AUTH_POLICY.otpDigits) return;
+    submitting.current = true;
     prepareFeedbackSound();
-    void onVerify(next);
+    void onVerify(next).finally(() => {
+      submitting.current = false;
+    });
   };
 
   return (

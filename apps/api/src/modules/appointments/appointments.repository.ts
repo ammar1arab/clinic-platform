@@ -209,6 +209,9 @@ export class AppointmentsRepository {
     return this.write(clinicId, async (tx) => {
       const current = await this.current(tx, clinicId, id, expectedUpdatedAt);
       const presenceChanged =
+        (dto.doctorId !== undefined && dto.doctorId !== current.doctorId) ||
+        (dto.roomId !== undefined && dto.roomId !== current.roomId) ||
+        (dto.durationMins !== undefined && dto.durationMins !== current.durationMins) ||
         (dto.scheduledAt !== undefined &&
           new Date(dto.scheduledAt).getTime() !== current.scheduledAt.getTime()) ||
         (dto.sessionType !== undefined && dto.sessionType !== current.sessionType) ||

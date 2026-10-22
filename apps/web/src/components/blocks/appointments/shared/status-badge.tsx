@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Badge } from '@/components/ui';
 import { SoftTip } from '@/components/primitives';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ type Props = {
   className?: string;
   compact?: boolean;
   tip?: boolean;
+  trailing?: ReactNode;
 };
 
 export function StatusBadgeBlock({
@@ -25,6 +27,7 @@ export function StatusBadgeBlock({
   className,
   compact,
   tip = true,
+  trailing,
 }: Props) {
   const { t } = useLanguage();
   const config = getStatusConfig(t)[status];
@@ -51,6 +54,7 @@ export function StatusBadgeBlock({
           )}
         />
         <span>{text}</span>
+        {trailing}
       </Badge>
     </SoftTip>
   );

@@ -1,3 +1,4 @@
+import { SHARED_EN } from "@clinic/types";
 import {
   Injectable,
   NotFoundException,
@@ -8,6 +9,7 @@ import { ReferralsRepository } from "./referrals.repository";
 import { NotificationsService } from "@/modules/notifications/notifications.service";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { PrismaService } from "@/prisma/prisma.service";
+import { NOTIFICATION_TYPE } from "@clinic/types";
 import {
   CreateReferralDto,
   ReferralOpinionDto,
@@ -50,8 +52,8 @@ export class ReferralsService {
     await this.notificationsService.create({
       clinicId: dto.clinicId,
       userId: dto.toDoctorId,
-      type: "referral_created",
-      title: `New ${dto.type} request`,
+      type: NOTIFICATION_TYPE.REFERRAL_CREATED,
+      title: SHARED_EN.notificationTypes.referral_created,
       body: dto.reason,
       payload: { referralId: referral.id, appointmentId: dto.appointmentId },
     });
@@ -94,9 +96,8 @@ export class ReferralsService {
     await this.notificationsService.create({
       clinicId: referral.clinicId,
       userId: referral.fromDoctorId,
-      type: "referral_accepted",
-      title: "Referral accepted",
-      body: `Your ${referral.type} was accepted`,
+      type: NOTIFICATION_TYPE.REFERRAL_ACCEPTED,
+      title: SHARED_EN.notificationTypes.referral_accepted,
       payload: { referralId: referral.id },
     });
 
@@ -126,9 +127,8 @@ export class ReferralsService {
     await this.notificationsService.create({
       clinicId: referral.clinicId,
       userId: referral.fromDoctorId,
-      type: "referral_rejected",
-      title: "Referral rejected",
-      body: `Your ${referral.type} was rejected`,
+      type: NOTIFICATION_TYPE.REFERRAL_REJECTED,
+      title: SHARED_EN.notificationTypes.referral_rejected,
       payload: { referralId: referral.id },
     });
 

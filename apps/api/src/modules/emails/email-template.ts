@@ -3,6 +3,7 @@ import { emailError } from "./email-errors";
 import { BadRequestException } from "@nestjs/common";
 import {
   LOCALE,
+  getSharedTranslations,
   type EmailBrandDetails,
   type EmailContent,
   type EmailPreviewResponse,
@@ -107,7 +108,7 @@ export const renderEmail = (
 
   const links = (
     [
-      ["website", isArabic ? "الموقع" : "Website", website],
+      ["website", getSharedTranslations(isArabic ? "ar" : "en").emailWebsite, website],
       ["instagram", "Instagram", brand.instagramUrl],
       ["facebook", "Facebook", brand.facebookUrl],
       ["linkedin", "LinkedIn", brand.linkedinUrl],

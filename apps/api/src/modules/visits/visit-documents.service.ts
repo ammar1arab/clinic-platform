@@ -1,3 +1,4 @@
+import { SHARED_EN } from "@clinic/types";
 import { Injectable } from "@nestjs/common";
 import { PdfExporter } from "../reports/exporters/pdf.exporter";
 
@@ -32,12 +33,12 @@ export class VisitDocumentsService {
         timezone: snapshot.timezone,
       },
       summary: [
-        { label: "Patient / المريض", value: snapshot.patientName },
-        { label: "Practitioner / الطبيب", value: snapshot.practitionerName },
+        { label: SHARED_EN.documents.patient, value: snapshot.patientName },
+        { label: SHARED_EN.documents.practitioner, value: snapshot.practitionerName },
       ],
       columns: [
-        { key: "label", header: "Section / القسم" },
-        { key: "value", header: "Details / التفاصيل" },
+        { key: "label", header: SHARED_EN.documents.section },
+        { key: "value", header: SHARED_EN.documents.details },
       ],
       rows: snapshot.sections.map((section) => ({
         label: section.label,

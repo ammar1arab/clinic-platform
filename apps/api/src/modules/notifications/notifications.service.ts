@@ -1,3 +1,4 @@
+import { SHARED_EN } from "@clinic/types";
 import {
   Injectable,
   NotFoundException,
@@ -17,12 +18,7 @@ type DoctorEvent = {
   actorId?: string;
 };
 
-const DOCTOR_EVENT_TITLES: Record<string, string> = {
-  [NOTIFICATION_TYPE.APPOINTMENT_BOOKED]: "New appointment",
-  [NOTIFICATION_TYPE.APPOINTMENT_RESCHEDULED]: "Appointment rescheduled",
-  [NOTIFICATION_TYPE.APPOINTMENT_CANCELLED]: "Appointment cancelled",
-  [NOTIFICATION_TYPE.QUEUE_PATIENT_WAITING]: "Patient is waiting",
-};
+const DOCTOR_EVENT_TITLES: Record<string, string> = SHARED_EN.notificationTypes;
 
 @Injectable()
 export class NotificationsService {

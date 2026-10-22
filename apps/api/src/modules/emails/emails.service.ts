@@ -1,3 +1,4 @@
+import { getSharedTranslations } from "@clinic/types";
 import { emailError } from "./email-errors";
 import {
   BadRequestException,
@@ -146,16 +147,14 @@ export class EmailsService {
   }
 
   async test(user: AuthUser, dto: TestEmailDto) {
-    const arabic = dto.locale === LOCALE.AR;
+    const copy = getSharedTranslations(dto.locale).testEmail;
     return this.enqueue(
       user,
       {
         locale: dto.locale,
         requestId: dto.requestId,
-        subject: arabic ? "بريد تجريبي" : "Test email",
-        body: arabic
-          ? "هذا بريد تجريبي من {{clinicName}}."
-          : "This is a test email from {{clinicName}}.",
+        subject: copy.subject,
+        body: copy.body,
       },
       true,
     );

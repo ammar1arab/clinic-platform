@@ -1,29 +1,9 @@
+import { SHARED_EN, SHARED_AR } from '@clinic/types';
 import { getLocale } from "@/infrastructure/i18n.context";
 import { renderEmail } from "@/modules/emails/email-template";
 import type { EmailBrandDetails } from "@clinic/types";
 
-const copy = {
-  en: {
-    otp: "Your verification code",
-    expiry: "Valid for 15 minutes. Do not share this code.",
-    welcome: "Welcome",
-    email: "Email",
-    password: "Temporary password",
-    setup:
-      "Your clinic created your account. Sign in with your email as both email and temporary password, then verify and set a new password.",
-    signIn: "Sign in",
-  },
-  ar: {
-    otp: "رمز التحقق",
-    expiry: "صالح لمدة 15 دقيقة. لا تشاركه مع أي شخص.",
-    welcome: "مرحباً",
-    email: "البريد الإلكتروني",
-    password: "كلمة المرور المؤقتة",
-    setup:
-      "أنشأت عيادتك حسابك. سجّل الدخول باستخدام بريدك كالبريد وكلمة المرور المؤقتة، ثم تحقق واختر كلمة مرور جديدة.",
-    signIn: "تسجيل الدخول",
-  },
-} as const;
+const copy = { en: SHARED_EN.authEmail, ar: SHARED_AR.authEmail };
 
 function letter(
   brand: EmailBrandDetails,

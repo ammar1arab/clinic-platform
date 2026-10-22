@@ -1,3 +1,4 @@
+import { SHARED_EN } from "@clinic/types";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import {
   BadRequestException,
@@ -226,10 +227,7 @@ export class ScheduleRequestsService {
             clinicId,
             userId,
             type,
-            title:
-              type === "schedule_request_pending"
-                ? "Schedule request awaiting review"
-                : "Schedule request reviewed",
+            title: (SHARED_EN.notificationTypes as Record<string, string>)[type] ?? type,
             payload: { requestId, doctorId },
           });
         } catch (error) {

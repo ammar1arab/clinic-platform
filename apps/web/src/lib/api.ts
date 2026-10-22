@@ -156,7 +156,10 @@ function shouldSkipErrorToast(error: AxiosError<ApiErrorBody>): boolean {
   return false;
 }
 
+const [ownerResetConfirmPrefix, ownerResetConfirmSuffix] = ENDPOINTS.AUTH.OWNER_RESET_PASSWORD_CONFIRM('\0').split('\0');
+
 function isAuthFlowRequest(url?: string): boolean {
+  if (url?.startsWith(ownerResetConfirmPrefix) && url.endsWith(ownerResetConfirmSuffix)) return true;
   return !!url && [
     ENDPOINTS.AUTH.LOGIN,
     ENDPOINTS.AUTH.GUEST,

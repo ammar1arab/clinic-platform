@@ -86,6 +86,7 @@ interface Props {
   isFetching: boolean;
   view: ScheduleView;
   focused?: boolean;
+  canManageAppointments?: boolean;
   onViewChange: (view: ScheduleView) => void;
   onVisibleRangeChange?: (start: Date, end: Date) => void;
   onEventClick: (appointment: Appointment) => void;
@@ -99,6 +100,7 @@ export function AppointmentCalendar({
   isFetching,
   view,
   focused = false,
+  canManageAppointments = true,
   onViewChange,
   onVisibleRangeChange,
   onEventClick,
@@ -183,6 +185,7 @@ export function AppointmentCalendar({
         textColor: "var(--color-primary-foreground)",
         display: "block" as const,
         editable:
+          canManageAppointments &&
           appointment.status !== "cancelled" &&
           appointment.status !== "completed",
         classNames:
@@ -197,7 +200,7 @@ export function AppointmentCalendar({
       ),
     );
     return { events: calendarEvents, appointmentsByDay: byDay };
-  }, [appointments, lang]);
+  }, [appointments, lang, canManageAppointments]);
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const appt = readCalendarAppointment(arg.event.extendedProps);
@@ -230,18 +233,18 @@ export function AppointmentCalendar({
       if (slot.getHours() === 0 && slot.getMinutes() === 0) {
         slot.setHours(9, 0, 0, 0);
       }
-      onSelectSlot(slot);
+      if (canManageAppointments) onSelectSlot(slot);
     },
-    [onSelectSlot],
+    [onSelectSlot, canManageAppointments],
   );
 
   const handleDateSelect = useCallback(
     (arg: DateSelectArg) => {
       setDayPopover(null);
       setAppointmentPopover(null);
-      onSelectSlot(arg.start);
+      if (canManageAppointments) onSelectSlot(arg.start);
     },
-    [onSelectSlot],
+    [onSelectSlot, canManageAppointments],
   );
 
   const handleDatesSet = useCallback(
@@ -545,14 +548,14 @@ export function AppointmentCalendar({
           slotMinTime={hours ? `${hours.start}:00` : '07:00:00'}
           slotMaxTime={hours ? `${hours.end}:00` : '21:00:00'}
           allDaySlot={false}
-          selectable
+          selectable={canManageAppointments}
           selectMirror
           longPressDelay={500}
           selectLongPressDelay={500}
           eventLongPressDelay={300}
           selectMinDistance={12}
           selectAllow={() => view !== "month"}
-          editable
+          editable={canManageAppointments}
           eventDurationEditable
           eventResizableFromStart
           nowIndicator

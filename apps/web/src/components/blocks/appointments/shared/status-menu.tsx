@@ -100,12 +100,17 @@ export function StatusPickerTrigger({
         className,
       )}
     >
-      <StatusBadgeBlock status={status} compact={compact} tip={false} className="shrink-0" />
-      {pending ? (
-        <IconSpinner className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
-      ) : disabled ? null : (
-        <IconChevronDown className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]:rotate-180" />
-      )}
+      <StatusBadgeBlock
+        status={status}
+        compact={compact}
+        tip={false}
+        className="shrink-0"
+        trailing={pending ? (
+          <IconSpinner aria-hidden className="size-3.5 shrink-0 animate-spin" />
+        ) : disabled ? null : (
+          <IconChevronDown aria-hidden className="size-3.5 shrink-0 transition-transform duration-150 group-data-[state=open]:rotate-180" />
+        )}
+      />
     </DropdownMenuTrigger>
   );
 }

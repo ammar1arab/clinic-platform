@@ -1,5 +1,6 @@
+import { SHARED_EN } from "@clinic/types";
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { resolveNotificationPrefs } from "@clinic/types";
+import { NOTIFICATION_TYPE, resolveNotificationPrefs } from "@clinic/types";
 import { VisitsRepository } from "./visits.repository";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { createLogger } from "@/infrastructure/logger";
@@ -37,11 +38,11 @@ export class DocumentationRemindersWorker
           OR: [
             {
               documentationDeadlineAt: { lte: now },
-              events: { none: { kind: "documentation_locked_notice" } },
+              events: { none: { kind: NOTIFICATION_TYPE.DOCUMENTATION_LOCKED } },
             },
             {
               documentationDeadlineAt: { gt: now, lte: soon },
-              events: { none: { kind: "documentation_due_notice" } },
+              events: { none: { kind: NOTIFICATION_TYPE.DOCUMENTATION_DUE } },
             },
           ],
         },
@@ -59,8 +60,8 @@ export class DocumentationRemindersWorker
             return [];
           const kind =
             visit.documentationDeadlineAt <= new Date()
-              ? "documentation_locked_notice"
-              : "documentation_due_notice";
+              ? NOTIFICATION_TYPE.DOCUMENTATION_LOCKED
+              : NOTIFICATION_TYPE.DOCUMENTATION_DUE;
           if (await tx.visitEvent.count({ where: { visitId: row.id, kind } }))
             return [];
           const owners = await tx.clinicUser.findMany({
@@ -93,19 +94,13 @@ export class DocumentationRemindersWorker
               clinicId: row.clinicId,
               userId,
               type: kind,
-              title:
-                kind === "documentation_locked_notice"
-                  ? "Visit documentation is locked"
-                  : "Visit documentation is due within an hour",
+              title: SHARED_EN.notificationTypes[kind],
               payload: {
                 visitId: row.id,
                 appointmentId: row.appointmentId,
                 documentationDeadlineAt:
                   visit.documentationDeadlineAt.toISOString(),
-                titleAr:
-                  kind === "documentation_locked_notice"
-                    ? "توثيق الزيارة مقفل"
-                    : "تنتهي مهلة توثيق الزيارة خلال ساعة",
+
               },
             })),
           });

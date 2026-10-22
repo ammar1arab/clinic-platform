@@ -13,3 +13,5 @@ export * from './permissions';
 export * from './form';
 export * from './visit';
 export * from './notification-prefs';
+
+export * from './i18n/index';

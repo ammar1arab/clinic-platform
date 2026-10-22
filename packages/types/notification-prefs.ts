@@ -47,6 +47,11 @@ export const NOTIFICATION_TYPE = {
   APPOINTMENT_RESCHEDULED: "appointment_rescheduled",
   APPOINTMENT_CANCELLED: "appointment_cancelled",
   QUEUE_PATIENT_WAITING: "queue_patient_waiting",
+  REFERRAL_CREATED: "referral_created",
+  REFERRAL_ACCEPTED: "referral_accepted",
+  REFERRAL_REJECTED: "referral_rejected",
+  DOCUMENTATION_DUE: "documentation_due_notice",
+  DOCUMENTATION_LOCKED: "documentation_locked_notice",
 } as const;
 export type NotificationDTO = {
   id: string;

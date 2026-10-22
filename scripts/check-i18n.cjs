@@ -59,4 +59,31 @@ for(const folder of ['services','providers','lib','hooks','constants','component
   visit(ast);
  }
 }
+const notificationText=load(root+'/src/lib/notification-copy.ts');
+for(const language of ['en','ar']) {
+ const t=getTranslations(language);
+ const result=notificationText.notificationCopy({type:'documentation_locked_notice',title:'Legacy title',body:null,payload:{titleAr:'Legacy Arabic title'}},t,language);
+ assert.equal(result.title,t.notifications.types.documentation_locked_notice,'Notification locale must use the dictionary');
+}
+const shared=req('@clinic/types');
+assert.deepEqual(keys(shared.SHARED_EN),keys(shared.SHARED_AR),'Shared locale keys');
+for(const key of keys(shared.SHARED_EN)) {
+ const en=key.split('.').reduce((value,part)=>value[part],shared.SHARED_EN);
+ const ar=key.split('.').reduce((value,part)=>value[part],shared.SHARED_AR);
+ assert.deepEqual((en.match(/\{\w+\}/g)||[]).sort(),(ar.match(/\{\w+\}/g)||[]).sort(),key);
+}
+for(const folder of [path.resolve(root,'../api/src'), path.join(root,'src')]) {
+ for(const file of walk(folder)) {
+  if(!/\.tsx?$/.test(file)||/\.spec\.ts$/.test(file)||file.includes('/i18n/')||file.endsWith('/seed-templates.ts'))continue;
+  const ast=ts.createSourceFile(file,fs.readFileSync(file,'utf8'),ts.ScriptTarget.Latest,true,file.endsWith('.tsx')?ts.ScriptKind.TSX:ts.ScriptKind.TS);
+  function audit(node) {
+   if((ts.isStringLiteral(node)||ts.isNoSubstitutionTemplateLiteral(node))&&/[\u0600-\u06FF]/.test(node.text)) {
+    const entityField=ts.isPropertyAssignment(node.parent)&&/^(nameAr|labelAr|bioAr|firstNameAr|lastNameAr)$/.test(node.parent.name.getText(ast));
+    assert(entityField,'Inline Arabic copy outside locale dictionaries: '+file+':'+(ast.getLineAndCharacterOfPosition(node.pos).line+1));
+   }
+   ts.forEachChild(node,audit);
+  }
+  audit(ast);
+ }
+}
 console.log('PASS: '+keys(translations.en).length+' dictionary keys and placeholders match; EN/AR validation, option, clock and balance checks pass; '+components+' UI/primitive files have no literal JSX labels; audited folders have no optional t access.');

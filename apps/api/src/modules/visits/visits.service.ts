@@ -1,3 +1,4 @@
+import { getSharedTranslations } from "@clinic/types";
 import { getLocale } from "@/infrastructure/i18n.context";
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
@@ -333,6 +334,10 @@ export class VisitsService {
           (row.sessionType === "in_person" && source === "online_manual")
         )
           visitError("visitPresenceSourceInvalid");
+        if (row.presenceConfirmedAt && (
+          (row.status === "waiting" && !waiting) ||
+          (row.status === (waiting ? "waiting" : "checked_in") && row.presenceSource === source)
+        )) return this.read(tx, actor, id);
         const now = new Date();
         await tx.appointment.update({
           where: { id },
@@ -377,6 +382,20 @@ export class VisitsService {
           !["checked_in", "waiting"].includes(row.status)
         )
           visitError("visitPresenceRequired", 409);
+        const live = await tx.visit.findFirst({
+          where: {
+            clinicId: actor.clinicId,
+            finishedAt: null,
+            appointmentId: { not: appointmentId },
+            appointment: { OR: [
+              { doctorId: row.doctorId },
+              { patientId: row.patientId },
+              ...(row.roomId ? [{ roomId: row.roomId }] : []),
+            ] },
+          },
+          select: { id: true },
+        });
+        if (live) visitError("visitResourceBusy", 409);
         const now = new Date();
         const end = new Date(
           row.scheduledAt.getTime() + row.durationMins * 60_000,
@@ -749,29 +768,15 @@ export class VisitsService {
   ): VisitDocumentSnapshot {
     const context = row.visit!.context as Record<string, string>;
     const arabic = getLocale() === "ar";
-    const labels: Record<string, string> = {
-      reason: "سبب الزيارة",
-      summary: "الخلاصة",
-      assessment: "التقييم",
-      plan: "الخطة",
-      followUp: "المتابعة",
-      subtotal: "المجموع الفرعي",
-      discount: "الخصم",
-      tax: "الضريبة",
-      packageCoverage: "تغطية الباقة",
-      prepayment: "الدفعة المسبقة",
-      total: "الإجمالي",
-      paid: "المدفوع",
-      balance: "المتبقي",
-      "Correction reason": "سبب التصحيح",
-    };
+    const copy = getSharedTranslations(getLocale()).documents;
+    const labels: Record<string, string> = copy.labels;
     return {
       title: arabic
         ? title.startsWith("Invoice ")
-          ? title.replace("Invoice ", "فاتورة ")
+          ? title.replace("Invoice ", copy.invoicePrefix)
           : title.includes("amended")
-            ? "تقرير طبي - نسخة مصححة"
-            : "تقرير طبي"
+            ? copy.amendedReport
+            : copy.medicalReport
         : title,
       clinicName: arabic
         ? context.clinicNameAr || context.clinicName
@@ -843,6 +848,11 @@ export class VisitsService {
             signedById: actor.clinicUserId,
           },
         });
+        if (amendment)
+          await tx.visitDocument.updateMany({
+            where: { visitId, kind: "medical_report", revision: { lt: nextRevision } },
+            data: { releasedAt: null },
+          });
         await tx.visitMedicalReport.update({
           where: { id: visit.report.id },
           data: {
@@ -1357,6 +1367,10 @@ export class VisitsService {
           where: { id: visit.invoice.id },
           data: { voidedAt: new Date(), revision: { increment: 1 } },
         });
+        await tx.visitDocument.updateMany({
+          where: { visitId, kind: "invoice" },
+          data: { releasedAt: null },
+        });
         await tx.visit.update({
           where: { id: visitId },
           data: { invoiceStatus: "void", revision: { increment: 1 } },
@@ -1392,7 +1406,17 @@ export class VisitsService {
     const result = await this.repo.withVisit(
       actor,
       document.visitId,
-      async (tx, row) => {
+      async (tx, row, visit) => {
+        const target = visit.documents.find((item) => item.id === id);
+        if (
+          released &&
+          (!target ||
+            visit.documents.some(
+              (item) => item.kind === target.kind && item.revision > target.revision,
+            ) ||
+            (target.kind === "invoice" && visit.invoice?.voidedAt))
+        )
+          visitError("visitInvalidTransition", 409);
         await tx.visitDocument.update({
           where: { id },
           data: { releasedAt: released ? new Date() : null },

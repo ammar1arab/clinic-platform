@@ -223,7 +223,6 @@ export class AuthService {
       account.id,
       account.passwordChangedAt,
       await this.passwords.hash(password),
-      true,
     );
     if (!changed) securityError("invalidToken", 401);
     return { success: true as const };
