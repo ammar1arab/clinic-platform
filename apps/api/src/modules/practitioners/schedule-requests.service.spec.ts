@@ -76,6 +76,11 @@ describe("Schedule requests", () => {
     );
   });
 
+  it("broadcasts request changes independently of inbox preferences", async () => {
+    notifications.create.mockResolvedValue(null);
+    await service.review(owner, "request", { decision: "approved" });
+    expect(gateway.emitScheduleRequestChanged).toHaveBeenCalledWith("clinic", true);
+  });
   it("scopes practitioner lists to themselves even when another doctor is requested", () => {
     service.list(practitioner, {
       doctorId: "other",

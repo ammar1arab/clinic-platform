@@ -339,6 +339,21 @@ describe("AppointmentsService", () => {
     });
   });
 
+  describe("appointment lifecycle boundaries", () => {
+    it("rejects cancellation reasons containing only whitespace", async () => {
+      repository.findById.mockResolvedValue({ id: "app1", clinicId: "c1", status: "confirmed" });
+      await expect(service.update("c1", "u1", "app1", { status: AppointmentStatusDto.cancelled, cancelReason: "   " })).rejects.toThrow("Cancellation reason is required");
+    });
+    it("does not reschedule a cancelled appointment", async () => {
+      repository.findById.mockResolvedValue({ id: "app1", clinicId: "c1", status: "cancelled" });
+      await expect(service.update("c1", "u1", "app1", { scheduledAt: new Date(Date.now() + 86400000).toISOString() })).rejects.toThrow("Cannot update a cancelled appointment");
+    });
+    it("does not mark a future appointment as no-show", async () => {
+      repository.findById.mockResolvedValue({ id: "app1", clinicId: "c1", status: "confirmed", scheduledAt: new Date(Date.now() + 86400000) });
+      await expect(service.update("c1", "u1", "app1", { status: AppointmentStatusDto.no_show })).rejects.toThrow("An appointment cannot be marked as a no-show before its scheduled time");
+    });
+  });
+
   describe("update status transitions", () => {
     it("should require cancelReason when cancelling", async () => {
       repository.findById.mockResolvedValue({
