@@ -51,6 +51,7 @@ interface Props {
   doctors: ClinicStaffMember[] | undefined;
   isLoading: boolean;
   focused?: boolean;
+  canManageAppointments?: boolean;
   toolbarSlot?: HTMLElement | null;
   onSelectSlot: (date: Date, doctorId?: string) => void;
   onEventClick: (appointment: Appointment) => void;
@@ -64,8 +65,10 @@ function TimelineEventBlock({
   leftPct,
   widthPct,
   onOpen,
+  canManageAppointments,
 }: PositionedAppt & {
   onOpen: (appt: Appointment, anchor: PopoverAnchorRect) => void;
+  canManageAppointments: boolean;
 }) {
   const { t, lang } = useLanguage();
   const accent = STATUS_COLORS[appt.status];
@@ -141,7 +144,7 @@ function TimelineEventBlock({
             />
           ) : density === 'sm' || density === 'md' ? (
             <StatusBadgeBlock status={appt.status} compact tip={false} />
-          ) : (
+          ) : canManageAppointments ? (
             <div
               className="shrink-0"
               onClick={(e) => e.stopPropagation()}
@@ -149,6 +152,8 @@ function TimelineEventBlock({
             >
               <AppointmentStatusSelect appointment={appt} compact />
             </div>
+          ) : (
+            <StatusBadgeBlock status={appt.status} compact tip={false} />
           )}
         </div>
 
@@ -223,6 +228,7 @@ export function DoctorTimeline({
   doctors,
   isLoading,
   focused = false,
+  canManageAppointments = true,
   toolbarSlot,
   onSelectSlot,
   onEventClick,
@@ -345,7 +351,7 @@ export function DoctorTimeline({
 
   const handleGridClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      if ((e.target as HTMLElement).closest('[data-appt]')) return;
+      if (!canManageAppointments || (e.target as HTMLElement).closest('[data-appt]')) return;
       setAppointmentPopover(null);
       const rect = e.currentTarget.getBoundingClientRect();
       const offsetY = e.clientY - rect.top + e.currentTarget.scrollTop;
@@ -358,10 +364,10 @@ export function DoctorTimeline({
       slot.setHours(Math.floor(totalMin / 60), totalMin % 60, 0, 0);
       onSelectSlot(slot, activeDoctorId === 'all' ? undefined : activeDoctorId);
     },
-    [selectedDate, activeDoctorId, onSelectSlot],
+    [canManageAppointments, selectedDate, activeDoctorId, onSelectSlot],
   );
 
-  const slot = focused ? null : toolbarSlot;
+  const slot = toolbarSlot;
   const doctorPicker = (
     <DoctorCombobox
       doctors={allDoctors}
@@ -392,7 +398,7 @@ export function DoctorTimeline({
           title={t.appointments.noDoctorsFound}
           description={t.appointments.noDoctorsDesc}
           className="flex-1 px-5 py-10"
-          action={(
+          action={canManageAppointments ? (
             <Button size="sm" onClick={() => {
               const slot = new Date(selectedDate);
               slot.setHours(9, 0, 0, 0);
@@ -400,7 +406,7 @@ export function DoctorTimeline({
             }}>
               <IconAdd className="me-1.5 size-3.5" /> {t.appointments.bookAppointment}
             </Button>
-          )}
+          ) : undefined}
         />
       </div>
     );
@@ -410,7 +416,7 @@ export function DoctorTimeline({
     <div
       data-schedule-host=""
       className={cn(
-        'relative page-fill overflow-hidden bg-card',
+        'relative page-fill flex-1 min-h-0 overflow-hidden bg-card',
         focused ? 'rounded-none border-0 px-1.5 pb-1.5 pt-0 sm:px-2 sm:pb-2' : 'card-aura rounded-xl border p-2 sm:p-2.5',
       )}
     >
@@ -446,7 +452,7 @@ export function DoctorTimeline({
       <div
         ref={attachTimelineScroll}
         onClick={handleGridClick}
-        className="relative page-fill cursor-pointer overflow-auto overscroll-contain rounded-lg border border-border/60"
+        className="relative page-fill flex-1 min-h-0 cursor-pointer overflow-auto overscroll-contain rounded-lg border border-border/60"
       >
         <div className="relative flex min-w-[20rem]" style={{ height: `${TIMELINE_TOTAL_HEIGHT}px` }}>
 
@@ -503,6 +509,7 @@ export function DoctorTimeline({
                 key={item.appt.id}
                 {...item}
                 onOpen={openPreview}
+                canManageAppointments={canManageAppointments}
               />
             ))}
           </div>

@@ -6,7 +6,7 @@ import { IconClose, IconFilters } from '@/constants/icons';
 import { keepNestedPortals } from '@/lib/overlay';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/providers/language-provider';
-import { DIRECTORY_ACTION_CLASS } from './directory-toolbar';
+import { DIRECTORY_ACTION_CLASS, DIRECTORY_FILTER_BUTTON_CLASS } from './directory-toolbar';
 
 export function FilterTrigger({ count }: { count: number }) {
   const { t } = useLanguage();
@@ -17,7 +17,7 @@ export function FilterTrigger({ count }: { count: number }) {
         variant="outline"
         size="sm"
         aria-label={t.common.filters}
-        className={cn(DIRECTORY_ACTION_CLASS, 'border-border/70 bg-background/50', count > 0 && 'border-primary/35 bg-primary/5')}
+        className={cn(DIRECTORY_ACTION_CLASS, count > 0 && DIRECTORY_FILTER_BUTTON_CLASS, 'border-border/70 bg-background/50', count > 0 && 'border-primary/35 bg-primary/5')}
       >
         <IconFilters className={cn('size-3.5 shrink-0', count > 0 ? 'text-primary' : 'text-muted-foreground')} />
         <span className="hidden font-semibold sm:inline">{t.common.filters}</span>

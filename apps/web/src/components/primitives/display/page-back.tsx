@@ -10,6 +10,7 @@ import { IconWell, type IconWellAccent } from './icon-well';
 
 interface Props {
   backHref: string;
+  onBack?: () => void;
   search?: ReactNode;
   actions?: ReactNode;
   className?: string;
@@ -19,6 +20,7 @@ interface Props {
 
 export function PageBack({
   backHref,
+  onBack,
   search,
   actions,
   className,
@@ -33,12 +35,16 @@ export function PageBack({
         variant="ghost"
         size="sm"
         className="-ms-2 h-8 shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground"
-        asChild
+        asChild={!onBack}
+        onClick={onBack}
       >
-        <Link href={backHref} prefetch>
+        {onBack ? <>
           <IconArrowLeft className="size-3.5 me-1 rtl:rotate-180" />
           {t.ui.back}
-        </Link>
+        </> : <Link href={backHref} prefetch>
+          <IconArrowLeft className="size-3.5 me-1 rtl:rotate-180" />
+          {t.ui.back}
+        </Link>}
       </Button>
       {icon ? <IconWell icon={icon} accent={accent} size="md" /> : null}
       {search ? <div className="min-w-0 flex-1">{search}</div> : null}

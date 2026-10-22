@@ -65,8 +65,8 @@ export function PractitionerHome() {
     item.status !== APPOINTMENT_STATUS.NO_SHOW,
   );
 
-  if (appointments.isError && !appointments.data) {
-    return <ErrorState onRetry={() => void appointments.refetch()} className="page-fill" />;
+  if ((appointments.isError && !appointments.data) || (profile.isError && !profile.data)) {
+    return <ErrorState onRetry={() => { void appointments.refetch(); void profile.refetch(); }} className="page-fill" />;
   }
 
   if ((appointments.isLoading && !appointments.data) || (profile.isLoading && !profile.data)) {
@@ -92,7 +92,7 @@ export function PractitionerHome() {
   ].filter((fact) => fact.value);
 
   return (
-    <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-2.5 pb-6">
+    <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-4 pb-6 sm:gap-5">
       <Card className="card-aura relative isolate shrink-0 gap-0 overflow-hidden py-0 ring-0">
         <CardContent className="relative z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 pb-14 pt-4 sm:gap-4 sm:p-4 sm:pb-14 sm:pt-5 lg:pb-5 lg:pe-[min(30%,24rem)]">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -197,13 +197,14 @@ export function PractitionerHome() {
 
 function PractitionerHomeSkeleton() {
   return (
-    <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-2.5 pb-6" aria-hidden>
+    <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-4 pb-6 sm:gap-5" aria-hidden>
       <Card className="gap-0 overflow-hidden py-0 ring-0">
         <CardContent className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 pb-14 pt-4 sm:gap-4 sm:p-4 sm:pb-14 sm:pt-5 lg:pb-5 lg:pe-[min(30%,24rem)]">
           <Skeleton className="size-12 shrink-0 rounded-full sm:size-20" />
           <div className="min-w-0 space-y-1">
             <Skeleton className="h-3 w-28" />
             <Skeleton className="h-5 w-full max-w-sm sm:h-6" />
+            <Skeleton className="mt-1 h-4 w-20" />
           </div>
           <div className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 lg:col-span-1 lg:col-start-2 lg:grid-cols-4">
               {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="h-10 w-full" />)}
@@ -213,11 +214,11 @@ function PractitionerHomeSkeleton() {
 
       <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
         {[0, 1, 2, 3].map((item) => (
-          <div key={item} className="flex min-h-[6.5rem] items-center gap-4 rounded-xl border border-border bg-card px-4 py-3.5">
-            <Skeleton className="size-12 shrink-0 rounded-xl sm:size-14" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <Skeleton className="h-7 w-10" />
-              <Skeleton className="h-3 w-full max-w-24" />
+          <div key={item} className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5">
+            <Skeleton className="size-9 shrink-0 rounded-lg" />
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <Skeleton className="h-5 w-10" />
+              <Skeleton className="h-[1.625rem] w-full max-w-24" />
             </div>
           </div>
         ))}

@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { BaseReportModal, ReportCard } from '@/components/blocks/reports';
-import { IconCard } from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import type { ReportModalFilters } from '@/components/blocks/reports';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
@@ -51,7 +50,8 @@ type ReportKey =
   | 'clinicAppointments'
   | 'referrals'
   | 'finance'
-  | 'signedVisits';
+  | 'signedVisits'
+  | 'issuedInvoices';
 
 type ReportDef = {
   key: ReportKey;
@@ -132,6 +132,15 @@ export default function ReportsPage() {
     accent: 'teal',
     title: t.visits.signedReports,
     description: t.visits.signedReportsDesc,
+    filters: { dates: true },
+  };
+
+  const issuedInvoicesDef: ReportDef = {
+    key: 'issuedInvoices',
+    icon: IconPayment,
+    accent: 'success',
+    title: t.visits.issuedInvoices,
+    description: t.visits.issuedInvoicesDesc,
     filters: { dates: true },
   };
 
@@ -272,7 +281,9 @@ export default function ReportsPage() {
   const active =
     activeKey === 'signedVisits'
       ? signedVisitsDef
-      : catalog.flatMap((group) => group.items).find((item) => item.key === activeKey);
+      : activeKey === 'issuedInvoices'
+        ? issuedInvoicesDef
+        : catalog.flatMap((group) => group.items).find((item) => item.key === activeKey);
 
   const isDirectory =
     activeKey === 'patientsDirectory' || activeKey === 'practitionersDirectory';
@@ -353,6 +364,14 @@ export default function ReportsPage() {
           reportStatus: 'signed',
         });
         break;
+      case 'issuedInvoices':
+        downloadVisits.mutate({
+          format,
+          from: fromDate || undefined,
+          to: toDate || undefined,
+          invoiceStatus: 'issued',
+        });
+        break;
       case 'finance':
         downloadFinance.mutate({
           format,
@@ -371,7 +390,7 @@ export default function ReportsPage() {
         <h2 className="text-sm font-semibold text-muted-foreground">{t.visits.title}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <ReportCard icon={IconFileText} accent="teal" title={t.visits.signedReports} description={t.visits.signedReportsDesc} onClick={() => setActiveKey('signedVisits')} />
-          {canFinance ? <IconCard href={`${ROUTES.VISITS}?invoiceStatus=issued`} icon={IconPayment} accent="success" title={t.visits.issuedInvoices} description={t.visits.issuedInvoicesDesc} /> : null}
+          {canFinance ? <ReportCard icon={IconPayment} accent="success" title={t.visits.issuedInvoices} description={t.visits.issuedInvoicesDesc} onClick={() => setActiveKey('issuedInvoices')} /> : null}
         </div>
       </section>
       {catalog.map((group) => {

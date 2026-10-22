@@ -101,7 +101,7 @@ export function SearchablePicker({
           size={size === 'sm' ? 'sm' : 'default'}
           className={cn(
             'w-full min-w-0 justify-between gap-1.5 overflow-hidden font-normal',
-            size === 'sm' ? 'h-8 text-xs' : 'h-8 text-sm',
+            size === 'sm' ? 'h-8 text-xs sm:text-[0.8rem]' : 'h-8 text-sm',
             className,
           )}
         >
@@ -112,7 +112,7 @@ export function SearchablePicker({
             )}
           >
             {leading}
-            <span className="min-w-0 flex-1 truncate text-start">
+            <span className={cn('min-w-0 flex-1 truncate text-start', size === 'sm' && 'text-xs sm:text-[0.8rem]')}>
               {selected?.label ?? placeholder ?? t.ui.select}
             </span>
           </span>
@@ -150,7 +150,7 @@ export function SearchablePicker({
                 type="button"
                 onClick={() => pick(option.value)}
                 className={cn(
-                  'flex w-full touch-pan-y items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-start text-sm hover:bg-muted',
+                  'flex w-full touch-pan-y items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-start text-xs sm:text-sm hover:bg-muted',
                   option.value === value && 'bg-muted',
                 )}
               >

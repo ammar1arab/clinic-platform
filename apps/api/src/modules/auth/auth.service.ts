@@ -324,7 +324,7 @@ export class AuthService {
     };
   }
 
-  private ready(user: Account): AuthSessionReady {
+  private async ready(user: Account): Promise<AuthSessionReady> {
     if (!user.emailVerifiedAt || user.mustChangePassword)
       securityError("invalidToken", 401);
     const member = this.membership(user);

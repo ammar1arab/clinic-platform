@@ -41,11 +41,11 @@ function useNotificationRealtime(clinicId: string, userId: string) {
   useSyncExternalStore(subscribe, () => 0, () => 0);
 }
 
-export function useNotifications() {
+export function useNotifications({ realtime = true }: { realtime?: boolean } = {}) {
   const { user } = useAuth();
   const clinicId = useClinicId();
   const queryClient = useQueryClient();
-  useNotificationRealtime(clinicId, user?.clinicUserId ?? '');
+  useNotificationRealtime(realtime ? clinicId : '', user?.clinicUserId ?? '');
 
   const query = useFetchData<NotificationDTO[]>({
     queryKey: QUERY_KEYS.notifications,

@@ -1,17 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TEMPLATE_STATUS, type TemplateDTO, type TemplateStatus } from '@clinic/types';
 import { Badge, Button, Card, CardContent, Popover, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import { DIRECTORY_ACTION_CLASS, DirectoryToolbar, EmptyState, ErrorState, FilterPanel, FilterSelect, FilterTrigger, FormField, NOTE_TEMPLATE_GRID, NoteTemplateCardSkeleton, Pagination, PinMark, RowActionsMenu, SoftTip, TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
-import { IconAdd, IconDelete, IconEdit, IconFileText, IconNoteCard, IconLibrary, IconPin, IconView } from '@/constants/icons';
+import { IconAdd, IconDelete, IconEdit, IconFileText, IconNoteCard, IconLibrary, IconPin, IconView, IconRotateCcw } from '@/constants/icons';
 import { ROUTES } from '@/constants/routes';
 import { TEMPLATE_STATUS_VARIANT } from '@/constants/status';
-import { useClinicalNoteTemplates, useClinicNoteDefault, useCreateClinicalNoteTemplate, useArchiveClinicalNoteTemplate, useDeleteClinicalNoteTemplate, usePublishClinicalNoteTemplate, useSetClinicNoteDefault, useStarterNoteTemplates } from '@/hooks/api/use-clinical-note-templates';
+import { useClinicalNoteTemplates, useClinicNoteDefault, useCreateClinicalNoteTemplate, useArchiveClinicalNoteTemplate, useDeleteClinicalNoteTemplate, usePublishClinicalNoteTemplate, useSetClinicNoteDefault, useStarterNoteTemplates, useDraftClinicalNoteTemplate, useRestoreClinicalNoteTemplate } from '@/hooks/api/use-clinical-note-templates';
 import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { cn } from '@/lib/utils';
 import { TEMPLATE_AUDIENCE, matchesAudience, type TemplateAudience } from './note-template-form';
 
@@ -21,6 +22,7 @@ type Sort = (typeof SORT)[keyof typeof SORT];
 
 export function NoteTemplateList() {
   const { lang, t } = useLanguage();
+  const clinicId = useClinicId();
   const router = useRouter();
   const starters = useStarterNoteTemplates();
   const create = useCreateClinicalNoteTemplate();
@@ -30,13 +32,17 @@ export function NoteTemplateList() {
   const remove = useDeleteClinicalNoteTemplate();
   const publish = usePublishClinicalNoteTemplate();
   const archive = useArchiveClinicalNoteTemplate();
+  const draft = useDraftClinicalNoteTemplate();
+  const restore = useRestoreClinicalNoteTemplate();
+  const pending = publish.isPending || archive.isPending || draft.isPending || restore.isPending || setDefault.isPending || remove.isPending;
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<TemplateStatus | ''>('');
-  const [audience, setAudience] = useState<TemplateAudience | ''>('');
-  const [sort, setSort] = useState<Sort>(SORT.RECENT);
-  const [page, setPage] = useState(1);
+  const scope = clinicId || 'none';
+  const [search, setSearch] = useSessionStorageState(`${scope}:note-templates-search`, '');
+  const [status, setStatus] = useSessionStorageState<TemplateStatus | ''>(`${scope}:note-templates-status`, '');
+  const [audience, setAudience] = useSessionStorageState<TemplateAudience | ''>(`${scope}:note-templates-audience`, '');
+  const [sort, setSort] = useSessionStorageState<Sort>(`${scope}:note-templates-sort`, SORT.RECENT);
+  const [page, setPage] = useSessionStorageState(`${scope}:note-templates-page`, 1);
   const activeFilters = Number(status !== '') + Number(audience !== '') + Number(sort !== SORT.RECENT);
   const resetFilters = () => { setStatus(''); setAudience(''); setSort(SORT.RECENT); setPage(1); };
 
@@ -61,39 +67,42 @@ export function NoteTemplateList() {
     const canSetDefault = template.status === TEMPLATE_STATUS.PUBLISHED && template.availableToAll && template.id !== defaultId;
     return (
       <Card key={template.id} className={cn('card-aura gap-0 py-0', pinned && 'border-primary/40 bg-primary/5')}>
-        <CardContent className="flex items-center gap-2.5 p-2.5 sm:gap-3 sm:p-3.5">
+        <CardContent className="flex items-center gap-1 p-2.5 sm:gap-3 sm:p-3.5">
           <Link href={ROUTES.NOTE_TEMPLATE(template.id)} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-ring sm:gap-3">
             <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary sm:size-10"><IconNoteCard className="size-4 sm:size-5" /></span>
             <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">{name}</span>
           </Link>
-          <Select
+          {pinned || template.status === TEMPLATE_STATUS.ARCHIVED ? (
+            <Badge variant={TEMPLATE_STATUS_VARIANT[template.status]}>{t.visits.templateStatuses[template.status]}</Badge>
+          ) : <Select
             value={template.status}
-            disabled={template.status === TEMPLATE_STATUS.ARCHIVED || publish.isPending || archive.isPending}
+            disabled={pending || clinicDefault.isPending || clinicDefault.isError}
             onValueChange={(value) => {
               if (value === TEMPLATE_STATUS.PUBLISHED) publish.mutate({ id: template.id, revision: template.revision });
               else if (value === TEMPLATE_STATUS.ARCHIVED) archive.mutate({ id: template.id, revision: template.revision });
+              else if (value === TEMPLATE_STATUS.DRAFT) draft.mutate({ id: template.id, revision: template.revision });
             }}
           >
-            <SelectTrigger size="sm" aria-label={t.common.status} className="h-7 w-auto shrink-0 gap-1 border-transparent bg-transparent px-1">
+            <SelectTrigger size="sm" aria-label={t.common.status} className="h-7 w-auto shrink-0 gap-1 border-transparent bg-transparent px-0.5 sm:px-1">
               <Badge variant={TEMPLATE_STATUS_VARIANT[template.status]}><SelectValue /></Badge>
             </SelectTrigger>
             <SelectContent>
               {Object.values(TEMPLATE_STATUS).map((value) => (
-                <SelectItem key={value} value={value} disabled={value === TEMPLATE_STATUS.DRAFT || value === TEMPLATE_STATUS.SCHEDULED}>{t.visits.templateStatuses[value]}</SelectItem>
+                <SelectItem key={value} value={value} disabled={value === template.status || value === TEMPLATE_STATUS.SCHEDULED}>{t.visits.templateStatuses[value]}</SelectItem>
               ))}
             </SelectContent>
-          </Select>
-          {pinned ? <PinMark active label={t.visits.clinicDefault} /> : null}
+          </Select>}
+          {pinned ? <PinMark active label={t.visits.clinicDefault} className="size-5 sm:size-7" /> : null}
           <RowActionsMenu items={[
             { label: t.common.view, icon: IconView, onSelect: () => router.push(`${ROUTES.NOTE_TEMPLATE(template.id)}?mode=view`) },
-            { label: t.common.edit, icon: IconEdit, onSelect: () => router.push(ROUTES.NOTE_TEMPLATE(template.id)) },
+            ...(template.status === TEMPLATE_STATUS.ARCHIVED ? [{ label: t.visits.restoreTemplate, icon: IconRotateCcw, disabled: pending, onSelect: () => restore.mutate({ id: template.id, revision: template.revision }) }] : [{ label: t.common.edit, icon: IconEdit, onSelect: () => router.push(ROUTES.NOTE_TEMPLATE(template.id)) }]),
             ...(pinned ? [] : [{
               label: t.visits.setClinicDefault,
               icon: IconPin,
-              disabled: !canSetDefault || setDefault.isPending,
+              disabled: !canSetDefault || pending || clinicDefault.isPending || clinicDefault.isError,
               onSelect: () => setDefault.mutate(template.id),
             }]),
-            { label: t.common.delete, icon: IconDelete, variant: 'destructive' as const, onSelect: () => del.ask({ id: template.id, name }) },
+            { label: t.common.delete, icon: IconDelete, variant: 'destructive' as const, disabled: pinned || pending || clinicDefault.isPending || clinicDefault.isError, onSelect: () => del.ask({ id: template.id, name }) },
           ]} />
         </CardContent>
       </Card>

@@ -45,6 +45,7 @@ function DropdownMenuTrigger({
 
 function DropdownMenuContent({
   className,
+  variant = 'default',
   align = 'start',
   side = 'bottom',
   sideOffset = 6,
@@ -53,7 +54,9 @@ function DropdownMenuContent({
   onPointerDownOutside,
   onInteractOutside,
   ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Content> & {
+  variant?: 'default' | 'status';
+}) {
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Content
@@ -68,6 +71,7 @@ function DropdownMenuContent({
           'z-50 max-h-(--radix-dropdown-menu-content-available-height)',
           'w-[min(100vw-1.5rem,var(--radix-dropdown-menu-trigger-width))] min-w-36 max-w-[calc(100vw-1.5rem)]',
           'overflow-y-auto overscroll-contain p-1.5',
+          variant === 'status' && 'status-menu w-max min-w-0 p-1.5',
           className,
         )}
         {...props}
@@ -143,7 +147,7 @@ function DropdownMenuCheckboxItem({
       data-slot="dropdown-menu-checkbox-item"
       data-inset={inset}
       className={cn(
-        'relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-sm outline-hidden select-none',
+        'relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-xs sm:text-sm outline-hidden select-none',
         'transition-all duration-100',
         'focus:bg-accent/70 focus:text-accent-foreground focus:**:text-accent-foreground',
         'data-inset:ps-8 data-disabled:pointer-events-none data-disabled:opacity-40',
@@ -191,7 +195,7 @@ function DropdownMenuRadioItem({
       data-slot="dropdown-menu-radio-item"
       data-inset={inset}
       className={cn(
-        'relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-sm outline-hidden select-none',
+        'relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-xs sm:text-sm outline-hidden select-none',
         'transition-all duration-100',
         'focus:bg-accent/70 focus:text-accent-foreground focus:**:text-accent-foreground',
         'data-inset:ps-8 data-disabled:pointer-events-none data-disabled:opacity-40',
@@ -284,7 +288,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        'flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm outline-hidden select-none',
+        'flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs sm:text-sm outline-hidden select-none',
         'transition-all duration-100',
         'focus:bg-accent/70 focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground',
         'data-inset:ps-8 data-open:bg-accent data-open:text-accent-foreground',

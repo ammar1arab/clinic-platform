@@ -59,16 +59,16 @@ function SchedulePageInner() {
   const viewParam = searchParams.get("view");
 
   const [view, setCurrentView] = useSessionStorageState<ScheduleView>(
-    "schedule-view",
+    `${clinicId || "none"}:schedule-view`,
     parseScheduleView(clinic?.defaultCalendarView || "month"),
   );
   const [range, setRange] = useSessionStorageState(
-    "schedule-range",
+    `${clinicId || "none"}:schedule-range`,
     initialScheduleRange(),
   );
-  const [search, setSearch] = useSessionStorageState("schedule-search", "");
+  const [search, setSearch] = useSessionStorageState(`${clinicId || "none"}:schedule-search`, "");
   const [departmentId, setDepartmentId] = useSessionStorageState(
-    "schedule-department",
+    `${clinicId || "none"}:schedule-department`,
     "",
   );
 
@@ -79,9 +79,7 @@ function SchedulePageInner() {
     if (viewParam) setCurrentView(parseScheduleView(viewParam));
   }
 
-  const [statusFilters, setStatusFilters] = useState<Set<AppointmentStatus>>(
-    () => new Set(),
-  );
+  const [statusFilters, setStatusFilters] = useSessionStorageState<AppointmentStatus[]>(`${clinicId || "none"}:schedule-status-filters`, []);
   const activeView = isPractitioner && view === "doctors" ? "month" : view;
   useClinicRealtime(clinicId);
 
@@ -112,14 +110,11 @@ function SchedulePageInner() {
 
   const toggleStatus = useCallback((status: AppointmentStatus) => {
     setStatusFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(status)) next.delete(status);
-      else next.add(status);
-      return next;
+      return prev.includes(status) ? prev.filter((item) => item !== status) : [...prev, status];
     });
-  }, []);
+  }, [setStatusFilters]);
 
-  const clearStatuses = useCallback(() => setStatusFilters(new Set()), []);
+  const clearStatuses = useCallback(() => setStatusFilters([]), [setStatusFilters]);
 
   const handleVisibleRangeChange = useCallback((start: Date, end: Date) => {
     const next = rangeFromVisible(start, end);
@@ -132,8 +127,8 @@ function SchedulePageInner() {
 
   const filteredAppointments = useMemo(() => {
     let list = appointments;
-    if (statusFilters.size > 0) {
-      list = list?.filter((appt) => statusFilters.has(appt.status));
+    if (statusFilters.length > 0) {
+      list = list?.filter((appt) => statusFilters.includes(appt.status));
     }
     return list?.filter((appt) =>
       matchesAppointmentSearch(appt, search),
@@ -163,89 +158,92 @@ function SchedulePageInner() {
     [activeView, isPractitioner, router],
   );
 
-  return (
-    <div className="page-fill gap-2.5">
-      <div className="shrink-0">
-      <ScheduleToolbar
-        view={activeView}
-        search={search}
-        onSearchChange={setSearch}
-        departmentId={departmentId}
-        onDepartmentChange={setDepartmentId}
-        departments={departments}
-        statusFilters={statusFilters}
-        onToggleStatus={toggleStatus}
-        onClearStatuses={clearStatuses}
-        pickerSlotRef={setPickerSlot}
-        {...(!isPractitioner && {
-          onNewPatient: () =>
-            router.push(
-              `${ROUTES.PATIENT_NEW}?returnTo=${encodeURIComponent(returnTo)}`,
-            ),
-          onNewAppointment: () => goNewAppointment(),
-        })}
-      />
-      </div>
+  const toolbar = (
+    <ScheduleToolbar
+      view={activeView}
+      search={search}
+      onSearchChange={setSearch}
+      departmentId={departmentId}
+      onDepartmentChange={setDepartmentId}
+      departments={departments}
+      statusFilters={new Set(statusFilters)}
+      onToggleStatus={toggleStatus}
+      onClearStatuses={clearStatuses}
+      pickerSlotRef={setPickerSlot}
+      {...(!isPractitioner && {
+        onNewPatient: () =>
+          router.push(
+            `${ROUTES.PATIENT_NEW}?returnTo=${encodeURIComponent(returnTo)}`,
+          ),
+        onNewAppointment: () => goNewAppointment(),
+      })}
+    />
+  );
 
-      {isError && !appointments ? (
-        <ErrorState onRetry={() => void refetch()} className="page-fill" />
-      ) : activeView === "doctors" ? (
-        <ViewFocus label={t.appointments.doctorTimeline}>
-          {(focused) => (
-            <DoctorTimeline
-              appointments={filteredAppointments}
-              doctors={practitioners}
-              isLoading={isLoading}
-              focused={focused}
-              onSelectSlot={goNewAppointment}
-              onEventClick={handleEventClick}
-              toolbarSlot={pickerSlot}
-            />
-          )}
-        </ViewFocus>
-      ) : activeView === "queue" ? (
-        <ViewFocus label={t.queue.waitingQueue}>
-          {(focused) => (
-            <WaitingQueueBoard
-              appointments={filteredAppointments}
-              isLoading={isLoading}
-              focused={focused}
-              canManagePayments={!isPractitioner}
-              onEventClick={handleEventClick}
-              toolbarSlot={pickerSlot}
-            />
-          )}
-        </ViewFocus>
-      ) : (
-        <ViewFocus label={t.appointments.calendar}>
-          {(focused) => (
-            <AppointmentCalendar
-              appointments={filteredAppointments}
-              isLoading={isLoading}
-              isFetching={isFetching}
-              view={activeView}
-              focused={focused}
-              canManageAppointments={!isPractitioner}
-              onViewChange={setView}
-              onVisibleRangeChange={handleVisibleRangeChange}
-              onEventClick={handleEventClick}
-              onSelectSlot={goNewAppointment}
-              hours={
-                clinic
-                  ? { start: clinic.workingHoursStart, end: clinic.workingHoursEnd }
-                  : undefined
-              }
-            />
-          )}
-        </ViewFocus>
-      )}
+  const focusLabel =
+    activeView === "doctors"
+      ? t.appointments.doctorTimeline
+      : activeView === "queue"
+        ? t.queue.waitingQueue
+        : t.appointments.calendar;
+
+  return (
+    <div className="page-fill h-0 min-h-0 flex-1 overflow-hidden">
+      <ViewFocus label={focusLabel} storageKey={`${clinicId || "none"}:schedule-${activeView === 'doctors' || activeView === 'queue' ? activeView : 'calendar'}`}>
+        {(focused) => (
+          <>
+            {toolbar}
+            {isError && !appointments ? (
+              <ErrorState onRetry={() => void refetch()} className="page-fill" />
+            ) : activeView === "doctors" ? (
+              <DoctorTimeline
+                appointments={filteredAppointments}
+                doctors={practitioners}
+                isLoading={isLoading}
+                focused={focused}
+                canManageAppointments={!isPractitioner}
+                onSelectSlot={goNewAppointment}
+                onEventClick={handleEventClick}
+                toolbarSlot={pickerSlot}
+              />
+            ) : activeView === "queue" ? (
+              <WaitingQueueBoard
+                appointments={filteredAppointments}
+                isLoading={isLoading}
+                focused={focused}
+                canManagePayments={!isPractitioner}
+                onEventClick={handleEventClick}
+                toolbarSlot={pickerSlot}
+              />
+            ) : (
+              <AppointmentCalendar
+                appointments={filteredAppointments}
+                isLoading={isLoading}
+                isFetching={isFetching}
+                view={activeView}
+                focused={focused}
+                canManageAppointments={!isPractitioner}
+                onViewChange={setView}
+                onVisibleRangeChange={handleVisibleRangeChange}
+                onEventClick={handleEventClick}
+                onSelectSlot={goNewAppointment}
+                hours={
+                  clinic
+                    ? { start: clinic.workingHoursStart, end: clinic.workingHoursEnd }
+                    : undefined
+                }
+              />
+            )}
+          </>
+        )}
+      </ViewFocus>
     </div>
   );
 }
 
 function ScheduleFallback() {
   return (
-    <div className="space-y-2">
+    <div className="page-fill h-0 flex-1 min-h-0 gap-2 overflow-hidden">
       <div className="card-aura space-y-1.5 rounded-xl border bg-card/90 p-1.5 sm:p-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="h-8 w-full rounded-lg bg-muted/60 sm:w-64" />

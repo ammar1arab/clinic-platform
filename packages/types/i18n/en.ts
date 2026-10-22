@@ -34,6 +34,7 @@ export const en = {
     "clinicalTemplateInvalid": "The clinical template is invalid.",
     "clinicalTemplateAssignmentInvalid": "Template assignments must belong to this clinic.",
     "clinicalTemplateInUse": "This template is used by saved visit notes and cannot be deleted. Archive it instead.",
+    "clinicalTemplateDefaultProtected": "Choose another published template for all practitioners as the clinic default before changing this template's audience, making it a draft, scheduling, archiving, or deleting it.",
     "clinicalTemplateNotFound": "Clinical template not found.",
     "clinicalTemplateUnavailable": "This template is not available for this visit.",
     "clinicalTemplateChangeConfirmationRequired": "Confirm replacing the existing draft before changing its template.",

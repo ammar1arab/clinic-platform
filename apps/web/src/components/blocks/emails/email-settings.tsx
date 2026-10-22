@@ -110,6 +110,19 @@ function EmailSettingsForm({
                 })}
               />
             </FormField>
+            <FormField
+              label={t.emails.contactPhone}
+              htmlFor="phone"
+              error={errors.phone?.message}
+            >
+              <Controller
+                control={control}
+                name="phone"
+                render={({ field }) => (
+                  <PhoneInputField value={field.value ?? ""} onChange={field.onChange} />
+                )}
+              />
+            </FormField>
             {(
               [
                 "websiteUrl",
@@ -148,19 +161,6 @@ function EmailSettingsForm({
                 </FormField>
               );
             })}
-            <FormField
-              label={t.emails.contactPhone}
-              htmlFor="phone"
-              error={errors.phone?.message}
-            >
-              <Controller
-                control={control}
-                name="phone"
-                render={({ field }) => (
-                  <PhoneInputField value={field.value ?? ""} onChange={field.onChange} />
-                )}
-              />
-            </FormField>
             {(["footerEn", "footerAr"] as const).map((name) => (
               <FormField
                 key={name}

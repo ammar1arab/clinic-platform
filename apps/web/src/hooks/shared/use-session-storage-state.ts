@@ -1,13 +1,16 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('hooks/session-storage');
+const subscribeHydration = () => () => {};
+const clientHydrated = () => true;
+const serverHydrated = () => false;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-function readSession<T>(key: string, initial: T): T {
+export function readSessionState<T>(key: string, initial: T): T {
   if (typeof window === 'undefined') return initial;
   try {
     const raw = sessionStorage.getItem(key);
@@ -18,7 +21,7 @@ function readSession<T>(key: string, initial: T): T {
     if (initialObject && parsedObject) {
       return { ...initial, ...parsed };
     }
-    if (initialObject !== parsedObject || typeof parsed !== typeof initial) {
+    if (initialObject !== parsedObject || Array.isArray(parsed) !== Array.isArray(initial) || typeof parsed !== typeof initial) {
       return initial;
     }
     return parsed;
@@ -31,7 +34,7 @@ function readSession<T>(key: string, initial: T): T {
   }
 }
 
-function writeSession<T>(key: string, value: T) {
+export function writeSessionState<T>(key: string, value: T) {
   if (typeof window === 'undefined') return;
   try {
     sessionStorage.setItem(key, JSON.stringify(value));
@@ -44,18 +47,19 @@ function writeSession<T>(key: string, value: T) {
 }
 
 export function useSessionStorageState<T>(key: string, initial: T) {
-  const [state, setStateInternal] = useState<T>(() => readSession(key, initial));
-  const [prevKey, setPrevKey] = useState(key);
+  const hydrated = useSyncExternalStore(subscribeHydration, clientHydrated, serverHydrated);
+  const [state, setStateInternal] = useState<T>(initial);
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
 
-  if (key !== prevKey) {
-    setPrevKey(key);
-    setStateInternal(readSession(key, initial));
+  if (hydrated && key !== loadedKey) {
+    setLoadedKey(key);
+    setStateInternal(readSessionState(key, initial));
   }
 
   const setState = useCallback((value: T | ((prev: T) => T)) => {
-    setStateInternal((prev) => {
-      const next = typeof value === 'function' ? (value as (p: T) => T)(prev) : value;
-      writeSession(key, next);
+    setStateInternal((previous) => {
+      const next = typeof value === 'function' ? (value as (p: T) => T)(previous) : value;
+      writeSessionState(key, next);
       return next;
     });
   }, [key]);

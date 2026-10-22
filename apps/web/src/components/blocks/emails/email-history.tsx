@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useReducer } from "react";
 import {
   EMAIL_DELIVERY_GROUPS,
   type EmailDeliveryGroup,
@@ -44,6 +43,7 @@ import {
 } from "@/constants/icons";
 import { ROUTES } from "@/constants/routes";
 import { useClinicId } from "@/hooks/shared/use-clinic-id";
+import { useSessionStorageState } from "@/hooks/shared/use-session-storage-state";
 import { useEmailHistory } from "@/hooks/api/use-emails";
 import { useRouteNav } from "@/hooks/shared/use-route-nav";
 import { cn } from "@/lib/utils";
@@ -107,10 +107,9 @@ export function EmailHistory() {
   const clinicId = useClinicId();
   const { t, lang } = useLanguage();
   const { go, prefetch } = useRouteNav();
-  const [{ page, search, from, to, status, kind }, dispatch] = useReducer(
-    historyReducer,
-    initialHistory,
-  );
+  const [history, setHistory] = useSessionStorageState<HistoryState>(`${clinicId || 'none'}:email-history`, initialHistory);
+  const { page, search, from, to, status, kind } = history;
+  const dispatch = (action: HistoryAction) => setHistory((previous) => historyReducer(previous, action));
   const invalidDates = !!from && !!to && from > to;
   const activeCount =
     (from ? 1 : 0) +

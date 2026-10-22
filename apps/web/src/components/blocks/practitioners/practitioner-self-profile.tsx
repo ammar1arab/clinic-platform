@@ -61,6 +61,7 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
   return (
     <ProfileShell
       backHref={editing ? ROUTES.PROFILE : ROUTES.DASHBOARD}
+      onBack={editing ? () => { reset(); setEditing(false); } : undefined}
       actions={!editing ? (
         <Button type="button" variant="outline" onClick={() => setEditing(true)}>
           <IconEdit className="size-3.5" />{t.practitioner.edit}

@@ -15,6 +15,7 @@ import { useAuth, useLanguage } from '@/providers';
 import { ClinicLockup, ProfileLink } from '@/components/layout/clinic-identity';
 import {
   IconChevronRight,
+  IconBell,
   IconDashboard,
   IconPatients,
   IconPractitioner,
@@ -55,6 +56,7 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
       { label: t.layout.sidebar.visits, href: ROUTES.VISITS, icon: IconClinicalRecord, accent: 'teal' },
       { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
       { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'orange' },
+      { label: t.notifications.title, href: ROUTES.NOTIFICATIONS, icon: IconBell, accent: 'indigo' },
       { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings, accent: 'cyan' },
     ];
   }
@@ -70,6 +72,7 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
     { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner, accent: 'indigo' },
     { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'orange' },
     { label: t.emails.title, href: ROUTES.EMAILS, icon: IconMail, accent: 'pink' },
+    { label: t.notifications.title, href: ROUTES.NOTIFICATIONS, icon: IconBell, accent: 'indigo' },
     { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings, accent: 'cyan' },
   ];
   return items.filter((item) => canSeeNavHref(item.href, role));

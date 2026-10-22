@@ -29,6 +29,9 @@ import {
   useScheduleClinicalNoteTemplate,
   useSilentUpdateClinicalNoteTemplate,
   useUpdateClinicalNoteTemplate,
+  useClinicNoteDefault,
+  useDraftClinicalNoteTemplate,
+  useRestoreClinicalNoteTemplate,
 } from './use-clinical-note-templates';
 
 export type BuilderSelection = { sectionId: string; fieldId?: string };
@@ -54,8 +57,13 @@ export function useNoteTemplateBuilder(template?: TemplateDTO, readOnly = false)
   const scheduleMutation = useScheduleClinicalNoteTemplate();
   const archiveMutation = useArchiveClinicalNoteTemplate();
   const cloneMutation = useCloneClinicalNoteTemplate();
-  const locked = readOnly || record?.status === TEMPLATE_STATUS.ARCHIVED;
-  const pending = create.isPending || update.isPending || autosave.isPending;
+  const draftMutation = useDraftClinicalNoteTemplate();
+  const restoreMutation = useRestoreClinicalNoteTemplate();
+  const clinicDefault = useClinicNoteDefault();
+  const isDefault = !!record && clinicDefault.data?.templateId === record.id;
+  const transitioning = publishMutation.isPending || scheduleMutation.isPending || archiveMutation.isPending || draftMutation.isPending || restoreMutation.isPending;
+  const locked = readOnly || record?.status === TEMPLATE_STATUS.ARCHIVED || transitioning || clinicDefault.isPending || clinicDefault.isError;
+  const pending = create.isPending || update.isPending || autosave.isPending || transitioning;
 
   if (!settingsDirty && !schemaDirty && template && record && template.revision > record.revision) {
     setRecord(template);
@@ -183,6 +191,7 @@ export function useNoteTemplateBuilder(template?: TemplateDTO, readOnly = false)
     bind,
     draft,
     record,
+    isDefault,
     locked,
     pending,
     problems,
@@ -249,15 +258,23 @@ export function useNoteTemplateBuilder(template?: TemplateDTO, readOnly = false)
       void persist(true);
     },
     publish: () => {
-      withSavedRecord((id, revision) => publishMutation.mutate({ id, revision }));
+      void withSavedRecord((id, revision) => publishMutation.mutate({ id, revision }, { onSuccess: (saved) => applySaved(saved, draftRef.current) }));
+    },
+    makeDraft: () => {
+      if (isDefault) return;
+      void withSavedRecord((id, revision) => draftMutation.mutate({ id, revision }, { onSuccess: (saved) => applySaved(saved, draftRef.current) }));
+    },
+    restore: () => {
+      if (!record || readOnly || pending) return;
+      restoreMutation.mutate({ id: record.id, revision: record.revision }, { onSuccess: (saved) => applySaved(saved, draftRef.current) });
     },
     schedule: (scheduledAt: string) => {
-      withSavedRecord((id, revision) => scheduleMutation.mutate({ id, revision, scheduledAt }));
+      if (isDefault) return;
+      void withSavedRecord((id, revision) => scheduleMutation.mutate({ id, revision, scheduledAt }, { onSuccess: (saved) => applySaved(saved, draftRef.current) }));
     },
     archive: () => {
-      if (!record || pending) return;
-      if (timer.current) window.clearTimeout(timer.current);
-      archiveMutation.mutate({ id: record.id, revision: record.revision }, { onSuccess: (saved) => applySaved(saved, draft) });
+      if (isDefault) return;
+      void withSavedRecord((id, revision) => archiveMutation.mutate({ id, revision }, { onSuccess: (saved) => applySaved(saved, draftRef.current) }));
     },
     clone: () => {
       if (!record) return;
@@ -268,13 +285,16 @@ export function useNoteTemplateBuilder(template?: TemplateDTO, readOnly = false)
     publishing: publishMutation.isPending || update.isPending || autosave.isPending,
     scheduling: scheduleMutation.isPending || update.isPending || autosave.isPending,
     archiving: archiveMutation.isPending,
+    restoring: restoreMutation.isPending,
     cloning: cloneMutation.isPending,
     cancel: () => router.push(ROUTES.NOTE_TEMPLATES),
   };
 
   async function withSavedRecord(run: (id: string, revision: number) => void) {
-    if (!record || pending) return;
+    if (!record || pending || locked) return;
     if (timer.current) window.clearTimeout(timer.current);
+    recordRef.current = record;
+    draftRef.current = draft;
     const saved = settingsDirty || schemaDirty ? await persist(true) : record;
     if (saved) run(saved.id, saved.revision);
   }

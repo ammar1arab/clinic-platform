@@ -34,6 +34,7 @@ export const ar = {
     "clinicalTemplateInvalid": "قالب الملاحظة الطبية غير صالح.",
     "clinicalTemplateAssignmentInvalid": "يجب أن تنتمي تخصيصات القالب لهذه العيادة.",
     "clinicalTemplateInUse": "هذا القالب مستخدم في ملاحظات زيارات محفوظة ولا يمكن حذفه. يمكنك أرشفته بدلًا من ذلك.",
+    "clinicalTemplateDefaultProtected": "اختر قالباً منشوراً آخر لجميع الممارسين كقالب افتراضي للعيادة قبل تغيير جمهور هذا القالب أو تحويله لمسودة أو جدولته أو أرشفته أو حذفه.",
     "clinicalTemplateNotFound": "القالب الطبي غير موجود.",
     "clinicalTemplateUnavailable": "هذا القالب غير متاح لهذه الزيارة.",
     "clinicalTemplateChangeConfirmationRequired": "أكد استبدال المسودة الحالية قبل تغيير قالبها.",

@@ -200,7 +200,7 @@ export function AppointmentCalendar({
       ),
     );
     return { events: calendarEvents, appointmentsByDay: byDay };
-  }, [appointments, lang, canManageAppointments]);
+  }, [appointments, canManageAppointments, lang]);
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const appt = readCalendarAppointment(arg.event.extendedProps);
@@ -229,22 +229,27 @@ export function AppointmentCalendar({
         return;
       setDayPopover(null);
       setAppointmentPopover(null);
+      if (!canManageAppointments) {
+        calendarRef.current?.getApi().changeView(VIEW_TO_FC.day, arg.date);
+        return;
+      }
       const slot = new Date(arg.date);
       if (slot.getHours() === 0 && slot.getMinutes() === 0) {
         slot.setHours(9, 0, 0, 0);
       }
       if (canManageAppointments) onSelectSlot(slot);
     },
-    [onSelectSlot, canManageAppointments],
+    [canManageAppointments, onSelectSlot],
   );
 
   const handleDateSelect = useCallback(
     (arg: DateSelectArg) => {
+      if (!canManageAppointments) return;
       setDayPopover(null);
       setAppointmentPopover(null);
       if (canManageAppointments) onSelectSlot(arg.start);
     },
-    [onSelectSlot, canManageAppointments],
+    [canManageAppointments, onSelectSlot],
   );
 
   const handleDatesSet = useCallback(
@@ -448,42 +453,41 @@ export function AppointmentCalendar({
     ) {
       return;
     }
-    calendarSizeRef.current = { width, height };
     const api = calendarRef.current?.getApi();
     if (!api) return;
-    const scroller = host.querySelector(".fc-scroller");
-    const scrollTop = scroller instanceof HTMLElement ? scroller.scrollTop : 0;
-    const scrollLeft = scroller instanceof HTMLElement ? scroller.scrollLeft : 0;
+    calendarSizeRef.current = { width, height };
+    const positions = Array.from(host.querySelectorAll<HTMLElement>('.fc-scroller'), (element) => ({ element, top: element.scrollTop, left: element.scrollLeft }));
     try {
       api.updateSize();
     } catch {
       return;
     }
-    const next = host.querySelector(".fc-scroller");
-    if (next instanceof HTMLElement) {
-      next.scrollTop = scrollTop;
-      next.scrollLeft = scrollLeft;
+    for (const { element, top, left } of positions) {
+      if (!element.isConnected) continue;
+      element.scrollTop = top;
+      element.scrollLeft = left;
     }
   }, []);
 
   const sizeHostRef = useResizeObserver(syncCalendarSize);
 
   if (isLoading && !appointments) {
-    return <CalendarSkeleton />;
+    return <CalendarSkeleton view={view} focused={focused} />;
   }
 
   return (
     <div
       data-schedule-host=""
       className={cn(
-        "relative page-fill bg-card [&_.fc]:text-sm",
+        "relative page-fill flex-1 min-h-0 bg-card [&_.fc]:text-sm",
         focused
           ? "rounded-none border-0 px-1.5 pb-1.5 pt-0 sm:px-2 sm:pb-2"
           : "card-aura rounded-xl border p-2 sm:p-2.5",
       )}
       aria-busy={isFetching || undefined}
     >
-      <div className="mb-2 grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-3">
+      <div className="mb-2 flex shrink-0 items-center gap-1 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3">
+        <div className="flex min-w-0 items-center gap-1 sm:contents">
         <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon-xs" aria-label={t.common.previous} onClick={() => calendarRef.current?.getApi().prev()}>
             <IconChevronLeft className="size-4 rtl:rotate-180" />
@@ -501,7 +505,8 @@ export function AppointmentCalendar({
             <TabsTrigger value="month" className="px-1.5 sm:px-4">{t.appointments.month}</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-2">
+        </div>
+        <div className="ms-auto flex min-w-0 items-center justify-end gap-1 sm:ms-0 sm:gap-2">
           <h2 className="min-w-0 truncate text-xs font-semibold sm:text-sm" title={calendarTitle}>{calendarTitle}</h2>
           <SoftTip label={t.appointments.today}>
             <Button type="button" variant="ghost" size="icon-xs" onClick={() => calendarRef.current?.getApi().today()} aria-label={t.appointments.today}>
@@ -556,8 +561,8 @@ export function AppointmentCalendar({
           selectMinDistance={12}
           selectAllow={() => view !== "month"}
           editable={canManageAppointments}
-          eventDurationEditable
-          eventResizableFromStart
+          eventDurationEditable={canManageAppointments}
+          eventResizableFromStart={canManageAppointments}
           nowIndicator
           slotLabelContent={(arg) => formatTime(arg.date, undefined, lang)}
           eventTimeFormat={{
@@ -593,6 +598,7 @@ export function AppointmentCalendar({
               eventMaxStack: isMobile ? 2 : 4,
             },
             timeGridWeek: {
+              dayHeaderFormat: { weekday: 'short' },
               eventMaxStack: isMobile ? 2 : 4,
             },
             dayGridMonth: {

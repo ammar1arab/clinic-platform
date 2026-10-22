@@ -37,7 +37,7 @@ import {
 } from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import { TEMPLATE_STATUS_VARIANT } from '@/constants/status';
-import { IconFieldText, IconFieldParagraph, IconFieldNumber, IconFieldSelect, IconFieldMultiSelect, IconFieldBoolean, IconFieldMeasurement, IconFieldScale, IconFieldMedication, IconTime, IconCalendar, IconGrip, IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconFileText, IconArchive, IconCopy, IconClose, IconCheck, IconFilters } from '@/constants/icons';
+import { IconFieldText, IconFieldParagraph, IconFieldNumber, IconFieldSelect, IconFieldMultiSelect, IconFieldBoolean, IconFieldMeasurement, IconFieldScale, IconFieldMedication, IconTime, IconCalendar, IconGrip, IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconFileText, IconArchive, IconCopy, IconFilters, IconRotateCcw } from '@/constants/icons';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useServices } from '@/hooks/api/use-services';
 import { usePractitionerDirectory } from '@/hooks/api/use-practitioners';
@@ -62,7 +62,6 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
   const status = record?.status ?? TEMPLATE_STATUS.DRAFT;
   const statusVariant = TEMPLATE_STATUS_VARIANT[status];
   const [scheduleDate, setScheduleDate] = useState('');
-  const [scheduling, setScheduling] = useState(false);
   const [pickKind, setPickKind] = useState<PickKind>(TEMPLATE_AUDIENCE.PRACTITIONERS);
   const audienceLabel = {
     [TEMPLATE_AUDIENCE.DEPARTMENTS]: t.visits.departments,
@@ -104,50 +103,7 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
             <Button type="button" size="sm" disabled={builder.pending} onClick={builder.saveSettings}>{t.common.save}</Button>
           ) : (
             <>
-              {status === TEMPLATE_STATUS.ARCHIVED || readOnly ? (
-                <Badge variant={statusVariant}>{t.visits.templateStatuses[status]}</Badge>
-              ) : (
-                <Select
-                  value={status}
-                  disabled={locked || builder.publishing || builder.archiving}
-                  onValueChange={(value) => {
-                    setScheduling(value === TEMPLATE_STATUS.SCHEDULED);
-                    if (value === TEMPLATE_STATUS.DRAFT) builder.saveSettings();
-                    else if (value === TEMPLATE_STATUS.PUBLISHED) builder.publish();
-                  }}
-                >
-                  <SelectTrigger size="sm" className="h-7 w-auto gap-1 border-transparent bg-transparent px-1.5 sm:h-8 sm:gap-1.5 sm:px-2">
-                    <Badge variant={statusVariant}><SelectValue /></Badge>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {([TEMPLATE_STATUS.DRAFT, TEMPLATE_STATUS.PUBLISHED, TEMPLATE_STATUS.SCHEDULED] as const).map((value) => (
-                      <SelectItem key={value} value={value} disabled={value === TEMPLATE_STATUS.DRAFT && status === TEMPLATE_STATUS.DRAFT}>{t.visits.templateStatuses[value]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              {scheduling ? (
-                <>
-                  <DatePicker value={scheduleDate} onChange={setScheduleDate} placeholder={t.visits.schedulePlaceholder} fromDate={new Date()} className="h-7 w-auto sm:h-8" />
-                  <SoftTip label={t.visits.scheduleConfirm}>
-                    <Button type="button" size="icon" variant="outline" className="size-7 sm:size-8" disabled={builder.scheduling || !scheduleDate} aria-label={t.visits.scheduleConfirm} onClick={() => { builder.schedule(new Date(`${scheduleDate}T00:00:00`).toISOString()); setScheduling(false); }}>
-                      <IconCheck className="size-4" />
-                    </Button>
-                  </SoftTip>
-                  <SoftTip label={t.common.close}>
-                    <Button type="button" size="icon" variant="ghost" className="size-7 sm:size-8" aria-label={t.common.close} onClick={() => setScheduling(false)}>
-                      <IconClose className="size-4" />
-                    </Button>
-                  </SoftTip>
-                </>
-              ) : null}
-              {status !== TEMPLATE_STATUS.ARCHIVED && !readOnly ? (
-                <SoftTip label={t.visits.archive}>
-                  <Button type="button" size="icon" variant="ghost" className="size-7 sm:size-8" disabled={builder.archiving} aria-label={t.visits.archive} onClick={builder.archive}>
-                    <IconArchive className="size-4" />
-                  </Button>
-                </SoftTip>
-              ) : null}
+              <Badge variant={statusVariant}>{t.visits.templateStatuses[status]}</Badge>
               <SoftTip label={t.visits.clone}>
                 <Button type="button" size="icon" variant="ghost" className="size-7 sm:size-8" disabled={builder.cloning} aria-label={t.visits.clone} onClick={builder.clone}>
                   <IconCopy className="size-4" />
@@ -168,6 +124,7 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
             <p className="text-sm font-semibold">{t.visits.template}</p>
           </CardHeader>
           <CardContent className="space-y-4">
+            {builder.isDefault ? <p className="text-xs leading-relaxed text-muted-foreground">{t.visits.defaultTemplateRule}</p> : null}
             <fieldset disabled={locked} className="min-w-0 border-0 p-0">
             <BilingualNameFields
               name={draft.name}
@@ -184,7 +141,7 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
               specific={!draft.availableToAll}
               onSpecificChange={(specific) => builder.writeSettings({ ...draft, availableToAll: !specific })}
               summary={audienceSummary}
-              disabled={locked}
+              disabled={locked || builder.isDefault}
               error={builder.problems.includes('assignments') ? t.visits.audienceRequired : undefined}
             >
               <ChoiceField
@@ -276,8 +233,14 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
           </Card>
 
           <SidePanel
-            title={t.visits.fieldSettings}
+            title={<span className="flex items-center gap-2"><IconFilters className="size-4 text-muted-foreground" aria-hidden />{t.visits.fieldSettings}</span>}
+            className="bg-muted/30"
             headerActions={selectedField && selectedSection ? (
+              <>
+              <label className="flex items-center gap-1.5 text-xs">
+                <SelectionToggle label={t.visits.required} checked={selectedField.required} disabled={locked} onChange={(required) => builder.patchField(selectedSection.id, selectedField.id, { required })} />
+                {t.visits.required}
+              </label>
               <RowActionsMenu
                 items={[
                   { label: t.visits.moveUp, icon: IconArrowUp, disabled: locked || selectedSection.fields[0]?.id === selectedField.id, onSelect: () => builder.moveField(selectedSection.id, selectedSection.fields.findIndex((item) => item.id === selectedField.id), -1) },
@@ -285,6 +248,7 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
                   { label: t.common.remove, icon: IconDelete, variant: 'destructive', disabled: locked || selectedSection.fields.length === 1, onSelect: () => builder.removeField(selectedSection.id, selectedField.id) },
                 ]}
               />
+              </>
             ) : undefined}
             mobileSheet
             open={!!selectedField}
@@ -306,6 +270,33 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
       </TabsContent>
 
       <TabsContent value="publish" className="min-h-0 space-y-4 overflow-y-auto p-1">
+        {record && !readOnly ? (
+          <Card>
+            <CardContent className="space-y-3">
+              {builder.isDefault ? <p className="text-xs leading-relaxed text-muted-foreground">{t.visits.defaultTemplateRule}</p> : status === TEMPLATE_STATUS.ARCHIVED ? (
+                <Button type="button" size="sm" variant="outline" disabled={builder.pending} onClick={builder.restore}>
+                  <IconRotateCcw className="size-4" />{t.visits.restoreTemplate}
+                </Button>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" disabled={builder.pending || locked} onClick={builder.publish}>{t.visits.publish}</Button>
+                    <Button type="button" size="sm" variant="outline" disabled={builder.pending || locked || status === TEMPLATE_STATUS.DRAFT} onClick={builder.makeDraft}>{t.visits.saveDraft}</Button>
+                    <Button type="button" size="sm" variant="outline" disabled={builder.pending || locked} onClick={builder.archive}><IconArchive className="size-4" />{t.visits.archive}</Button>
+                  </div>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <FormField label={t.visits.schedulePlaceholder} labelClassName="text-xs">
+                      <DatePicker value={scheduleDate} onChange={setScheduleDate} placeholder={t.visits.schedulePlaceholder} fromDate={new Date(new Date().setHours(24, 0, 0, 0))} />
+                    </FormField>
+                    <Button type="button" size="sm" variant="outline" disabled={builder.pending || locked || !scheduleDate} onClick={() => builder.schedule(new Date(`${scheduleDate}T00:00:00`).toISOString())}>
+                      <IconCalendar className="size-4" />{t.visits.scheduleConfirm}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        ) : null}
         <TemplatePreview key={JSON.stringify(previewSections(draft))} sections={previewSections(draft)} title={getBilingualName(draft.name, draft.nameAr, lang)} />
         {record?.status === TEMPLATE_STATUS.SCHEDULED && record.scheduledAt ? (
           <p className="text-xs text-muted-foreground">{t.visits.scheduleAt} {new Date(record.scheduledAt).toLocaleDateString(lang === 'ar' ? 'ar' : 'en')}</p>
@@ -380,6 +371,17 @@ function PaletteItems({ locked, onPick, onDrop, compact = false }: {
   const { t } = useLanguage();
   return MEDICAL_NOTE_PALETTE.map((type) => {
     const Icon = FIELD_ICONS[type];
+    if (compact) return (
+      <div key={type} className="flex shrink-0 items-center rounded-xl border border-border/50 bg-muted/20">
+        <Button type="button" variant="ghost" disabled={locked} onClick={() => onPick(type)} className="h-9 gap-1.5 px-2.5 text-xs font-normal">
+          <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          {t.visits.fieldTypes[type]}
+        </Button>
+        <DragItem label={t.visits.fieldTypes[type]} disabled={locked} variant="ghost" className="size-8 justify-center gap-0 p-0" onDrop={(target) => onDrop(type, target)}>
+          <IconGrip className="size-3.5 text-muted-foreground" aria-hidden />
+        </DragItem>
+      </div>
+    );
     return <DragItem key={type} label={t.visits.fieldTypes[type]} disabled={locked}
       className={cn('group/palette h-auto justify-start rounded-xl border-border/50 bg-muted/20 text-start font-normal hover:border-primary/40 hover:bg-primary/5', compact ? 'min-h-9 shrink-0 gap-1.5 px-2.5 py-1.5' : 'min-h-10 w-full px-2.5 py-2')}
       onPick={() => onPick(type)} onDrop={(target) => onDrop(type, target)}>
@@ -420,10 +422,6 @@ function FieldSettings({
           </SelectContent>
         </Select>
       </FormField>
-      <label className="flex items-center gap-2 text-sm">
-        <SelectionToggle label={t.visits.required} checked={field.required} disabled={locked} onChange={(required) => onPatch({ required })} />
-        {t.visits.required}
-      </label>
       {field.type === CLINICAL_FIELD_TYPE.NUMBER || field.type === CLINICAL_FIELD_TYPE.MEASUREMENT ? (
         <div className="grid grid-cols-2 gap-2">
           <FormField label={t.visits.minimum} error={problems.includes(`${field.id}-range`) ? t.visits.invalidRange : undefined}>

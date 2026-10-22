@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import {
   APPOINTMENT_STATUS,
   INVOICE_STATUS,
@@ -41,6 +41,8 @@ import { formatDate, formatTime } from '@/lib/datetime';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { usePractitionerDirectory } from '@/hooks/api/use-practitioners';
 import { usePrefetchVisitWorkspace, useVisits } from '@/hooks/api/use-visits';
+import { useDownloadVisitsReport } from '@/hooks/api/use-reports';
+import { ExportFormatButton } from '@/components/blocks/reports';
 import { useAuth, useLanguage } from '@/providers';
 
 const NOTE_FILTERS = Object.values(NOTE_STATUS);
@@ -55,16 +57,17 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
   const clinicId = useClinicId();
   const prefetchWorkspace = usePrefetchVisitWorkspace();
   const staffView = user?.role !== ROLE.PRACTITIONER;
-  const [search, setSearch] = useState('');
-  const [practitionerId, setPractitionerId] = useState('');
-  const [appointmentStatus, setAppointmentStatus] = useState('');
-  const [noteStatus, setNoteStatus] = useState(initialNoteStatus ?? '');
-  const [reportStatus, setReportStatus] = useState(initialReportStatus ?? '');
-  const [invoiceStatus, setInvoiceStatus] = useState(initialInvoiceStatus ?? '');
-  const [queue, setQueue] = useState<VisitQueue | ''>('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [page, setPage] = useState(1);
+  const scope = clinicId || 'none';
+  const [search, setSearch] = useSessionStorageState(`${scope}:visits-search`, '');
+  const [practitionerId, setPractitionerId] = useSessionStorageState(`${scope}:visits-practitioner`, '');
+  const [appointmentStatus, setAppointmentStatus] = useSessionStorageState(`${scope}:visits-appointment-status`, '');
+  const [noteStatus, setNoteStatus] = useSessionStorageState(`${scope}:visits-note-status`, initialNoteStatus ?? '');
+  const [reportStatus, setReportStatus] = useSessionStorageState(`${scope}:visits-report-status`, initialReportStatus ?? '');
+  const [invoiceStatus, setInvoiceStatus] = useSessionStorageState(`${scope}:visits-invoice-status`, initialInvoiceStatus ?? '');
+  const [queue, setQueue] = useSessionStorageState<VisitQueue | ''>(`${scope}:visits-queue`, '');
+  const [from, setFrom] = useSessionStorageState(`${scope}:visits-from`, '');
+  const [to, setTo] = useSessionStorageState(`${scope}:visits-to`, '');
+  const [page, setPage] = useSessionStorageState(`${scope}:visits-page`, 1);
   const practitioners = usePractitionerDirectory({ clinicId });
   const query = {
     search: search || undefined,
@@ -80,6 +83,7 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
     limit: 20,
   };
   const visits = useVisits(query, !!user);
+  const downloadVisits = useDownloadVisitsReport(clinicId);
   const resetPage = () => setPage(1);
   const activeCount =
     (queue ? 1 : 0) +
@@ -109,9 +113,27 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
         onSearchChange={(value) => { setSearch(value); resetPage(); }}
         searchPlaceholder={t.common.search}
         actions={
-          <Popover>
-            <FilterTrigger count={activeCount} />
-            <FilterPanel count={activeCount} onClear={resetFilters}>
+          <div className="flex items-center gap-1.5">
+            <ExportFormatButton
+              compact
+              disabled={downloadVisits.isPending || visits.isLoading || !visits.data?.total}
+              pending={downloadVisits.isPending}
+              onSelect={(format) => downloadVisits.mutate({
+                format,
+                from: query.from,
+                to: query.to,
+                practitionerId: staffView ? practitionerId || undefined : undefined,
+                appointmentStatus: appointmentStatus || undefined,
+                noteStatus: noteStatus || undefined,
+                reportStatus: reportStatus || undefined,
+                invoiceStatus: invoiceStatus || undefined,
+                queue: queue || undefined,
+                search: search || undefined,
+              })}
+            />
+            <Popover>
+              <FilterTrigger count={activeCount} />
+              <FilterPanel count={activeCount} onClear={resetFilters}>
               <FilterSelect label={t.visits.workQueue} value={queue} onChange={(value) => { setQueue(value as VisitQueue | ''); setAppointmentStatus(''); setNoteStatus(''); setReportStatus(''); setInvoiceStatus(''); resetPage(); }}>
                 {QUEUE_FILTERS.map((item) => <SelectItem key={item} value={item}>{t.visits.queues[item]}</SelectItem>)}
               </FilterSelect>
@@ -148,8 +170,9 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
                   <DatePicker value={to} onChange={(value) => { setTo(value); resetPage(); }} placeholder={t.visits.to} />
                 </FormField>
               </div>
-            </FilterPanel>
-          </Popover>
+              </FilterPanel>
+            </Popover>
+          </div>
         }
       />
 
@@ -181,13 +204,14 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
                   title={getBilingualName(item.patient.name, item.patient.nameAr, lang)}
                   avatar={<span onClick={(event) => event.stopPropagation()}><PreviewableAvatar src={item.patient.imageUrl} seed={item.patient.id} size="sm" /></span>}
                   subtitle={<div className="space-y-1.5 whitespace-normal">
-                    <p>{formatDate(item.scheduledAt, undefined, lang)} · {formatTime(item.scheduledAt, undefined, lang)}</p>
+                    <p>{formatDate(item.scheduledAt, undefined, lang)}</p>
                     <div className="flex min-w-0 items-center gap-1.5">
                       <span onClick={(event) => event.stopPropagation()}><PreviewableAvatar src={item.practitioner.imageUrl} seed={item.practitioner.id} size="sm" /></span>
                       <span className="min-w-0 break-words">{getBilingualName(item.practitioner.name, item.practitioner.nameAr, lang)}</span>
                     </div>
                   </div>}
                   actions={<div className="flex max-w-36 flex-col items-end gap-1">
+                    <span className="whitespace-nowrap text-xs font-semibold tabular-nums">{formatTime(item.scheduledAt, undefined, lang)}</span>
                     <StatusBadgeBlock status={item.appointmentStatus} tip={false} />
                     <Badge variant="muted">{item.mode === SESSION_TYPE.ONLINE ? t.visits.online : t.visits.inPerson}{item.room ? ` · ${getBilingualName(item.room.name, item.room.nameAr, lang)}` : ''}</Badge>
                   </div>}
@@ -237,6 +261,6 @@ function VisitCardMeta({ item, className }: { item: VisitSummary; className: str
     { label: t.visits.invoice, value: t.visits.invoiceStatuses[item.invoiceStatus], warning: item.invoiceStatus === INVOICE_STATUS.AWAITING_REVIEW },
   ];
   return <dl className={className}>{details.map((detail) => (
-    <div key={detail.label} className="min-w-0 space-y-1 border-s border-border/70 ps-3"><dt className="text-muted-foreground">{detail.label}</dt><dd className={cn('break-words font-medium', detail.warning && 'text-warning')}>{detail.value}</dd></div>
+    <div key={detail.label} className="min-w-0 space-y-1 px-1 text-center"><dt className="text-muted-foreground">{detail.label}</dt><dd className={cn('break-words font-medium', detail.warning && 'text-warning')}>{detail.value}</dd></div>
   ))}</dl>;
 }

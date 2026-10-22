@@ -42,7 +42,7 @@ export function DashboardOverview() {
       ) : !kpis.isLoading && !rooms.isLoading && kpis.data?.total === 0 && rooms.data?.length === 0 ? (
         <EmptyState icon={IconTodaysAppointments} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} className="page-fill" />
       ) : (
-        <ViewFocus label={t.dashboard.roomUtilizationToday}>
+        <ViewFocus label={t.dashboard.roomUtilizationToday} storageKey={`${clinicId || 'none'}:dashboard-room-utilization`}>
           {(focused) => <RoomUtilizationCardBlock rooms={rooms.data} isLoading={rooms.isLoading} focused={focused} />}
         </ViewFocus>
       )}

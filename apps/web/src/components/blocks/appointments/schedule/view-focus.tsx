@@ -5,7 +5,6 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useState,
   type ReactNode,
 } from 'react';
 import { SoftTip } from '@/components/primitives';
@@ -13,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { IconMaximize, IconMinimize } from '@/constants/icons';
 import { useLanguage } from '@/providers';
+import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 
 interface ViewFocusApi {
   focused: boolean;
@@ -34,6 +34,7 @@ type FocusRender = (focused: boolean) => ReactNode;
 
 interface ViewFocusProps {
   label: string;
+  storageKey: string;
   children: ReactNode | FocusRender;
   className?: string;
 }
@@ -86,22 +87,24 @@ function ViewFocusHandle() {
   );
 }
 
-export function ViewFocus({ label, children, className }: ViewFocusProps) {
-  const [focused, setFocused] = useState(false);
+export function ViewFocus({ label, storageKey, children, className }: ViewFocusProps) {
+  const [focused, setFocused] = useSessionStorageState(`view-focus:${storageKey}`, false);
 
   const enter = useCallback(() => {
     applyViewFocus(true);
     setFocused(true);
-  }, []);
+  }, [setFocused]);
 
   const exit = useCallback(() => {
     applyViewFocus(false);
     setFocused(false);
-  }, []);
+  }, [setFocused]);
 
   const bind = useCallback((node: HTMLDivElement | null) => {
-    if (!node) applyViewFocus(false);
-  }, []);
+    if (!node) return;
+    applyViewFocus(Boolean(node && focused));
+    return () => applyViewFocus(false);
+  }, [focused]);
 
   useKeyboardShortcut(
     'escape',
@@ -126,12 +129,12 @@ export function ViewFocus({ label, children, className }: ViewFocusProps) {
         aria-label={focused ? `${label} focus view` : undefined}
         className={cn(
           focused
-            ? 'fixed inset-0 z-40 flex min-h-0 flex-col overflow-y-auto overflow-x-hidden overscroll-y-contain bg-background p-2 sm:p-3 md:overflow-hidden'
-            : 'relative isolate page-fill',
+            ? 'fixed start-0 end-0 top-[var(--app-header-height)] z-5 flex h-[calc(100dvh-var(--app-header-height))] min-h-0 flex-col overflow-y-auto overflow-x-hidden overscroll-y-contain bg-background p-2 sm:p-3 md:start-[var(--app-sidebar-current-width)] md:overflow-hidden'
+            : 'relative isolate page-fill flex-1 min-h-0',
           className,
         )}
       >
-        <div className={cn('page-fill', focused && 'md:min-h-0 md:flex-1')}>
+        <div className={cn('page-fill flex-1 min-h-0 gap-2.5', focused && 'h-0')}>
           {content}
         </div>
         <ViewFocusHandle />

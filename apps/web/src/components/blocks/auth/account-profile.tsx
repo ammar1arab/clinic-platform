@@ -8,7 +8,6 @@ import { Button, Card, CardContent, Input } from "@/components/ui";
 import {
   AvatarUpload,
   SensitiveInput,
-  ContactLine,
   EmailLink,
   FormField,
   FormActions,
@@ -21,16 +20,21 @@ import {
 import { IconEdit } from "@/constants/icons";
 import { useRequestEmailChange, useConfirmEmailChange, useUpdateAccountProfile } from "@/hooks/api/use-auth-mutations";
 import { useAuth, useLanguage } from "@/providers";
+import { useClinic } from "@/hooks/api/use-clinic";
+import { useClinicId } from "@/hooks/shared/use-clinic-id";
 import type { AccountProfileInput } from "@clinic/types";
 import { ROLE } from "@clinic/types";
 import { ROUTES } from "@/constants/routes";
 import { getBilingualName } from "@/i18n";
 import { extractErrorMessage } from "@/lib/api";
+import { formatClock } from "@/lib/datetime";
 import { AccountVerificationDialog } from "./account-verification-dialog";
 import { AccountPasswordReset } from "./account-password-reset";
 
 export function AccountProfile() {
   const { user, logout } = useAuth();
+  const clinicId = useClinicId();
+  const { data: clinic } = useClinic(clinicId);
   const { t, lang } = useLanguage();
   const [editing, setEditing] = useState(false);
   const mutation = useUpdateAccountProfile();
@@ -92,6 +96,7 @@ export function AccountProfile() {
   return (
     <ProfileShell
       backHref={ROUTES.DASHBOARD}
+      onBack={editing ? cancel : undefined}
       actions={!editing ? (
         <Button type="button" variant="outline" onClick={() => setEditing(true)}>
           <IconEdit className="size-3.5" />{t.common.edit}
@@ -103,7 +108,6 @@ export function AccountProfile() {
           <AvatarUpload className="shrink-0" value={editing ? imageUrl : user.imageUrl} onChange={(value) => setValue("imageUrl", value)} fallbackLabel={editing ? name : user.name} showPreviewNotice={false} disabled={!editing} />
           <div className="min-w-0 flex-1 space-y-1">
             <h1 dir="auto" className="truncate text-start font-heading text-base font-semibold tracking-tight sm:text-lg">{getBilingualName(user.name, user.nameAr, lang)}</h1>
-            <ContactLine phone={user.phone} email={user.email} className="text-xs sm:text-sm" />
           </div>
         </CardContent>
       </Card>
@@ -141,9 +145,27 @@ export function AccountProfile() {
             <ProfileInfoField label={t.common.signInEmail} value={user.email}>
               <EmailLink value={user.email} copyable className="text-sm font-medium" />
             </ProfileInfoField>
+            <ProfileInfoField label={t.common.staffRole} value={t.appointments.roleOwner} />
           </ProfileInfoGrid>
         </ProfileSection>
       )}
+
+      {clinic ? (
+        <ProfileSection title={t.common.clinicDetails}>
+          <ProfileInfoGrid className="lg:grid-cols-3">
+            <ProfileInfoField label={t.emails.clinicName} value={getBilingualName(clinic.name, clinic.nameAr, lang)} />
+            <ProfileInfoField label={t.common.clinicEmail} value={clinic.email} dir="ltr">
+              <EmailLink value={clinic.email} copyable className="text-sm font-medium" />
+            </ProfileInfoField>
+            <ProfileInfoField label={t.exports.phone} value={clinic.phone} dir="ltr">
+              <PhoneLink value={clinic.phone} copyable className="text-sm font-medium" />
+            </ProfileInfoField>
+            <ProfileInfoField label={t.common.clinicAddressLabel} value={clinic.address} />
+            <ProfileInfoField label={t.common.clinicTimezone} value={clinic.timezone} dir="ltr" />
+            <ProfileInfoField label={t.common.clinicWorkingHours} value={`${formatClock(clinic.workingHoursStart, "", lang)} - ${formatClock(clinic.workingHoursEnd, "", lang)}`} />
+          </ProfileInfoGrid>
+        </ProfileSection>
+      ) : null}
 
       <AccountPasswordReset id={user.clinicUserId} />
       <AccountVerificationDialog open={!!challenge} pending={confirmEmail.isPending || emailChange.isPending} email={challenge?.email} resendAt={challenge?.resendAt ?? 0} error={verificationError}

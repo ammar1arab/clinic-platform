@@ -14,6 +14,7 @@ import { ClinicLockup } from '@/components/layout/clinic-identity';
 import { REFRESH_PARAM } from '@/hooks/shared/use-app-refresh';
 
 function resolveTitle(pathname: string, scheduleView: string | null, t: Translations): string {
+  if (pathname === ROUTES.NOTIFICATIONS) return t.notifications.title;
   if (pathname === ROUTES.EMAIL_NEW) return t.emails.compose;
   if (pathname === ROUTES.EMAIL_SETTINGS) return t.emails.settings;
   if (pathname === ROUTES.EMAILS) return t.emails.title;
