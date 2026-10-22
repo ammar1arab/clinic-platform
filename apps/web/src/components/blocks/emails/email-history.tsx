@@ -1,5 +1,7 @@
 "use client";
 
+import { DEFAULT_PAGE_SIZE } from "@/components/primitives/display/pagination";
+
 import Link from "next/link";
 import {
   EMAIL_DELIVERY_GROUPS,
@@ -118,7 +120,7 @@ export function EmailHistory() {
     (kind !== MESSAGE_KIND.ALL ? 1 : 0);
   const filters: EmailHistoryInput = {
     page,
-    limit: 20,
+    limit: DEFAULT_PAGE_SIZE,
     search: search || undefined,
     from: from || undefined,
     to: to ? `${to}T23:59:59.999Z` : undefined,
@@ -139,20 +141,27 @@ export function EmailHistory() {
     {
       id: "subject",
       label: t.emails.subject,
-      className: "w-[30%]",
+      className: "w-[26%]",
       render: (message) => (
-        <div className="space-y-1">
-          <TruncatedText className="font-medium" lines={2}>
-            {message.subject}
-          </TruncatedText>
-          {message.isTest && <Badge variant="outline">{t.emails.test}</Badge>}
-        </div>
+        <TruncatedText className="font-medium" lines={2}>
+          {message.subject}
+        </TruncatedText>
+      ),
+    },
+    {
+      id: "type",
+      label: t.emails.type,
+      className: "w-[11%]",
+      render: (message) => (
+        <Badge variant={message.isTest ? "warning" : "info"}>
+          <span>{message.isTest ? t.emails.test : t.emails.campaign}</span>
+        </Badge>
       ),
     },
     {
       id: "delivery",
       label: t.emails.delivery,
-      className: "w-[20%]",
+      className: "w-[11%]",
       render: (message) => <EmailDeliveryCounts counts={message.counts} />,
     },
     {
@@ -166,14 +175,14 @@ export function EmailHistory() {
     {
       id: "recipients",
       label: t.emails.recipients,
-      className: "w-[8%]",
+      className: "w-[9%]",
       cellClassName: "tabular-nums",
       render: (message) => message.recipientCount,
     },
     {
       id: "created",
       label: t.emails.createdAt,
-      className: "w-[16%]",
+      className: "w-[17%]",
       cellClassName: "text-xs text-muted-foreground",
       render: (message) => (
         <TruncatedText lines={2}>
@@ -352,7 +361,7 @@ export function EmailHistory() {
                 prefetch(ROUTES.EMAIL_DETAIL(message.id))
               }
               className="hidden md:flex"
-              tableClassName="min-w-[52rem]"
+              tableClassName="min-w-[60rem]"
             />
             <div className="page-fill overflow-y-auto overscroll-y-contain md:hidden">
               <div className="grid grid-cols-1 gap-4">
@@ -383,9 +392,8 @@ export function EmailHistory() {
             </div>
             <Pagination
               page={page}
-              pageCount={Math.ceil(query.data.total / 20)}
               totalItems={query.data.total}
-              pageSize={20}
+              pageSize={DEFAULT_PAGE_SIZE}
               onPageChange={(value) => dispatch({ type: "page", value })}
             />
           </div>

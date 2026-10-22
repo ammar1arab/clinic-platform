@@ -1,5 +1,6 @@
 'use client';
 
+import { PractitionerEmploymentBadge } from './practitioner-employment-badge';
 import { ROLE } from '@clinic/types';
 import { useOwnerGenerateOtp } from '@/hooks/api/use-auth-mutations';
 import { AccountOtpDialog } from '@/components/blocks/auth/account-otp-dialog';
@@ -9,8 +10,6 @@ import {
 import { Badge } from '@/components/ui';
 import {
   LANGUAGE_BADGE_VARIANT,
-  getPractitionerEmploymentLabels,
-  PRACTITIONER_EMPLOYMENT_VARIANT,
   WEEKDAY_OPTIONS,
   languageLabelList,
 } from '@/constants/practitioner';
@@ -42,12 +41,7 @@ import { formatDate, formatDateTime, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
 import { IconMail, IconActivate, IconCalendar, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
 import { useAuth, useLanguage } from '@/providers';
-import { getBilingualName, getStaffName, type Translations } from '@/i18n';
-
-function employmentLabel(type: string | null | undefined, t: Translations) {
-  if (!type) return null;
-  return getPractitionerEmploymentLabels(t)[type] ?? type;
-}
+import { getBilingualName, getStaffName } from '@/i18n';
 
 export function PractitionerProfile({
   practitioner,
@@ -83,7 +77,6 @@ export function PractitionerProfile({
   const nationality = practitioner.nationality
     ? countryLabel(practitioner.nationality, lang) ?? practitioner.nationality
     : null;
-  const employment = employmentLabel(practitioner.employmentType, t);
   const languages = languageLabelList(practitioner.languages, t);
   const genderLbl = practitioner.gender
     ? (t.constants.gender as Record<string, string>)[practitioner.gender.toLowerCase()] ?? practitioner.gender
@@ -149,16 +142,7 @@ export function PractitionerProfile({
           />
         }
         title={titleName}
-        badges={
-          employment && practitioner.employmentType ? (
-            <Badge
-              variant={PRACTITIONER_EMPLOYMENT_VARIANT[practitioner.employmentType] ?? 'secondary'}
-              className="font-normal"
-            >
-              {employment}
-            </Badge>
-          ) : null
-        }
+        badges={<PractitionerEmploymentBadge type={practitioner.employmentType} />}
         subtitle={specialtyName ? <p>{specialtyName}</p> : null}
         meta={<ContactLine phone={practitioner.phone} email={practitioner.email} />}
         stats={[
@@ -192,17 +176,8 @@ export function PractitionerProfile({
               lang,
             )}
           />
-          <ProfileInfoField label={t.practitioner.employment} value={employment}>
-            {employment && practitioner.employmentType ? (
-              <Badge
-                variant={
-                  PRACTITIONER_EMPLOYMENT_VARIANT[practitioner.employmentType] ?? 'secondary'
-                }
-                className="font-normal"
-              >
-                {employment}
-              </Badge>
-            ) : null}
+          <ProfileInfoField label={t.practitioner.employment} value={practitioner.employmentType}>
+            {practitioner.employmentType ? <PractitionerEmploymentBadge type={practitioner.employmentType} /> : null}
           </ProfileInfoField>
           <ProfileInfoField
             label={t.practitioner.commission}
@@ -375,20 +350,13 @@ export function PractitionerProfile({
       {canManage && <AccountOtpDialog code={otp.data} onClose={otp.reset} />}
 
       {canManage && <TwoStepDeleteDialogs
-        step1={del.step1}
-        step2={del.step2}
-        onStep1OpenChange={(open) => !open && del.cancelStep1()}
-        onStep2OpenChange={(open) => !open && del.cancelStep2()}
-        onContinue={del.advance}
-        onConfirm={() => {
-          if (!del.step2) return;
-          remove.mutate(del.step2.id, {
-            onSuccess: () => {
-              del.clear();
-              router.push(ROUTES.PRACTITIONERS);
-            },
-          });
-        }}
+        controller={del}
+        onConfirm={(item) => remove.mutate(item.id, {
+          onSuccess: () => {
+            del.clear();
+            router.push(ROUTES.PRACTITIONERS);
+          },
+        })}
         isPending={remove.isPending}
         warning={t.practitioner.deleteWarning1}
         finalWarning={t.practitioner.deleteWarning2}

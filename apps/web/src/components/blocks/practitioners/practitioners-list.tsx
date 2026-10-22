@@ -70,7 +70,6 @@ interface Props {
   clinicId: string;
   hasActiveFilters?: boolean;
   page: number;
-  pageCount: number;
   totalItems: number;
   pageSize: number;
   onPageChange: (page: number) => void;
@@ -83,7 +82,6 @@ export function PractitionersList({
   clinicId,
   hasActiveFilters = false,
   page,
-  pageCount,
   totalItems,
   pageSize,
   onPageChange,
@@ -332,7 +330,6 @@ export function PractitionersList({
 
       <Pagination
         page={page}
-        pageCount={pageCount}
         totalItems={totalItems}
         pageSize={pageSize}
         onPageChange={onPageChange}
@@ -341,15 +338,8 @@ export function PractitionersList({
       <AccountOtpDialog code={otp.data} onClose={otp.reset} />
 
       <TwoStepDeleteDialogs
-        step1={del.step1}
-        step2={del.step2}
-        onStep1OpenChange={(open) => !open && del.cancelStep1()}
-        onStep2OpenChange={(open) => !open && del.cancelStep2()}
-        onContinue={del.advance}
-        onConfirm={() => {
-          if (!del.step2) return;
-          remove.mutate(del.step2.id, { onSuccess: del.clear });
-        }}
+        controller={del}
+        onConfirm={(item) => remove.mutate(item.id, { onSuccess: del.clear })}
         isPending={remove.isPending}
         warning={t.practitioner.deleteWarning1}
         finalWarning={t.practitioner.deleteWarning2}

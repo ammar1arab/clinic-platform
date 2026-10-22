@@ -142,7 +142,7 @@ function PhoneCountrySelect({
 
         <div className="max-h-64 overflow-y-auto overscroll-contain p-1">
           {filtered.length === 0 && (
-            <p className="px-2.5 py-4 text-center text-sm text-muted-foreground">
+            <p className="px-2.5 py-4 text-center text-control text-muted-foreground">
               {t.common.noCountriesFound}
             </p>
           )}
@@ -161,7 +161,7 @@ function PhoneCountrySelect({
                   onBlur?.();
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm text-popover-foreground',
+                  'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-control text-popover-foreground',
                   'hover:bg-accent hover:text-accent-foreground',
                   active && 'bg-accent text-accent-foreground',
                 )}
@@ -208,11 +208,11 @@ export function PhoneInputField({
       onChange={(val) => onChange(val ?? '')}
       countrySelectComponent={PhoneCountrySelect}
       className={cn(
-        'flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors md:text-sm',
+        'flex h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-control transition-colors',
         'focus-within:border-primary focus-within:ring-0',
         'has-disabled:cursor-not-allowed has-disabled:opacity-50',
         'dark:bg-input/30',
-        '[&_input]:min-w-0 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:text-base [&_input]:text-foreground [&_input]:outline-none md:[&_input]:text-sm [&_input]:placeholder:text-muted-foreground',
+        '[&_input]:min-w-0 [&_input]:flex-1 [&_input]:bg-transparent [&_input]:text-control [&_input]:text-foreground [&_input]:outline-none [&_input]:placeholder:text-muted-foreground',
         '[&_.PhoneInputCountry]:me-2 [&_.PhoneInputCountry]:shrink-0',
         className,
       )}

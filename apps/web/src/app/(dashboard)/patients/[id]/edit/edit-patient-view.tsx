@@ -73,20 +73,13 @@ export function EditPatientView({ id }: { id: string }) {
       )}
 
       <TwoStepDeleteDialogs
-        step1={del.step1}
-        step2={del.step2}
-        onStep1OpenChange={(open) => !open && del.cancelStep1()}
-        onStep2OpenChange={(open) => !open && del.cancelStep2()}
-        onContinue={del.advance}
-        onConfirm={() => {
-          if (!del.step2) return;
-          deleteMutation.mutate(del.step2.id, {
-            onSuccess: () => {
-              del.clear();
-              router.push('/patients');
-            },
-          });
-        }}
+        controller={del}
+        onConfirm={(item) => deleteMutation.mutate(item.id, {
+          onSuccess: () => {
+            del.clear();
+            router.push('/patients');
+          },
+        })}
         isPending={deleteMutation.isPending}
         warning={t.patient.deleteWarning1}
         finalWarning={t.patient.deleteWarning2}

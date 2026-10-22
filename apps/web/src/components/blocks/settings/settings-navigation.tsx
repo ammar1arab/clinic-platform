@@ -8,6 +8,7 @@ import {
   IconBadgePercent,
   IconBell,
   IconCalendarClock,
+  IconAdd,
   IconHospital,
   IconMail,
   IconNetwork,
@@ -17,7 +18,9 @@ import {
   IconService,
 } from '@/constants/icons';
 import type { IconWellAccent } from '@/components/primitives';
-import { PageBack } from '@/components/primitives';
+import { FormActions, PageBack } from '@/components/primitives';
+import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui';
+import { useLanguage } from '@/providers';
 import type { Translations } from '@/i18n';
 
 const SETTINGS_SECTIONS = {
@@ -136,4 +139,55 @@ export function SettingsPageBack({
   actions?: ReactNode;
 }) {
   return <PageBack backHref={backHref} search={search} actions={actions} />;
+}
+
+export function SettingsAddButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <Button size="sm" onClick={onClick} className="shrink-0 max-sm:size-8 max-sm:px-0" aria-label={label}>
+      <IconAdd className="size-4 sm:me-1.5" />
+      <span className="hidden sm:inline">{label}</span>
+    </Button>
+  );
+}
+
+export function SettingsFormDialog({
+  open,
+  onOpenChange,
+  editing,
+  addTitle,
+  pending,
+  disabled,
+  onSubmit,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  editing: boolean;
+  addTitle: string;
+  pending: boolean;
+  disabled: boolean;
+  onSubmit: () => void;
+  children: ReactNode;
+}) {
+  const { t } = useLanguage();
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{editing ? t.common.edit : addTitle}</DialogTitle>
+        </DialogHeader>
+        {children}
+        <DialogFooter>
+          <FormActions
+            variant="dialog"
+            onCancel={() => onOpenChange(false)}
+            submitLabel={editing ? t.common.save : t.common.create}
+            pending={pending}
+            disabled={disabled}
+            onSubmitClick={onSubmit}
+          />
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

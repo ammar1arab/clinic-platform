@@ -47,6 +47,28 @@ export function isNestedOverlayOpen() {
   );
 }
 
+const OVERLAY_TRIGGER =
+  '[data-slot$="-trigger"][aria-haspopup], [data-slot="select-trigger"], [data-slot="popover-trigger"]';
+
+function handOffToNextTrigger(event: DismissEvent) {
+  const original = event.detail?.originalEvent;
+  if (!(original instanceof PointerEvent) || original.button !== 0) return;
+  const { clientX, clientY, pointerType } = original;
+  const blocked = original.target;
+  requestAnimationFrame(() => {
+    const trigger = [...document.querySelectorAll<HTMLElement>(OVERLAY_TRIGGER)].findLast((element) => {
+      const rect = element.getBoundingClientRect();
+      return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+    });
+    if (!trigger || (blocked instanceof Node && trigger.contains(blocked))) return;
+    if (trigger.matches(':disabled, [data-disabled]')) return;
+    const init = { bubbles: true, cancelable: true, clientX, clientY, button: 0, pointerType, isPrimary: true };
+    trigger.dispatchEvent(new PointerEvent('pointerdown', init));
+    trigger.dispatchEvent(new PointerEvent('pointerup', init));
+    trigger.dispatchEvent(new MouseEvent('click', init));
+  });
+}
+
 export function overlayDismissProps<TPointer>(handlers?: {
   onPointerDownOutside?: (event: TPointer) => void;
 }) {
@@ -54,6 +76,7 @@ export function overlayDismissProps<TPointer>(handlers?: {
     onPointerDownOutside: (event: TPointer) => {
       preventDismissOnOwnTrigger(event as DismissEvent);
       handlers?.onPointerDownOutside?.(event);
+      if (!(event as unknown as Event).defaultPrevented) handOffToNextTrigger(event as DismissEvent);
     },
     onCloseAutoFocus: (event: Event) => {
       event.preventDefault();

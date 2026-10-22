@@ -21,15 +21,12 @@ import { ButtonSpinner } from '@/components/primitives/states/button-spinner';
 import { TruncatedText } from '@/components/primitives';
 import { useLanguage } from '@/providers/language-provider';
 
-export type TwoStepDeleteTarget = { id: string; name: string } | null;
 
-interface Props {
-  step1: TwoStepDeleteTarget;
-  step2: TwoStepDeleteTarget;
-  onStep1OpenChange: (open: boolean) => void;
-  onStep2OpenChange: (open: boolean) => void;
-  onContinue: () => void;
-  onConfirm: () => void;
+type Target = { id: string; name: string };
+
+interface Props<T extends Target> {
+  controller: TwoStepDelete<T>;
+  onConfirm: (item: T) => void;
   isPending?: boolean;
 
   warning: string;
@@ -38,19 +35,18 @@ interface Props {
   confirmLabel?: string;
 }
 
-export function TwoStepDeleteDialogs({
-  step1,
-  step2,
-  onStep1OpenChange,
-  onStep2OpenChange,
-  onContinue,
+export function TwoStepDeleteDialogs<T extends Target>({
+  controller,
   onConfirm,
   isPending,
   warning,
   finalWarning,
   confirmLabel,
-}: Props) {
+}: Props<T>) {
   const { t } = useLanguage();
+  const { step1, step2 } = controller;
+  const onStep1OpenChange = (open: boolean) => { if (!open) controller.cancelStep1(); };
+  const onStep2OpenChange = (open: boolean) => { if (!open) controller.cancelStep2(); };
   const resolvedConfirmLabel = confirmLabel ?? t.common.confirmDeleteEverything;
 
   return (
@@ -70,7 +66,7 @@ export function TwoStepDeleteDialogs({
             <Button variant="outline" onClick={() => onStep1OpenChange(false)}>
               {t.common.cancel}
             </Button>
-            <Button variant="destructive" onClick={onContinue}>
+            <Button variant="destructive" onClick={controller.advance}>
               {t.common.continue}
             </Button>
           </DialogFooter>
@@ -95,7 +91,7 @@ export function TwoStepDeleteDialogs({
               {t.common.cancel}
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={onConfirm}
+              onClick={() => { if (step2) onConfirm(step2); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isPending}
             >
@@ -108,6 +104,8 @@ export function TwoStepDeleteDialogs({
     </>
   );
 }
+
+export type TwoStepDelete<T> = ReturnType<typeof useTwoStepDelete<T & { id: string }>>;
 
 export function useTwoStepDelete<T extends { id: string }>() {
   const [step1, setStep1] = useState<T | null>(null);

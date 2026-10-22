@@ -25,15 +25,16 @@ th, td {
   
   --brand: var(--primary);
   --brand-foreground: var(--primary-foreground);
-  --accent-teal: oklch(0.6 0.14 185);
+  --accent-teal: oklch(0.48 0.085 185);
   --accent-teal-foreground: var(--primary-foreground);
 
   
-  --success: oklch(0.47 0.13 145);
-  --warning: oklch(0.5 0.12 65);
+  --success: oklch(0.48 0.115 155);
+  --warning: oklch(0.5 0.11 65);
   --error: var(--destructive);
-  --info: oklch(0.49 0.16 255);
-  --accent-violet: oklch(0.49 0.16 300);
+  --info: oklch(0.5 0.13 255);
+  --accent-violet: oklch(0.5 0.13 300);
+  --accent-cyan: oklch(0.5 0.1 215);
 
   
   --background: #fff;
@@ -51,7 +52,7 @@ th, td {
   --primary-foreground: oklch(0.98 0 0);
   --secondary: oklch(0.96 0.005 260);
   --secondary-foreground: oklch(0.2 0.01 260);
-  --destructive: oklch(0.58 0.22 25);
+  --destructive: oklch(0.54 0.17 25);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.13 0.01 260);
 
@@ -67,6 +68,8 @@ th, td {
   --overlay-from: 5px;
   --overlay-scale-from: 0.992;
   --app-queue-col-max: min(32rem, 70dvh);
+  --app-text-control: 0.75rem;
+  --app-leading-control: 1rem;
 
   /* Motion tokens – use for consistent transition timing */
   --motion-fast: 120ms;     /* micro: hover, active, press, focus */
@@ -77,6 +80,8 @@ th, td {
 
 @media (min-width: 640px) {
   :root {
+    --app-text-control: 0.8rem;
+    --app-leading-control: 1.125rem;
     --app-main-pad: 0.625rem;
     --app-main-pad-y: 0.5rem;
   }
@@ -109,15 +114,16 @@ th, td {
   
   --brand: var(--primary);
   --brand-foreground: var(--primary-foreground);
-  --accent-teal: oklch(0.65 0.13 185);
+  --accent-teal: oklch(0.76 0.085 185);
   --accent-teal-foreground: var(--primary-foreground);
 
   
-  --success: oklch(0.65 0.15 145);
-  --warning: oklch(0.78 0.16 75);
+  --success: oklch(0.76 0.115 155);
+  --warning: oklch(0.8 0.12 75);
   --error: var(--destructive);
-  --info: oklch(0.76 0.12 255);
-  --accent-violet: oklch(0.76 0.12 300);
+  --info: oklch(0.76 0.1 255);
+  --accent-violet: oklch(0.76 0.1 300);
+  --accent-cyan: oklch(0.78 0.09 215);
 
   
   --background: oklch(0.15 0.012 260);
@@ -135,7 +141,7 @@ th, td {
   --primary-foreground: oklch(0.98 0.005 260);
   --secondary: oklch(0.25 0.014 260);
   --secondary-foreground: oklch(0.96 0.005 260);
-  --destructive: oklch(0.65 0.2 25);
+  --destructive: oklch(0.76 0.13 25);
   --popover: oklch(0.18 0.014 260);
   --popover-foreground: oklch(0.96 0.005 260);
 }
@@ -151,6 +157,7 @@ th, td {
   --color-error: var(--error);
   --color-info: var(--info);
   --color-accent-violet: var(--accent-violet);
+  --color-accent-cyan: var(--accent-cyan);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -176,6 +183,10 @@ th, td {
   --radius-lg: calc(var(--radius) + 4px);
   --radius-xl: calc(var(--radius) + 8px);
   --font-sans: var(--font-ui), ui-sans-serif, system-ui, sans-serif;
+  --text-2xs: 0.7rem;
+  --text-2xs--line-height: 1rem;
+  --text-control: var(--app-text-control);
+  --text-control--line-height: var(--app-leading-control);
   --spacing-app-header: var(--app-header-height);
   --spacing-app-sidebar: var(--app-sidebar-current-width);
   --spacing-app-main-pad: var(--app-main-pad);
@@ -512,8 +523,17 @@ th, td {
 
   .status-menu [role^='menuitem'] {
     justify-content: flex-start;
-    padding-inline: 0.5rem 1.75rem;
+    padding-inline: 0.25rem;
     background: transparent;
+  }
+
+  /* The check mark sits inside the badge; space is reserved only while it is shown. */
+  .status-menu [role^='menuitem']:is([data-state='checked'], [data-state='indeterminate']) [data-slot='badge'] {
+    padding-inline-end: 1.5rem;
+  }
+
+  .status-menu [role^='menuitem'] > [data-slot$='indicator'] {
+    inset-inline-end: 0.5rem;
   }
 
   .status-menu [role^='menuitem'] > :not([data-slot$='indicator']) {
@@ -543,19 +563,6 @@ th, td {
   }
 
   /* Filter menus list independent statuses: no flow connectors and no extra gaps. */
-  .status-menu.status-menu-flat [role^='menuitem'] {
-    padding-inline: 0.25rem;
-  }
-
-  /* Filter check mark sits inside the status badge, at its end edge. */
-  .status-menu.status-menu-flat [role^='menuitem'] [data-slot='badge'] {
-    padding-inline-end: 1.5rem;
-  }
-
-  .status-menu.status-menu-flat [role^='menuitem'] > [data-slot$='indicator'] {
-    inset-inline-end: 0.5rem;
-  }
-
   .status-menu.status-menu-flat [role^='menuitem']:has(+ [role^='menuitem']) {
     margin-bottom: 0;
   }
@@ -2055,9 +2062,6 @@ html[data-view-focus='true'] main > * > *:not([data-view-focus='true']) {
   .wx-spin, .wx-twinkle, .wx-drift, .wx-slide, .wx-fall, .wx-flash { animation: none; }
 }
 
-@keyframes pinPop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
-.pin-pop { animation: pinPop 0.35s var(--overlay-ease, ease-out); }
-@media (prefers-reduced-motion: reduce) { .pin-pop { animation: none; } }
 
 @keyframes panelSwap { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .panel-swap { animation: panelSwap var(--overlay-duration) var(--overlay-ease) both; }
@@ -2081,7 +2085,7 @@ html[data-view-focus='true'] main > * > *:not([data-view-focus='true']) {
 .visit-chain {
   --chain-start: 3.5rem;
   --chain-end: 2rem;
-  --chain-pair: linear-gradient(90deg, var(--color-primary) 1px, transparent 1px, transparent 7px, var(--color-primary) 7px);
+  --chain-pair: linear-gradient(90deg, var(--color-primary) 2px, transparent 2px, transparent 6px, var(--color-primary) 6px);
 }
 
 .visit-chain:not(:last-child)::before {
@@ -2095,7 +2099,7 @@ html[data-view-focus='true'] main > * > *:not([data-view-focus='true']) {
     var(--chain-pair) var(--chain-start) 0 / 8px 100% no-repeat,
     var(--chain-pair) 50% 0 / 8px 100% no-repeat,
     var(--chain-pair) calc(100% - var(--chain-end)) 0 / 8px 100% no-repeat;
-  mask-image: linear-gradient(to bottom, black, rgb(0 0 0 / 0.2) 50%, black);
+  mask-image: linear-gradient(to bottom, black, rgb(0 0 0 / 0.55) 50%, black);
   animation: visitConnection 5s ease-in-out infinite;
 }
 
@@ -2104,8 +2108,8 @@ html[dir='rtl'] .visit-chain:not(:last-child)::before {
 }
 
 @keyframes visitConnection {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.65; }
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.85; }
 }
 
 @media (min-width: 640px) {
@@ -2113,7 +2117,7 @@ html[dir='rtl'] .visit-chain:not(:last-child)::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .visit-chain::before { animation: none; opacity: 0.35; }
+  .visit-chain::before { animation: none; opacity: 0.65; }
 }
 
 .drag-ghost {
@@ -2151,16 +2155,26 @@ body.is-dragging {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   animation:
-    notifTrace 900ms var(--overlay-ease) forwards,
-    notifFade 450ms ease-out 900ms forwards;
+    notifTrace 2200ms ease-in-out forwards,
+    notifGlow 6000ms ease-in-out 2200ms infinite;
 }
 
 @keyframes notifTrace {
-  to { stroke-dashoffset: 0; }
+  0% { stroke-dashoffset: 1; opacity: 0; }
+  15% { opacity: 1; }
+  80% { stroke-dashoffset: 0; opacity: 0.7; }
+  100% { stroke-dashoffset: 0; opacity: 0.22; }
 }
 
-@keyframes notifFade {
-  to { opacity: 0; }
+@keyframes notifGlow {
+  0%, 100% {
+    opacity: 0.22;
+    filter: drop-shadow(0 0 1px currentColor);
+  }
+  50% {
+    opacity: 0.48;
+    filter: drop-shadow(0 0 3px currentColor);
+  }
 }
 
 .notif-roll {
@@ -2191,6 +2205,6 @@ body.is-dragging {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .notif-ring path { animation: none; stroke-dashoffset: 0; opacity: 0; }
+  .notif-ring path { animation: none; stroke-dashoffset: 0; opacity: 0.22; }
   .notif-roll__strip--go { animation: none; transform: translateY(-1em); }
 }

@@ -84,7 +84,7 @@ export function OptionList({
                   }
                 }}
                 className={cn(
-                  'flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-start text-sm outline-none transition-colors duration-(--motion-fast) hover:bg-muted/60 focus-visible:bg-muted/60 motion-reduce:transition-none',
+                  'flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-start text-control outline-none transition-colors duration-(--motion-fast) hover:bg-muted/60 focus-visible:bg-muted/60 motion-reduce:transition-none',
                   selected && 'font-medium text-primary',
                   option.disabled && 'cursor-not-allowed opacity-50 hover:bg-transparent',
                 )}

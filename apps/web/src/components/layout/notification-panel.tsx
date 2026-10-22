@@ -83,13 +83,11 @@ export function NotificationPanel({ items, unread, error, onRetry, onOpen, onMar
                       isUnread && 'bg-primary/5',
                     )}
                   >
-                    <span className={cn('mt-0.5 grid size-8 shrink-0 place-items-center rounded-full', isUnread ? 'bg-primary/12 text-primary' : 'bg-muted text-muted-foreground')}>
-                      <NotificationTypeIcon type={item.type} className="size-4" />
-                    </span>
+                    <NotificationTypeIcon type={item.type} className="mt-0.5 rounded-full" />
                     <span className="min-w-0 flex-1">
                       <span className={cn('block truncate text-sm', isUnread ? 'font-semibold' : 'font-medium')}>{copy.title}</span>
                       {copy.body ? <span className="block truncate text-xs text-muted-foreground">{copy.body}</span> : null}
-                      <span className="mt-0.5 block text-[0.6875rem] text-muted-foreground/80">
+                      <span className="mt-0.5 block text-2xs text-muted-foreground/80">
                         {notificationAge(item.createdAt, t, lang, now)}
                       </span>
                     </span>

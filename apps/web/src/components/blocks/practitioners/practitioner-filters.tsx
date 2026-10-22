@@ -146,7 +146,7 @@ export function PractitionerFiltersBlock({
               >
                 {Object.entries(getPractitionerEmploymentLabels(t)).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
-                    {(t?.constants?.employment as Record<string, string>)?.[value] ?? label}
+                    {label}
                   </SelectItem>
                 ))}
               </FilterSelect>

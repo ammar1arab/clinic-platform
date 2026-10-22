@@ -20,13 +20,31 @@ export function notificationCopy(item: NotificationDTO, t: Translations, lang: s
   return { title: known, body: [patient, when].filter(Boolean).join(' · ') || (item.type === 'referral_created' ? item.body : null) };
 }
 
-export function notificationHref(item: NotificationDTO) {
+export function notificationAction(item: NotificationDTO, t: Translations) {
   if (item.type.startsWith('schedule_request_')) {
-    return item.type === 'schedule_request_pending' ? ROUTES.SETTINGS_SCHEDULE_REQUESTS : `${ROUTES.SETTINGS_SCHEDULE_REQUESTS}?view=history`;
+    return {
+      href: item.type === 'schedule_request_pending' ? ROUTES.SETTINGS_SCHEDULE_REQUESTS : `${ROUTES.SETTINGS_SCHEDULE_REQUESTS}?view=history`,
+      label: t.notifications.openScheduleRequests,
+    };
   }
   const appointmentId = text(item.payload?.appointmentId);
   if (!appointmentId) return null;
-  return item.type.startsWith('appointment_') ? ROUTES.SCHEDULE_EDIT(appointmentId) : ROUTES.VISIT(appointmentId);
+  return item.type.startsWith('appointment_')
+    ? { href: ROUTES.SCHEDULE_EDIT(appointmentId), label: t.notifications.openAppointment }
+    : { href: ROUTES.VISIT(appointmentId), label: t.notifications.openVisit };
+}
+
+export function notificationDetails(item: NotificationDTO, t: Translations, lang: string) {
+  const payload = item.payload ?? {};
+  const patient = lang === 'ar' ? (text(payload.patientNameAr) ?? text(payload.patientName)) : text(payload.patientName);
+  const scheduledAt = text(payload.scheduledAt);
+  const deadlineAt = text(payload.documentationDeadlineAt);
+  return [
+    patient && { label: t.notifications.patient, value: patient },
+    scheduledAt && { label: t.notifications.appointmentAt, value: formatDateTime(scheduledAt, '', lang) },
+    deadlineAt && { label: t.notifications.deadlineAt, value: formatDateTime(deadlineAt, '', lang) },
+    { label: t.notifications.receivedAt, value: formatDateTime(item.createdAt, '', lang) },
+  ].filter((row): row is { label: string; value: string } => !!row);
 }
 
 export function notificationAge(createdAt: string, t: Translations, lang: string, now: Date) {

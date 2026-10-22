@@ -373,7 +373,7 @@ function PaletteItems({ locked, onPick, onDrop, compact = false }: {
     const Icon = FIELD_ICONS[type];
     if (compact) return (
       <div key={type} className="flex shrink-0 items-center rounded-xl border border-border/50 bg-muted/20">
-        <Button type="button" variant="ghost" disabled={locked} onClick={() => onPick(type)} className="h-9 gap-1.5 px-2.5 text-xs font-normal">
+        <Button type="button" variant="ghost" disabled={locked} onClick={() => onPick(type)} className="h-9 gap-1.5 px-2.5 font-normal">
           <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
           {t.visits.fieldTypes[type]}
         </Button>

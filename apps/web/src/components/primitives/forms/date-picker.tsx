@@ -11,6 +11,7 @@ import {
 
 import { ar, enUS } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/datetime';
 import {
   Button,
   Calendar,
@@ -153,7 +154,7 @@ export function DatePicker({
           <IconCalendar className="size-4 opacity-70" />
           <span className="flex-1 truncate text-start">
             {selected
-              ? format(selected, 'MMM d, yyyy', { locale })
+              ? formatDate(selected, '', lang)
               : resolvedPlaceholder}
           </span>
           {selected && !disabled && (

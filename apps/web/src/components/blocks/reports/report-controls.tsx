@@ -32,7 +32,7 @@ export function DateRangePresets({ onPick }: DatePresetProps) {
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 px-2.5 text-xs"
+          className="h-8 px-2.5"
           onClick={() => {
             const { from, to } = preset.range();
             onPick(from, to);
@@ -98,7 +98,7 @@ export function ExportFormatButton({
               <span className="font-semibold">{label}</span>
               <DropdownMenuShortcut>{ext}</DropdownMenuShortcut>
             </div>
-            <span className="text-[11px] text-muted-foreground group-focus/menu-item:text-accent-foreground/70">
+            <span className="text-2xs text-muted-foreground group-focus/menu-item:text-accent-foreground/70">
               {desc}
             </span>
           </DropdownMenuItem>

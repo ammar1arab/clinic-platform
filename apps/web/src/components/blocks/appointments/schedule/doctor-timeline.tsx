@@ -131,7 +131,7 @@ function TimelineEventBlock({
           <p
             className={cn(
               'min-w-0 flex-1 truncate font-semibold text-foreground',
-              density === 'xs' ? 'text-[11px] leading-4' : 'text-xs leading-4 sm:text-[13px] sm:leading-5',
+              density === 'xs' ? 'text-2xs leading-4' : 'text-xs leading-4 sm:text-[13px] sm:leading-5',
               isCancelled && 'line-through',
             )}
           >
@@ -158,14 +158,14 @@ function TimelineEventBlock({
         </div>
 
         {density !== 'xs' && (
-          <p className="truncate text-[11px] font-medium leading-4 tabular-nums text-muted-foreground">
+          <p className="truncate text-2xs font-medium leading-4 tabular-nums text-muted-foreground">
             {timeLabel}
           </p>
         )}
 
         {density === 'md' && !narrow && (
           <p
-            className="flex min-w-0 items-center gap-1.5 truncate text-[11px] leading-4 text-muted-foreground"
+            className="flex min-w-0 items-center gap-1.5 truncate text-2xs leading-4 text-muted-foreground"
           >
             <span
               className="size-1.5 shrink-0 rounded-full"
@@ -181,7 +181,7 @@ function TimelineEventBlock({
         {density === 'lg' && !narrow && (
           <>
             <p
-              className="flex min-w-0 items-center gap-1.5 truncate text-[11px] leading-4 text-muted-foreground"
+              className="flex min-w-0 items-center gap-1.5 truncate text-2xs leading-4 text-muted-foreground"
             >
               <span
                 className="size-1.5 shrink-0 rounded-full"
@@ -192,7 +192,7 @@ function TimelineEventBlock({
                 {formatDoctorLabel(doctorName)}
               </span>
             </p>
-            <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-4 text-muted-foreground">
+            <div className="mt-auto flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-2xs leading-4 text-muted-foreground">
               {appt.service ? (
                 <span
                   className="flex min-w-0 max-w-full items-center gap-1 truncate font-medium text-foreground/75"
@@ -460,7 +460,7 @@ export function DoctorTimeline({
             {TIMELINE_HOURS.map((h) => (
               <div
                 key={h}
-                className="absolute end-0 flex w-12 items-start justify-end pe-1.5 text-[10px] font-semibold text-muted-foreground/60"
+                className="absolute end-0 flex w-12 items-start justify-end pe-1.5 text-2xs font-semibold text-muted-foreground/60"
                 style={{ top: `${(h - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT}px`, height: `${TIMELINE_HOUR_HEIGHT}px` }}
               >
                 <span className="mt-0.5">{formatHourLabel(h, lang)}</span>
@@ -496,7 +496,7 @@ export function DoctorTimeline({
 
             {positioned.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-3">
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-center text-[11px] font-semibold text-primary sm:px-4 sm:text-xs">
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-2 text-center text-2xs font-semibold text-primary sm:px-4 sm:text-xs">
                   <IconAdd className="size-3.5 shrink-0" />
                   <span className="sm:hidden">{t.appointments.tapToBook}</span>
                   <span className="hidden sm:inline">{t.appointments.clickAnywhereToBook}</span>

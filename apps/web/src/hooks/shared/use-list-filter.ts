@@ -3,11 +3,12 @@
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/providers';
 import { useSessionStorageState } from './use-session-storage-state';
+import { DEFAULT_PAGE_SIZE } from '@/components/primitives/display/pagination';
 
 export function useListFilter<T>(
   items: T[] | undefined,
   searchFields: (item: T) => string[],
-  pageSize = 10,
+  pageSize = DEFAULT_PAGE_SIZE,
 ) {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -42,9 +43,8 @@ export function useListFilter<T>(
     },
     page: currentPage,
     setPage,
-    pageCount,
     pageItems,
     totalItems: filtered.length,
-    pageSize,
+    pagination: { page: currentPage, totalItems: filtered.length, pageSize, onPageChange: setPage },
   };
 }

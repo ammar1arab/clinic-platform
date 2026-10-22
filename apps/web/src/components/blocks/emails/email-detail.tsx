@@ -189,7 +189,6 @@ export function EmailDetail({ id }: { id: string }) {
                   <div className="shrink-0">
                     <Pagination
                       page={page}
-                      pageCount={pageCount}
                       totalItems={message.totalRecipients}
                       pageSize={message.limit}
                       resetScroll={false}

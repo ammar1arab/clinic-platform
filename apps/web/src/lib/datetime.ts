@@ -111,7 +111,7 @@ export function formatDate(
   empty = EMPTY,
   lang = 'en',
 ) {
-  return formatDatePattern(value, 'MMM d, yyyy', empty, lang);
+  return formatDatePattern(value, lang === 'ar' ? 'd MMM yyyy' : 'MMM d, yyyy', empty, lang);
 }
 
 export function formatMonthYear(
@@ -127,7 +127,7 @@ export function formatWeekdayDate(
   empty = EMPTY,
   lang = 'en',
 ) {
-  return formatDatePattern(value, 'EEE, MMM d, yyyy', empty, lang);
+  return formatDatePattern(value, lang === 'ar' ? 'EEE، d MMM yyyy' : 'EEE, MMM d, yyyy', empty, lang);
 }
 
 export function formatDateTime(
@@ -138,6 +138,20 @@ export function formatDateTime(
   const date = toDate(value);
   if (!date) return empty;
   return `${formatDate(date, empty, lang)} · ${formatTime(date, empty, lang)}`;
+}
+
+export function formatDateTimeRange(
+  start: Date | string | number | null | undefined,
+  end: Date | string | number | null | undefined,
+  empty = EMPTY,
+  lang = 'en',
+) {
+  const from = toDate(start);
+  const to = toDate(end);
+  if (!from || !to) return empty;
+  return from.toDateString() === to.toDateString()
+    ? `${formatDate(from, empty, lang)} · ${formatTimeRange(from, to, empty, lang)}`
+    : `${formatDateTime(from, empty, lang)}${RANGE_SEP}${formatDateTime(to, empty, lang)}`;
 }
 
 export function toDateParam(date: Date) {

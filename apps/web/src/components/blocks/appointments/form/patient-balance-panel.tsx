@@ -74,7 +74,7 @@ export function PatientBalancePanel({
         <IconWell icon={IconPayment} size="sm" accent="muted" />
         <div className="min-w-0">
           <p className="text-sm font-medium">{t.appointments.patientBalance}</p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {t.appointments.balanceDesc}
           </p>
         </div>
@@ -172,7 +172,7 @@ function PackageRow({
                 {t.appointments.coveringThisVisitCharged.replace('{cost}', costLabel)}
               </Badge>
             ) : covers ? (
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
+              <p className="mt-0.5 text-2xs text-muted-foreground">
                 {t.appointments.useForThisVisit.replace('{cost}', costLabel)}
               </p>
             ) : (

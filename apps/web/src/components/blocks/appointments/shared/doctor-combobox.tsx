@@ -14,7 +14,7 @@ export type DoctorOption = {
 
 function CountBadge({ count }: { count: number }) {
   return (
-    <Badge variant="muted" className="min-h-5 px-2 text-[11px] tabular-nums">
+    <Badge variant="muted" className="min-h-5 px-2 text-2xs tabular-nums">
       {count}
     </Badge>
   );

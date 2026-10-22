@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui';
 import { APPOINTMENT_EDITABLE_STATUSES, APPOINTMENT_STATUS_GROUPS } from '@clinic/types';
+import { STATUS_GROUP_BADGE_VARIANT } from '@/constants/appointment';
 import { cn } from '@/lib/utils';
 import type { AppointmentStatus } from '@/services/appointments.service';
 import { StatusBadgeBlock } from './status-badge';
@@ -73,7 +74,7 @@ export function StatusFilterItems({
       onSelect={(event) => event.preventDefault()}
       className="gap-2 rounded-md px-2 py-1.5"
     >
-      <Badge variant={group === 'inProgress' ? 'info' : group === 'completed' ? 'success' : 'muted'}>{t.appointments.statusGroups[group as keyof typeof APPOINTMENT_STATUS_GROUPS]}</Badge>
+      <Badge variant={STATUS_GROUP_BADGE_VARIANT[group as keyof typeof APPOINTMENT_STATUS_GROUPS]}>{t.appointments.statusGroups[group as keyof typeof APPOINTMENT_STATUS_GROUPS]}</Badge>
     </DropdownMenuCheckboxItem>;
   });
 }

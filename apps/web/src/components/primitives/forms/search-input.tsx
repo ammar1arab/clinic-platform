@@ -78,7 +78,7 @@ export function SearchInput({
         }}
         placeholder={resolvedPlaceholder}
         className={cn(
-          'h-5 min-w-0 flex-1 border-0 bg-transparent p-0 text-sm leading-5 text-foreground outline-none ring-0 placeholder:text-muted-foreground',
+          'h-5 min-w-0 flex-1 border-0 bg-transparent p-0 text-control text-foreground outline-none ring-0 placeholder:text-muted-foreground',
           inputClassName,
         )}
       />

@@ -191,7 +191,7 @@ export function DayAppointmentsPopover({
           <h2 className="truncate text-xs font-semibold text-foreground">
             {formatDay(state.date, lang)}
           </h2>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {sorted.length} {t.appointments.appts}
           </p>
         </div>
@@ -249,12 +249,12 @@ export function DayAppointmentsPopover({
                       tip={false}
                     />
                   </div>
-                  <p className="text-[10px] font-medium tabular-nums text-muted-foreground">
+                  <p className="text-2xs font-medium tabular-nums text-muted-foreground">
                     {formatApptTimeRange(appointment, lang)}
                     <span className="mx-1 text-border">·</span>
                     {appointment.durationMins}{t.appointments.minutesShort}
                   </p>
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-2xs text-muted-foreground">
                     <span className="inline-flex min-w-0 max-w-full items-center gap-1 truncate">
                       <IconPerson className="size-2.5 shrink-0 text-primary" />
                       <span className="truncate">{doctor}</span>
@@ -341,7 +341,7 @@ export function AppointmentPopover({
                   {title}
                 </h2>
               </SoftTip>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-2xs text-muted-foreground">
                 {formatApptTimeRange(appointment, lang)}
               </p>
             </div>
@@ -357,7 +357,7 @@ export function AppointmentPopover({
             </Button>
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
-            <span className="text-[10px] font-medium text-muted-foreground">
+            <span className="text-2xs font-medium text-muted-foreground">
               {t.appointments.status}
             </span>
             <AppointmentStatusSelect
@@ -482,7 +482,7 @@ export function AppointmentPopover({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-7 px-2.5 text-xs"
+            className="h-7 px-2.5"
             onClick={onClose}
           >
             {t.common.close}
@@ -491,7 +491,7 @@ export function AppointmentPopover({
             type="button"
             variant="outline"
             size="sm"
-            className="h-7 px-2.5 text-xs"
+            className="h-7 px-2.5"
             onClick={() => {
               onClose();
               router.push(ROUTES.VISIT(appointment.id));
@@ -502,7 +502,7 @@ export function AppointmentPopover({
           <Button
             type="button"
             size="sm"
-            className="h-7 px-2.5 text-xs"
+            className="h-7 px-2.5"
             onClick={() => onExpand({ ...appointment, status })}
           >
             <IconMaximize />
@@ -531,7 +531,7 @@ function DetailRow({
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <p className="text-2xs font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </p>
         <SoftTip label={title}>

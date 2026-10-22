@@ -1,16 +1,17 @@
+import type { EmploymentType } from '@clinic/types';
 import type { Translations } from '@/i18n';
 
 export const getPractitionerEmploymentLabels = (
   t: Translations,
-): Record<string, string> => t.constants.employment;
+): Record<EmploymentType, string> => t.constants.employment;
 
 export const PRACTITIONER_EMPLOYMENT_VARIANT: Record<
-  string,
-  'secondary' | 'warning' | 'info'
+  EmploymentType,
+  'success' | 'warning' | 'info'
 > = {
-  salaried: 'secondary',
+  salaried: 'info',
   commission: 'warning',
-  mixed: 'info',
+  mixed: 'success',
 };
 
 export const getPractitionerLanguages = (t: Translations) =>

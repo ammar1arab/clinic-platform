@@ -34,7 +34,7 @@ export function PageBack({
       <Button
         variant="ghost"
         size="sm"
-        className="-ms-2 h-8 shrink-0 px-2 text-xs text-muted-foreground hover:text-foreground"
+        className="-ms-2 h-8 shrink-0 px-2 text-muted-foreground hover:text-foreground"
         asChild={!onBack}
         onClick={onBack}
       >

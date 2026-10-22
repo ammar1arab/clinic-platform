@@ -84,7 +84,7 @@ export function MultiSelect({
         </div>
         <div className="p-1">
           {filtered.length === 0 ? (
-            <p className="px-2.5 py-4 text-center text-sm text-muted-foreground">{emptyText ?? t.common.noMatches}</p>
+            <p className="px-2.5 py-4 text-center text-control text-muted-foreground">{emptyText ?? t.common.noMatches}</p>
           ) : (
             filtered.map((option) => {
               const checked = value.includes(option.value);
@@ -96,7 +96,7 @@ export function MultiSelect({
                   aria-selected={checked}
                   onClick={() => toggle(option.value)}
                   className={cn(
-                    'flex w-full touch-pan-y items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-start text-xs hover:bg-muted sm:text-sm',
+                    'flex w-full touch-pan-y items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-start text-control hover:bg-muted',
                     checked && 'bg-muted',
                   )}
                 >

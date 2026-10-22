@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { Button, Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { WEEKDAY_OPTIONS } from '@/constants/practitioner';
-import { formatDateTime, formatTimeRange } from '@/lib/datetime';
+import { formatDateTimeRange, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerHoursData } from '@/lib/validations';
 import { useLanguage } from '@/providers';
+import { cn } from '@/lib/utils';
 
 export function PractitionerHoursSummary({
   hours,
@@ -53,21 +54,11 @@ export function PractitionerHoursSummary({
         <section className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">{t.practitioner.extraAvailability}</p>
           {hours.availabilityOverrides.length ? (
-            <ul className="max-h-56 space-y-1.5 overflow-y-auto overscroll-y-contain">
-              {hours.availabilityOverrides.map((entry, index) => (
-                <li
-                  key={`${entry.startAt}-${index}`}
-                  className="rounded-lg bg-muted/40 px-3 py-2 text-sm"
-                >
-                  <p className="flex flex-wrap gap-x-2 tabular-nums text-muted-foreground">
-                    <span>{formatDateTime(entry.startAt, undefined, lang)}</span><span>-</span><span>{formatDateTime(entry.endAt, undefined, lang)}</span>
-                  </p>
-                  {entry.reason ? (
-                    <p className="mt-1 text-xs text-muted-foreground">{entry.reason}</p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <ScheduleEntryList
+              className="max-h-56 overflow-y-auto overscroll-y-contain"
+              entries={hours.availabilityOverrides.map((entry) => ({ title: entry.reason, start: entry.startAt, end: entry.endAt }))}
+              fallback={t.practitioner.extraAvailability}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">{t.practitioner.noExtraAvailability}</p>
           )}
@@ -76,26 +67,38 @@ export function PractitionerHoursSummary({
         <section className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">{t.practitioner.leave}</p>
           {hours.timeOffs.length ? (
-            <ul className="max-h-56 space-y-1.5 overflow-y-auto overscroll-y-contain">
-              {hours.timeOffs.map((entry, index) => (
-                <li
-                  key={`${entry.startDate}-${index}`}
-                  className="rounded-lg bg-muted/40 px-3 py-2 text-sm"
-                >
-                  <div>
-                    {formatDateTime(entry.startDate, undefined, lang)} - {formatDateTime(entry.endDate, undefined, lang)}
-                  </div>
-                  {entry.reason ? (
-                    <p className="mt-1 text-xs text-muted-foreground">{entry.reason}</p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <ScheduleEntryList
+              className="max-h-56 overflow-y-auto overscroll-y-contain"
+              entries={hours.timeOffs.map((entry) => ({ title: entry.reason, start: entry.startDate, end: entry.endDate }))}
+              fallback={t.practitioner.leave}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">{t.practitioner.noLeaveBlocks}</p>
           )}
         </section>
       </CardContent>
     </Card>
+  );
+}
+
+export function ScheduleEntryList({
+  entries,
+  fallback,
+  className,
+}: {
+  entries: { title?: string | null; start: string; end: string }[];
+  fallback: string;
+  className?: string;
+}) {
+  const { lang } = useLanguage();
+  return (
+    <ul className={cn('space-y-2', className)}>
+      {entries.map((entry, index) => (
+        <li key={`${entry.start}-${index}`} className="min-w-0 rounded-lg bg-muted/50 px-3 py-2">
+          <p className="truncate text-sm font-medium">{entry.title?.trim() || fallback}</p>
+          <p className="mt-0.5 text-xs tabular-nums text-muted-foreground">{formatDateTimeRange(entry.start, entry.end, undefined, lang)}</p>
+        </li>
+      ))}
+    </ul>
   );
 }

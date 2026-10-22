@@ -42,7 +42,7 @@ export function StatusBadgeBlock({
         aria-label={translatedLabel}
         className={cn(
           'max-w-none shrink-0 [&>span]:max-w-none [&>span]:overflow-visible [&>span]:whitespace-nowrap',
-          compact && 'text-[11px]',
+          compact && 'text-2xs',
           className,
         )}
       >

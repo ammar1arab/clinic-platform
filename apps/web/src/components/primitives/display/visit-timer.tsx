@@ -61,14 +61,14 @@ export function VisitTimer({
     >
       {compact ? <IconTime className="size-4 shrink-0 text-muted-foreground max-sm:hidden" /> : null}
       <div className={cn("min-w-0", compact && "flex items-center gap-2")}>
-        <p className={cn("text-[11px] font-medium text-muted-foreground sm:text-xs", compact && "sr-only sm:not-sr-only")}>
+        <p className={cn("text-2xs font-medium text-muted-foreground sm:text-xs", compact && "sr-only sm:not-sr-only")}>
           {finishedAt ? t.visits.timerFinished : running == null ? t.visits.timerNotStarted : overtime ? t.visits.timerOvertime : t.visits.timerRemaining}
         </p>
         <p className={cn('font-heading text-xl font-semibold tabular-nums tracking-tight sm:text-3xl', compact && 'whitespace-nowrap text-sm sm:text-base', overtime && !finishedAt && 'text-warning')}>
           <ClockReadout main={shown.slice(0, -3)} minor={shown.slice(-3)} minorClassName="text-inherit" />
         </p>
       </div>
-      <p className={cn("text-end text-[11px] text-muted-foreground sm:text-xs", compact && "hidden")}>
+      <p className={cn("text-end text-2xs text-muted-foreground sm:text-xs", compact && "hidden")}>
         {t.visits.plannedDuration.replace('{minutes}', String(durationMins))}
       </p>
     </div>

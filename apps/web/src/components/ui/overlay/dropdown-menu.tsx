@@ -105,7 +105,7 @@ function DropdownMenuItem({
       data-variant={variant}
       className={cn(
         'group/menu-item relative flex cursor-pointer items-center gap-2',
-        'rounded-lg px-2.5 py-2 text-sm outline-hidden select-none',
+        'rounded-lg px-2.5 py-2 text-control outline-hidden select-none',
 
         'transition-all duration-100',
 
@@ -147,7 +147,7 @@ function DropdownMenuCheckboxItem({
       data-slot="dropdown-menu-checkbox-item"
       data-inset={inset}
       className={cn(
-        'relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-xs sm:text-sm outline-hidden select-none',
+        'relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-control outline-hidden select-none',
         'transition-all duration-100',
         'focus:bg-accent/70 focus:text-accent-foreground focus:**:text-accent-foreground',
         'data-inset:ps-8 data-disabled:pointer-events-none data-disabled:opacity-40',
@@ -195,7 +195,7 @@ function DropdownMenuRadioItem({
       data-slot="dropdown-menu-radio-item"
       data-inset={inset}
       className={cn(
-        'relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-xs sm:text-sm outline-hidden select-none',
+        'relative flex cursor-pointer items-center gap-2 rounded-lg py-2 pe-8 ps-2.5 text-control outline-hidden select-none',
         'transition-all duration-100',
         'focus:bg-accent/70 focus:text-accent-foreground focus:**:text-accent-foreground',
         'data-inset:ps-8 data-disabled:pointer-events-none data-disabled:opacity-40',
@@ -230,7 +230,7 @@ function DropdownMenuLabel({
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
-        'px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 data-inset:ps-8',
+        'px-2.5 py-1.5 text-2xs font-bold uppercase tracking-wider text-muted-foreground/80 data-inset:ps-8',
         className,
       )}
       {...props}
@@ -259,7 +259,7 @@ function DropdownMenuShortcut({
     <span
       data-slot="dropdown-menu-shortcut"
       className={cn(
-        'ms-auto inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono font-semibold tracking-widest text-muted-foreground',
+        'ms-auto inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/60 px-1.5 py-0.5 text-2xs font-mono font-semibold tracking-widest text-muted-foreground',
         'group-focus/menu-item:border-accent-foreground/30 group-focus/menu-item:bg-accent-foreground/10 group-focus/menu-item:text-accent-foreground/80',
         'transition-all duration-100',
         className,
@@ -278,17 +278,19 @@ function DropdownMenuSub({
 function DropdownMenuSubTrigger({
   className,
   inset,
+  chevron = true,
   children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
   inset?: boolean;
+  chevron?: boolean;
 }) {
   return (
     <DropdownMenuPrimitive.SubTrigger
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        'flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-xs sm:text-sm outline-hidden select-none',
+        'flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-control outline-hidden select-none',
         'transition-all duration-100',
         'focus:bg-accent/70 focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground',
         'data-inset:ps-8 data-open:bg-accent data-open:text-accent-foreground',
@@ -298,7 +300,7 @@ function DropdownMenuSubTrigger({
       {...props}
     >
       {children}
-      <IconChevronRight className="ms-auto size-4 text-muted-foreground rtl:rotate-180" />
+      {chevron && <IconChevronRight className="ms-auto size-4 text-muted-foreground rtl:rotate-180" />}
     </DropdownMenuPrimitive.SubTrigger>
   );
 }
@@ -308,11 +310,14 @@ function DropdownMenuSubContent({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
   return (
-    <DropdownMenuPrimitive.SubContent
-      data-slot="dropdown-menu-sub-content"
-      className={cn(OVERLAY_POP_CLASS, 'z-50 min-w-30 p-1.5', className)}
-      {...props}
-    />
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.SubContent
+        data-slot="dropdown-menu-sub-content"
+        collisionPadding={OVERLAY_COLLISION_PADDING}
+        className={cn(OVERLAY_POP_CLASS, 'z-50 min-w-30 p-1.5', className)}
+        {...props}
+      />
+    </DropdownMenuPrimitive.Portal>
   );
 }
 

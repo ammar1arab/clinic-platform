@@ -22,7 +22,7 @@ export const DIRECTORY_ACTION_CLASS =
 export const DIRECTORY_FILTER_BUTTON_CLASS = 'h-8 w-auto min-w-8 gap-1 px-2 sm:gap-1.5 sm:px-2.5';
 
 export const DIRECTORY_FILTER_BADGE_CLASS =
-  'ms-0 h-4 min-h-4 min-w-4 justify-center px-1 py-0 text-[10px] leading-none';
+  'ms-0 h-4 min-h-4 min-w-4 justify-center px-1 py-0 text-2xs leading-none';
 
 export function DirectoryToolbar({
   search,

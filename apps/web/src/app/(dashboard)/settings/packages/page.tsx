@@ -2,20 +2,8 @@
 
 import { useState } from 'react';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
+import { ResourceTable } from '@/components/primitives';
 import {
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Skeleton,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
   Input,
   Select,
   SelectContent,
@@ -26,20 +14,15 @@ import {
 import {
   DirectoryActions,
   RowActionsMenu,
-  EmptyState,
   FormField,
-  FormActions,
   TruncatedText,
   SearchInput,
-  Pagination,
-  TableFrame,
   EntityMetaStat,
   EntityMobileCard,
 } from '@/components/primitives';
 
-import { SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
+import { SettingsAddButton, SettingsFormDialog, SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
 import {
-  IconAdd,
   IconDelete,
   IconEdit,
   IconPackage,
@@ -55,6 +38,7 @@ import {
 } from '@/hooks/api/use-packages';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useListFilter } from '@/hooks/shared/use-list-filter';
+import { useCreateDialog } from '@/hooks/shared/use-create-dialog';
 import { useLanguage } from '@/providers';
 import type { ClinicPackage } from '@/services/packages.service';
 import type { DiscountType } from '@/services/appointments.service';
@@ -75,12 +59,8 @@ export default function PackagesPage() {
   const {
     search,
     setSearch,
-    page,
-    setPage,
-    pageCount,
     pageItems,
-    totalItems,
-    pageSize,
+    pagination,
   } = useListFilter(packages, searchFields);
 
   const createMutation = useCreatePackage(clinicId);
@@ -90,7 +70,7 @@ export default function PackagesPage() {
   const deleteMutation = useDeletePackage(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useCreateDialog();
   const [editing, setEditing] = useState<ClinicPackage | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -178,115 +158,84 @@ export default function PackagesPage() {
             placeholder={t.settings.searchPackages}
           />
         }
-        actions={
-          <Button size="sm" onClick={openCreate} className="shrink-0 max-sm:size-8 max-sm:px-0" aria-label={t.settings.addPackage}>
-            <IconAdd className="size-4 sm:me-1.5" />
-            <span className="hidden sm:inline">{t.settings.addPackage}</span>
-          </Button>
-        }
+        actions={<SettingsAddButton label={t.settings.addPackage} onClick={openCreate} />}
       />
 
-      <div className="hidden md:block">
-        <TableFrame>
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[36%]">{t.common.name}</TableHead>
-                <TableHead className="w-[12%]">{t.settings.sessions}</TableHead>
-                <TableHead className="w-[14%]">{t.common.fee}</TableHead>
-                <TableHead className="w-[14%]">{t.appointments.discount}</TableHead>
-                <TableHead className="w-[24%] text-end">{t.common.active}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading &&
-                Array.from({ length: 3 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-32 max-w-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-10" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-14" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-12" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-9 ms-auto" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-
-              {!isLoading && totalItems === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="p-0">
-                    <EmptyState
-                      icon={IconPackage}
-                      title={search ? t.settings.noMatchingPackages : t.settings.noPackages}
-                      description={
-                        search
-                          ? t.common.noResults
-                          : t.settings.packagesDesc
-                      }
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-
-              {pageItems.map((p) => (
-                <TableRow key={p.id} className={!p.isActive ? 'opacity-60' : undefined}>
-                  <TableCell className="max-w-0 overflow-hidden">
-                    <TruncatedText className="font-medium">{p.name}</TruncatedText>
-                    {p.description && (
-                      <p className="truncate text-xs text-muted-foreground">{p.description}</p>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{p.sessionCount ?? '—'}</TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {p.price != null ? `${Number(p.price).toFixed(3)} JOD` : '—'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {formatPackageDiscount(p)}
-                  </TableCell>
-                  <TableCell>
-                    <DirectoryActions
-                      name={p.name}
-                      active={p.isActive}
-                      disabled={isToggling}
-                      onChange={(checked) => handleToggle(p, checked)}
-                    >
-                      {rowActions(p)}
-                    </DirectoryActions>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableFrame>
-      </div>
-
-      <div className="space-y-2 md:hidden">
-        {isLoading &&
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border/70 bg-card p-4">
-              <Skeleton className="h-4 w-28" />
-            </div>
-          ))}
-        {!isLoading && totalItems === 0 && (
-          <EmptyState
-            icon={IconPackage}
-            title={search ? t.settings.noMatchingPackages : t.settings.noPackages}
-            description={
-              search
-                ? t.common.noResults
-                : t.settings.packagesDesc
-            }
-          />
-        )}
-        {pageItems.map((p) => (
+      <ResourceTable
+        rows={pageItems}
+        rowKey={(p) => p.id}
+        inactive={(p) => !p.isActive}
+        isLoading={isLoading}
+        pagination={pagination}
+        empty={{
+          icon: IconPackage,
+          title: search ? t.settings.noMatchingPackages : t.settings.noPackages,
+          description: search ? t.common.noResults : t.settings.packagesDesc,
+        }}
+        columns={[
+          {
+            id: 'name',
+            header: t.common.name,
+            className: 'w-[36%]',
+            cellClassName: 'max-w-0 overflow-hidden',
+            skeleton: 'h-4 w-32 max-w-full',
+            render: (p) => (
+              <>
+                <TruncatedText className="font-medium">{p.name}</TruncatedText>
+                {p.description && (
+                  <p className="truncate text-xs text-muted-foreground">{p.description}</p>
+                )}
+              </>
+            ),
+          },
+          {
+            id: 'sessions',
+            header: t.settings.sessions,
+            className: 'w-[12%]',
+            cellClassName: 'text-muted-foreground',
+            skeleton: 'h-4 w-10',
+            render: (p) => (
+              <>{p.sessionCount ?? '—'}</>
+            ),
+          },
+          {
+            id: 'fee',
+            header: t.common.fee,
+            className: 'w-[14%]',
+            cellClassName: 'font-mono text-xs',
+            skeleton: 'h-4 w-14',
+            render: (p) => (
+              <>{p.price != null ? `${Number(p.price).toFixed(3)} JOD` : '—'}</>
+            ),
+          },
+          {
+            id: 'discount',
+            header: t.appointments.discount,
+            className: 'w-[14%]',
+            cellClassName: 'text-muted-foreground',
+            skeleton: 'h-4 w-12',
+            render: (p) => (
+              <>{formatPackageDiscount(p)}</>
+            ),
+          },
+          {
+            id: 'active',
+            header: t.common.active,
+            className: 'w-[24%] text-end',
+            skeleton: 'h-5 w-9 ms-auto',
+            render: (p) => (
+              <DirectoryActions
+                name={p.name}
+                active={p.isActive}
+                disabled={isToggling}
+                onChange={(checked) => handleToggle(p, checked)}
+              >
+                {rowActions(p)}
+              </DirectoryActions>
+            ),
+          },
+        ]}
+        mobileCard={(p) => (
           <EntityMobileCard
             key={p.id}
             title={p.name}
@@ -306,114 +255,92 @@ export default function PackagesPage() {
               </>
             }
           />
-        ))}
-      </div>
-
-      <Pagination
-        page={page}
-        pageCount={pageCount}
-        totalItems={totalItems}
-        pageSize={pageSize}
-        onPageChange={setPage}
+        )}
       />
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editing ? t.common.edit : t.settings.addPackage}</DialogTitle>
-          </DialogHeader>
-          <div className="py-2 space-y-3">
-            <FormField label={t.common.name} htmlFor="pkg-name">
-              <Input
-                id="pkg-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. 5-session physio pack"
-              />
-            </FormField>
-            <FormField label={t.common.description} htmlFor="pkg-desc">
-              <Input
-                id="pkg-desc"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Initial assessment + 4 follow-ups"
-              />
-            </FormField>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label={t.settings.sessions} htmlFor="pkg-sessions">
-                <Input
-                  id="pkg-sessions"
-                  type="number"
-                  min={1}
-                  value={sessionCount}
-                  onChange={(e) => setSessionCount(e.target.value)}
-                />
-              </FormField>
-              <FormField label={t.common.fee} htmlFor="pkg-price">
-                <Input
-                  id="pkg-price"
-                  type="number"
-                  min={0}
-                  step="0.001"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                />
-              </FormField>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <FormField label={t.appointments.discountType}>
-                <Select
-                  value={discountType || FORM_NONE}
-                  onValueChange={(v) =>
-                    setDiscountType(v === FORM_NONE ? '' : (v as DiscountType))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t.common.none} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={FORM_NONE}>{t.common.none}</SelectItem>
-                    <SelectItem value="fixed">{t.appointments.fixed}</SelectItem>
-                    <SelectItem value="percentage">{t.appointments.percentage}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormField>
-              <FormField label={t.appointments.discountValue} htmlFor="pkg-disc">
-                <Input
-                  id="pkg-disc"
-                  type="number"
-                  min={0}
-                  step="0.001"
-                  value={discountValue}
-                  onChange={(e) => setDiscountValue(e.target.value)}
-                  disabled={!discountType}
-                />
-              </FormField>
-            </div>
-          </div>
-          <DialogFooter>
-            <FormActions
-              variant="dialog"
-              onCancel={() => setOpen(false)}
-              submitLabel={editing ? t.common.save : t.common.create}
-              pending={isSaving}
-              disabled={!name.trim()}
-              onSubmitClick={handleSubmit}
+      <SettingsFormDialog
+        open={open}
+        onOpenChange={setOpen}
+        editing={!!editing}
+        addTitle={t.settings.addPackage}
+        pending={isSaving}
+        disabled={!name.trim()}
+        onSubmit={handleSubmit}
+      >
+        <div className="py-2 space-y-3">
+          <FormField label={t.common.name} htmlFor="pkg-name">
+            <Input
+              id="pkg-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. 5-session physio pack"
             />
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </FormField>
+          <FormField label={t.common.description} htmlFor="pkg-desc">
+            <Input
+              id="pkg-desc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g. Initial assessment + 4 follow-ups"
+            />
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label={t.settings.sessions} htmlFor="pkg-sessions">
+              <Input
+                id="pkg-sessions"
+                type="number"
+                min={1}
+                value={sessionCount}
+                onChange={(e) => setSessionCount(e.target.value)}
+              />
+            </FormField>
+            <FormField label={t.common.fee} htmlFor="pkg-price">
+              <Input
+                id="pkg-price"
+                type="number"
+                min={0}
+                step="0.001"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label={t.appointments.discountType}>
+              <Select
+                value={discountType || FORM_NONE}
+                onValueChange={(v) =>
+                  setDiscountType(v === FORM_NONE ? '' : (v as DiscountType))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t.common.none} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={FORM_NONE}>{t.common.none}</SelectItem>
+                  <SelectItem value="fixed">{t.appointments.fixed}</SelectItem>
+                  <SelectItem value="percentage">{t.appointments.percentage}</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+            <FormField label={t.appointments.discountValue} htmlFor="pkg-disc">
+              <Input
+                id="pkg-disc"
+                type="number"
+                min={0}
+                step="0.001"
+                value={discountValue}
+                onChange={(e) => setDiscountValue(e.target.value)}
+                disabled={!discountType}
+              />
+            </FormField>
+          </div>
+        </div>
+      </SettingsFormDialog>
 
       <TwoStepDeleteDialogs
-        step1={del.step1}
-        step2={del.step2}
-        onStep1OpenChange={(open) => !open && del.cancelStep1()}
-        onStep2OpenChange={(open) => !open && del.cancelStep2()}
-        onContinue={del.advance}
-        onConfirm={() => {
-          if (!del.step2) return;
-          deleteMutation.mutate(del.step2.id, { onSuccess: del.clear });
-        }}
+        controller={del}
+        onConfirm={(item) => deleteMutation.mutate(item.id, { onSuccess: del.clear })}
         isPending={deleteMutation.isPending}
         warning="This will permanently remove this package. Patients linked to it will keep their profile but lose the package default. Prefer the Active toggle to hide it temporarily."
         finalWarning="This will permanently delete this package. Linked patients will have their package cleared. This cannot be undone."

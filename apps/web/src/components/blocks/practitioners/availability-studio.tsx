@@ -260,7 +260,7 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
                 aria-label={`${t.practitioner.setWorkingHours} ${t.constants.weekdays[label]}`}
                 aria-pressed={workingDays.has(day)}
                 className={cn(
-                  'flex h-9 items-center justify-center rounded-md text-[11px] font-medium',
+                  'flex h-9 items-center justify-center rounded-md text-2xs font-medium',
                   'cursor-pointer transition-colors active:scale-95',
                   workingDays.has(day)
                     ? 'bg-primary text-primary-foreground'

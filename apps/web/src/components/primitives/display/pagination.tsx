@@ -4,11 +4,12 @@ import { Button } from '@/components/ui';
 import { IconChevronLeft, IconChevronRight } from '@/constants/icons';
 import { useLanguage } from '@/providers/language-provider';
 
+export const DEFAULT_PAGE_SIZE = 20;
+
 interface Props {
   page: number;
-  pageCount: number;
   totalItems: number;
-  pageSize: number;
+  pageSize?: number;
   onPageChange: (page: number) => void;
   resetScroll?: boolean;
 }
@@ -28,13 +29,13 @@ function goToPage(
 
 export function Pagination({
   page,
-  pageCount,
   totalItems,
-  pageSize,
+  pageSize = DEFAULT_PAGE_SIZE,
   onPageChange,
   resetScroll = true,
 }: Props) {
   const { t, dir } = useLanguage();
+  const pageCount = Math.ceil(totalItems / pageSize);
   if (totalItems === 0 || pageCount <= 1) return null;
 
   const start = (page - 1) * pageSize + 1;

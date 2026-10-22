@@ -92,7 +92,7 @@ export function PractitionerHome() {
   ].filter((fact) => fact.value);
 
   return (
-    <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-4 pb-6 sm:gap-5">
+    <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-4 sm:gap-5">
       <Card className="card-aura relative isolate shrink-0 gap-0 overflow-hidden py-0 ring-0">
         <CardContent className="relative z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 pb-14 pt-4 sm:gap-4 sm:p-4 sm:pb-14 sm:pt-5 lg:pb-5 lg:pe-[min(30%,24rem)]">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -114,7 +114,7 @@ export function PractitionerHome() {
           <dl className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 lg:col-span-1 lg:col-start-2 lg:grid-cols-4">
               {facts.map((fact) => (
                 <div key={fact.label} className="min-w-0 text-start">
-                  <dt className="text-[10px] leading-tight text-muted-foreground">{fact.label}</dt>
+                  <dt className="text-2xs leading-tight text-muted-foreground">{fact.label}</dt>
                   <dd className="mt-0.5 break-words text-xs font-medium leading-snug text-foreground">{fact.value}</dd>
                 </div>
               ))}

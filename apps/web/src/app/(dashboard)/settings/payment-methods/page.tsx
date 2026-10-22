@@ -2,36 +2,21 @@
 
 import { useState } from 'react';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
+import { ResourceTable } from '@/components/primitives';
 import {
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Skeleton,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
   Input,
   } from '@/components/ui';
 import {
   DirectoryActions,
   RowActionsMenu,
-  EmptyState,
   FormField,
-  FormActions,
   TruncatedText,
   SearchInput,
-  Pagination,
-  TableFrame,
   EntityMobileCard,
 } from '@/components/primitives';
 
-import { SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
+import { SettingsAddButton, SettingsFormDialog, SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
 import {
   usePaymentMethods,
   useCreatePaymentMethod,
@@ -45,7 +30,7 @@ import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useListFilter } from '@/hooks/shared/use-list-filter';
 import { useLanguage } from '@/providers';
 import type { PaymentMethod } from '@/services/payment-methods.service';
-import { IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconEdit, IconPayment } from '@/constants/icons';
+import { IconArrowDown, IconArrowUp, IconDelete, IconEdit, IconPayment } from '@/constants/icons';
 
 const searchFields = (m: PaymentMethod) => [m.name];
 
@@ -56,12 +41,8 @@ export default function PaymentMethodsPage() {
   const {
     search,
     setSearch,
-    page,
-    setPage,
-    pageCount,
     pageItems,
-    totalItems,
-    pageSize,
+    pagination,
   } = useListFilter(methods, searchFields);
 
   const createMutation = useCreatePaymentMethod(clinicId);
@@ -172,102 +153,58 @@ export default function PaymentMethodsPage() {
             placeholder={t.settings.searchPaymentMethods}
           />
         }
-        actions={
-          <Button size="sm" onClick={openCreate} className="shrink-0 max-sm:size-8 max-sm:px-0" aria-label={t.settings.addPaymentMethod}>
-            <IconAdd className="size-4 sm:me-1.5" />
-            <span className="hidden sm:inline">{t.settings.addPaymentMethod}</span>
-          </Button>
-        }
+        actions={<SettingsAddButton label={t.settings.addPaymentMethod} onClick={openCreate} />}
       />
 
-      <div className="hidden md:block">
-        <TableFrame>
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[12%]">{t.common.sort}</TableHead>
-                <TableHead className="w-[58%]">{t.common.name}</TableHead>
-                <TableHead className="w-[30%] text-end">{t.common.active}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading &&
-                Array.from({ length: 3 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-10" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-32 max-w-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-9 ms-auto" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-
-              {!isLoading && totalItems === 0 && (
-                <TableRow>
-                  <TableCell colSpan={3} className="p-0">
-                    <EmptyState
-                      icon={IconPayment}
-                      title={search ? t.settings.noMatchingPaymentMethods : t.settings.noPaymentMethods}
-                      description={
-                        search
-                          ? t.common.noResults
-                          : t.settings.paymentMethodsDesc
-                      }
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-
-              {pageItems.map((m) => (
-                <TableRow key={m.id} className={!m.isActive ? 'opacity-60' : undefined}>
-                  <TableCell>
-                    <div className="flex items-center gap-0.5">{reorderActions(m)}</div>
-                  </TableCell>
-                  <TableCell className="max-w-0 overflow-hidden">
-                    <TruncatedText className="font-medium">{m.name}</TruncatedText>
-                  </TableCell>
-                  <TableCell>
-                    <DirectoryActions
-                      name={m.name}
-                      active={m.isActive}
-                      disabled={isToggling}
-                      onChange={(checked) => handleToggle(m, checked)}
-                    >
-                      {rowActions(m)}
-                    </DirectoryActions>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableFrame>
-      </div>
-
-      <div className="space-y-2 md:hidden">
-        {isLoading &&
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border/70 bg-card p-4">
-              <Skeleton className="h-4 w-28" />
-            </div>
-          ))}
-
-        {!isLoading && totalItems === 0 && (
-          <EmptyState
-            icon={IconPayment}
-            title={search ? t.settings.noMatchingPaymentMethods : t.settings.noPaymentMethods}
-            description={
-              search
-                ? t.common.noResults
-                : t.settings.paymentMethodsDesc
-            }
-          />
-        )}
-
-        {pageItems.map((m) => (
+      <ResourceTable
+        rows={pageItems}
+        rowKey={(m) => m.id}
+        inactive={(m) => !m.isActive}
+        isLoading={isLoading}
+        pagination={pagination}
+        empty={{
+          icon: IconPayment,
+          title: search ? t.settings.noMatchingPaymentMethods : t.settings.noPaymentMethods,
+          description: search ? t.common.noResults : t.settings.paymentMethodsDesc,
+        }}
+        columns={[
+          {
+            id: 'sort',
+            header: t.common.sort,
+            className: 'w-[12%]',
+            skeleton: 'h-4 w-10',
+            render: (m) => (
+              <div className="flex items-center gap-0.5">{reorderActions(m)}</div>
+            ),
+          },
+          {
+            id: 'name',
+            header: t.common.name,
+            className: 'w-[58%]',
+            cellClassName: 'max-w-0 overflow-hidden',
+            skeleton: 'h-4 w-32 max-w-full',
+            render: (m) => (
+              <TruncatedText className="font-medium">{m.name}</TruncatedText>
+            ),
+          },
+          {
+            id: 'active',
+            header: t.common.active,
+            className: 'w-[30%] text-end',
+            skeleton: 'h-5 w-9 ms-auto',
+            render: (m) => (
+              <DirectoryActions
+                name={m.name}
+                active={m.isActive}
+                disabled={isToggling}
+                onChange={(checked) => handleToggle(m, checked)}
+              >
+                {rowActions(m)}
+              </DirectoryActions>
+            ),
+          },
+        ]}
+        mobileCard={(m) => (
           <EntityMobileCard
             key={m.id}
             title={m.name}
@@ -276,54 +213,32 @@ export default function PaymentMethodsPage() {
             activeDisabled={isToggling}
             actions={rowActions(m)}
           />
-        ))}
-      </div>
-
-      <Pagination
-        page={page}
-        pageCount={pageCount}
-        totalItems={totalItems}
-        pageSize={pageSize}
-        onPageChange={setPage}
+        )}
       />
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editing ? t.common.edit : t.settings.addPaymentMethod}</DialogTitle>
-          </DialogHeader>
-          <FormField label={t.common.name} htmlFor="pm-name">
-            <Input
-              id="pm-name"
-              maxLength={60}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Cash, Visa, CliQ"
-            />
-          </FormField>
-          <DialogFooter>
-            <FormActions
-              variant="dialog"
-              onCancel={() => setOpen(false)}
-              submitLabel={editing ? t.common.save : t.common.create}
-              pending={isSaving}
-              disabled={!name.trim()}
-              onSubmitClick={handleSubmit}
-            />
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SettingsFormDialog
+        open={open}
+        onOpenChange={setOpen}
+        editing={!!editing}
+        addTitle={t.settings.addPaymentMethod}
+        pending={isSaving}
+        disabled={!name.trim()}
+        onSubmit={handleSubmit}
+      >
+        <FormField label={t.common.name} htmlFor="pm-name">
+          <Input
+            id="pm-name"
+            maxLength={60}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Cash, Visa, CliQ"
+          />
+        </FormField>
+      </SettingsFormDialog>
 
       <TwoStepDeleteDialogs
-        step1={del.step1}
-        step2={del.step2}
-        onStep1OpenChange={(open) => !open && del.cancelStep1()}
-        onStep2OpenChange={(open) => !open && del.cancelStep2()}
-        onContinue={del.advance}
-        onConfirm={() => {
-          if (!del.step2) return;
-          deleteMutation.mutate(del.step2.id, { onSuccess: del.clear });
-        }}
+        controller={del}
+        onConfirm={(item) => deleteMutation.mutate(item.id, { onSuccess: del.clear })}
         isPending={deleteMutation.isPending}
         warning="This permanently removes the payment method. Paid appointments keep their paid status but lose the method link. Prefer the Active toggle to hide it from pickers."
         finalWarning="This will permanently delete this payment method and clear it from appointments. This cannot be undone."

@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { TEMPLATE_STATUS, type TemplateDTO, type TemplateStatus } from '@clinic/types';
 import { Badge, Button, Card, CardContent, Popover, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
-import { DIRECTORY_ACTION_CLASS, DirectoryToolbar, EmptyState, ErrorState, FilterPanel, FilterSelect, FilterTrigger, FormField, NOTE_TEMPLATE_GRID, NoteTemplateCardSkeleton, Pagination, PinMark, RowActionsMenu, SoftTip, TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
-import { IconAdd, IconDelete, IconEdit, IconFileText, IconNoteCard, IconLibrary, IconPin, IconView, IconRotateCcw } from '@/constants/icons';
+import { DIRECTORY_ACTION_CLASS, DirectoryToolbar, EmptyState, ErrorState, FilterPanel, FilterSelect, FilterTrigger, FormField, NOTE_TEMPLATE_GRID, NoteTemplateCardSkeleton, Pagination, RowActionsMenu, SoftTip, TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
+import { IconAdd, IconBookmark, IconChevronDown, IconDelete, IconEdit, IconFileText, IconNoteCard, IconLibrary, IconPin, IconView, IconRotateCcw } from '@/constants/icons';
 import { ROUTES } from '@/constants/routes';
-import { TEMPLATE_STATUS_VARIANT } from '@/constants/status';
+import { HIGHLIGHT_SURFACE_CLASS, TEMPLATE_STATUS_VARIANT } from '@/constants/status';
 import { useClinicalNoteTemplates, useClinicNoteDefault, useCreateClinicalNoteTemplate, useArchiveClinicalNoteTemplate, useDeleteClinicalNoteTemplate, usePublishClinicalNoteTemplate, useSetClinicNoteDefault, useStarterNoteTemplates, useDraftClinicalNoteTemplate, useRestoreClinicalNoteTemplate } from '@/hooks/api/use-clinical-note-templates';
 import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
@@ -66,14 +66,18 @@ export function NoteTemplateList() {
     const name = getBilingualName(template.name, template.nameAr, lang);
     const canSetDefault = template.status === TEMPLATE_STATUS.PUBLISHED && template.availableToAll && template.id !== defaultId;
     return (
-      <Card key={template.id} className={cn('card-aura gap-0 py-0', pinned && 'border-primary/40 bg-primary/5')}>
+      <Card key={template.id} className={cn('card-aura gap-0 py-0', pinned && HIGHLIGHT_SURFACE_CLASS)}>
         <CardContent className="flex items-center gap-1 p-2.5 sm:gap-3 sm:p-3.5">
           <Link href={ROUTES.NOTE_TEMPLATE(template.id)} className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg focus-visible:outline focus-visible:outline-ring sm:gap-3">
             <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/8 text-primary sm:size-10"><IconNoteCard className="size-4 sm:size-5" /></span>
             <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base">{name}</span>
           </Link>
+          <div className="flex shrink-0 items-center gap-0.5">
           {pinned || template.status === TEMPLATE_STATUS.ARCHIVED ? (
-            <Badge variant={TEMPLATE_STATUS_VARIANT[template.status]}>{t.visits.templateStatuses[template.status]}</Badge>
+            <Badge variant={TEMPLATE_STATUS_VARIANT[template.status]}>
+              {pinned ? <IconBookmark aria-label={t.visits.clinicDefault} className="fill-current" /> : null}
+              <span>{t.visits.templateStatuses[template.status]}</span>
+            </Badge>
           ) : <Select
             value={template.status}
             disabled={pending || clinicDefault.isPending || clinicDefault.isError}
@@ -83,8 +87,11 @@ export function NoteTemplateList() {
               else if (value === TEMPLATE_STATUS.DRAFT) draft.mutate({ id: template.id, revision: template.revision });
             }}
           >
-            <SelectTrigger size="sm" aria-label={t.common.status} className="h-7 w-auto shrink-0 gap-1 border-transparent bg-transparent px-0.5 sm:px-1">
-              <Badge variant={TEMPLATE_STATUS_VARIANT[template.status]}><SelectValue /></Badge>
+            <SelectTrigger size="sm" chevron={false} aria-label={t.common.status} className="group h-7 w-auto shrink-0 border-transparent bg-transparent px-0.5 hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent">
+              <Badge variant={TEMPLATE_STATUS_VARIANT[template.status]}>
+                <span><SelectValue /></span>
+                <IconChevronDown aria-hidden className="transition-transform duration-150 group-data-[state=open]:rotate-180" />
+              </Badge>
             </SelectTrigger>
             <SelectContent>
               {Object.values(TEMPLATE_STATUS).map((value) => (
@@ -92,7 +99,6 @@ export function NoteTemplateList() {
               ))}
             </SelectContent>
           </Select>}
-          {pinned ? <PinMark active label={t.visits.clinicDefault} className="size-5 sm:size-7" /> : null}
           <RowActionsMenu items={[
             { label: t.common.view, icon: IconView, onSelect: () => router.push(`${ROUTES.NOTE_TEMPLATE(template.id)}?mode=view`) },
             ...(template.status === TEMPLATE_STATUS.ARCHIVED ? [{ label: t.visits.restoreTemplate, icon: IconRotateCcw, disabled: pending, onSelect: () => restore.mutate({ id: template.id, revision: template.revision }) }] : [{ label: t.common.edit, icon: IconEdit, onSelect: () => router.push(ROUTES.NOTE_TEMPLATE(template.id)) }]),
@@ -104,6 +110,7 @@ export function NoteTemplateList() {
             }]),
             { label: t.common.delete, icon: IconDelete, variant: 'destructive' as const, disabled: pinned || pending || clinicDefault.isPending || clinicDefault.isError, onSelect: () => del.ask({ id: template.id, name }) },
           ]} />
+          </div>
         </CardContent>
       </Card>
     );
@@ -181,19 +188,12 @@ export function NoteTemplateList() {
           <EmptyState icon={IconFileText} title={t.visits.templates} description={t.visits.templatesDesc} />
         ) : null}
         {!loading && others.length ? <div className={NOTE_TEMPLATE_GRID}>{pageItems.map((item) => renderCard(item))}</div> : null}
-        {!loading ? <Pagination page={currentPage} pageCount={pageCount} totalItems={others.length} pageSize={PAGE_SIZE} onPageChange={setPage} /> : null}
+        {!loading ? <Pagination page={currentPage} totalItems={others.length} pageSize={PAGE_SIZE} onPageChange={setPage} /> : null}
       </section>
 
       <TwoStepDeleteDialogs
-        step1={del.step1}
-        step2={del.step2}
-        onStep1OpenChange={(open) => !open && del.cancelStep1()}
-        onStep2OpenChange={(open) => !open && del.cancelStep2()}
-        onContinue={del.advance}
-        onConfirm={() => {
-          if (!del.step2) return;
-          remove.mutate(del.step2.id, { onSuccess: del.clear });
-        }}
+        controller={del}
+        onConfirm={(item) => remove.mutate(item.id, { onSuccess: del.clear })}
         isPending={remove.isPending}
         warning={t.visits.deleteTemplateWarning}
         finalWarning={t.visits.deleteTemplateFinalWarning}

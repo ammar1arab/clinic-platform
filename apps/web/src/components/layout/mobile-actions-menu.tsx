@@ -16,15 +16,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
 } from '@/components/ui';
 import { LanguageOptions } from '@/components/primitives/display/language-switcher';
 import { ThemeOptions } from '@/components/primitives/display/theme-toggle';
 import { IconLanguage, IconLogout, IconRotateCcw, IconSun } from '@/constants/icons';
 import { useAppRefresh } from '@/hooks/shared/use-app-refresh';
+import { cn } from '@/lib/utils';
 
 function AnimatedDots({ open }: { open: boolean }) {
   return (
@@ -45,20 +44,31 @@ function AnimatedDots({ open }: { open: boolean }) {
   );
 }
 
+type Panel = 'language' | 'theme';
+
+const PANELS = [
+  { id: 'language', icon: IconLanguage, label: 'languageSwitcher' },
+  { id: 'theme', icon: IconSun, label: 'themeToggle' },
+] as const satisfies readonly { id: Panel; icon: typeof IconSun; label: 'languageSwitcher' | 'themeToggle' }[];
+
 export function MobileActionsMenu() {
   const { logout } = useAuth();
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
-  const [languageOpen, setLanguageOpen] = useState(false);
-  const [themeOpen, setThemeOpen] = useState(false);
+  const [panel, setPanel] = useState<Panel | null>(null);
+  const [shownPanel, setShownPanel] = useState<Panel>('language');
+  const togglePanel = (next: Panel) => {
+    setShownPanel(next);
+    setPanel((current) => (current === next ? null : next));
+  };
   const { refreshing, refreshApp, animation } = useAppRefresh({ animate: true });
 
   return (
     <>
       {animation}
 
-      <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenu open={open} onOpenChange={(next) => { setOpen(next); if (!next) setPanel(null); }}>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
@@ -73,11 +83,6 @@ export function MobileActionsMenu() {
         <DropdownMenuContent
           align="end"
           className="w-[12.25rem] min-w-0 p-2"
-          onInteractOutside={(event) => {
-            if (event.target instanceof Element && event.target.closest('[data-slot="popover-content"]')) {
-              event.preventDefault();
-            }
-          }}
         >
           <div className="grid grid-cols-4 gap-1.5">
             <DropdownMenuItem
@@ -88,42 +93,20 @@ export function MobileActionsMenu() {
             >
               <IconRotateCcw className={`size-4 ${refreshing ? 'animate-spin' : ''}`} />
             </DropdownMenuItem>
-            <Popover open={languageOpen} onOpenChange={setLanguageOpen}>
-              <PopoverTrigger asChild>
-                <DropdownMenuItem
-                  aria-label={t.layout.languageSwitcher}
-                  onSelect={(event) => event.preventDefault()}
-                  className="size-10 justify-center rounded-xl p-0"
-                >
-                  <IconLanguage className="size-4" />
-                </DropdownMenuItem>
-              </PopoverTrigger>
-              <PopoverContent side="bottom" align="center" sideOffset={8} collisionPadding={12} className="w-40 p-1.5">
-                <div className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-muted-foreground">
-                  <IconLanguage className="size-3.5" />
-                  {t.layout.languageSwitcher}
-                </div>
-                <LanguageOptions presentation="button" onSelect={() => setLanguageOpen(false)} />
-              </PopoverContent>
-            </Popover>
-            <Popover open={themeOpen} onOpenChange={setThemeOpen}>
-              <PopoverTrigger asChild>
-                <DropdownMenuItem
-                  aria-label={t.layout.themeToggle}
-                  onSelect={(event) => event.preventDefault()}
-                  className="size-10 justify-center rounded-xl p-0"
-                >
-                  <IconSun className="size-4" />
-                </DropdownMenuItem>
-              </PopoverTrigger>
-              <PopoverContent side="bottom" align="center" sideOffset={8} collisionPadding={12} className="w-40 p-1.5">
-                <div className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-muted-foreground">
-                  <IconSun className="size-3.5" />
-                  {t.layout.themeToggle}
-                </div>
-                <ThemeOptions presentation="button" onSelect={() => setThemeOpen(false)} />
-              </PopoverContent>
-            </Popover>
+            {PANELS.map(({ id, icon: Icon, label }) => (
+              <DropdownMenuItem
+                key={id}
+                aria-label={t.layout[label]}
+                aria-expanded={panel === id}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  togglePanel(id);
+                }}
+                className={cn('size-10 justify-center rounded-xl p-0', panel === id && 'bg-accent text-accent-foreground')}
+              >
+                <Icon className="size-4" />
+              </DropdownMenuItem>
+            ))}
             <DropdownMenuItem
               aria-label={t.auth.logout}
               variant="destructive"
@@ -132,6 +115,18 @@ export function MobileActionsMenu() {
             >
               <IconLogout className="size-4" />
             </DropdownMenuItem>
+          </div>
+          <div
+            inert={!panel}
+            className={cn(
+              'grid transition-[grid-template-rows,opacity] duration-(--motion-normal) ease-(--motion-ease) motion-reduce:transition-none',
+              panel ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+            )}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <DropdownMenuSeparator className="-mx-2 my-2" />
+              {shownPanel === 'language' ? <LanguageOptions /> : <ThemeOptions />}
+            </div>
           </div>
         </DropdownMenuContent>
       </DropdownMenu>

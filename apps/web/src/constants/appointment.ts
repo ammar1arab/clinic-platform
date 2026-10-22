@@ -1,18 +1,24 @@
 import type { Translations } from '@/i18n';
 import type { AppointmentStatus } from '@/services/appointments.service';
-import { APPOINTMENT_STATUS } from '@clinic/types';
+import type { BadgeVariant } from '@/components/ui/display/badge';
+import { APPOINTMENT_STATUS_GROUPS, APPOINTMENT_STATUS } from '@clinic/types';
 
 export const CLINIC_CURRENCY = 'JOD';
 export const DEFAULT_DURATION_MINS = '45';
 
-export const STATUS_BADGE_VARIANT: Record<
-  AppointmentStatus,
-  'warning' | 'success' | 'info' | 'destructive' | 'muted'
-> = {
+export const STATUS_GROUP_BADGE_VARIANT = {
+  booked: 'violet',
+  arrived: 'teal',
+  inProgress: 'info',
+  completed: 'success',
+  closed: 'muted',
+} satisfies Record<keyof typeof APPOINTMENT_STATUS_GROUPS, BadgeVariant>;
+
+export const STATUS_BADGE_VARIANT: Record<AppointmentStatus, BadgeVariant> = {
   [APPOINTMENT_STATUS.UNCONFIRMED]: 'warning',
-  [APPOINTMENT_STATUS.CONFIRMED]: 'success',
-  [APPOINTMENT_STATUS.CHECKED_IN]: 'success',
-  [APPOINTMENT_STATUS.WAITING]: 'warning',
+  [APPOINTMENT_STATUS.CONFIRMED]: 'violet',
+  [APPOINTMENT_STATUS.CHECKED_IN]: 'teal',
+  [APPOINTMENT_STATUS.WAITING]: 'cyan',
   [APPOINTMENT_STATUS.IN_PROGRESS]: 'info',
   [APPOINTMENT_STATUS.COMPLETED]: 'success',
   [APPOINTMENT_STATUS.NO_SHOW]: 'destructive',
@@ -21,9 +27,9 @@ export const STATUS_BADGE_VARIANT: Record<
 
 export const STATUS_COLORS: Record<AppointmentStatus, string> = {
   [APPOINTMENT_STATUS.UNCONFIRMED]: 'var(--color-warning)',
-  [APPOINTMENT_STATUS.CONFIRMED]: 'var(--color-success)',
-  [APPOINTMENT_STATUS.CHECKED_IN]: 'var(--color-success)',
-  [APPOINTMENT_STATUS.WAITING]: 'var(--color-warning)',
+  [APPOINTMENT_STATUS.CONFIRMED]: 'var(--color-accent-violet)',
+  [APPOINTMENT_STATUS.CHECKED_IN]: 'var(--color-accent-teal)',
+  [APPOINTMENT_STATUS.WAITING]: 'var(--color-accent-cyan)',
   [APPOINTMENT_STATUS.IN_PROGRESS]: 'var(--color-info)',
   [APPOINTMENT_STATUS.COMPLETED]: 'var(--color-success)',
   [APPOINTMENT_STATUS.NO_SHOW]: 'var(--color-error)',
@@ -42,15 +48,15 @@ export const getStatusConfig = (
   },
   confirmed: {
     ...t.constants.status.confirmed,
-    dotClassName: 'bg-success',
+    dotClassName: 'bg-accent-violet',
   },
   checked_in: {
     ...t.constants.status.checked_in,
-    dotClassName: 'bg-success',
+    dotClassName: 'bg-accent-teal',
   },
   waiting: {
     ...t.constants.status.waiting,
-    dotClassName: 'bg-warning',
+    dotClassName: 'bg-accent-cyan',
   },
   in_progress: {
     ...t.constants.status.in_progress,

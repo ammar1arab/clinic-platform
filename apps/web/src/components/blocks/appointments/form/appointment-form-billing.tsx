@@ -222,7 +222,7 @@ export function AppointmentBillingFields({
           </span>
         </div>
         {appointment?.patientPackageId && (
-          <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+          <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-2xs">
             <Badge variant="success">{t.appointments.coveredByPackage}</Badge>
             <span className="text-muted-foreground">
               {packageCreditLabel(appointment.packageCredit, lang)}

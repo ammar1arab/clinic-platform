@@ -268,7 +268,7 @@ export function WaitingQueueBoard({
       {slot ? createPortal(
         <Select value={stageTab} onValueChange={(value) => setStageTab(value as QueueStage)}>
           <SelectTrigger size="sm" aria-label={t.queue.waitingQueue} className="h-8 min-w-[9rem] flex-1 bg-background/50 sm:w-52 sm:max-w-56 sm:flex-none">
-            <span className="min-w-0 flex-1 truncate text-start text-xs sm:text-[0.8rem]">
+            <span className="min-w-0 flex-1 truncate text-start">
               <SelectValue />
             </span>
           </SelectTrigger>
@@ -320,18 +320,18 @@ export function WaitingQueueBoard({
                 return (
                   <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                     <div className="flex items-center justify-between gap-2">
-                      <Badge variant={timerVariant} className={cn('font-semibold', waitMins >= 25 && 'animate-pulse')}>
+                      <Badge variant={timerVariant} className={cn('min-w-0 shrink font-semibold', waitMins >= 25 && 'animate-pulse')}>
                         <IconTime className="size-3" />
-                        {formatWaitingMins(waitMins, t)} · {waitLabel}
+                        <span>{formatWaitingMins(waitMins, t)} · {waitLabel}</span>
                       </Badge>
-                      <div onClick={(e) => e.stopPropagation()}>
+                      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />
                       </div>
                     </div>
                     <div className="mt-3">
                       <Button
                         size="sm"
-                        className="w-full text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
+                        className="w-full font-bold shadow-xs transition-all active:scale-[0.98]"
                         onClick={(e) => { e.stopPropagation(); router.push(ROUTES.VISIT(appt.id)); }}
                       >
                         <IconPlay className="me-1.5 size-3.5 fill-current" />
@@ -376,19 +376,19 @@ export function WaitingQueueBoard({
                     <div className="flex items-center justify-between gap-2">
                       <Badge
                         variant={isLong ? 'destructive' : 'info'}
-                        className={cn('font-semibold', isLong && 'animate-pulse')}
+                        className={cn('min-w-0 shrink font-semibold', isLong && 'animate-pulse')}
                       >
                         <IconTimer className="size-3 animate-spin" />
-                        {formatWaitingMins(sessionMins, t)} / {appt.durationMins}{t.appointments.minutesShort}
+                        <span>{formatWaitingMins(sessionMins, t)} / {appt.durationMins}{t.appointments.minutesShort}</span>
                       </Badge>
-                      <div onClick={(e) => e.stopPropagation()}>
+                      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                         <AppointmentStatusSelect appointment={appt} compact />
                       </div>
                     </div>
                     <div className="mt-3">
                       <Button
                         size="sm"
-                        className="w-full text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
+                        className="w-full font-bold shadow-xs transition-all active:scale-[0.98]"
                         onClick={(e) => { e.stopPropagation(); router.push(ROUTES.VISIT(appt.id)); }}
                       >
                         <IconCheckCircle className="me-1.5 size-3.5" />
@@ -424,11 +424,11 @@ export function WaitingQueueBoard({
               upcomingList.map((appt) => (
                 <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                   <div className="flex items-center justify-between gap-2">
-                    <Badge variant="muted" className="font-semibold">
+                    <Badge variant="muted" className="min-w-0 shrink font-semibold">
                       <IconTime className="size-3" />
-                      {formatApptTimeRange(appt, lang)}
+                      <span>{formatApptTimeRange(appt, lang)}</span>
                     </Badge>
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                       <AppointmentStatusSelect appointment={appt} compact />
                     </div>
                   </div>
@@ -436,7 +436,7 @@ export function WaitingQueueBoard({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full text-xs font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
+                      className="w-full font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
                       disabled={markWaiting.isPending}
                       onClick={(e) => { e.stopPropagation(); markWaiting.mutate(appt); }}
                     >
@@ -472,17 +472,17 @@ export function WaitingQueueBoard({
               completedList.map((appt) => (
                 <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                   <div className="flex items-center justify-between gap-2">
-                    <Badge variant="success" className="font-semibold">
+                    <Badge variant="success" className="min-w-0 shrink font-semibold">
                       <IconCheckCircle className="size-3" />
-                      {t.appointments.markCompleted}
+                      <span>{t.appointments.markCompleted}</span>
                     </Badge>
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                       <AppointmentStatusSelect appointment={appt} compact />
                     </div>
                   </div>
 
                     {canManagePayments ? (
-                      <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-[11px]">
+                      <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-2xs">
                         <span className="font-medium text-muted-foreground">{t.appointments.paymentStatus}:</span>
                         {appt.isPaid ? (
                           <Badge variant="success"><IconCreditCard className="size-3" />{t.appointments.paid}</Badge>
@@ -531,11 +531,11 @@ export function WaitingQueueBoard({
               closedList.map((appt) => (
                 <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
                   <div className="flex items-center justify-between gap-2">
-                    <Badge variant="muted" className="font-semibold">
+                    <Badge variant="muted" className="min-w-0 shrink font-semibold">
                       <IconTime className="size-3" />
-                      {formatApptTimeRange(appt, lang)}
+                      <span>{formatApptTimeRange(appt, lang)}</span>
                     </Badge>
-                    <div onClick={(e) => e.stopPropagation()}>
+                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
                       <AppointmentStatusSelect appointment={appt} compact />
                     </div>
                   </div>
@@ -632,7 +632,7 @@ function QueueCard({
           <p className="text-xs font-bold break-words text-foreground group-hover:text-primary transition-colors">
             {patientDisplayName(appt, lang)}
           </p>
-          <p className="mt-0.5 text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+          <p className="mt-0.5 text-2xs text-muted-foreground font-medium flex items-center gap-1">
             <IconTime className="size-2.5" />
             {formatApptTimeRange(appt, lang)}
           </p>
@@ -642,7 +642,7 @@ function QueueCard({
         </div>
       </div>
 
-      <div className="mb-2.5 flex flex-col gap-1 text-[10px] text-muted-foreground">
+      <div className="mb-2.5 flex flex-col gap-1 text-2xs text-muted-foreground">
         <div className="flex items-start gap-1.5">
           <IconService className="mt-0.5 size-3 shrink-0 text-primary" />
           <span className="min-w-0 break-words font-medium text-foreground/90">

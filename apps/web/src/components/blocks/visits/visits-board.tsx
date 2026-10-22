@@ -1,5 +1,7 @@
 'use client';
 
+import { DEFAULT_PAGE_SIZE } from '@/components/primitives/display/pagination';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
@@ -35,6 +37,7 @@ import {
 import { IconClinicalRecord, IconInPerson, IconOnline } from '@/constants/icons';
 import { StatusBadgeBlock } from '@/components/blocks/appointments/shared/status-badge';
 import { ROUTES } from '@/constants/routes';
+import { HIGHLIGHT_SURFACE_CLASS } from '@/constants/status';
 import { cn } from '@/lib/utils';
 import { getBilingualName } from '@/i18n';
 import { formatDate, formatTime } from '@/lib/datetime';
@@ -80,7 +83,7 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
     from: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
     to: to ? new Date(`${to}T23:59:59`).toISOString() : undefined,
     page,
-    limit: 20,
+    limit: DEFAULT_PAGE_SIZE,
   };
   const visits = useVisits(query, !!user);
   const downloadVisits = useDownloadVisitsReport(clinicId);
@@ -200,7 +203,7 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto">
             {visits.data.items.map((item) => (
               <div key={item.appointmentId} className="visit-chain relative">
-                <EntityMobileCard className={cn('lg:hidden', item.appointmentStatus === APPOINTMENT_STATUS.IN_PROGRESS && 'border border-primary/40 bg-primary/5')}
+                <EntityMobileCard className={cn('lg:hidden', item.appointmentStatus === APPOINTMENT_STATUS.IN_PROGRESS && HIGHLIGHT_SURFACE_CLASS)}
                   title={getBilingualName(item.patient.name, item.patient.nameAr, lang)}
                   avatar={<span onClick={(event) => event.stopPropagation()}><PreviewableAvatar src={item.patient.imageUrl} seed={item.patient.id} size="sm" /></span>}
                   subtitle={<div className="space-y-1.5 whitespace-normal">
@@ -223,13 +226,13 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
                 />
               <Card aura={item.appointmentStatus !== APPOINTMENT_STATUS.IN_PROGRESS} className={cn(
                 'relative hidden gap-0 py-0 transition-colors hover:bg-muted/40 lg:flex',
-                item.appointmentStatus === APPOINTMENT_STATUS.IN_PROGRESS && 'border border-primary/40 bg-primary/5 ring-0',
+                item.appointmentStatus === APPOINTMENT_STATUS.IN_PROGRESS && [HIGHLIGHT_SURFACE_CLASS, 'ring-0'],
               )}>
                 <Link href={ROUTES.VISIT(item.appointmentId)} onMouseEnter={() => prefetchWorkspace(item.appointmentId)} onFocus={() => prefetchWorkspace(item.appointmentId)} aria-label={getBilingualName(item.patient.name, item.patient.nameAr, lang)} className="absolute inset-0 z-10 rounded-xl focus-visible:outline focus-visible:outline-ring" />
                 <CardContent className="grid grid-cols-[6rem_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 xl:grid-cols-[6rem_minmax(0,1fr)_minmax(24rem,1fr)] sm:p-4">
                   <div className="flex min-h-12 flex-col items-center justify-center gap-1 border-e border-border/70 pe-3 text-center">
                     <p className="whitespace-nowrap text-sm font-semibold tabular-nums">{formatTime(item.scheduledAt, undefined, lang)}</p>
-                    <p className="whitespace-nowrap text-[11px] leading-4 text-muted-foreground">{t.visits.plannedDuration.replace('{minutes}', String(item.durationMins))}</p>
+                    <p className="whitespace-nowrap text-2xs leading-4 text-muted-foreground">{t.visits.plannedDuration.replace('{minutes}', String(item.durationMins))}</p>
                   </div>
                   <div className="min-w-0 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -245,7 +248,7 @@ export function VisitsBoard({ initialNoteStatus, initialInvoiceStatus, initialRe
               </div>
             ))}
           </div>
-          <Pagination page={visits.data.page} pageCount={Math.ceil(visits.data.total / visits.data.limit)} totalItems={visits.data.total} pageSize={visits.data.limit} onPageChange={setPage} />
+          <Pagination page={visits.data.page} totalItems={visits.data.total} pageSize={visits.data.limit} onPageChange={setPage} />
         </div>
       )}
     </div>

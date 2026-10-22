@@ -131,7 +131,7 @@ export function TimePicker({
       >
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1.5">
-            <p className="text-[11px] font-medium text-muted-foreground">
+            <p className="text-2xs font-medium text-muted-foreground">
               {t.common.hour}
             </p>
             <Select value={String(hour)} onValueChange={setHour}>
@@ -152,7 +152,7 @@ export function TimePicker({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <p className="text-[11px] font-medium text-muted-foreground">
+            <p className="text-2xs font-medium text-muted-foreground">
               {t.common.minute}
             </p>
             <Select value={String(minute)} onValueChange={setMinute}>

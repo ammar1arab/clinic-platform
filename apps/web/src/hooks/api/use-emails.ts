@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE } from '@/components/primitives/display/pagination';
 import { useState } from "react";
 import type {
   EmailAudiencesResponse,
@@ -46,7 +47,7 @@ export function useEmailMessage(clinicId: string, id: string, page: number) {
   const brandStamp = clinic?.updatedAt ?? "";
   return useFetchData<EmailMessageDetail>({
     queryKey: QUERY_KEYS.emails.detail(clinicId, lang, id, page, brandStamp),
-    request: () => emailsService.detail(id, { page, limit: 20 }),
+    request: () => emailsService.detail(id, { page, limit: DEFAULT_PAGE_SIZE }),
     options: {
       enabled: !!clinicId && !!id,
       refetchInterval: 10000,

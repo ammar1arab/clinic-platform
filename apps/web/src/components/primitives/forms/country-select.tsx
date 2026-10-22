@@ -110,7 +110,7 @@ export function CountrySelect({
           type="button"
           disabled={disabled}
           className={cn(
-            'flex h-8 w-full items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 text-sm transition-colors',
+            'flex h-8 w-full items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 text-control transition-colors',
             'hover:bg-muted/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
             'disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30',
             !selected && 'text-muted-foreground',
@@ -160,14 +160,14 @@ export function CountrySelect({
                 setQuery('');
                 setOpen(false);
               }}
-              className="flex w-full items-center rounded-md px-2 py-1.5 text-start text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              className="flex w-full items-center rounded-md px-2 py-1.5 text-start text-control text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               {t.common.clearSelection}
             </button>
           ) : null}
 
           {filtered.length === 0 ? (
-            <p className="px-2.5 py-4 text-center text-sm text-muted-foreground">
+            <p className="px-2.5 py-4 text-center text-control text-muted-foreground">
               {t.common.noCountriesFound}
             </p>
           ) : (
@@ -183,7 +183,7 @@ export function CountrySelect({
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-sm',
+                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-start text-control',
                     'hover:bg-accent hover:text-accent-foreground',
                     active && 'bg-accent text-accent-foreground',
                   )}

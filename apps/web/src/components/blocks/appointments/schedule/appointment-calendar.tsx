@@ -353,7 +353,7 @@ export function AppointmentCalendar({
     (arg: MoreLinkContentArg) => (
       <Badge
         variant="info"
-        className="fc-more-badge pointer-events-none flex w-full justify-center text-[10px] font-semibold"
+        className="fc-more-badge pointer-events-none flex w-full justify-center text-2xs font-semibold"
       >
         +{arg.num}
       </Badge>

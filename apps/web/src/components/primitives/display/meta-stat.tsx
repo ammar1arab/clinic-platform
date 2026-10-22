@@ -11,7 +11,7 @@ export function MetaStat({
 }) {
   return (
     <div className={cn('min-w-0', className)}>
-      <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+      <p className="text-2xs uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <p className="truncate font-medium">{value}</p>

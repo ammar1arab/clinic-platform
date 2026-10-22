@@ -13,18 +13,24 @@ const badgeVariants = cva(
         secondary:
           "border-border/80 bg-secondary text-secondary-foreground [a]:hover:bg-secondary/75",
         destructive:
-          "border-destructive/30 bg-destructive/12 text-destructive shadow-destructive/10 focus-visible:ring-destructive/20 dark:border-transparent dark:bg-destructive dark:text-primary-foreground dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20 dark:[a]:hover:bg-destructive/90",
+          "border-destructive/25 bg-destructive/10 text-destructive shadow-none focus-visible:ring-destructive/20 [a]:hover:bg-destructive/15",
         outline:
           "border-border/90 bg-background/70 text-foreground [a]:hover:bg-muted",
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
         success:
-          "border-success/30 bg-success/12 text-success shadow-success/10",
+          "border-success/25 bg-success/10 text-success shadow-none",
         warning:
-          "border-warning/35 bg-warning/15 text-warning shadow-warning/10",
+          "border-warning/25 bg-warning/10 text-warning shadow-none",
         info:
-          "border-info/30 bg-info/12 text-info shadow-info/10",
+          "border-info/25 bg-info/10 text-info shadow-none",
+        teal:
+          "border-accent-teal/25 bg-accent-teal/10 text-accent-teal shadow-none",
+        violet:
+          "border-accent-violet/25 bg-accent-violet/10 text-accent-violet shadow-none",
+        cyan:
+          "border-accent-cyan/25 bg-accent-cyan/10 text-accent-cyan shadow-none",
         muted:
           "border-border/80 bg-muted/80 text-muted-foreground",
         fill:

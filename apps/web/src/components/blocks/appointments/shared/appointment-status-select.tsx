@@ -113,13 +113,7 @@ export function AppointmentStatusSelect({
   return (
     <>
       <DropdownMenu>
-        <SoftTip
-          label={
-            isCancelled
-              ? t.appointments.cannotModifyCancelled
-              : t.appointments.clickToChangeStatus
-          }
-        >
+        <SoftTip label={isCancelled ? t.appointments.cannotModifyCancelled : undefined}>
           <StatusPickerTrigger
             status={appt.status}
             disabled={isDisabled}
@@ -156,12 +150,12 @@ export function AppointmentStatusSelect({
                 if (cancelError && e.target.value.trim()) setCancelError(false);
               }}
               className={cn(
-                'resize-none text-xs',
+                'resize-none',
                 cancelError && 'border-destructive ring-2 ring-destructive/20',
               )}
             />
             {cancelError && (
-              <p className="text-[11px] font-medium text-destructive">
+              <p className="text-2xs font-medium text-destructive">
                 {t.appointments.cancellationReasonRequired}
               </p>
             )}

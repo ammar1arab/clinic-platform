@@ -170,7 +170,7 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
       />
       {body}
       {query.data && pageCount > 1 ? (
-        <Pagination resetScroll={false} page={view.page} pageCount={pageCount} totalItems={query.data.total} pageSize={query.data.pageSize} onPageChange={(page) => setView({ ...view, page })} />
+        <Pagination resetScroll={false} page={view.page} totalItems={query.data.total} pageSize={query.data.pageSize} onPageChange={(page) => setView({ ...view, page })} />
       ) : null}
       {creating ? (
         <ScheduleRequestDialog

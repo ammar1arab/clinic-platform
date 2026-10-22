@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { BaseReportModal, ReportCard } from '@/components/blocks/reports';
-import { ROUTES } from '@/constants/routes';
 import type { ReportModalFilters } from '@/components/blocks/reports';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { usePatients } from '@/hooks/api/use-patients';

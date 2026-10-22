@@ -58,7 +58,7 @@ function StatusFilterDropdown({
           variant="outline"
           size="sm"
           className={cn(
-            'h-8 shrink-0 gap-1 border-border/70 bg-background/50 px-2.5 text-xs font-semibold shadow-2xs sm:text-[0.8rem]',
+            'h-8 shrink-0 gap-1 border-border/70 bg-background/50 px-2.5 font-semibold shadow-2xs',
             count > 0 && 'border-primary/35 bg-primary/5 text-foreground',
           )}
         >

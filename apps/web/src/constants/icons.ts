@@ -50,6 +50,7 @@ export {
   ClipboardList as IconNoteCard,
   Phone as IconPhone,
   Plus as IconAdd,
+  ArrowUpRight as IconOpen,
   Pin as IconPin,
   Library as IconLibrary,
   LayoutGrid as IconLayoutGrid,

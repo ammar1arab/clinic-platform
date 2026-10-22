@@ -1,5 +1,7 @@
 "use client";
 
+import { DEFAULT_PAGE_SIZE } from "@/components/primitives/display/pagination";
+
 import { useState } from "react";
 import type { EmailRecipientPreview } from "@clinic/types";
 import { Button, Card, CardContent } from "@/components/ui";
@@ -21,7 +23,7 @@ import { useLanguage } from "@/providers";
 import { getBilingualName } from "@/i18n";
 import { IconClose, IconDelete, IconMail } from "@/constants/icons";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 export function EmailRecipientList({
   recipients,
@@ -255,7 +257,6 @@ export function EmailRecipientList({
         <div className="sticky bottom-0 z-20 bg-background lg:static lg:shrink-0">
           <Pagination
             page={currentPage}
-            pageCount={pageCount}
             totalItems={visible.length}
             pageSize={PAGE_SIZE}
             resetScroll={false}

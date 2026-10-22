@@ -6,10 +6,10 @@ import {
   CardContent,
   Skeleton,
 } from '@/components/ui';
-import { EmptyState } from '@/components/primitives';
+import { EmptyState, FoldSection } from '@/components/primitives';
 import { RoomUtilization } from '@/services/dashboard.service';
 import { cn } from '@/lib/utils';
-import { IconChevronDown, IconRoom } from '@/constants/icons';
+import { IconRoom } from '@/constants/icons';
 import { useLanguage } from '@/providers';
 import { getBilingualName } from '@/i18n';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
@@ -33,9 +33,6 @@ function barColor(percent: number) {
   if (percent >= 50) return 'bg-warning';
   return 'bg-success';
 }
-
-const fold =
-  'duration-[var(--overlay-duration)] ease-[var(--overlay-ease)] motion-reduce:transition-none';
 
 export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: Props) {
   const { t, lang } = useLanguage();
@@ -122,37 +119,7 @@ export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: 
         {groups.map((group) => {
           const open = !collapsed.has(group.key);
           return (
-            <section key={group.key}>
-              <button
-                type="button"
-                onClick={() => toggle(group.key)}
-                aria-expanded={open}
-                aria-label={`${open ? t.layout.sidebar.collapse : t.layout.sidebar.expand} ${group.label}`}
-                className="flex w-full items-center gap-1.5 border-b border-border/60 pb-1.5 text-start"
-              >
-                <IconChevronDown
-                  aria-hidden
-                  className={cn(
-                    'size-3 shrink-0 text-muted-foreground/70 transition-transform',
-                    fold,
-                    !open && '-rotate-90 rtl:rotate-90',
-                  )}
-                />
-                <h3 className="min-w-0 flex-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                  {group.label}
-                </h3>
-                <span className="text-[11px] tabular-nums text-muted-foreground">
-                  {group.rooms.length}
-                </span>
-              </button>
-              <div
-                className={cn(
-                  'grid transition-[grid-template-rows]',
-                  fold,
-                  open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-                )}
-              >
-                <div className="min-h-0 overflow-hidden">
+            <FoldSection key={group.key} label={group.label} count={group.rooms.length} open={open} onToggle={() => toggle(group.key)}>
                   <div className="space-y-3 pt-3">
                     {group.rooms.map((room) => {
                       const displayName = getBilingualName(room.roomName, room.roomNameAr, lang);
@@ -177,9 +144,7 @@ export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: 
                       );
                     })}
                   </div>
-                </div>
-              </div>
-            </section>
+            </FoldSection>
           );
         })}
       </CardContent>

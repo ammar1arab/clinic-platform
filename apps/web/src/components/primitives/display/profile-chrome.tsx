@@ -81,7 +81,7 @@ export function ProfileHero({
               <p className="text-xs font-semibold tabular-nums tracking-tight sm:text-sm">
                 {stat.value}
               </p>
-              <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground sm:text-xs">
+              <p className="mt-0.5 text-2xs leading-tight text-muted-foreground sm:text-xs">
                 {stat.label}
               </p>
             </div>
@@ -110,8 +110,8 @@ export function ProfileSection({
   const fillHeight = Boolean(className?.includes('h-full'));
 
   return (
-    <Card className={cn('card-aura flex flex-col ring-0', className)}>
-      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 pb-2 pt-4 sm:px-5 sm:pb-3 sm:pt-5">
+    <Card className={cn('card-aura flex flex-col gap-0 py-0 ring-0', className)}>
+      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
         <div className="min-w-0 space-y-0.5">
           <CardTitle className="text-base font-semibold tracking-tight">
             {title}

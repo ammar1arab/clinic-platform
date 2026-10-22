@@ -24,7 +24,9 @@ export { MetaStat } from './display/meta-stat';
 export { MoreDotsIcon } from './display/more-dots-icon';
 export { MultiSelect, type MultiSelectOption } from './forms/multi-select';
 export { PageBack } from './display/page-back';
-export { Pagination } from './display/pagination';
+export { DEFAULT_PAGE_SIZE, Pagination } from './display/pagination';
+export { ResourceTable, type ResourceColumn } from './display/resource-table';
+export { FoldSection } from './display/fold-section';
 export { PhoneInputField } from './forms/phone-input';
 export { RowActionsMenu, type RowActionItem } from './display/row-actions-menu';
 export { SearchInput } from './forms/search-input';
@@ -36,7 +38,6 @@ export { AudienceChips, type AudienceOption } from './forms/audience-chips';
 export { ChoiceChips, ChoiceChips as ChoiceField, type ChoiceOption } from './forms/choice-chips';
 export { TargetAudience } from './forms/target-audience';
 export { OptionList, type OptionListItem } from './forms/option-list';
-export { PinMark } from './display/pin-mark';
 export { FilterPanel, FilterTrigger } from './display/filter-panel';
 export {
   CardGridSkeleton,

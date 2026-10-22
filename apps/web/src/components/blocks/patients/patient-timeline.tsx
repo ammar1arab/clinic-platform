@@ -223,7 +223,7 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
                       <div className="flex flex-wrap items-center gap-1.5">
                         <Badge
                           variant={isUnpaid ? 'warning' : 'outline'}
-                          className="px-1.5 py-0 text-[10px]"
+                          className="px-1.5 py-0 text-2xs"
                         >
                           {isUnpaid ? t.patient.unpaid : meta.label}
                         </Badge>

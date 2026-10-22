@@ -1,5 +1,7 @@
 "use client";
 
+import { DEFAULT_PAGE_SIZE } from "@/components/primitives/display/pagination";
+
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui";
 import {
@@ -43,7 +45,7 @@ import { getPersonName } from "@/i18n";
 import { formatDateTime } from "@/lib/datetime";
 import { ROUTES } from "@/constants/routes";
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 interface Props {
   patients: Patient[] | undefined;
@@ -314,22 +316,14 @@ export function PatientsList({
 
       <Pagination
         page={currentPage}
-        pageCount={pageCount}
         totalItems={totalItems}
         pageSize={PAGE_SIZE}
         onPageChange={setPage}
       />
 
       {canManage && <TwoStepDeleteDialogs
-        step1={del.step1}
-        step2={del.step2}
-        onStep1OpenChange={(open) => !open && del.cancelStep1()}
-        onStep2OpenChange={(open) => !open && del.cancelStep2()}
-        onContinue={del.advance}
-        onConfirm={() => {
-          if (!del.step2) return;
-          deleteMutation.mutate(del.step2.id, { onSuccess: del.clear });
-        }}
+        controller={del}
+        onConfirm={(item) => deleteMutation.mutate(item.id, { onSuccess: del.clear })}
         isPending={deleteMutation.isPending}
         warning={t.patient.deleteWarning1}
         finalWarning={t.patient.deleteWarning2}

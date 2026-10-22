@@ -2,42 +2,25 @@
 
 import { useState } from 'react';
 import { TwoStepDeleteDialogs, useTwoStepDelete } from '@/components/primitives';
+import { ResourceTable } from '@/components/primitives';
 import {
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Skeleton,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
   } from '@/components/ui';
 import {
   DirectoryActions,
   RowActionsMenu,
-  EmptyState,
-  FormActions,
   TruncatedText,
   SearchInput,
-  Pagination,
   BilingualNameFields,
   optionalArabicName,
-  TableFrame,
   EntityMobileCard,
 } from '@/components/primitives';
 
 import {
-  IconAdd,
   IconDelete,
   IconDepartment,
   IconEdit,
 } from '@/constants/icons';
-import { SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
+import { SettingsAddButton, SettingsFormDialog, SettingsPageBack } from '@/components/blocks/settings/settings-navigation';
 import {
   useDepartments,
   useCreateDepartment,
@@ -49,6 +32,7 @@ import {
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useLanguage } from '@/providers';
 import { useListFilter } from '@/hooks/shared/use-list-filter';
+import { useCreateDialog } from '@/hooks/shared/use-create-dialog';
 import type { Department } from '@/services/departments.service';
 
 const searchFields = (d: Department) => [d.name];
@@ -60,12 +44,8 @@ export default function DepartmentsPage() {
   const {
     search,
     setSearch,
-    page,
-    setPage,
-    pageCount,
     pageItems,
-    totalItems,
-    pageSize,
+    pagination,
   } = useListFilter(departments, searchFields);
   const createMutation = useCreateDepartment(clinicId);
   const updateMutation = useUpdateDepartment(clinicId);
@@ -74,7 +54,7 @@ export default function DepartmentsPage() {
   const deleteMutation = useDeleteDepartment(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useCreateDialog();
   const [editing, setEditing] = useState<Department | null>(null);
   const [name, setName] = useState('');
   const [nameAr, setNameAr] = useState('');
@@ -143,97 +123,51 @@ export default function DepartmentsPage() {
             placeholder={t.settings.searchDepartments}
           />
         }
-        actions={
-          <Button size="sm" onClick={openCreate} className="shrink-0 max-sm:size-8 max-sm:px-0" aria-label={t.settings.addDepartment}>
-            <IconAdd className="size-4 sm:me-1.5" />
-            <span className="hidden sm:inline">{t.settings.addDepartment}</span>
-          </Button>
-        }
+        actions={<SettingsAddButton label={t.settings.addDepartment} onClick={openCreate} />}
       />
 
-      <div className="hidden md:block">
-        <TableFrame>
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[60%]">{t.common.name}</TableHead>
-                <TableHead className="w-[40%] text-end">{t.common.active}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading &&
-                Array.from({ length: 3 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-32 max-w-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-9 ms-auto" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-
-              {!isLoading && totalItems === 0 && (
-                <TableRow>
-                  <TableCell colSpan={2} className="p-0">
-                    <EmptyState
-                      icon={IconDepartment}
-                      title={search ? t.settings.noMatchingDepartments : t.settings.noDepartments}
-                      description={
-                        search
-                          ? t.common.noResults
-                          : t.settings.departmentsDesc
-                      }
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-
-              {pageItems.map((dept) => (
-                <TableRow key={dept.id} className={!dept.isActive ? 'opacity-60' : undefined}>
-                  <TableCell className="max-w-0 overflow-hidden">
-                    <TruncatedText className="font-medium">
-                      {lang === 'ar' && dept.nameAr ? dept.nameAr : dept.name}
-                    </TruncatedText>
-                  </TableCell>
-                  <TableCell>
-                    <DirectoryActions
-                      name={dept.name}
-                      active={dept.isActive}
-                      disabled={isToggling}
-                      onChange={(checked) => handleToggleActive(dept, checked)}
-                    >
-                      {rowActions(dept)}
-                    </DirectoryActions>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableFrame>
-      </div>
-
-      <div className="space-y-2 md:hidden">
-        {isLoading &&
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border/70 bg-card p-4">
-              <Skeleton className="h-4 w-28" />
-            </div>
-          ))}
-
-        {!isLoading && totalItems === 0 && (
-          <EmptyState
-            icon={IconDepartment}
-            title={search ? t.settings.noMatchingDepartments : t.settings.noDepartments}
-            description={
-              search
-                ? t.common.noResults
-                : t.settings.departmentsDesc
-            }
-          />
-        )}
-
-        {pageItems.map((dept) => (
+      <ResourceTable
+        rows={pageItems}
+        rowKey={(dept) => dept.id}
+        inactive={(dept) => !dept.isActive}
+        isLoading={isLoading}
+        pagination={pagination}
+        empty={{
+          icon: IconDepartment,
+          title: search ? t.settings.noMatchingDepartments : t.settings.noDepartments,
+          description: search ? t.common.noResults : t.settings.departmentsDesc,
+        }}
+        columns={[
+          {
+            id: 'name',
+            header: t.common.name,
+            className: 'w-[60%]',
+            cellClassName: 'max-w-0 overflow-hidden',
+            skeleton: 'h-4 w-32 max-w-full',
+            render: (dept) => (
+              <TruncatedText className="font-medium">
+                {lang === 'ar' && dept.nameAr ? dept.nameAr : dept.name}
+              </TruncatedText>
+            ),
+          },
+          {
+            id: 'active',
+            header: t.common.active,
+            className: 'w-[40%] text-end',
+            skeleton: 'h-5 w-9 ms-auto',
+            render: (dept) => (
+              <DirectoryActions
+                name={dept.name}
+                active={dept.isActive}
+                disabled={isToggling}
+                onChange={(checked) => handleToggleActive(dept, checked)}
+              >
+                {rowActions(dept)}
+              </DirectoryActions>
+            ),
+          },
+        ]}
+        mobileCard={(dept) => (
           <EntityMobileCard
             key={dept.id}
             title={lang === 'ar' && dept.nameAr ? dept.nameAr : dept.name}
@@ -242,55 +176,31 @@ export default function DepartmentsPage() {
             activeDisabled={isToggling}
             actions={rowActions(dept)}
           />
-        ))}
-      </div>
-
-      <Pagination
-        page={page}
-        pageCount={pageCount}
-        totalItems={totalItems}
-        pageSize={pageSize}
-        onPageChange={setPage}
+        )}
       />
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {editing ? t.common.edit : t.settings.addDepartment}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-2">
-            <BilingualNameFields
-              name={name}
-              nameAr={nameAr}
-              onNameChange={setName}
-              onNameArChange={setNameAr}
-            />
-          </div>
-          <DialogFooter>
-            <FormActions
-              variant="dialog"
-              onCancel={() => setOpen(false)}
-              submitLabel={editing ? t.common.save : t.common.create}
-              pending={isSaving}
-              disabled={!name.trim()}
-              onSubmitClick={handleSubmit}
-            />
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SettingsFormDialog
+        open={open}
+        onOpenChange={setOpen}
+        editing={!!editing}
+        addTitle={t.settings.addDepartment}
+        pending={isSaving}
+        disabled={!name.trim()}
+        onSubmit={handleSubmit}
+      >
+        <div className="py-2">
+          <BilingualNameFields
+            name={name}
+            nameAr={nameAr}
+            onNameChange={setName}
+            onNameArChange={setNameAr}
+          />
+        </div>
+      </SettingsFormDialog>
 
       <TwoStepDeleteDialogs
-        step1={del.step1}
-        step2={del.step2}
-        onStep1OpenChange={(open) => !open && del.cancelStep1()}
-        onStep2OpenChange={(open) => !open && del.cancelStep2()}
-        onContinue={del.advance}
-        onConfirm={() => {
-          if (!del.step2) return;
-          deleteMutation.mutate(del.step2.id, { onSuccess: del.clear });
-        }}
+        controller={del}
+        onConfirm={(item) => deleteMutation.mutate(item.id, { onSuccess: del.clear })}
         isPending={deleteMutation.isPending}
         warning="This will permanently remove this department along with its rooms, services, and appointments. This cannot be undone. If you just want to hide it temporarily, use the toggle instead and cancel here."
         finalWarning="This will permanently delete this department and every room, service, and appointment linked to it, including patient visit history. This action cannot be undone."

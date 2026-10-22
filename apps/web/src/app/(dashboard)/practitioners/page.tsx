@@ -1,5 +1,7 @@
 'use client';
 
+import { DEFAULT_PAGE_SIZE } from '@/components/primitives/display/pagination';
+
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui';
@@ -25,7 +27,7 @@ import type {
 } from '@/services/practitioners.service';
 import type { ReportFormat } from '@/services/reports.service';
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 const EMPTY_DIRECTORY: Practitioner[] = [];
 
 function toDirectoryQuery(
@@ -172,7 +174,6 @@ export default function PractitionersPage() {
         clinicId={clinicId}
         hasActiveFilters={hasActiveFilters}
         page={currentPage}
-        pageCount={pageCount}
         totalItems={totalItems}
         pageSize={PAGE_SIZE}
         onPageChange={setPage}

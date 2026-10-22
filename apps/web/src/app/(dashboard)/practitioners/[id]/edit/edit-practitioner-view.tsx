@@ -97,20 +97,13 @@ export function EditPractitionerView({ id }: { id: string }) {
       {data && !isError && <AccountPasswordReset id={id} />}
 
       <TwoStepDeleteDialogs
-        step1={del.step1}
-        step2={del.step2}
-        onStep1OpenChange={(open) => !open && del.cancelStep1()}
-        onStep2OpenChange={(open) => !open && del.cancelStep2()}
-        onContinue={del.advance}
-        onConfirm={() => {
-          if (!del.step2) return;
-          remove.mutate(del.step2.id, {
-            onSuccess: () => {
-              del.clear();
-              router.push(ROUTES.PRACTITIONERS);
-            },
-          });
-        }}
+        controller={del}
+        onConfirm={(item) => remove.mutate(item.id, {
+          onSuccess: () => {
+            del.clear();
+            router.push(ROUTES.PRACTITIONERS);
+          },
+        })}
         isPending={remove.isPending}
         warning={t.practitioner.deleteWarning1}
         finalWarning={t.practitioner.deleteWarning2}
