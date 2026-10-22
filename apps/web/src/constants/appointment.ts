@@ -14,7 +14,7 @@ export const STATUS_BADGE_VARIANT: Record<
   [APPOINTMENT_STATUS.CHECKED_IN]: 'success',
   [APPOINTMENT_STATUS.WAITING]: 'warning',
   [APPOINTMENT_STATUS.IN_PROGRESS]: 'info',
-  [APPOINTMENT_STATUS.COMPLETED]: 'info',
+  [APPOINTMENT_STATUS.COMPLETED]: 'success',
   [APPOINTMENT_STATUS.NO_SHOW]: 'destructive',
   [APPOINTMENT_STATUS.CANCELLED]: 'muted',
 };
@@ -22,10 +22,10 @@ export const STATUS_BADGE_VARIANT: Record<
 export const STATUS_COLORS: Record<AppointmentStatus, string> = {
   [APPOINTMENT_STATUS.UNCONFIRMED]: 'var(--color-warning)',
   [APPOINTMENT_STATUS.CONFIRMED]: 'var(--color-success)',
-  [APPOINTMENT_STATUS.CHECKED_IN]: 'var(--color-accent-teal)',
+  [APPOINTMENT_STATUS.CHECKED_IN]: 'var(--color-success)',
   [APPOINTMENT_STATUS.WAITING]: 'var(--color-warning)',
-  [APPOINTMENT_STATUS.IN_PROGRESS]: 'var(--color-primary)',
-  [APPOINTMENT_STATUS.COMPLETED]: 'var(--color-primary)',
+  [APPOINTMENT_STATUS.IN_PROGRESS]: 'var(--color-info)',
+  [APPOINTMENT_STATUS.COMPLETED]: 'var(--color-success)',
   [APPOINTMENT_STATUS.NO_SHOW]: 'var(--color-error)',
   [APPOINTMENT_STATUS.CANCELLED]: 'var(--color-muted-foreground)',
 };
@@ -54,11 +54,11 @@ export const getStatusConfig = (
   },
   in_progress: {
     ...t.constants.status.in_progress,
-    dotClassName: 'bg-primary animate-pulse',
+    dotClassName: 'bg-info animate-pulse',
   },
   completed: {
     ...t.constants.status.completed,
-    dotClassName: 'bg-primary',
+    dotClassName: 'bg-success',
   },
   no_show: {
     ...t.constants.status.no_show,

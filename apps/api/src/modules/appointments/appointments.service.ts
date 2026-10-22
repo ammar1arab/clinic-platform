@@ -452,6 +452,12 @@ export class AppointmentsService {
     if (denied.length) securityError("clinicUnavailable", 403);
     const existing = await this.findOne(clinicId, id, practitionerId);
     if (dto.status && !(APPOINTMENT_EDITABLE_STATUSES as readonly string[]).includes(dto.status)) visitError('visitUseCommands', 409);
+    if (existing.status === AppointmentStatus.cancelled && Object.keys(dto).some((key) => !['notes', 'statusReason'].includes(key))) {
+      throw new BadRequestException("Cannot update a cancelled appointment");
+    }
+    if (dto.status === AppointmentStatusDto.no_show && existing.scheduledAt > new Date()) {
+      throw new BadRequestException({ code: "appointmentNoShowTooEarly", message: "An appointment cannot be marked as a no-show before its scheduled time" });
+    }
     const visit = await this.prisma.visit.findFirst({ where: { appointmentId: id, clinicId }, select: { id: true } });
     if (visit && Object.keys(dto).some(key => !['notes','statusReason'].includes(key))) visitError('visitScheduleFrozen', 409);
     if (practitionerId && dto.notes !== undefined) visitError('visitUseClinicalNote', 403);
@@ -460,7 +466,7 @@ export class AppointmentsService {
       await this.resolveDiscountCode(clinicId, dto.discountCodeId);
 
     if (dto.status && String(dto.status) !== String(existing.status)) {
-      if (dto.status === AppointmentStatusDto.cancelled && !dto.cancelReason) {
+      if (dto.status === AppointmentStatusDto.cancelled && !dto.cancelReason?.trim()) {
         throw new BadRequestException("Cancellation reason is required");
       }
       if (existing.status === AppointmentStatus.cancelled) {

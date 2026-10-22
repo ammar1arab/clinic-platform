@@ -33,11 +33,11 @@ const accentMap: Record<IconWellAccent, string> = {
   warning: 'bg-warning/15 text-warning ring-1 ring-inset ring-warning/20',
   error: 'bg-error/12 text-error ring-1 ring-inset ring-error/15',
   muted: 'bg-muted text-foreground ring-1 ring-inset ring-border/60',
-  indigo: 'bg-indigo-500/10 text-indigo-600 ring-1 ring-inset ring-indigo-500/15 dark:text-indigo-400',
-  violet: 'bg-violet-500/10 text-violet-600 ring-1 ring-inset ring-violet-500/15 dark:text-violet-400',
-  pink: 'bg-pink-500/10 text-pink-600 ring-1 ring-inset ring-pink-500/15 dark:text-pink-400',
-  orange: 'bg-orange-500/10 text-orange-600 ring-1 ring-inset ring-orange-500/15 dark:text-orange-400',
-  cyan: 'bg-cyan-500/10 text-cyan-700 ring-1 ring-inset ring-cyan-500/15 dark:text-cyan-400',
+  indigo: 'bg-info/12 text-info ring-1 ring-inset ring-info/15',
+  violet: 'bg-accent-violet/12 text-accent-violet ring-1 ring-inset ring-accent-violet/15',
+  pink: 'bg-accent-violet/12 text-accent-violet ring-1 ring-inset ring-accent-violet/15',
+  orange: 'bg-warning/12 text-warning ring-1 ring-inset ring-warning/15',
+  cyan: 'bg-accent-teal/12 text-accent-teal ring-1 ring-inset ring-accent-teal/15',
 };
 
 interface Props {

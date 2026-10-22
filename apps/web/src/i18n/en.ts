@@ -1543,6 +1543,7 @@ export const en = {
     publishHint: "Preview uses the same fields as the visit note. Publish snapshots this version. Later edits become a draft until you publish again.",
   },
   errors: {
+    appointmentNoShowTooEarly: "An appointment cannot be marked as a no-show before its scheduled time.",
     scheduleRequestRange: "Choose a future period, ending after it starts, within one year.",
     scheduleRequestDuplicate: "An overlapping request is already awaiting review.",
     scheduleRequestReviewed: "This request has already been reviewed. Refresh to see the decision.",

@@ -1532,6 +1532,7 @@ export const ar: Translations = {
     publishHint: "المعاينة تستخدم الحقول نفسها في ملاحظة الزيارة. النشر يثبت هذا الإصدار. التعديلات اللاحقة تصبح مسودة حتى تنشر مرة أخرى.",
   },
   errors: {
+    appointmentNoShowTooEarly: "لا يمكن تسجيل عدم الحضور قبل وقت الموعد.",
     scheduleRequestRange: "اختر فترة مستقبلية لا تتجاوز سنة وتنتهي بعد بدايتها.",
     scheduleRequestDuplicate: "يوجد طلب متداخل بانتظار المراجعة.",
     scheduleRequestReviewed: "تمت مراجعة هذا الطلب مسبقًا. حدّث الصفحة لعرض القرار.",
