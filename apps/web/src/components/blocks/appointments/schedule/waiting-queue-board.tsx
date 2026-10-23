@@ -507,6 +507,7 @@ export function WaitingQueueBoard({
             ? 'gap-2 p-1.5 scroll-px-1.5 sm:p-2 sm:scroll-px-2'
             : 'gap-2.5 p-2.5 scroll-px-2.5 sm:gap-3 sm:p-3 sm:scroll-px-3'),
           focused && 'h-0',
+          !single && view.overflow && 'pb-1.5 sm:pb-2',
         )}
       >
         {statuses.map((status) => {
@@ -526,7 +527,6 @@ export function WaitingQueueBoard({
               icon={STATUS_ICONS[status]}
               color={STATUS_COLORS[status]}
               badgeVariant={STATUS_BADGE_VARIANT[status]}
-              roomy={view.overflow}
             >
               {loading ? <QueueColumnSkeleton count={3} /> : list.length === 0 && !placeholder ? (
                 <EmptyState framed={false} icon={STATUS_ICONS[status]} title={emptyText[status]} className="flex-1 px-3 py-8" />
@@ -548,32 +548,27 @@ export function WaitingQueueBoard({
         })}
       </div>
       {!single && view.overflow ? (
-        <div
-          role="scrollbar"
-          aria-controls={trackId}
-          aria-label={t.queue.waitingQueue}
-          aria-orientation="horizontal"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(view.start)}
-          tabIndex={0}
-          onPointerDown={scrub}
-          onKeyDown={nudge}
-          className="absolute bottom-3 end-3 z-20 cursor-grab touch-none select-none rounded-xl border bg-card/90 p-1.5 shadow-lg backdrop-blur-sm outline-none transition-[border-color,box-shadow] duration-200 hover:border-primary/40 focus-visible:border-ring active:cursor-grabbing sm:bottom-4 sm:end-4"
-        >
-          <div className="relative flex gap-0.5">
-            {statuses.map((status) => (
+        <div className="flex shrink-0 justify-center pb-1.5 sm:pb-2">
+          <div
+            role="scrollbar"
+            aria-controls={trackId}
+            aria-label={t.queue.waitingQueue}
+            aria-orientation="horizontal"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(view.start)}
+            tabIndex={0}
+            onPointerDown={scrub}
+            onKeyDown={nudge}
+            className="group w-20 cursor-grab touch-none select-none py-1.5 outline-none active:cursor-grabbing sm:w-28"
+          >
+            <div className="relative h-1 rounded-full bg-foreground/10 transition-[height] duration-200 group-hover:h-1.5 group-focus-visible:ring-2 group-focus-visible:ring-ring group-active:h-1.5">
               <span
-                key={status}
-                className="h-7 w-2 rounded-[3px]"
-                style={{ background: `color-mix(in oklch, ${STATUS_COLORS[status]} 30%, transparent)` }}
+                aria-hidden
+                className="absolute inset-y-0 min-w-2 rounded-full bg-primary/60 transition-colors duration-200 group-hover:bg-primary group-active:bg-primary"
+                style={{ left: `${view.start}%`, width: `${view.size}%` }}
               />
-            ))}
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -inset-y-1 rounded-md border-2 border-primary bg-primary/10 shadow-xs"
-              style={{ left: `${view.start}%`, width: `${view.size}%` }}
-            />
+            </div>
           </div>
         </div>
       ) : null}
@@ -616,7 +611,6 @@ function StageColumn({
   icon: Icon,
   color,
   badgeVariant,
-  roomy,
   children,
 }: {
   single: boolean;
@@ -630,7 +624,6 @@ function StageColumn({
   icon: LucideIcon;
   color: string;
   badgeVariant: BadgeVariant;
-  roomy: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -655,7 +648,7 @@ function StageColumn({
           {count === undefined ? <Skeleton className="h-4 w-4" /> : count}
         </Badge>
       </div>
-      <div data-drag-scroll="y" className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain p-2.5 sm:p-3', roomy && 'pb-14 sm:pb-16')}>
+      <div data-drag-scroll="y" className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain p-2.5 sm:p-3">
         <div className="flex min-h-full flex-1 flex-col gap-2.5">{children}{placeholder}</div>
       </div>
     </section>
