@@ -48,9 +48,8 @@ export function StatusBadgeBlock({
       >
         <span
           className={cn(
-            'size-1.5 shrink-0 rounded-full ring-2 ring-background shadow-sm',
+            'size-1.5 shrink-0 rounded-full',
             config.dotClassName,
-            'dark:ring-0',
           )}
         />
         <span>{text}</span>
