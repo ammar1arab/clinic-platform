@@ -128,6 +128,19 @@ export const REPORT_SECTION = {
 } as const;
 export type ReportSectionKey =
   (typeof REPORT_SECTION)[keyof typeof REPORT_SECTION];
+export const REPORT_TYPE = {
+  GENERAL: "general",
+  SICK_LEAVE: "sick_leave",
+  INSURANCE: "insurance",
+  REFERRAL: "referral",
+} as const;
+export type ReportType = (typeof REPORT_TYPE)[keyof typeof REPORT_TYPE];
+export interface ReportDetails {
+  reportType: ReportType;
+  restFrom: string | null;
+  restTo: string | null;
+  purpose: string;
+}
 export interface ReportSections {
   reason: string;
   summary: string;
@@ -145,6 +158,8 @@ export interface VisitReportDTO {
   signedById: string | null;
   signedAt: string | null;
   pdfAvailable: boolean;
+  details: ReportDetails;
+  referenceNumber: string;
   versions: {
     id: string;
     revision: number;
@@ -256,6 +271,7 @@ export interface SignInput {
 }
 export interface ReportDraftInput {
   sections: ReportSections;
+  details?: ReportDetails;
   revision: number;
 }
 export interface ReportAmendInput extends ReportDraftInput {

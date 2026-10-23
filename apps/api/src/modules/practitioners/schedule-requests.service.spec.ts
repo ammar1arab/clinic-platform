@@ -166,7 +166,6 @@ describe("Schedule requests", () => {
         endDate: period.endAt,
         kind: "leave",
         reason: pending.reason,
-        kind: "leave",
       },
     });
     expect(notifications.create).toHaveBeenCalledWith(

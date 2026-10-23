@@ -47,7 +47,7 @@ describe('Visit document release rules', () => {
       id: 'visit',
       context: { clinicName: 'Clinic', patientName: 'Patient', practitionerName: 'Doctor', timezone: 'UTC' },
       note: { signedAt: new Date() },
-      report: { id: 'report', revision: 3, signedAt: new Date(), sections: { reason: 'r', summary: 's', assessment: '', plan: 'p', followUp: '' } },
+      report: { id: 'report', revision: 3, signedAt: new Date(), reportType: 'general', restFrom: null, restTo: null, purpose: '', referenceNumber: 'MR-TEST0001', sections: { reason: 'r', summary: 's', assessment: '', plan: 'p', followUp: '' } },
       invoice: { id: 'invoice', revision: 4, issuedAt: new Date(), voidedAt: null, prepayment: new Prisma.Decimal(0), payments: [] },
       documents: [document('report-1', 'medical_report', 1), document('report-2', 'medical_report', 3), document('invoice-1', 'invoice', 2)],
     } as unknown as VisitRow;

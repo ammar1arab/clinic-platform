@@ -719,6 +719,11 @@ model VisitMedicalReport {
   sourceNoteRevisionId String
   signedById           String?
   signedAt             DateTime?
+  reportType           String    @default("general")
+  restFrom             DateTime? @db.Date
+  restTo               DateTime? @db.Date
+  purpose              String    @default("")
+  referenceNumber      String    @unique
   visit                Visit     @relation(fields: [visitId, clinicId], references: [id, clinicId], onDelete: Restrict)
 
   @@unique([visitId, clinicId])

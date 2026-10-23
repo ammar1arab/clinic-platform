@@ -9,6 +9,7 @@ import {
   IsInt,
   IsISO8601,
   IsObject,
+  IsOptional,
   IsString,
   IsUUID,
   Matches,
@@ -26,6 +27,8 @@ import {
   PRESENCE_SOURCE,
   VISIT_QUEUE,
   VISIT_REPORT_STATUS,
+  REPORT_TYPE,
+  type ReportType,
   type ClinicalSection,
   type ClinicalValue,
   type ReportSections,
@@ -65,11 +68,22 @@ export class ReportSectionsDto implements ReportSections {
   @IsString() @MaxLength(20000) plan: string;
   @IsString() @MaxLength(10000) followUp: string;
 }
+export class ReportDetailsDto {
+  @IsIn(Object.values(REPORT_TYPE))
+  reportType: ReportType;
+  @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) restFrom: string | null;
+  @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) restTo: string | null;
+  @IsString() @MaxLength(200) purpose: string;
+}
 export class ReportDraftDto extends SignDto {
   @IsObject()
   @ValidateNested()
   @Type(() => ReportSectionsDto)
   sections: ReportSectionsDto;
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ReportDetailsDto)
+  details?: ReportDetailsDto;
 }
 export class ReportAmendDto extends ReportDraftDto {
   @Transform(({ value }: { value: unknown }) =>

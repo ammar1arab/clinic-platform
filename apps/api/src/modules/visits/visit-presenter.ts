@@ -13,6 +13,7 @@ import type {
   VisitWorkspace,
 } from "@clinic/types";
 import type { SummaryRow, VisitRow, WorkspaceRow } from "./visits.repository";
+import { storedReportDetails } from "./report-details";
 const iso = (date: Date | null | undefined) => date?.toISOString() ?? null;
 export const noteLocked = (
   visit: Pick<VisitRow, "documentationDeadlineAt" | "unlockGrantedAt"> & {
@@ -220,6 +221,8 @@ export function workspaceDto(
           signedById: visit.report.signedById,
           signedAt: iso(visit.report.signedAt),
           pdfAvailable: !!visit.report.signedAt,
+          details: storedReportDetails(visit.report),
+          referenceNumber: visit.report.referenceNumber,
           versions: visit.documents
             .filter((document) => document.kind === "medical_report")
             .map((document) => ({

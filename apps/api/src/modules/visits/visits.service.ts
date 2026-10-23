@@ -1,4 +1,4 @@
-import { getSharedTranslations } from "@clinic/types";
+import { REPORT_TYPE, getSharedTranslations } from "@clinic/types";
 import { getLocale } from "@/infrastructure/i18n.context";
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
@@ -33,6 +33,14 @@ import {
   workspaceDto,
 } from "./visit-presenter";
 import { validateValues, blankReport } from "./clinical-validation";
+import {
+  assertReportDetails,
+  newReferenceNumber,
+  normalizeReportDetails,
+  reportDetailsData,
+  restDays,
+  storedReportDetails,
+} from "./report-details";
 import { visitError } from "./visit-errors";
 import {
   AddendumDto,
@@ -611,6 +619,7 @@ export class VisitsService {
             clinicId: actor.clinicId,
             sections: toJson(report),
             sourceNoteRevisionId: event.id,
+            referenceNumber: newReferenceNumber(),
           },
         });
         await tx.visit.update({
@@ -748,6 +757,8 @@ export class VisitsService {
           where: { id: visit.report.id },
           data: {
             sections: toJson(input.sections),
+            ...(input.details &&
+              reportDetailsData(normalizeReportDetails(input.details))),
             revision: { increment: 1 },
           },
         });
@@ -830,11 +841,44 @@ export class VisitsService {
           !sections.plan.trim()
         )
           visitError("visitReportIncomplete");
+        const details = normalizeReportDetails(
+          amendment?.details ?? storedReportDetails(visit.report),
+        );
+        assertReportDetails(details);
         const nextRevision = amendment ? revision + 1 : revision;
+        const copy = getSharedTranslations(getLocale()).documents;
+        const detailRows = [
+          { label: copy.labels.reportType, value: copy.reportTypes[details.reportType] },
+          ...(details.reportType === REPORT_TYPE.SICK_LEAVE
+            ? [
+                {
+                  label: copy.labels.restPeriod,
+                  value: `${details.restFrom} - ${details.restTo}`,
+                },
+                {
+                  label: copy.labels.restDays,
+                  value: String(restDays(details)),
+                },
+              ]
+            : []),
+          ...(details.purpose
+            ? [{ label: copy.labels.purpose, value: details.purpose }]
+            : []),
+          {
+            label: copy.labels.referenceNumber,
+            value: visit.report.referenceNumber,
+          },
+        ];
         const snapshot = this.documentSnapshot(
           row,
           amendment ? "Medical report - amended" : "Medical report",
-          Object.entries(sections).map(([label, value]) => ({ label, value })),
+          [
+            ...detailRows,
+            ...Object.entries(sections).map(([label, value]) => ({
+              label,
+              value,
+            })),
+          ],
         );
         const pdf = await this.documents.render(snapshot);
         await tx.visitDocument.create({
@@ -857,6 +901,7 @@ export class VisitsService {
           where: { id: visit.report.id },
           data: {
             sections: toJson(sections),
+            ...reportDetailsData(details),
             revision: nextRevision,
             signedAt: new Date(),
             signedById: actor.clinicUserId,
