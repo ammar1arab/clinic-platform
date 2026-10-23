@@ -55,12 +55,17 @@ function handOffToNextTrigger(event: DismissEvent) {
   if (!(original instanceof PointerEvent) || original.button !== 0) return;
   const { clientX, clientY, pointerType } = original;
   const blocked = original.target;
+  const openTriggers = new Set(
+    [...document.querySelectorAll<HTMLElement>(OVERLAY_TRIGGER)].filter(
+      (trigger) => trigger.getAttribute('aria-expanded') === 'true',
+    ),
+  );
   requestAnimationFrame(() => {
     const trigger = [...document.querySelectorAll<HTMLElement>(OVERLAY_TRIGGER)].findLast((element) => {
       const rect = element.getBoundingClientRect();
       return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
     });
-    if (!trigger || (blocked instanceof Node && trigger.contains(blocked))) return;
+    if (!trigger || openTriggers.has(trigger) || (blocked instanceof Node && trigger.contains(blocked))) return;
     if (trigger.matches(':disabled, [data-disabled]')) return;
     const init = { bubbles: true, cancelable: true, clientX, clientY, button: 0, pointerType, isPrimary: true };
     trigger.dispatchEvent(new PointerEvent('pointerdown', init));
