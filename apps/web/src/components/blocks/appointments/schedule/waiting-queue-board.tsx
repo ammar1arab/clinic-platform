@@ -1,7 +1,7 @@
 'use client';
 
 import { createPortal } from 'react-dom';
-import React, { useMemo, useCallback, useRef, useState } from 'react';
+import React, { useMemo, useCallback, useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useNow } from '@/hooks/shared/use-now';
@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
+  type BadgeVariant,
 } from '@/components/ui';
 import { Appointment, type AppointmentStatus } from '@/services/appointments.service';
 import { AppointmentStatusSelect } from '../shared/appointment-status-select';
@@ -30,11 +31,11 @@ import {
 import { cn } from '@/lib/utils';
 import { EmptyState, PreviewableAvatar, QueueColumnSkeleton } from '@/components/primitives';
 import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
-import { IconActivate, IconBan, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPlay, IconRoom, IconService, IconTime, IconTimer, type LucideIcon } from '@/constants/icons';
+import { IconActivate, IconBan, IconCalendarClock, IconCheckCircle, IconCreditCard, IconDeactivate, IconHourglass, IconOnline, IconPlay, IconRoom, IconService, IconTime, IconTimer, IconTodaysAppointments, type LucideIcon } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
 import { useAuth, useLanguage } from '@/providers';
 import { APPOINTMENT_STATUS, PRESENCE_SOURCE, ROLE, SESSION_TYPE } from '@clinic/types';
-import { QUEUE_STAGE, STATUS_OPTIONS, getStatusConfig, type QueueStage } from '@/constants/appointment';
+import { QUEUE_STAGE, STATUS_BADGE_VARIANT, STATUS_COLORS, STATUS_OPTIONS, getStatusConfig, type QueueStage } from '@/constants/appointment';
 import { ROUTES } from '@/constants/routes';
 import { visitsService } from '@/services/visits.service';
 import { INVALIDATE, useApiMutation } from '@/hooks/query';
@@ -51,6 +52,17 @@ const DROP_TARGETS: Record<AppointmentStatus, readonly AppointmentStatus[]> = {
   [COMPLETED]: [],
   [NO_SHOW]: [UNCONFIRMED, CONFIRMED, CANCELLED],
   [CANCELLED]: [],
+};
+
+const STATUS_ICONS: Record<AppointmentStatus, LucideIcon> = {
+  [UNCONFIRMED]: IconCalendarClock,
+  [CONFIRMED]: IconTodaysAppointments,
+  [CHECKED_IN]: IconActivate,
+  [WAITING]: IconHourglass,
+  [IN_PROGRESS]: IconService,
+  [COMPLETED]: IconCheckCircle,
+  [NO_SHOW]: IconDeactivate,
+  [CANCELLED]: IconBan,
 };
 
 const UPDATE_TARGETS: readonly AppointmentStatus[] = [UNCONFIRMED, CONFIRMED, NO_SHOW, CANCELLED];
@@ -227,21 +239,19 @@ export function WaitingQueueBoard({
     return groups;
   }, [dayAppointments]);
 
+  const trackId = useId();
   const trackNode = useRef<HTMLDivElement | null>(null);
-  const [pager, setPager] = useState<{ overflow: boolean; visible: number[] }>({ overflow: false, visible: [] });
+  const [view, setView] = useState({ overflow: false, start: 0, size: 100 });
   const trackRef = useCallback((node: HTMLDivElement | null) => {
     trackNode.current = node;
     if (!node || single) return;
     const sync = () => {
-      const box = node.getBoundingClientRect();
-      const ratios = Array.from(node.querySelectorAll<HTMLElement>('[data-board-column]'), (column) => {
-        const rect = column.getBoundingClientRect();
-        return (Math.min(rect.right, box.right) - Math.max(rect.left, box.left)) / rect.width;
-      });
-      const best = Math.max(...ratios);
-      const visible = ratios.flatMap((ratio, index) => (ratio >= 0.6 || ratio === best ? [index] : []));
-      const overflow = node.scrollWidth > node.clientWidth + 1;
-      setPager((prev) => (prev.overflow === overflow && prev.visible.join() === visible.join() ? prev : { overflow, visible }));
+      const { scrollWidth, clientWidth, scrollLeft } = node;
+      const offset = getComputedStyle(node).direction === 'rtl' ? scrollWidth - clientWidth + scrollLeft : scrollLeft;
+      const next = { overflow: scrollWidth > clientWidth + 1, start: (offset / scrollWidth) * 100, size: (clientWidth / scrollWidth) * 100 };
+      setView((prev) =>
+        prev.overflow === next.overflow && Math.abs(prev.start - next.start) < 0.1 && Math.abs(prev.size - next.size) < 0.1 ? prev : next,
+      );
     };
     sync();
     node.addEventListener('scroll', sync, { passive: true });
@@ -253,10 +263,41 @@ export function WaitingQueueBoard({
     };
   }, [single]);
 
-  const jumpTo = (index: number) =>
-    trackNode.current
-      ?.querySelectorAll<HTMLElement>('[data-board-column]')
-      [index]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+  const scrub = (event: React.PointerEvent<HTMLDivElement>) => {
+    const node = trackNode.current;
+    if (!node || event.button !== 0) return;
+    const map = event.currentTarget;
+    const rect = map.getBoundingClientRect();
+    const fraction = (x: number) => (x - rect.left) / rect.width;
+    const win = { start: view.start / 100, size: view.size / 100 };
+    const pressed = fraction(event.clientX);
+    const grab = pressed >= win.start && pressed <= win.start + win.size ? pressed - (win.start + win.size / 2) : 0;
+    const seek = (x: number) => {
+      const max = node.scrollWidth - node.clientWidth;
+      const offset = Math.min(max, Math.max(0, (fraction(x) - grab) * node.scrollWidth - node.clientWidth / 2));
+      node.scrollLeft = getComputedStyle(node).direction === 'rtl' ? offset - max : offset;
+    };
+    const move = (moveEvent: PointerEvent) => seek(moveEvent.clientX);
+    const end = () => {
+      document.body.classList.remove('is-dragging');
+      map.removeEventListener('pointermove', move);
+      map.removeEventListener('pointerup', end);
+      map.removeEventListener('pointercancel', end);
+    };
+    map.setPointerCapture(event.pointerId);
+    document.body.classList.add('is-dragging');
+    seek(event.clientX);
+    map.addEventListener('pointermove', move);
+    map.addEventListener('pointerup', end);
+    map.addEventListener('pointercancel', end);
+  };
+
+  const nudge = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
+    if (!step || !trackNode.current) return;
+    event.preventDefault();
+    trackNode.current.scrollBy({ left: step * trackNode.current.clientWidth * 0.6 });
+  };
 
   const loading = isLoading && !appointments?.length;
 
@@ -267,15 +308,15 @@ export function WaitingQueueBoard({
     ...STATUS_OPTIONS.map((status) => ({ key: status, label: withCount(statusConfig[status].label, columns[status].length) })),
   ];
 
-  const emptyStates: Record<AppointmentStatus, [LucideIcon, string]> = {
-    [UNCONFIRMED]: [IconCalendarClock, t.queue.noUpcomingVisitsToday],
-    [CONFIRMED]: [IconCalendarClock, t.queue.noUpcomingVisitsToday],
-    [CHECKED_IN]: [IconTimer, t.queue.noPatientsWaiting],
-    [WAITING]: [IconTimer, t.queue.noPatientsWaiting],
-    [IN_PROGRESS]: [IconService, t.queue.noConsultationsInSession],
-    [COMPLETED]: [IconCheckCircle, t.queue.noCompletedVisitsToday],
-    [NO_SHOW]: [IconBan, t.queue.noClosedVisitsToday],
-    [CANCELLED]: [IconBan, t.queue.noClosedVisitsToday],
+  const emptyText: Record<AppointmentStatus, string> = {
+    [UNCONFIRMED]: t.queue.noUpcomingVisitsToday,
+    [CONFIRMED]: t.queue.noUpcomingVisitsToday,
+    [CHECKED_IN]: t.queue.noPatientsWaiting,
+    [WAITING]: t.queue.noPatientsWaiting,
+    [IN_PROGRESS]: t.queue.noConsultationsInSession,
+    [COMPLETED]: t.queue.noCompletedVisitsToday,
+    [NO_SHOW]: t.queue.noClosedVisitsToday,
+    [CANCELLED]: t.queue.noClosedVisitsToday,
   };
 
   const statusMenu = (appt: Appointment) => (
@@ -457,6 +498,7 @@ export function WaitingQueueBoard({
       ) : null}
       <div
         ref={trackRef}
+        id={trackId}
         data-drag-scroll="x"
         className={cn(
           'flex min-h-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain',
@@ -470,7 +512,6 @@ export function WaitingQueueBoard({
         {statuses.map((status) => {
           const list = columns[status];
           const placeholder = slotFor(status);
-          const [EmptyIcon, emptyText] = emptyStates[status];
           return (
             <StageColumn
               key={status}
@@ -482,9 +523,13 @@ export function WaitingQueueBoard({
               title={statusConfig[status].label}
               count={loading ? undefined : list.length}
               dotClassName={statusConfig[status].dotClassName}
+              icon={STATUS_ICONS[status]}
+              color={STATUS_COLORS[status]}
+              badgeVariant={STATUS_BADGE_VARIANT[status]}
+              roomy={view.overflow}
             >
               {loading ? <QueueColumnSkeleton count={3} /> : list.length === 0 && !placeholder ? (
-                <EmptyState framed={false} icon={EmptyIcon} title={emptyText} className="flex-1 px-3 py-8" />
+                <EmptyState framed={false} icon={STATUS_ICONS[status]} title={emptyText[status]} className="flex-1 px-3 py-8" />
               ) : (
                 list.map((appt) => (
                   <QueueCard
@@ -502,29 +547,35 @@ export function WaitingQueueBoard({
           );
         })}
       </div>
-      {!single && pager.overflow ? (
-        <nav aria-label={t.queue.waitingQueue} className="flex shrink-0 items-center justify-center pb-1.5 sm:pb-2">
-          {statuses.map((status, index) => {
-            const current = pager.visible.includes(index);
-            return (
-              <button
+      {!single && view.overflow ? (
+        <div
+          role="scrollbar"
+          aria-controls={trackId}
+          aria-label={t.queue.waitingQueue}
+          aria-orientation="horizontal"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(view.start)}
+          tabIndex={0}
+          onPointerDown={scrub}
+          onKeyDown={nudge}
+          className="absolute bottom-3 end-3 z-20 cursor-grab touch-none select-none rounded-xl border bg-card/90 p-1.5 shadow-lg backdrop-blur-sm outline-none transition-[border-color,box-shadow] duration-200 hover:border-primary/40 focus-visible:border-ring active:cursor-grabbing sm:bottom-4 sm:end-4"
+        >
+          <div className="relative flex gap-0.5">
+            {statuses.map((status) => (
+              <span
                 key={status}
-                type="button"
-                aria-label={statusConfig[status].label}
-                aria-current={current || undefined}
-                onClick={() => jumpTo(index)}
-                className="group flex h-5 items-center px-[3px] outline-none"
-              >
-                <span
-                  className={cn(
-                    'block h-1.5 rounded-full transition-all duration-300 group-focus-visible:ring-2 group-focus-visible:ring-ring',
-                    current ? 'w-4 bg-foreground/60' : 'w-1.5 bg-muted-foreground/30 group-hover:bg-muted-foreground/60',
-                  )}
-                />
-              </button>
-            );
-          })}
-        </nav>
+                className="h-7 w-2 rounded-[3px]"
+                style={{ background: `color-mix(in oklch, ${STATUS_COLORS[status]} 30%, transparent)` }}
+              />
+            ))}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -inset-y-1 rounded-md border-2 border-primary bg-primary/10 shadow-xs"
+              style={{ left: `${view.start}%`, width: `${view.size}%` }}
+            />
+          </div>
+        </div>
       ) : null}
 
       {appointmentPopover ? (
@@ -562,6 +613,10 @@ function StageColumn({
   title,
   count,
   dotClassName,
+  icon: Icon,
+  color,
+  badgeVariant,
+  roomy,
   children,
 }: {
   single: boolean;
@@ -572,6 +627,10 @@ function StageColumn({
   title: string;
   count: number | undefined;
   dotClassName: string;
+  icon: LucideIcon;
+  color: string;
+  badgeVariant: BadgeVariant;
+  roomy: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -580,23 +639,24 @@ function StageColumn({
       data-board-column=""
       aria-label={title}
       className={cn(
-        'flex min-h-0 shrink-0 flex-col transition-[opacity,background-color,box-shadow] duration-200',
-        single
-          ? 'w-full'
-          : 'w-[85%] snap-start rounded-xl bg-muted/50 sm:w-72 sm:rounded-2xl lg:w-auto lg:min-w-60 lg:flex-1 dark:bg-muted/30',
-        over && 'bg-primary/10 ring-2 ring-inset ring-primary/30 dark:bg-primary/10',
+        'card-aura flex min-h-0 shrink-0 flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs transition-[opacity,box-shadow] duration-200 sm:rounded-2xl',
+        single ? 'w-full' : 'w-[85%] snap-start sm:w-72 lg:w-auto lg:min-w-68 lg:flex-1',
+        over && 'ring-2 ring-primary/40',
         blocked && 'opacity-40',
       )}
     >
-      <header className="flex shrink-0 items-center gap-2 px-3 pb-2 pt-3">
-        <span className={cn('size-2 shrink-0 rounded-full', dotClassName)} />
-        <h3 className="min-w-0 truncate text-2xs font-semibold uppercase text-muted-foreground">{title}</h3>
-        <span className="ms-auto min-w-5 shrink-0 rounded-full bg-background/70 px-1.5 text-center text-2xs font-semibold tabular-nums text-muted-foreground">
-          {count === undefined ? <Skeleton className="my-0.5 h-3 w-3" /> : count}
-        </span>
-      </header>
-      <div data-drag-scroll="y" className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-2 pb-2">
-        <div className="flex min-h-full flex-1 flex-col gap-2">{children}{placeholder}</div>
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b bg-muted/25 p-2.5 sm:p-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={cn('size-2 shrink-0 rounded-full ring-2 ring-background', dotClassName)} />
+          <Icon className="size-4 shrink-0" style={{ color }} />
+          <h3 className="truncate text-xs font-bold tracking-tight text-foreground">{title}</h3>
+        </div>
+        <Badge variant={badgeVariant} className="font-bold tabular-nums">
+          {count === undefined ? <Skeleton className="h-4 w-4" /> : count}
+        </Badge>
+      </div>
+      <div data-drag-scroll="y" className={cn('flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain p-2.5 sm:p-3', roomy && 'pb-14 sm:pb-16')}>
+        <div className="flex min-h-full flex-1 flex-col gap-2.5">{children}{placeholder}</div>
       </div>
     </section>
   );
@@ -623,7 +683,7 @@ function QueueCard({
       onClick={onClick}
       data-queue-card=""
       className={cn(
-        'group relative flex shrink-0 cursor-pointer select-none flex-col rounded-xl bg-card p-3 shadow-xs ring-1 ring-border/60 transition-[box-shadow,opacity] duration-200 [-webkit-touch-callout:none] hover:shadow-md',
+        'group relative flex shrink-0 cursor-pointer select-none flex-col rounded-xl border bg-card p-3 shadow-xs transition-[border-color,box-shadow,opacity] duration-200 [-webkit-touch-callout:none] hover:border-primary/40 hover:shadow-md sm:p-3.5',
         dragging && 'opacity-40',
       )}
     >

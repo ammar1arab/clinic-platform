@@ -283,7 +283,7 @@ export function QueueColumnSkeleton({ count = 6 }: { count?: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="rounded-xl bg-card p-3 shadow-xs ring-1 ring-border/60">
+        <div key={index} className="rounded-xl border bg-card p-3 shadow-xs sm:p-3.5">
           <div className="mb-2 flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1 space-y-1"><Skeleton className="h-4 w-28 max-w-full" /><Skeleton className="h-3 w-20" /></div>
             <Skeleton className="size-7 shrink-0 rounded-full" />

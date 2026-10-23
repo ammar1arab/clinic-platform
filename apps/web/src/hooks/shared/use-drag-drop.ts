@@ -110,7 +110,7 @@ export function useDragDrop<T>({ canDrop, onDrop, onReject }: Options<T>) {
         document.body.appendChild(ghost);
         document.body.classList.add('is-dragging');
         active.current = true;
-        if (touch) navigator.vibrate?.(8);
+        if (touch && navigator.userActivation?.hasBeenActive) navigator.vibrate?.(8);
         place();
         setDrag({ id, zone: null, ...size });
         frame = requestAnimationFrame(tick);
