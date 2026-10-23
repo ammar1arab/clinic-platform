@@ -32,6 +32,7 @@ export { RowActionsMenu, type RowActionItem } from './display/row-actions-menu';
 export { SearchInput } from './forms/search-input';
 export { SearchablePicker, PickerSearch, type PickerOption } from './forms/searchable-picker';
 export { SidePanel } from './display/side-panel';
+export { CountBadge } from './display/count-badge';
 export { ClockReadout } from './display/clock-readout';
 export { LiveClock } from './display/live-clock';
 export { AudienceChips, type AudienceOption } from './forms/audience-chips';
