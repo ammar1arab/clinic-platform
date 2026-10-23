@@ -1,3 +1,4 @@
+import { extractErrorMessage } from '@/lib/api';
 import type { CreateScheduleRequestInput, ReviewScheduleRequestInput, ScheduleRequestPage } from "@clinic/types";
 import type { Translations } from '@/i18n';
 import { practitionersService, type ScheduleRequestListFilters } from '@/services/practitioners.service';
@@ -110,5 +111,7 @@ export function useScheduleRequestMutation(clinicId: string) {
     request: (input) => 'id' in input ? practitionersService.reviewSchedule(input.id, input.data) : practitionersService.requestSchedule(input),
     invalidateQueries: [...writeKeys(clinicId), QUERY_KEYS.dashboard.kpisAll, QUERY_KEYS.dashboard.roomUtilizationAll],
     successMessage: t.scheduleRequests.saved,
+    // 409 responses skip the global toast, so surface the reason here (e.g. conflicting appointments).
+    errorMessage: (error) => extractErrorMessage(error),
   });
 }
