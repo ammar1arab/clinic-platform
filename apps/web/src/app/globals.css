@@ -2017,10 +2017,8 @@ html[data-view-focus='true'] main > * > *:not([data-view-focus='true']) {
     select,
     textarea,
     [contenteditable='true'],
-    [role='combobox'],
     [data-slot='input'],
-    [data-slot='textarea'],
-    [data-slot='select-trigger'] {
+    [data-slot='textarea'] {
       font-size: 16px !important;
     }
   }
