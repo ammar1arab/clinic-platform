@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import type { NotificationDTO } from '@clinic/types';
 import {
-  Badge, Button, Dialog, DialogContent, DialogDescription,
+  Button, Dialog, DialogContent,
   DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui';
 import {
@@ -55,14 +55,6 @@ export function NotificationDetailDialog({ item, onClose }: {
             <NotificationTypeIcon type={item.type} size="md" className="shrink-0 rounded-xl" />
             <div className="min-w-0 flex-1 space-y-1">
               <DialogTitle className="break-words text-base [overflow-wrap:anywhere]">{copy.title}</DialogTitle>
-              <DialogDescription asChild>
-                <div>
-                  <Badge variant={item.readAt ? 'muted' : 'info'}>
-                    <span aria-hidden className="size-1.5 rounded-full bg-current" />
-                    <span>{item.readAt ? t.notifications.read : t.notifications.unread}</span>
-                  </Badge>
-                </div>
-              </DialogDescription>
             </div>
           </DialogHeader>
           <dl className="divide-y rounded-xl border bg-muted/30 text-sm">
