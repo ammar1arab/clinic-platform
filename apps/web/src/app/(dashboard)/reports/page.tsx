@@ -36,7 +36,6 @@ import {
   type LucideIcon,
 } from '@/constants/icons';
 import type { ReportFormat } from '@/services/reports.service';
-import type { IconWellAccent } from '@/components/primitives';
 
 type ReportKey =
   | 'patientMedical'
@@ -55,7 +54,6 @@ type ReportKey =
 type ReportDef = {
   key: ReportKey;
   icon: LucideIcon;
-  accent: IconWellAccent;
   title: string;
   description: string;
   filters?: ReportModalFilters;
@@ -128,7 +126,6 @@ export default function ReportsPage() {
   const signedVisitsDef: ReportDef = {
     key: 'signedVisits',
     icon: IconFileText,
-    accent: 'teal',
     title: t.visits.signedReports,
     description: t.visits.signedReportsDesc,
     filters: { dates: true },
@@ -137,7 +134,6 @@ export default function ReportsPage() {
   const issuedInvoicesDef: ReportDef = {
     key: 'issuedInvoices',
     icon: IconPayment,
-    accent: 'success',
     title: t.visits.issuedInvoices,
     description: t.visits.issuedInvoicesDesc,
     filters: { dates: true },
@@ -150,7 +146,6 @@ export default function ReportsPage() {
         {
           key: 'patientMedical',
           icon: IconPerson,
-          accent: 'default',
           title: t.reports.patientMedical,
           description: t.reports.patientMedicalDesc,
           filters: { patient: 'required' },
@@ -158,7 +153,6 @@ export default function ReportsPage() {
         {
           key: 'patientsDirectory',
           icon: IconPatients,
-          accent: 'teal',
           title: t.reports.patientsDirectory,
           description: t.reports.patientsDirectoryDesc,
         },
@@ -170,14 +164,12 @@ export default function ReportsPage() {
         {
           key: 'practitionersDirectory',
           icon: IconPractitioner,
-          accent: 'teal',
           title: t.reports.practitionersDirectory,
           description: t.reports.practitionersDirectoryDesc,
         },
         {
           key: 'practitionerProfile',
           icon: IconPerson,
-          accent: 'default',
           title: t.reports.practitionerProfile,
           description: t.reports.practitionerProfileDesc,
           filters: { practitioner: 'required', dates: true },
@@ -185,7 +177,6 @@ export default function ReportsPage() {
         {
           key: 'practitionerAppointments',
           icon: IconSchedule,
-          accent: 'warning',
           title: t.reports.practitionerAppointments,
           description: t.reports.practitionerAppointmentsDesc,
           filters: { practitioner: 'required', dates: true },
@@ -193,7 +184,6 @@ export default function ReportsPage() {
         {
           key: 'practitionerHours',
           icon: IconTime,
-          accent: 'default',
           title: t.reports.practitionerHours,
           description: t.reports.practitionerHoursDesc,
           filters: { practitioner: 'required', dates: true },
@@ -201,7 +191,6 @@ export default function ReportsPage() {
         {
           key: 'practitionerExceptions',
           icon: IconCalendarClock,
-          accent: 'teal',
           title: t.reports.practitionerExceptions,
           description: t.reports.practitionerExceptionsDesc,
           filters: { practitioner: 'required', dates: true },
@@ -214,7 +203,6 @@ export default function ReportsPage() {
         {
           key: 'clinicAppointments',
           icon: IconTodaysAppointments,
-          accent: 'warning',
           title: t.reports.clinicAppointments,
           description: t.reports.clinicAppointmentsDesc,
           filters: { dates: true, status: true },
@@ -222,7 +210,6 @@ export default function ReportsPage() {
         {
           key: 'referrals',
           icon: IconReferral,
-          accent: 'warning',
           title: t.reports.referralsConsultations,
           description: t.reports.referralsConsultationsDesc,
           filters: { dates: true, patient: 'optional' },
@@ -235,7 +222,6 @@ export default function ReportsPage() {
         {
           key: 'finance',
           icon: IconPayment,
-          accent: 'success',
           title: t.reports.finance,
           description: t.reports.financeDesc,
           filters: { dates: true },
@@ -253,7 +239,6 @@ export default function ReportsPage() {
             {
               key: 'practitionerAppointments',
               icon: IconSchedule,
-              accent: 'warning',
               title: t.reports.myAppointments,
               description: t.reports.myAppointmentsDesc,
               filters: { dates: true },
@@ -261,7 +246,6 @@ export default function ReportsPage() {
             {
               key: 'practitionerHours',
               icon: IconTime,
-              accent: 'default',
               title: t.reports.practitionerHours,
               description: t.reports.practitionerHoursDesc,
               filters: { dates: true },
@@ -269,7 +253,6 @@ export default function ReportsPage() {
             {
               key: 'practitionerExceptions',
               icon: IconCalendarClock,
-              accent: 'teal',
               title: t.reports.practitionerExceptions,
               description: t.reports.practitionerExceptionsDesc,
               filters: { dates: true },
@@ -390,8 +373,8 @@ export default function ReportsPage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-muted-foreground">{t.visits.title}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <ReportCard icon={IconFileText} accent="teal" title={t.visits.signedReports} description={t.visits.signedReportsDesc} onClick={() => setActiveKey('signedVisits')} />
-          {canFinance ? <ReportCard icon={IconPayment} accent="success" title={t.visits.issuedInvoices} description={t.visits.issuedInvoicesDesc} onClick={() => setActiveKey('issuedInvoices')} /> : null}
+          <ReportCard icon={IconFileText} title={t.visits.signedReports} description={t.visits.signedReportsDesc} onClick={() => setActiveKey('signedVisits')} />
+          {canFinance ? <ReportCard icon={IconPayment} title={t.visits.issuedInvoices} description={t.visits.issuedInvoicesDesc} onClick={() => setActiveKey('issuedInvoices')} /> : null}
         </div>
       </section>
       {catalog.map((group) => {
@@ -409,7 +392,6 @@ export default function ReportsPage() {
                   icon={item.icon}
                   title={item.title}
                   description={item.description}
-                  accent={item.accent}
                   onClick={() => setActiveKey(item.key)}
                 />
               ))}
