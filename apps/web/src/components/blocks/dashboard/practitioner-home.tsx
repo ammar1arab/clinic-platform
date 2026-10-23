@@ -94,34 +94,12 @@ export function PractitionerHome() {
 
   return (
     <div className="fade-in flex min-h-full w-full min-w-0 shrink-0 flex-col gap-4 motion-reduce:animate-none sm:gap-5">
-      <Card className="card-aura relative isolate shrink-0 gap-0 overflow-hidden py-0 ring-0">
-        <CardContent className="relative z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 pb-14 pt-4 sm:gap-4 sm:p-4 sm:pb-14 sm:pt-5 lg:pb-5 lg:pe-[min(30%,24rem)]">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-            <div className="welcome-ambient absolute inset-0" />
-            <div className="absolute inset-x-4 bottom-3 flex h-8 items-center gap-3 text-primary lg:inset-x-auto lg:inset-y-0 lg:end-5 lg:h-full lg:w-[25%]">
-              <svg viewBox="0 0 360 40" preserveAspectRatio="none" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-full min-w-0 flex-1 rtl:-scale-x-100 lg:h-16">
-                <path d={WELCOME_PULSE} strokeOpacity="0.15" vectorEffect="non-scaling-stroke" />
-                <path d={WELCOME_PULSE} className="welcome-trace" pathLength="1" vectorEffect="non-scaling-stroke" />
-              </svg>
-              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/5 ring-1 ring-primary/10 lg:size-12"><IconHeart className="size-4 text-primary/70 lg:size-6" strokeWidth={1.5} /></span>
-            </div>
-          </div>
-          <PreviewableAvatar src={practitioner?.imageUrl ?? user?.imageUrl} seed={user?.clinicUserId ?? 'practitioner'} size="xl" priority className="size-12 ring-2 ring-primary/15 sm:size-20" />
-          <div className="min-w-0 text-start">
-            <p className="text-xs font-medium text-muted-foreground">{formatDate(today, undefined, lang)}</p>
-            <h1 className="break-words font-heading text-base font-semibold leading-tight tracking-tight sm:text-lg">{t.dashboard.welcome}, {getBilingualName(user?.name, user?.nameAr, lang)}</h1>
-            <LiveClock className="mt-1" />
-          </div>
-          <dl className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 lg:col-span-1 lg:col-start-2 lg:grid-cols-4">
-              {facts.map((fact) => (
-                <div key={fact.label} className="min-w-0 text-start">
-                  <dt className="text-2xs leading-tight text-muted-foreground">{fact.label}</dt>
-                  <dd className="mt-0.5 break-words text-xs font-medium leading-snug text-foreground">{fact.value}</dd>
-                </div>
-              ))}
-          </dl>
-        </CardContent>
-      </Card>
+      <WelcomeCard
+        name={getBilingualName(user?.name, user?.nameAr, lang)}
+        imageUrl={practitioner?.imageUrl ?? user?.imageUrl}
+        seed={user?.clinicUserId ?? 'practitioner'}
+        facts={facts}
+      />
 
       <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
         <KpiCardBlock label={t.dashboard.todaysAppointments} value={ordered.length} icon={IconTodaysAppointments} />
@@ -189,6 +167,59 @@ export function PractitionerHome() {
   );
 }
 
+function WelcomeCard({
+  loading = false,
+  name,
+  imageUrl,
+  seed,
+  facts,
+}: {
+  loading?: boolean;
+  name: string;
+  imageUrl?: string | null;
+  seed: string;
+  facts: { label: string; value: string }[];
+}) {
+  const { lang, t } = useLanguage();
+  const today = new Date();
+  return (
+    <Card className="card-aura relative isolate shrink-0 gap-0 overflow-hidden py-0 ring-0">
+      <CardContent className="relative z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 pb-14 pt-4 sm:gap-4 sm:p-4 sm:pb-14 sm:pt-5 lg:pb-5 lg:pe-[min(30%,24rem)]">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="welcome-ambient absolute inset-0" />
+          <div className="absolute inset-x-4 bottom-3 flex h-8 items-center gap-3 text-primary lg:inset-x-auto lg:inset-y-0 lg:end-5 lg:h-full lg:w-[25%]">
+            <svg viewBox="0 0 360 40" preserveAspectRatio="none" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-full min-w-0 flex-1 rtl:-scale-x-100 lg:h-16">
+              <path d={WELCOME_PULSE} strokeOpacity="0.15" vectorEffect="non-scaling-stroke" />
+              <path d={WELCOME_PULSE} className="welcome-trace" pathLength="1" vectorEffect="non-scaling-stroke" />
+            </svg>
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary/5 ring-1 ring-primary/10 lg:size-12"><IconHeart className="size-4 text-primary/70 lg:size-6" strokeWidth={1.5} /></span>
+          </div>
+        </div>
+        {loading ? (
+          <Skeleton className="size-12 shrink-0 rounded-full ring-2 ring-primary/15 sm:size-20" />
+        ) : (
+          <PreviewableAvatar src={imageUrl} seed={seed} size="xl" priority className="size-12 ring-2 ring-primary/15 sm:size-20" />
+        )}
+        <div className="min-w-0 text-start">
+          <p className="text-xs font-medium text-muted-foreground">{formatDate(today, undefined, lang)}</p>
+          <h1 className="break-words font-heading text-base font-semibold leading-tight tracking-tight sm:text-lg">{t.dashboard.welcome}, {name}</h1>
+          <LiveClock className="mt-1" />
+        </div>
+        <dl className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 lg:col-span-1 lg:col-start-2 lg:grid-cols-4">
+          {facts.map((fact) => (
+            <div key={fact.label} className="min-w-0 text-start">
+              <dt className="text-2xs leading-tight text-muted-foreground">{fact.label}</dt>
+              <dd className="mt-0.5 break-words text-xs font-medium leading-snug text-foreground">
+                {loading ? <Skeleton className="h-[1.03rem] w-24 max-w-full" /> : fact.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </CardContent>
+    </Card>
+  );
+}
+
 const HOME_CARD_CLASS = 'card-aura relative isolate flex min-w-0 flex-col gap-0 overflow-hidden py-0 ring-0';
 const HOME_CARD_HEADER = 'flex min-h-10 items-center justify-between gap-3 p-3 pt-4 sm:p-4 sm:pt-5';
 const HOME_CARD_BODY = 'flex flex-1 flex-col gap-2 px-3 pb-3 sm:px-4 sm:pb-4';
@@ -221,22 +252,16 @@ function HomeListCard({
 }
 
 function PractitionerHomeSkeleton() {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
+  const { user } = useAuth();
   return (
     <div className="fade-in flex min-h-full w-full min-w-0 shrink-0 flex-col gap-4 motion-reduce:animate-none sm:gap-5" aria-hidden>
-      <Card className="card-aura relative isolate shrink-0 gap-0 overflow-hidden py-0 ring-0">
-        <CardContent className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 pb-14 pt-4 sm:gap-4 sm:p-4 sm:pb-14 sm:pt-5 lg:pb-5 lg:pe-[min(30%,24rem)]">
-          <Skeleton className="size-12 shrink-0 rounded-full ring-2 ring-primary/15 sm:size-20" />
-          <div className="min-w-0 space-y-1">
-            <Skeleton className="h-3 w-28" />
-            <Skeleton className="h-5 w-full max-w-sm sm:h-6" />
-            <Skeleton className="mt-1 h-4 w-20" />
-          </div>
-          <div className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 lg:col-span-1 lg:col-start-2 lg:grid-cols-4">
-            {[0, 1, 2, 3].map((item) => <Skeleton key={item} className="h-10 w-full" />)}
-          </div>
-        </CardContent>
-      </Card>
+      <WelcomeCard
+        loading
+        name={getBilingualName(user?.name, user?.nameAr, lang)}
+        seed={user?.clinicUserId ?? 'practitioner'}
+        facts={[t.exports.specialty, t.exports.department, t.exports.room, t.exports.experience].map((label) => ({ label, value: '' }))}
+      />
 
       <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
         <KpiCardBlock label={t.dashboard.todaysAppointments} value={undefined} isLoading icon={IconTodaysAppointments} />
