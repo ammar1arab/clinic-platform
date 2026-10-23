@@ -78,7 +78,7 @@ export function NotificationsPage() {
   };
 
   return (
-    <div className="page-fill gap-2.5">
+    <div className="page-fill-always min-h-0 gap-2.5">
       <DirectoryToolbar
         search={filters.search}
         onSearchChange={(value) => updateFilter('search', value)}
@@ -129,10 +129,10 @@ export function NotificationsPage() {
       />
 
       {query.isError && !items ? (
-        <ErrorState onRetry={() => void query.refetch()} className="page-fill" />
+        <ErrorState onRetry={() => void query.refetch()} className="page-fill-always" />
       ) : !items ? (
-        <div className="page-fill gap-2 overflow-hidden" aria-busy="true">
-          {Array.from({ length: 8 }, (_, index) => (
+        <div className="page-fill-always gap-2 overflow-hidden" aria-busy="true">
+          {Array.from({ length: 16 }, (_, index) => (
             <div key={index} className="flex shrink-0 items-center gap-3 rounded-xl border bg-card px-3 py-2.5 sm:px-4">
               <Skeleton className="size-8 shrink-0 rounded-xl" />
               <div className="flex-1 space-y-1.5"><Skeleton className="h-3.5 w-1/2" /><Skeleton className="h-3 w-1/3" /></div>
@@ -142,9 +142,9 @@ export function NotificationsPage() {
         </div>
       ) : !filtered.length ? (
         <EmptyState icon={IconBell} title={items.length ? t.common.noResults : t.notifications.empty}
-          description={items.length ? t.notifications.noMatchesDesc : t.notifications.emptyDesc} className="page-fill" />
+          description={items.length ? t.notifications.noMatchesDesc : t.notifications.emptyDesc} className="page-fill-always" />
       ) : (
-        <div className="page-fill gap-3">
+        <div className="page-fill-always gap-3">
           <ul ref={listRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-1">
             {pageItems.map((item) => {
               const copy = notificationCopy(item, t, lang);

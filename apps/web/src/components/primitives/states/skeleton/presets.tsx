@@ -17,7 +17,7 @@ export function TableSkeleton({
   return (
     <div
       className={cn(
-        'rounded-xl border bg-card overflow-hidden shadow-xs',
+        'flex min-h-0 flex-col rounded-xl border bg-card overflow-hidden shadow-xs',
         className,
       )}
     >
@@ -30,7 +30,7 @@ export function TableSkeleton({
           </div>
         </div>
       )}
-      <div className="divide-y">
+      <div className="min-h-0 flex-1 divide-y overflow-hidden">
         {Array.from({ length: rows }).map((_, r) => (
           <div
             key={r}

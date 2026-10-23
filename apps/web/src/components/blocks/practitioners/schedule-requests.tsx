@@ -112,7 +112,7 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
   ];
 
   const body = query.isLoading ? (
-    <TableSkeleton className="page-fill-always" rows={10} cols={columns.length} hasHeader={false} />
+    <TableSkeleton className="page-fill-always" rows={24} cols={columns.length} hasHeader={false} />
   ) : query.isError ? (
     <TableFrame className="page-fill-always">
       <ErrorState className="page-fill-always" onRetry={() => void query.refetch()} />
