@@ -49,17 +49,17 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
 
   if (workspace.isLoading) {
     return (
-      <Tabs defaultValue="note" className="min-h-full w-full min-w-0 shrink-0 gap-3">
-        <VisitWorkspaceHeader actions={<Skeleton className="h-8 w-24 rounded-lg" />} />
+      <Tabs defaultValue="note" className="min-h-full w-full min-w-0 flex-1 shrink-0 gap-3" aria-busy="true">
+        <VisitWorkspaceHeader actions={<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted sm:w-32 sm:gap-1.5 sm:px-2.5"><Skeleton className="size-4 shrink-0" /><Skeleton className="hidden h-4 flex-1 sm:block" /></div>} />
         <VisitWorkspaceSkeleton />
       </Tabs>
     );
   }
   if (workspace.isError || !data) {
     return (
-      <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-3">
+      <div className="flex min-h-full w-full min-w-0 flex-1 shrink-0 flex-col gap-3">
         <PageBack backHref={ROUTES.VISITS} />
-        <ErrorState onRetry={() => void workspace.refetch()} />
+        <Card className="flex-1 gap-0 py-0"><ErrorState className="flex-1" onRetry={() => void workspace.refetch()} /></Card>
       </div>
     );
   }
@@ -73,7 +73,7 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
   ));
 
   return (
-    <Tabs defaultValue="note" className="min-h-full w-full min-w-0 shrink-0 gap-3">
+    <Tabs defaultValue="note" className="min-h-full w-full min-w-0 flex-1 shrink-0 gap-3">
       <VisitWorkspaceHeader closed={closed} actions={showActions ? (<div className="flex items-center justify-end gap-2 sm:gap-3">
             {data.startedAt ? <VisitTimer serverNow={data.serverNow} startedAt={data.startedAt} finishedAt={data.finishedAt} durationMins={data.durationMins} compact /> : null}
             <div className="flex gap-2">
@@ -95,7 +95,7 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
             </div>
           </div>) : undefined} />
 
-      <Card className="gap-0 py-0">
+      <Card className="shrink-0 gap-0 py-0">
         <CardContent className="flex flex-col p-3 sm:p-4">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
             <div className="flex min-w-0 items-center gap-3">
@@ -153,7 +153,7 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
       </Card>
 
       {closed ? (
-        <EmptyState icon={IconClinicalRecord} title={t.visits.closedVisit} description={t.visits.closedVisitDesc} />
+        <Card className="flex-1 gap-0 py-0"><EmptyState className="flex-1" icon={IconClinicalRecord} title={t.visits.closedVisit} description={t.visits.closedVisitDesc} /></Card>
       ) : (
           <Card className="min-w-0 flex-1 gap-0 py-0">
             <CardContent className="flex flex-1 flex-col p-3 sm:p-4">
@@ -199,7 +199,7 @@ function VisitTabs({ variant }: { variant: 'pill' | 'fill' }) {
     <TabsList variant={variant} className={variant === 'pill' ? 'w-full' : undefined}>
       <TabsTrigger value="note" className="flex-1">{t.visits.note}</TabsTrigger>
       <TabsTrigger value="report" className="flex-1">{t.visits.report}</TabsTrigger>
-      <TabsTrigger value="invoice" className="flex-1">{t.visits.billing}</TabsTrigger>
+      <TabsTrigger value="invoice" className="flex-1">{t.visits.invoice}</TabsTrigger>
     </TabsList>
   );
 }

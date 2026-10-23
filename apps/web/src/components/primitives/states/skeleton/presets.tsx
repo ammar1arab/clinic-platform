@@ -292,19 +292,20 @@ export function QueueColumnSkeleton({ count = 6 }: { count?: number }) {
 
 export function VisitWorkspaceSkeleton() {
   return (
-    <div className="space-y-3" aria-busy="true">
-      <Card className="gap-0 py-0">
-        <CardContent className="space-y-3 p-3 sm:p-4">
+    <div className="page-fill flex-1 gap-3 md:h-auto md:overflow-visible" aria-busy="true">
+      <Card className="shrink-0 gap-0 py-0">
+        <CardContent className="flex flex-col p-3 sm:p-4">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-            <div className="flex min-w-0 items-center gap-3"><Skeleton className="size-10 shrink-0 rounded-full" /><div className="min-w-0 space-y-2"><Skeleton className="h-7 w-40 max-w-full" /><Skeleton className="h-4 w-56 max-w-full" /></div></div>
-            <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:gap-2"><Skeleton className="h-5 w-24 rounded-full" /><Skeleton className="h-5 w-16 rounded-full" /></div>
+            <div className="flex min-w-0 items-center gap-3"><Skeleton className="size-10 shrink-0 rounded-full" /><div className="min-w-0 flex-1"><Skeleton className="h-7 w-40 max-w-full sm:h-7" /><Skeleton className="mt-1 h-4 w-56 max-w-full sm:h-5" /></div></div>
+            <div className="flex max-w-40 flex-col items-end gap-1.5 sm:max-w-none"><Skeleton className="h-5 w-24 rounded-full" /><Skeleton className="h-5 w-16 rounded-full" /></div>
           </div>
-          <div className="grid grid-cols-2 items-start gap-x-4 gap-y-3 lg:grid-cols-3 xl:grid-cols-6">
-            {[0, 1, 2, 3, 4, 5].map((item) => <div key={item} className="space-y-1"><Skeleton className="h-4 w-16" /><Skeleton className="h-6 w-28 max-w-full" /></div>)}
+          <div className="grid grid-cols-2 items-start gap-x-4 gap-y-3 pt-2 sm:pt-3 lg:grid-cols-3 xl:grid-cols-6">
+            {[0, 1, 2, 3, 4].map((item) => <div key={item} className="min-w-0 space-y-1"><Skeleton className="h-4 w-16" /><div className="flex h-6 items-center gap-2">{item === 0 ? <Skeleton className="size-6 shrink-0 rounded-full" /> : null}<Skeleton className="h-4 w-28 max-w-full sm:h-5" /></div></div>)}
           </div>
+          <div className="mt-2 flex justify-end sm:mt-3"><Skeleton className="size-6 rounded-lg" /></div>
         </CardContent>
       </Card>
-      <Card className="gap-0 py-0"><CardContent className="space-y-4 p-3 sm:p-4"><Skeleton className="h-4 w-32" /><Skeleton className="h-32 w-full" /></CardContent></Card>
+      <Card className="min-h-64 flex-1 gap-0 py-0"><CardContent className="flex flex-1 flex-col gap-4 p-3 sm:p-4"><Skeleton className="h-4 w-32 shrink-0" /><Skeleton className="min-h-40 w-full flex-1" /></CardContent></Card>
     </div>
   );
 }
