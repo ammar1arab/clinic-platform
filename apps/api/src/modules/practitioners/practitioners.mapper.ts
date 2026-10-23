@@ -86,7 +86,7 @@ export function mapPractitioner(row: Row) {
       startDate: t.startDate.toISOString(),
       endDate: t.endDate.toISOString(),
       reason: t.reason,
-      kind: t.kind === "vacation" ? "vacation" : "leave",
+      kind: t.kind === "vacation" ? "vacation" as const : "leave" as const,
     })),
     availabilityOverrides: row.availabilityOverrides.map((entry) => ({
       id: entry.id,

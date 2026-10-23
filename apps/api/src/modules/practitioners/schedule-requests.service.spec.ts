@@ -91,6 +91,8 @@ describe("Schedule requests", () => {
     expect(repo.scheduleRequests).toHaveBeenCalledWith("clinic", {
       doctorId: "doctor",
       departmentId: undefined,
+      kind: undefined,
+      search: undefined,
       group: "pending",
       sort: "newest",
       page: 1,
@@ -162,6 +164,7 @@ describe("Schedule requests", () => {
         doctorId: "doctor",
         startDate: period.startAt,
         endDate: period.endAt,
+        kind: "leave",
         reason: pending.reason,
       },
     });

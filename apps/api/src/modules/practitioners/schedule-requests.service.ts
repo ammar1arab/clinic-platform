@@ -34,6 +34,8 @@ export class ScheduleRequestsService {
       group: filters.group,
       sort: filters.sort,
       page: filters.page,
+      kind: filters.kind,
+      search: filters.search,
     });
   }
 

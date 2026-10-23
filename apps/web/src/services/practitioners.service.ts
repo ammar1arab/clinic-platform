@@ -1,6 +1,7 @@
 import type { CreateScheduleRequestInput, ReviewScheduleRequestInput, ScheduleRequestPage } from "@clinic/types";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/constants/endpoints";
+import { z } from "zod";
 import type {
   AssignServicesInput,
   CreatePractitionerInput,
@@ -29,18 +30,27 @@ export type {
 
 export type ScheduleRequestGroup = 'all' | 'pending' | 'history';
 export type ScheduleRequestSort = 'newest' | 'oldest';
+export const scheduleRequestViewSchema = z.object({
+  group: z.enum(['all', 'pending', 'history']).catch('all'),
+  kind: z.enum(['', 'leave', 'vacation', 'extra']).catch(''),
+  departmentId: z.union([z.literal(''), z.uuid()]).catch(''),
+  sort: z.enum(['newest', 'oldest']).catch('newest'),
+  page: z.number().int().min(1).max(100000).catch(1),
+});
 export type ScheduleRequestListFilters = {
   group: ScheduleRequestGroup;
   departmentId?: string;
   sort: ScheduleRequestSort;
   page: number;
+  kind?: 'leave' | 'vacation' | 'extra';
+  search?: string;
 };
 
 export const practitionersService = {
   scheduleRequests: (doctorId: string | undefined, filters: ScheduleRequestListFilters) =>
     api
       .get<ScheduleRequestPage>(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUESTS, {
-        params: { doctorId, departmentId: filters.departmentId, group: filters.group, sort: filters.sort, page: filters.page },
+        params: { doctorId, departmentId: filters.departmentId, group: filters.group === 'all' ? undefined : filters.group, sort: filters.sort === 'newest' ? undefined : filters.sort, page: filters.page, kind: filters.kind, search: filters.search || undefined },
       })
       .then((r) => r.data),
   requestSchedule: (data: CreateScheduleRequestInput) => api.post(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUESTS, data).then((r) => r.data),

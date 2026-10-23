@@ -46,6 +46,15 @@ export class ReviewScheduleRequestDto implements ReviewScheduleRequestInput {
 
 export class ScheduleRequestFiltersDto {
   @IsOptional()
+  @IsIn(["extra", "leave", "vacation"])
+  kind?: ScheduleRequestKind;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  search?: string;
+
+  @IsOptional()
   @IsUUID()
   doctorId?: string;
 

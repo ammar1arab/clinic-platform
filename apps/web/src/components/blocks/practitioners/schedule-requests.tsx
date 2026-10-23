@@ -25,9 +25,9 @@ import { IconAdd, IconCalendarClock } from '@/constants/icons';
 import { useClinicRealtime } from '@/hooks/api/use-clinic-realtime';
 import { useScheduleRequestMutation, useScheduleRequests } from '@/hooks/api/use-practitioners';
 import { useDepartments } from '@/hooks/api/use-departments';
-import type { ScheduleRequestGroup, ScheduleRequestListFilters, ScheduleRequestSort } from '@/services/practitioners.service';
+import { scheduleRequestViewSchema, type ScheduleRequestGroup, type ScheduleRequestListFilters, type ScheduleRequestSort } from '@/services/practitioners.service';
 import { formatDateTime } from '@/lib/datetime';
-import { getStaffName } from '@/i18n';
+import { getBilingualName, getStaffName } from '@/i18n';
 import { useAuth, useLanguage } from '@/providers';
 import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import { DeclineRequestDialog, ScheduleRequestDialog } from './schedule-request-dialogs';
@@ -40,29 +40,29 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'all' }: { docto
   const clinicId = user?.clinic.id ?? '';
   const { connected } = useClinicRealtime(clinicId);
   const scope = `${clinicId || 'none'}:schedule-requests:${practitioner ? 'self' : doctorId || 'all'}`;
-  const [view, setView] = useSessionStorageState(`${scope}:requests-view`, {
+  const [savedView, setView] = useSessionStorageState(`${scope}:requests-view`, {
     group: initialGroup,
     kind: '',
     departmentId: '',
     sort: 'newest' as ScheduleRequestSort,
     page: 1,
   });
+  const view = scheduleRequestViewSchema.parse(savedView);
   const [search, setSearch] = useSessionStorageState(`${scope}:search`, '');
   const [creating, setCreating] = useState(false);
   const [declining, setDeclining] = useState<ScheduleRequest | null>(null);
   const { data: departments } = useDepartments(clinicId);
-  const listFilters: ScheduleRequestListFilters = { group: view.group, departmentId: view.departmentId || undefined, sort: view.sort, page: view.page };
+  const term = search.trim().slice(0, 500);
+  const listFilters: ScheduleRequestListFilters = { group: view.group, departmentId: practitioner ? undefined : view.departmentId || undefined, sort: view.sort, page: view.page, kind: view.kind || undefined, search: term || undefined };
   const query = useScheduleRequests(clinicId, practitioner ? user?.clinicUserId : doctorId, listFilters, connected);
   const mutation = useScheduleRequestMutation(clinicId);
 
-  const term = search.trim().toLowerCase();
-  const rows = (query.data?.items ?? []).filter(
-    (row) =>
-      (!view.kind || row.kind === view.kind) &&
-      (!term || row.reason.toLowerCase().includes(term) || getStaffName(row.doctor, lang).toLowerCase().includes(term)),
-  );
-  const activeFilters = (view.group !== 'all' ? 1 : 0) + (view.kind ? 1 : 0) + (view.departmentId ? 1 : 0) + (view.sort !== 'newest' ? 1 : 0);
-  const pageCount = query.data ? Math.ceil(query.data.total / query.data.pageSize) : 1;
+  const rows = query.data?.items ?? [];
+  const activeFilters = (view.group !== 'all' ? 1 : 0) + (view.kind ? 1 : 0) + (!practitioner && view.departmentId ? 1 : 0) + (view.sort !== 'newest' ? 1 : 0);
+  const pageCount = query.data ? Math.max(1, Math.ceil(query.data.total / query.data.pageSize)) : 1;
+  if (query.data?.page === view.page && view.page > pageCount) {
+    setView({ ...view, page: pageCount });
+  }
 
   const review = (row: ScheduleRequest, decision: 'approved' | 'declined' | 'withdrawn', reviewNote?: string) =>
     mutation.mutate({ id: row.id, data: { decision, ...(reviewNote ? { reviewNote } : {}) } }, { onSuccess: () => setDeclining(null) });
@@ -168,21 +168,20 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'all' }: { docto
   return (
     <div className="page-fill-always min-h-0 gap-2.5">
       <SettingsPageBack
-        search={<SearchInput value={search} onChange={setSearch} placeholder={copy.search} />}
+        search={<SearchInput value={search} onChange={(value) => { setSearch(value); setView({ ...view, page: 1 }); }} placeholder={copy.search} />}
         actions={
           <div className="flex items-center gap-1.5">
             <Popover>
               <FilterTrigger count={activeFilters} />
               <FilterPanel count={activeFilters} onClear={() => setView({ group: 'all', kind: '', departmentId: '', sort: 'newest', page: 1 })}>
-                <FilterSelect label={t.common.status} value={view.group} onChange={(group) => setView({ ...view, group: group as ScheduleRequestGroup, page: 1 })}>
-                  <SelectItem value="all">{copy.allRequests}</SelectItem>
+                <FilterSelect label={t.common.status} value={view.group === 'all' ? '' : view.group} placeholder={copy.allRequests} onChange={(group) => setView({ ...view, group: group === 'history' || group === 'pending' ? group : 'all', page: 1 })}>
                   <SelectItem value="pending">{copy.current}</SelectItem>
                   <SelectItem value="history">{copy.history}</SelectItem>
                 </FilterSelect>
                 {practitioner ? null : (
                   <FilterSelect label={t.practitioner.department} value={view.departmentId} placeholder={copy.allDepartments} onChange={(departmentId) => setView({ ...view, departmentId, page: 1 })}>
                     {(departments ?? []).map((d) => (
-                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      <SelectItem key={d.id} value={d.id}>{getBilingualName(d.name, d.nameAr, lang)}</SelectItem>
                     ))}
                   </FilterSelect>
                 )}
@@ -191,8 +190,7 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'all' }: { docto
                   <SelectItem value="vacation">{copy.kinds.vacation}</SelectItem>
                   <SelectItem value="extra">{copy.kinds.extra}</SelectItem>
                 </FilterSelect>
-                <FilterSelect label={copy.sort} value={view.sort} onChange={(sort) => setView({ ...view, sort: sort as ScheduleRequestSort, page: 1 })}>
-                  <SelectItem value="newest">{copy.newest}</SelectItem>
+                <FilterSelect label={copy.sort} value={view.sort === 'newest' ? '' : view.sort} placeholder={copy.newest} onChange={(sort) => setView({ ...view, sort: sort === 'oldest' ? 'oldest' : 'newest', page: 1 })}>
                   <SelectItem value="oldest">{copy.oldest}</SelectItem>
                 </FilterSelect>
               </FilterPanel>
