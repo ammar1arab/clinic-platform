@@ -15,7 +15,6 @@ import {
   Pagination,
   PreviewableAvatar,
   SearchInput,
-  TableFrame,
   TableSkeleton,
   TruncatedText,
   type DirectoryColumn,
