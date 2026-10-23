@@ -1,9 +1,14 @@
 import {
   reportsService,
+  reportViewService,
   type DirectoryDownloadParams,
   type ReportFormat,
+  type ReportViewData,
 } from '@/services/reports.service';
-import { type TResponseError, useApiMutation } from '../query';
+import { QUERY_KEYS } from '@/constants/query-keys';
+import { useClinicId } from '@/hooks/shared/use-clinic-id';
+import { reportViewPath, type ReportViewRequest } from '@/lib/report-view';
+import { type TResponseError, useApiMutation, useFetchData } from '../query';
 
 export interface ReportDownloadResult {
   filename: string;
@@ -158,5 +163,14 @@ export function useDownloadVisitsReport(clinicId: string) {
   return useApiMutation<ReportDownloadResult, TResponseError, VisitsDownloadVars>({
     request: (params) => reportsService.downloadVisits({ clinicId, ...params }),
     successMessage: downloaded,
+  });
+}
+
+export function useReportView(request: ReportViewRequest) {
+  const clinicId = useClinicId();
+  return useFetchData<ReportViewData>({
+    queryKey: QUERY_KEYS.reports.view(clinicId, request),
+    request: () => reportViewService.fetch(reportViewPath(request, clinicId)),
+    options: { skipNormalization: true },
   });
 }

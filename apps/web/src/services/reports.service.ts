@@ -291,3 +291,18 @@ export const reportsService = {
 
   apiBase: () => env.NEXT_PUBLIC_API_URL,
 };
+
+export type ReportViewData = {
+  type: string;
+  title: string;
+  generatedAt: string;
+  letterhead: { clinicName: string; timezone?: string };
+  summary: { label: string; value: string }[];
+  columns: { key: string; header: string }[];
+  rows: Record<string, string | number | null>[];
+};
+
+export const reportViewService = {
+  fetch: (path: string) =>
+    api.get<ReportViewData>(path).then((res) => res.data),
+};

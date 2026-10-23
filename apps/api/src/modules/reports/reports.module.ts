@@ -10,6 +10,7 @@ import { PdfExporter } from "./exporters/pdf.exporter";
 import { CsvExporter } from "./exporters/csv.exporter";
 import { ExcelExporter } from "./exporters/excel.exporter";
 import { WordExporter } from "./exporters/word.exporter";
+import { JsonExporter } from "./exporters/json.exporter";
 import { ReportExporterFactory } from "./exporters/report-exporter.factory";
 
 @Module({
@@ -22,6 +23,7 @@ import { ReportExporterFactory } from "./exporters/report-exporter.factory";
     CsvExporter,
     ExcelExporter,
     WordExporter,
+    JsonExporter,
     ReportExporterFactory,
   ],
   exports: [ReportsService],

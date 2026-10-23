@@ -1,4 +1,7 @@
 export const QUERY_KEYS = {
+  reports: {
+    view: (clinicId: string, request: object) => ['reports', 'view', clinicId, request] as const,
+  },
   emails: {
     all: ['emails'] as const,
     history: (clinicId: string, lang: string, filters: object) => ['emails', clinicId, lang, 'history', filters] as const,

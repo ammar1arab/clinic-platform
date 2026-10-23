@@ -6,6 +6,7 @@ import { PdfExporter } from "./pdf.exporter";
 import { WordExporter } from "./word.exporter";
 import { ExcelExporter } from "./excel.exporter";
 import { CsvExporter } from "./csv.exporter";
+import { JsonExporter } from "./json.exporter";
 import type { ReportDocument } from "../types/report-document";
 import { chunkColumns, reportTheme } from "../utils/report-theme";
 
@@ -96,5 +97,19 @@ describe("report exports", () => {
     ).toBe(13);
     expect(reportTheme("#0F766E").headerBg).toBe("#0F766E");
     expect(reportTheme("invalid").headerBg).toMatch(/^#[0-9A-F]{6}$/i);
+  });
+});
+
+describe("json report export", () => {
+  it("returns declared columns only, without internal row fields", async () => {
+    const exported = await new JsonExporter().export({
+      ...source,
+      summary: [{ label: "Patients", value: "1" }],
+      rows: [{ name: "Demo patient", phone: "0790000000", count: 0, internalId: "secret" } as never],
+    });
+    const body = JSON.parse(exported.buffer.toString("utf8"));
+    expect(exported.contentType).toContain("application/json");
+    expect(body.summary).toEqual([{ label: "Patients", value: "1" }]);
+    expect(body.rows).toEqual([{ name: "Demo patient", phone: "0790000000", count: 0 }]);
   });
 });

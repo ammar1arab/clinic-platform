@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { BaseReportModal, ReportCard } from '@/components/blocks/reports';
 import type { ReportModalFilters } from '@/components/blocks/reports';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
@@ -36,6 +37,7 @@ import {
   type LucideIcon,
 } from '@/constants/icons';
 import type { ReportFormat } from '@/services/reports.service';
+import { reportViewHref, type ReportViewRequest } from '@/lib/report-view';
 
 type ReportKey =
   | 'patientMedical'
@@ -64,6 +66,7 @@ export default function ReportsPage() {
   const clinicId = useClinicId();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const router = useRouter();
   const canFinance =
     user?.role === 'owner' ||
     user?.role === 'admin' ||
@@ -296,6 +299,20 @@ export default function ReportsPage() {
         ? `${practitioners?.length ?? 0} ${t.reports.readyPractitioners}`
         : undefined;
 
+  const handleView = () => {
+    if (!activeKey) return;
+    const request: ReportViewRequest = {
+      key: activeKey,
+      patientId: patientId || undefined,
+      practitionerId: scopedPractitionerId || undefined,
+      from: fromDate || undefined,
+      to: toDate || undefined,
+      status: status || undefined,
+    };
+    setActiveKey(null);
+    router.push(reportViewHref(request));
+  };
+
   const handleExport = (format: ReportFormat) => {
     switch (activeKey) {
       case 'patientMedical':
@@ -442,6 +459,7 @@ export default function ReportsPage() {
           exportDisabled={exportDisabled}
           isExporting={exportPending}
           onExport={handleExport}
+          onView={handleView}
         />
       ) : null}
     </div>

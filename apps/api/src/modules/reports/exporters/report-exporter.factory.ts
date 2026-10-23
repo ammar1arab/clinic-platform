@@ -5,6 +5,7 @@ import { PdfExporter } from "./pdf.exporter";
 import { CsvExporter } from "./csv.exporter";
 import { ExcelExporter } from "./excel.exporter";
 import { WordExporter } from "./word.exporter";
+import { JsonExporter } from "./json.exporter";
 
 @Injectable()
 export class ReportExporterFactory {
@@ -15,12 +16,14 @@ export class ReportExporterFactory {
     csv: CsvExporter,
     excel: ExcelExporter,
     word: WordExporter,
+    json: JsonExporter,
   ) {
     this.exporters = new Map<ReportFormat, ReportExporter>([
       [pdf.format, pdf],
       [csv.format, csv],
       [excel.format, excel],
       [word.format, word],
+      [json.format, json],
     ]);
   }
 

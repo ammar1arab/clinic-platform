@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -28,7 +29,7 @@ import type { Patient } from "@/services/patients.service";
 import type { Practitioner } from "@/services/practitioners.service";
 import type { ReportFormat } from "@/services/reports.service";
 import { useLanguage } from "@/providers";
-import type { LucideIcon } from "@/constants/icons";
+import { IconView, type LucideIcon } from "@/constants/icons";
 
 export type ReportModalFilters = {
   patient?: "required" | "optional";
@@ -64,6 +65,7 @@ type BaseProps = {
   exportDisabled?: boolean;
   isExporting?: boolean;
   onExport?: (format: ReportFormat) => void;
+  onView?: () => void;
   children?: React.ReactNode;
 };
 
@@ -94,6 +96,7 @@ export function BaseReportModal({
   exportDisabled,
   isExporting,
   onExport,
+  onView,
   children,
 }: BaseProps) {
   const { t } = useLanguage();
@@ -217,14 +220,28 @@ export function BaseReportModal({
 
             {children}
 
-            {onExport ? (
-              <div className="flex justify-end">
-                <ExportFormatButton
-                  className="w-full sm:w-auto"
-                  pending={isExporting}
-                  disabled={exportDisabled}
-                  onSelect={onExport}
-                />
+            {onExport || onView ? (
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                {onView ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-8 w-full rounded-lg sm:w-auto"
+                    disabled={exportDisabled}
+                    onClick={onView}
+                  >
+                    <IconView className="size-4" />
+                    {t.reports.viewInApp}
+                  </Button>
+                ) : null}
+                {onExport ? (
+                  <ExportFormatButton
+                    className="w-full sm:w-auto"
+                    pending={isExporting}
+                    disabled={exportDisabled}
+                    onSelect={onExport}
+                  />
+                ) : null}
               </div>
             ) : null}
           </div>

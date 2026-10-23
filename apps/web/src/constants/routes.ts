@@ -28,6 +28,7 @@ export const ROUTES = {
   NOTE_TEMPLATE_NEW: '/note-templates/new',
   NOTE_TEMPLATE: (id: string) => `/note-templates/${id}`,
   REPORTS: '/reports',
+  REPORTS_VIEW: '/reports/view',
   SETTINGS: '/settings',
   SETTINGS_SCHEDULE_REQUESTS: '/settings/schedule-requests',
   SETTINGS_NOTIFICATIONS: '/settings/notifications',

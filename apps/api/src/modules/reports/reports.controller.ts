@@ -34,9 +34,10 @@ const PRODUCES = [
 ] as const;
 
 function sendExport(res: Response, exported: ExportedReport) {
+  const inline = exported.contentType.startsWith("application/json");
   res.set({
     "Content-Type": exported.contentType,
-    "Content-Disposition": `attachment; filename="${exported.filename}"`,
+    "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${exported.filename}"`,
     "Cache-Control": "no-store",
   });
   return new StreamableFile(exported.buffer);
