@@ -24,6 +24,7 @@ import { ageLabel } from '@/lib/age';
 import { cn } from '@/lib/utils';
 import { formatDate, formatTime } from '@/lib/datetime';
 import { useAuth, useLanguage } from '@/providers';
+import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import { useAvailableNoteTemplates } from '@/hooks/api/use-clinical-note-templates';
 import { useCheckIn, useFinishVisit, useRevokeUnlock, useStartVisit, useUnlockNote, useVisitWorkspace } from '@/hooks/api/use-visits';
 import { getBilingualName } from '@/i18n';
@@ -45,7 +46,7 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
   const unlock = useUnlockNote(appointmentId);
   const revoke = useRevokeUnlock(appointmentId);
   const [reasonMode, setReasonMode] = useState<'unlock' | 'revoke' | null>(null);
-  const [factsOpen, setFactsOpen] = useState(true);
+  const [factsOpen, setFactsOpen] = useSessionStorageState('visit-facts-open', true);
 
   if (workspace.isLoading) {
     return (
@@ -156,7 +157,7 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
         <Card className="flex-1 gap-0 py-0"><EmptyState className="flex-1" icon={IconClinicalRecord} title={t.visits.closedVisit} description={t.visits.closedVisitDesc} /></Card>
       ) : (
           <Card className="min-w-0 flex-1 gap-0 py-0">
-            <CardContent className="flex flex-1 flex-col p-3 sm:p-4">
+            <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-3 sm:p-4">
               <TabsContent value="note" className="flex flex-1 flex-col [&>[role=status]]:flex-1">
                 {data.note || user?.role === ROLE.PRACTITIONER ? (
                   data.allowedActions.editNote && !data.note && templates.isPending ? (

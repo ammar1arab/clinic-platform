@@ -3,8 +3,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { DRAFT_SAVE_PHASE, NOTE_STATUS, type ClinicalSection, type ClinicalValue, type DraftSavePhase, type TemplateDTO, type VisitErrorCode, type VisitWorkspace } from '@clinic/types';
-import { Badge, Button, Skeleton } from '@/components/ui';
-import { ChoiceField, EmptyState, ErrorState, ReasonDialog } from '@/components/primitives';
+import { Badge, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Skeleton } from '@/components/ui';
+import { EmptyState, ErrorState, ReasonDialog } from '@/components/primitives';
 import { IconFileText } from '@/constants/icons';
 import { QUERY_KEYS } from '@/constants/query-keys';
 import { useNotePreference, useSignNote, useNoteAddendum, useNoteHistory, visitErrorCode } from '@/hooks/api/use-visits';
@@ -176,21 +176,27 @@ export function ClinicalNoteEditor({
   return (
     <div ref={bind} className="space-y-4">
       {(canEdit && published.length > 0) || workspace.noteStatus !== NOTE_STATUS.DRAFT || phaseLabel ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center justify-between gap-2">
           {canEdit && published.length > 0 ? (
-            <ChoiceField
-              label={t.visits.pickTemplate}
-              value={templateId}
-              options={published.map((item) => ({ value: item.id, label: clinicalText(lang, item.name, item.nameAr) }))}
-              onChange={chooseTemplate}
-            />
-          ) : null}
-          {workspace.noteStatus !== NOTE_STATUS.DRAFT ? (
-            <Badge variant={workspace.noteStatus === NOTE_STATUS.LOCKED ? 'warning' : 'success'}>
-              {t.visits.noteStatuses[workspace.noteStatus]}
-            </Badge>
-          ) : null}
-          {phaseLabel ? <span className="text-xs text-muted-foreground">{phaseLabel}</span> : null}
+            <div className="min-w-0 flex-1 sm:max-w-xs">
+              <Select value={templateId} onValueChange={chooseTemplate}>
+                <SelectTrigger aria-label={t.visits.pickTemplate} className="h-8 w-full rounded-lg">
+                  <SelectValue placeholder={t.visits.pickTemplate} />
+                </SelectTrigger>
+                <SelectContent>
+                  {published.map((item) => <SelectItem key={item.id} value={item.id}>{clinicalText(lang, item.name, item.nameAr)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : <span className="flex-1" />}
+          <div className="flex shrink-0 items-center gap-2">
+            {phaseLabel ? <span className="text-xs text-muted-foreground">{phaseLabel}</span> : null}
+            {workspace.noteStatus !== NOTE_STATUS.DRAFT ? (
+              <Badge variant={workspace.noteStatus === NOTE_STATUS.LOCKED ? 'warning' : 'success'}>
+                {t.visits.noteStatuses[workspace.noteStatus]}
+              </Badge>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
