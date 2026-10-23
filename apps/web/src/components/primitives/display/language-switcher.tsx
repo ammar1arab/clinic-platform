@@ -8,23 +8,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { IconLanguage, IconCheck } from '@/constants/icons';
+import { IconLanguage, IconCheck, IconGlobe } from '@/constants/icons';
 import { SoftTip } from '@/components/primitives';
 
 export function LanguageOptions() {
   const { language, setLanguage, t } = useLanguage();
   const options = [
-    { value: 'en' as const, label: t.layout.english },
-    { value: 'ar' as const, label: t.layout.arabic },
+    { value: 'en' as const, label: t.layout.english, icon: IconGlobe },
+    { value: 'ar' as const, label: t.layout.arabic, icon: IconLanguage },
   ];
 
-  return options.map(({ value, label }) => (
+  return options.map(({ value, label, icon: OptionIcon }) => (
     <DropdownMenuItem
       key={value}
       onClick={() => setLanguage(value)}
       className="flex items-center justify-between"
     >
-      {label}
+      <span className="flex items-center gap-2">
+        <OptionIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+        <span>{label}</span>
+      </span>
       {language === value && <IconCheck className="size-4 ms-2" />}
     </DropdownMenuItem>
   ));

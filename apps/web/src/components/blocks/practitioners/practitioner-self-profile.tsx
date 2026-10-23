@@ -152,9 +152,9 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
         </ProfileSection>
       </div>
       <Card className="card-aura gap-0 py-0 ring-0">
-        <CardContent className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+        <CardContent className="flex flex-col items-stretch gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5">
           <h2 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight">{t.visits.preference}</h2>
-          <div className="w-[min(16rem,55%)] shrink-0"><NotePreference /></div>
+          <div className="w-full shrink-0 sm:w-[min(16rem,55%)]"><NotePreference /></div>
         </CardContent>
       </Card>
     </ProfileShell>
