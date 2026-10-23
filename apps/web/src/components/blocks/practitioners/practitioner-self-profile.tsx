@@ -1,7 +1,7 @@
 'use client';
 
 import { PractitionerEmploymentBadge } from './practitioner-employment-badge';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { can, PROFILE_PERMISSIONS } from '@clinic/types';
 import { Badge, Button, Card, CardContent, Input, Skeleton, Textarea } from '@/components/ui';
@@ -19,7 +19,8 @@ import { useAuth, useLanguage } from '@/providers';
 import { ROUTES } from '@/constants/routes';
 import { NotePreference } from '@/components/blocks/visits/note-preference';
 import { ScheduleEntryList } from './practitioner-hours-summary';
-import { leaveEntries, vacationDaysInYear, vacationsInYear } from './time-off';
+import { PractitionerTimeOffSection } from './practitioner-time-off-section';
+import { splitTimeOff } from './time-off';
 
 const WEEKDAY_KEYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 
@@ -97,6 +98,10 @@ export function PractitionerSelfProfileSkeleton() {
 }
 
 export function PractitionerSelfProfile({ practitioner }: { practitioner: PractitionerDetail }) {
+  const { vacations, leaves, vacationDays } = useMemo(
+    () => splitTimeOff(practitioner.timeOffs, new Date().getFullYear()),
+    [practitioner.timeOffs],
+  );
   const { lang, t } = useLanguage();
   const { user } = useAuth();
   const [editing, setEditing] = useState(false);
@@ -216,16 +221,20 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
         <ProfileSection title={t.practitioner.extraAvailability} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
           {practitioner.availabilityOverrides.length ? <ScheduleEntryList entries={practitioner.availabilityOverrides.map((entry) => ({ title: entry.reason, start: entry.startAt, end: entry.endAt }))} fallback={t.practitioner.extraAvailability} /> : <ProfileEmpty>{t.practitioner.noExtraAvailability}</ProfileEmpty>}
         </ProfileSection>
-        <ProfileSection title={t.scheduleRequests.kinds.vacation} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
-          <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-            <span className="text-muted-foreground">{t.practitioner.vacationDaysThisYear}</span>
-            <span className="font-semibold tabular-nums text-foreground">{vacationDaysInYear(practitioner.timeOffs, new Date().getFullYear())}</span>
-          </div>
-          {vacationsInYear(practitioner.timeOffs, new Date().getFullYear()).length ? <ScheduleEntryList entries={vacationsInYear(practitioner.timeOffs, new Date().getFullYear()).map((entry) => ({ title: entry.reason, start: entry.startDate, end: entry.endDate }))} fallback={t.scheduleRequests.kinds.vacation} /> : <ProfileEmpty>{t.practitioner.noVacations}</ProfileEmpty>}
-        </ProfileSection>
-        <ProfileSection title={t.practitioner.leave} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
-          {leaveEntries(practitioner.timeOffs).length ? <ScheduleEntryList entries={leaveEntries(practitioner.timeOffs).map((entry) => ({ title: entry.reason, start: entry.startDate, end: entry.endDate }))} fallback={t.practitioner.leave} /> : <ProfileEmpty>{t.practitioner.noLeaveBlocks}</ProfileEmpty>}
-        </ProfileSection>
+        <PractitionerTimeOffSection
+          title={t.scheduleRequests.kinds.vacation}
+          entries={vacations}
+          emptyLabel={t.practitioner.noVacations}
+          action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}
+          summary={{ label: t.practitioner.vacationDaysThisYear, value: vacationDays }}
+          dateOnly
+        />
+        <PractitionerTimeOffSection
+          title={t.practitioner.leave}
+          entries={leaves}
+          emptyLabel={t.practitioner.noLeaveBlocks}
+          action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}
+        />
       </div>
       <Card className="card-aura gap-0 py-0 ring-0">
         <CardContent className="flex flex-col items-stretch gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5">
