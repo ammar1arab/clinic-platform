@@ -1,7 +1,7 @@
 'use client';
 
 import { createPortal } from 'react-dom';
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useNow } from '@/hooks/shared/use-now';
@@ -17,13 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
-  type BadgeVariant,
 } from '@/components/ui';
 import { Appointment, type AppointmentStatus } from '@/services/appointments.service';
 import { AppointmentStatusSelect } from '../shared/appointment-status-select';
 import { QueueMoveDialog } from './queue-move-dialog';
 import { doctorDisplayName, formatApptTimeRange, patientDisplayName } from '../shared/appointment-display';
-import { STATUS_COLORS } from '../shared/status-badge';
 import {
   AppointmentPopover,
   popoverAnchorFromElement,
@@ -32,37 +30,41 @@ import {
 import { cn } from '@/lib/utils';
 import { EmptyState, PreviewableAvatar, QueueColumnSkeleton } from '@/components/primitives';
 import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
-import { IconActivate, IconBan, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
+import { IconActivate, IconBan, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPlay, IconRoom, IconService, IconTime, IconTimer, type LucideIcon } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
-import { useLanguage } from '@/providers';
-import { APPOINTMENT_STATUS, PRESENCE_SOURCE, SESSION_TYPE } from '@clinic/types';
-import { QUEUE_STAGE, type QueueStage } from '@/constants/appointment';
+import { useAuth, useLanguage } from '@/providers';
+import { APPOINTMENT_STATUS, PRESENCE_SOURCE, ROLE, SESSION_TYPE } from '@clinic/types';
+import { QUEUE_STAGE, STATUS_OPTIONS, getStatusConfig, type QueueStage } from '@/constants/appointment';
 import { ROUTES } from '@/constants/routes';
 import { visitsService } from '@/services/visits.service';
 import { INVALIDATE, useApiMutation } from '@/hooks/query';
 
-const STAGE_OF: Record<AppointmentStatus, QueueStage> = {
-  [APPOINTMENT_STATUS.UNCONFIRMED]: QUEUE_STAGE.UPCOMING,
-  [APPOINTMENT_STATUS.CONFIRMED]: QUEUE_STAGE.UPCOMING,
-  [APPOINTMENT_STATUS.CHECKED_IN]: QUEUE_STAGE.WAITING,
-  [APPOINTMENT_STATUS.WAITING]: QUEUE_STAGE.WAITING,
-  [APPOINTMENT_STATUS.IN_PROGRESS]: QUEUE_STAGE.IN_PROGRESS,
-  [APPOINTMENT_STATUS.COMPLETED]: QUEUE_STAGE.COMPLETED,
-  [APPOINTMENT_STATUS.NO_SHOW]: QUEUE_STAGE.CLOSED,
-  [APPOINTMENT_STATUS.CANCELLED]: QUEUE_STAGE.CLOSED,
+const { UNCONFIRMED, CONFIRMED, CHECKED_IN, WAITING, IN_PROGRESS, COMPLETED, NO_SHOW, CANCELLED } = APPOINTMENT_STATUS;
+
+/** Where the workflow lets a card go from each column. Completion happens in the visit page unless the visit can finish now. */
+const DROP_TARGETS: Record<AppointmentStatus, readonly AppointmentStatus[]> = {
+  [UNCONFIRMED]: [CONFIRMED, CHECKED_IN, WAITING, IN_PROGRESS, NO_SHOW, CANCELLED],
+  [CONFIRMED]: [UNCONFIRMED, CHECKED_IN, WAITING, IN_PROGRESS, NO_SHOW, CANCELLED],
+  [CHECKED_IN]: [CONFIRMED, WAITING, IN_PROGRESS, NO_SHOW, CANCELLED],
+  [WAITING]: [CONFIRMED, IN_PROGRESS, NO_SHOW, CANCELLED],
+  [IN_PROGRESS]: [COMPLETED],
+  [COMPLETED]: [],
+  [NO_SHOW]: [UNCONFIRMED, CONFIRMED, CANCELLED],
+  [CANCELLED]: [],
 };
 
-/** A card can be dropped into a column only when the workflow can move it there. Completion happens in the visit page. */
-function dropAllowed(status: AppointmentStatus, stage: QueueStage): boolean {
-  if (STAGE_OF[status] === stage) return false;
-  if (stage === QUEUE_STAGE.COMPLETED) return status === APPOINTMENT_STATUS.IN_PROGRESS;
-  if (STAGE_OF[status] === QUEUE_STAGE.CLOSED || status === APPOINTMENT_STATUS.COMPLETED) return false;
-  if (status === APPOINTMENT_STATUS.IN_PROGRESS) return false;
-  if (stage === QUEUE_STAGE.UPCOMING) return status === APPOINTMENT_STATUS.CHECKED_IN || status === APPOINTMENT_STATUS.WAITING;
-  return true;
+const UPDATE_TARGETS: readonly AppointmentStatus[] = [UNCONFIRMED, CONFIRMED, NO_SHOW, CANCELLED];
+const NEWEST_FIRST: readonly AppointmentStatus[] = [COMPLETED, NO_SHOW, CANCELLED];
+
+const dropAllowed = (status: AppointmentStatus, target: AppointmentStatus) => DROP_TARGETS[status].includes(target);
+
+function queueTime(appt: Appointment) {
+  if (appt.status === CHECKED_IN || appt.status === WAITING) return appt.waitingStartedAt || appt.statusUpdatedAt || appt.scheduledAt;
+  if (appt.status === IN_PROGRESS) return appt.inProgressAt || appt.statusUpdatedAt || appt.scheduledAt;
+  return appt.scheduledAt;
 }
 
-type PendingMove = DragSize & { id: string; from: AppointmentStatus; stage: QueueStage };
+type PendingMove = DragSize & { id: string; from: AppointmentStatus; stage: AppointmentStatus };
 
 interface Props {
   appointments: Appointment[] | undefined;
@@ -86,22 +88,31 @@ export function WaitingQueueBoard({
   onEventClick,
 }: Props) {
   const { t, lang } = useLanguage();
+  const { user } = useAuth();
   const router = useRouter();
   const [localStage, setLocalStage] = useState<QueueStage>(QUEUE_STAGE.ALL);
   const stageTab = stage ?? localStage;
   const setStageTab = onStageChange ?? setLocalStage;
-  const single = stageTab !== QUEUE_STAGE.ALL;
+  const statuses = stageTab === QUEUE_STAGE.ALL ? STATUS_OPTIONS : [stageTab];
+  const single = statuses.length === 1;
+  const statusConfig = getStatusConfig(t);
   const [appointmentPopover, setAppointmentPopover] =
     useState<AppointmentPopoverState | null>(null);
   const now = useNow(10_000);
-  const markWaiting = useApiMutation({
-    request: ({ appointment, statusReason }: { appointment: Appointment; statusReason?: string }) =>
-      appointment.sessionType === SESSION_TYPE.ONLINE
-        ? visitsService.checkIn(appointment.id, PRESENCE_SOURCE.ONLINE_MANUAL, statusReason)
-        : visitsService.markWaiting(appointment.id, statusReason),
+  const presence = useApiMutation({
+    request: async ({ appointment, waiting, statusReason }: { appointment: Appointment; waiting: boolean; statusReason?: string }) => {
+      const online = appointment.sessionType === SESSION_TYPE.ONLINE;
+      const source = online
+        ? PRESENCE_SOURCE.ONLINE_MANUAL
+        : user?.role === ROLE.PRACTITIONER ? PRESENCE_SOURCE.PRACTITIONER : PRESENCE_SOURCE.FRONT_DESK;
+      if (!waiting) return visitsService.checkIn(appointment.id, source, statusReason);
+      if (online && appointment.status !== CHECKED_IN) await visitsService.checkIn(appointment.id, source);
+      return visitsService.markWaiting(appointment.id, statusReason);
+    },
     invalidateQueries: [...INVALIDATE.visitWrite],
     successMessage: t.visits.presenceSaved,
   });
+  const arrival = (appointment: Appointment) => ({ appointment, waiting: appointment.sessionType !== SESSION_TYPE.ONLINE });
 
   const updateAppointment = useUpdateAppointment();
   const finishVisit = useApiMutation({
@@ -120,19 +131,20 @@ export function WaitingQueueBoard({
   const movingId = moving?.id;
 
   const { drag, bind, zoneProps } = useDragDrop<Appointment>({
-    canDrop: (appt, stage) => dropAllowed(appt.status, stage as QueueStage),
+    canDrop: (appt, zone) => dropAllowed(appt.status, zone as AppointmentStatus),
     onDrop: (appt, zone, size) => {
-      const stage = zone as QueueStage;
-      if (stage === QUEUE_STAGE.COMPLETED) {
+      const target = zone as AppointmentStatus;
+      if (target === COMPLETED) {
         void completeFromQueue(appt).catch((error: ApiErrorLike) => {
           toast.error(extractErrorMessage(error) || t.appointments.statusUpdateFailed);
         });
         return;
       }
       setMoveNote('');
-      setMove({ appointment: appt, id: appt.id, from: appt.status, stage, ...size });
+      setMove({ appointment: appt, id: appt.id, from: appt.status, stage: target, ...size });
     },
   });
+  const dragged = drag ? appointments?.find((a) => a.id === drag.id) : undefined;
 
   const completeFromQueue = async (appointment: Appointment) => {
     const workspace = await visitsService.workspace(appointment.id);
@@ -143,43 +155,24 @@ export function WaitingQueueBoard({
     router.push(ROUTES.VISIT(appointment.id));
   };
 
-  const runMove = async (appointment: Appointment, stage: QueueStage, statusReason?: string) => {
+  const runMove = async (appointment: Appointment, target: AppointmentStatus, statusReason?: string) => {
     const { id, status } = appointment;
-    const arrived = status === APPOINTMENT_STATUS.CHECKED_IN || status === APPOINTMENT_STATUS.WAITING;
-    if (stage === QUEUE_STAGE.UPCOMING) {
-      await updateAppointment.mutateAsync({ id, data: { status: APPOINTMENT_STATUS.CONFIRMED, statusReason } });
-      return;
-    }
-    if (status === APPOINTMENT_STATUS.UNCONFIRMED) {
-      await updateAppointment.mutateAsync({ id, data: { status: APPOINTMENT_STATUS.CONFIRMED } });
-    }
-    if (stage === QUEUE_STAGE.WAITING) {
-      await markWaiting.mutateAsync({ appointment, statusReason });
-      return;
-    }
-    if (!arrived) await markWaiting.mutateAsync({ appointment });
-    await startVisit.mutateAsync({ appointmentId: id, statusReason });
-  };
-
-  const closeMove = async (status: typeof APPOINTMENT_STATUS.NO_SHOW | typeof APPOINTMENT_STATUS.CANCELLED) => {
-    if (!move) return;
-    const note = moveNote.trim() || undefined;
-    setPending(move);
-    setMove(null);
-    try {
+    if (UPDATE_TARGETS.includes(target)) {
       await updateAppointment.mutateAsync({
-        id: move.appointment.id,
-        data: {
-          status,
-          statusReason: note,
-          cancelReason: status === APPOINTMENT_STATUS.CANCELLED ? note : undefined,
-        },
+        id,
+        data: { status: target, statusReason, cancelReason: target === CANCELLED ? statusReason : undefined },
       });
-    } catch (error) {
-      toast.error(extractErrorMessage(error as ApiErrorLike) || t.appointments.statusUpdateFailed);
-    } finally {
-      setPending(null);
+      return;
     }
+    if (status === UNCONFIRMED) {
+      await updateAppointment.mutateAsync({ id, data: { status: CONFIRMED } });
+    }
+    if (target === CHECKED_IN || target === WAITING) {
+      await presence.mutateAsync({ appointment, waiting: target === WAITING, statusReason });
+      return;
+    }
+    if (status !== CHECKED_IN && status !== WAITING) await presence.mutateAsync(arrival(appointment));
+    await startVisit.mutateAsync({ appointmentId: id, statusReason });
   };
 
   const confirmMove = async () => {
@@ -196,17 +189,14 @@ export function WaitingQueueBoard({
     }
   };
 
-  const stageNames: Partial<Record<QueueStage, string>> = {
-    [QUEUE_STAGE.WAITING]: t.queue.waiting,
-    [QUEUE_STAGE.IN_PROGRESS]: t.queue.inSession,
-    [QUEUE_STAGE.UPCOMING]: t.queue.upcomingToday,
-    [QUEUE_STAGE.COMPLETED]: t.queue.completed,
-    [QUEUE_STAGE.CLOSED]: t.queue.cancelledStage,
-  };
-  const moveDestination = move ? (stageNames[move.stage] ?? '') : '';
+  const confirmAppointment = (appt: Appointment) =>
+    updateAppointment.mutate(
+      { id: appt.id, data: { status: CONFIRMED } },
+      { onError: (error) => toast.error(extractErrorMessage(error) || t.appointments.statusUpdateFailed) },
+    );
 
-  const slotFor = (stage: QueueStage) => {
-    const size = drag?.zone === stage ? drag : moving?.stage === stage ? moving : null;
+  const slotFor = (status: AppointmentStatus) => {
+    const size = drag?.zone === status ? drag : moving?.stage === status ? moving : null;
     return size ? (
       <Skeleton
         className="drop-slot shrink-0 rounded-xl border-2 border-dashed border-primary/40"
@@ -227,109 +217,220 @@ export function WaitingQueueBoard({
     });
   }, [appointments, movingId]);
 
-  const waitingList = useMemo(
-    () =>
-      dayAppointments
-        .filter((a) => a.status === APPOINTMENT_STATUS.WAITING || a.status === APPOINTMENT_STATUS.CHECKED_IN)
-        .sort((a, b) => {
-          const aTime = new Date(a.waitingStartedAt || a.statusUpdatedAt || a.scheduledAt).getTime();
-          const bTime = new Date(b.waitingStartedAt || b.statusUpdatedAt || b.scheduledAt).getTime();
-          return aTime - bTime;
-        }),
-    [dayAppointments],
-  );
+  const columns = useMemo(() => {
+    const groups = Object.fromEntries(STATUS_OPTIONS.map((status) => [status, [] as Appointment[]])) as Record<AppointmentStatus, Appointment[]>;
+    for (const appt of dayAppointments) groups[appt.status]?.push(appt);
+    for (const status of STATUS_OPTIONS) {
+      const order = NEWEST_FIRST.includes(status) ? -1 : 1;
+      groups[status].sort((a, b) => (new Date(queueTime(a)).getTime() - new Date(queueTime(b)).getTime()) * order);
+    }
+    return groups;
+  }, [dayAppointments]);
 
-  const inProgressList = useMemo(
-    () =>
-      dayAppointments
-        .filter((a) => a.status === APPOINTMENT_STATUS.IN_PROGRESS)
-        .sort((a, b) => {
-          const aTime = new Date(a.inProgressAt || a.statusUpdatedAt || a.scheduledAt).getTime();
-          const bTime = new Date(b.inProgressAt || b.statusUpdatedAt || b.scheduledAt).getTime();
-          return aTime - bTime;
-        }),
-    [dayAppointments],
-  );
+  const trackNode = useRef<HTMLDivElement | null>(null);
+  const [pager, setPager] = useState<{ overflow: boolean; visible: number[] }>({ overflow: false, visible: [] });
+  const trackRef = useCallback((node: HTMLDivElement | null) => {
+    trackNode.current = node;
+    if (!node || single) return;
+    const sync = () => {
+      const box = node.getBoundingClientRect();
+      const ratios = Array.from(node.querySelectorAll<HTMLElement>('[data-board-column]'), (column) => {
+        const rect = column.getBoundingClientRect();
+        return (Math.min(rect.right, box.right) - Math.max(rect.left, box.left)) / rect.width;
+      });
+      const best = Math.max(...ratios);
+      const visible = ratios.flatMap((ratio, index) => (ratio >= 0.6 || ratio === best ? [index] : []));
+      const overflow = node.scrollWidth > node.clientWidth + 1;
+      setPager((prev) => (prev.overflow === overflow && prev.visible.join() === visible.join() ? prev : { overflow, visible }));
+    };
+    sync();
+    node.addEventListener('scroll', sync, { passive: true });
+    const observer = new ResizeObserver(sync);
+    observer.observe(node);
+    return () => {
+      node.removeEventListener('scroll', sync);
+      observer.disconnect();
+    };
+  }, [single]);
 
-  const upcomingList = useMemo(
-    () =>
-      dayAppointments
-        .filter((a) => a.status === APPOINTMENT_STATUS.CONFIRMED || a.status === APPOINTMENT_STATUS.UNCONFIRMED)
-        .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()),
-    [dayAppointments],
-  );
-
-  const completedList = useMemo(
-    () =>
-      dayAppointments
-        .filter((a) => a.status === APPOINTMENT_STATUS.COMPLETED)
-        .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
-    [dayAppointments],
-  );
-
-  const closedList = useMemo(
-    () =>
-      dayAppointments
-        .filter((a) => STAGE_OF[a.status] === QUEUE_STAGE.CLOSED)
-        .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
-    [dayAppointments],
-  );
-
-  const isVisible = useCallback(
-    (stage: QueueStage) => stageTab === QUEUE_STAGE.ALL || stageTab === stage,
-    [stageTab],
-  );
+  const jumpTo = (index: number) =>
+    trackNode.current
+      ?.querySelectorAll<HTMLElement>('[data-board-column]')
+      [index]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
 
   const loading = isLoading && !appointments?.length;
 
   const withCount = (name: string, count: number) => (loading ? name : `${name} (${count})`);
 
-  const stageTabs: {
-    key: QueueStage;
-    label: string;
-    short: string;
-    icon: React.ReactNode;
-    variant: BadgeVariant;
-  }[] = [
-    { key: QUEUE_STAGE.ALL, label: t.queue.allStages, short: t.queue.allStages, icon: null, variant: 'default' },
-    {
-      key: QUEUE_STAGE.UPCOMING,
-      label: withCount(t.queue.upcomingToday, upcomingList.length),
-      short: withCount(t.queue.upcomingToday, upcomingList.length),
-      icon: <IconPatients className="size-3" />,
-      variant: 'violet',
-    },
-    {
-      key: QUEUE_STAGE.WAITING,
-      label: withCount(t.queue.waiting, waitingList.length),
-      short: withCount(t.queue.waiting, waitingList.length),
-      icon: <IconTimer className="size-3" />,
-      variant: 'teal',
-    },
-    {
-      key: QUEUE_STAGE.IN_PROGRESS,
-      label: withCount(t.queue.inSession, inProgressList.length),
-      short: withCount(t.queue.inSession, inProgressList.length),
-      icon: <IconService className="size-3" />,
-      variant: 'info',
-    },
-    {
-      key: QUEUE_STAGE.COMPLETED,
-      label: withCount(t.queue.completed, completedList.length),
-      short: withCount(t.queue.completed, completedList.length),
-      icon: <IconCheckCircle className="size-3" />,
-      variant: 'success',
-    },
-    {
-      key: QUEUE_STAGE.CLOSED,
-      label: withCount(t.queue.cancelledStage, closedList.length),
-      short: withCount(t.queue.cancelledStage, closedList.length),
-      icon: <IconBan className="size-3" />,
-      variant: 'muted',
-    },
+  const stageOptions: { key: QueueStage; label: string }[] = [
+    { key: QUEUE_STAGE.ALL, label: t.queue.allStages },
+    ...STATUS_OPTIONS.map((status) => ({ key: status, label: withCount(statusConfig[status].label, columns[status].length) })),
   ];
 
-  const slot = toolbarSlot;
+  const emptyStates: Record<AppointmentStatus, [LucideIcon, string]> = {
+    [UNCONFIRMED]: [IconCalendarClock, t.queue.noUpcomingVisitsToday],
+    [CONFIRMED]: [IconCalendarClock, t.queue.noUpcomingVisitsToday],
+    [CHECKED_IN]: [IconTimer, t.queue.noPatientsWaiting],
+    [WAITING]: [IconTimer, t.queue.noPatientsWaiting],
+    [IN_PROGRESS]: [IconService, t.queue.noConsultationsInSession],
+    [COMPLETED]: [IconCheckCircle, t.queue.noCompletedVisitsToday],
+    [NO_SHOW]: [IconBan, t.queue.noClosedVisitsToday],
+    [CANCELLED]: [IconBan, t.queue.noClosedVisitsToday],
+  };
+
+  const statusMenu = (appt: Appointment) => (
+    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+      <AppointmentStatusSelect appointment={appt} compact />
+    </div>
+  );
+
+  const timeBadge = (appt: Appointment) => (
+    <Badge variant="muted" className="min-w-0 shrink font-semibold">
+      <IconTime className="size-3" />
+      <span>{formatApptTimeRange(appt, lang)}</span>
+    </Badge>
+  );
+
+  const cardBody = (appt: Appointment) => {
+    switch (appt.status) {
+      case UNCONFIRMED:
+      case CONFIRMED:
+        return (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              {timeBadge(appt)}
+              {statusMenu(appt)}
+            </div>
+            <div className="mt-3">
+              {appt.status === UNCONFIRMED ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
+                  disabled={updateAppointment.isPending}
+                  onClick={(e) => { e.stopPropagation(); confirmAppointment(appt); }}
+                >
+                  <IconCheckCircle className="me-1.5 size-3.5 text-primary" />
+                  {t.common.confirm}
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
+                  disabled={presence.isPending}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    presence.mutate(arrival(appt), {
+                      onError: (error) => toast.error(extractErrorMessage(error) || t.appointments.statusUpdateFailed),
+                    });
+                  }}
+                >
+                  <IconActivate className="me-1.5 size-3.5 text-primary" />
+                  {t.queue.patientArrived}
+                </Button>
+              )}
+            </div>
+          </>
+        );
+      case CHECKED_IN:
+      case WAITING: {
+        const waitMins = elapsedMinutesSince(queueTime(appt), now);
+        const timerVariant = waitMins >= 25 ? 'destructive' : waitMins >= 12 ? 'warning' : 'success';
+        const waitLabel = waitMins >= 25 ? t.queue.longWait : waitMins >= 12 ? t.queue.moderateWait : t.queue.onTrack;
+        return (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <Badge variant={timerVariant} className={cn('min-w-0 shrink font-semibold', waitMins >= 25 && 'animate-pulse')}>
+                <IconTime className="size-3" />
+                <span>{formatWaitingMins(waitMins, t)} · {waitLabel}</span>
+              </Badge>
+              {statusMenu(appt)}
+            </div>
+            <div className="mt-3">
+              <Button
+                size="sm"
+                className="w-full font-bold shadow-xs transition-all active:scale-[0.98]"
+                onClick={(e) => { e.stopPropagation(); router.push(ROUTES.VISIT(appt.id)); }}
+              >
+                <IconPlay className="me-1.5 size-3.5 fill-current" />
+                {t.queue.startConsultation}
+              </Button>
+            </div>
+          </>
+        );
+      }
+      case IN_PROGRESS: {
+        const sessionMins = elapsedMinutesSince(queueTime(appt), now);
+        const isLong = sessionMins > appt.durationMins;
+        return (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <Badge
+                variant={isLong ? 'destructive' : 'info'}
+                className={cn('min-w-0 shrink font-semibold', isLong && 'animate-pulse')}
+              >
+                <IconTimer className="size-3 animate-spin" />
+                <span>{formatWaitingMins(sessionMins, t)} / {appt.durationMins}{t.appointments.minutesShort}</span>
+              </Badge>
+              {statusMenu(appt)}
+            </div>
+            <div className="mt-3">
+              <Button
+                size="sm"
+                className="w-full font-bold shadow-xs transition-all active:scale-[0.98]"
+                onClick={(e) => { e.stopPropagation(); router.push(ROUTES.VISIT(appt.id)); }}
+              >
+                <IconCheckCircle className="me-1.5 size-3.5" />
+                {t.queue.finishConsultation}
+              </Button>
+            </div>
+          </>
+        );
+      }
+      case COMPLETED:
+        return (
+          <>
+            <div className="flex items-center justify-between gap-2">
+              <Badge variant="success" className="min-w-0 shrink font-semibold">
+                <IconCheckCircle className="size-3" />
+                <span>{t.appointments.markCompleted}</span>
+              </Badge>
+              {statusMenu(appt)}
+            </div>
+            {canManagePayments ? (
+              <div className="mt-2.5 flex items-center justify-between gap-2 border-t pt-2 text-2xs">
+                <span className="font-medium text-muted-foreground">{t.appointments.paymentStatus}:</span>
+                {appt.isPaid ? (
+                  <Badge variant="success"><IconCreditCard className="size-3" />{t.appointments.paid}</Badge>
+                ) : (
+                  <Badge asChild variant="warning">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(ROUTES.VISIT(appt.id));
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <IconCreditCard className="size-3" />
+                      {t.appointments.unpaid} · {t.visits.openVisit}
+                    </button>
+                  </Badge>
+                )}
+              </div>
+            ) : null}
+          </>
+        );
+      default:
+        return (
+          <div className="flex items-center justify-between gap-2">
+            {timeBadge(appt)}
+            {statusMenu(appt)}
+          </div>
+        );
+    }
+  };
 
   return (
     <div
@@ -341,7 +442,7 @@ export function WaitingQueueBoard({
         !single && 'card-aura rounded-xl sm:rounded-2xl',
       )}
     >
-      {slot ? createPortal(
+      {toolbarSlot ? createPortal(
         <Select value={stageTab} onValueChange={(value) => setStageTab(value as QueueStage)}>
           <SelectTrigger size="sm" aria-label={t.queue.waitingQueue} className="h-8 w-full">
             <span className="min-w-0 flex-1 truncate text-start">
@@ -349,279 +450,82 @@ export function WaitingQueueBoard({
             </span>
           </SelectTrigger>
           <SelectContent>
-            {stageTabs.map(({ key, label }) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
+            {stageOptions.map(({ key, label }) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
           </SelectContent>
         </Select>,
-        slot,
+        toolbarSlot,
       ) : null}
       <div
+        ref={trackRef}
+        data-drag-scroll="x"
         className={cn(
-          'grid min-h-0 flex-1 grid-cols-1 overflow-y-auto overscroll-y-contain',
-          single
-            ? 'grid-rows-[minmax(0,1fr)] gap-0 p-0 lg:grid-cols-1 lg:overflow-hidden'
-            : cn(
-                'gap-2.5 p-2.5 lg:grid-flow-col lg:auto-cols-[minmax(14rem,1fr)] lg:overflow-x-auto lg:overflow-y-hidden lg:grid-rows-[minmax(0,1fr)] lg:items-stretch',
-                focused ? 'p-1.5 sm:gap-2 sm:p-2 md:gap-2' : 'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
-              ),
+          'flex min-h-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain',
+          !single && 'snap-x snap-mandatory lg:snap-proximity',
+          !single && (focused
+            ? 'gap-2 p-1.5 scroll-px-1.5 sm:p-2 sm:scroll-px-2'
+            : 'gap-2.5 p-2.5 scroll-px-2.5 sm:gap-3 sm:p-3 sm:scroll-px-3'),
           focused && 'h-0',
         )}
       >
-        {isVisible(QUEUE_STAGE.UPCOMING) && (
-          <StageColumn
-            single={single}
-            zoneProps={zoneProps(QUEUE_STAGE.UPCOMING)}
-            over={drag?.zone === QUEUE_STAGE.UPCOMING}
-            placeholder={slotFor(QUEUE_STAGE.UPCOMING)}
-            title={t.queue.upcomingToday}
-            count={loading ? undefined : upcomingList.length}
-            accentClass="bg-accent-violet"
-            badgeVariant="violet"
-            icon={<IconCalendarClock className="size-4 text-accent-violet" />}
-          >
-            {loading ? <QueueColumnSkeleton /> : upcomingList.length === 0 && !slotFor(QUEUE_STAGE.UPCOMING) ? (
-              <EmptyState framed={false}
-                icon={IconCalendarClock}
-                title={t.queue.noUpcomingVisitsToday}
-                className="flex-1 px-3 py-8"
-              />
-            ) : (
-              upcomingList.map((appt) => (
-                <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
-                  <div className="flex items-center justify-between gap-2">
-                    <Badge variant="muted" className="min-w-0 shrink font-semibold">
-                      <IconTime className="size-3" />
-                      <span>{formatApptTimeRange(appt, lang)}</span>
-                    </Badge>
-                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                      <AppointmentStatusSelect appointment={appt} compact />
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
-                      disabled={markWaiting.isPending}
-                      onClick={(e) => { e.stopPropagation(); markWaiting.mutate({ appointment: appt }); }}
-                    >
-                      <IconActivate className="me-1.5 size-3.5 text-primary" />
-                      {t.queue.patientArrived}
-                    </Button>
-                  </div>
-                </QueueCard>
-              ))
-            )}
-          </StageColumn>
-        )}
-
-        {isVisible(QUEUE_STAGE.WAITING) && (
-          <StageColumn
-            single={single}
-            zoneProps={zoneProps(QUEUE_STAGE.WAITING)}
-            over={drag?.zone === QUEUE_STAGE.WAITING}
-            placeholder={slotFor(QUEUE_STAGE.WAITING)}
-            title={t.queue.waiting}
-            count={loading ? undefined : waitingList.length}
-            accentClass="bg-accent-teal"
-            badgeVariant="teal"
-            icon={<IconTimer className="size-4 text-accent-teal" />}
-          >
-            {loading ? <QueueColumnSkeleton /> : waitingList.length === 0 && !slotFor(QUEUE_STAGE.WAITING) ? (
-              <EmptyState framed={false}
-                icon={IconTimer}
-                title={t.queue.noPatientsWaiting}
-                className="flex-1 px-3 py-8"
-              />
-            ) : (
-              waitingList.map((appt) => {
-                const waitMins = elapsedMinutesSince(
-                  appt.waitingStartedAt || appt.statusUpdatedAt || appt.scheduledAt,
-                  now,
-                );
-                const timerVariant =
-                  waitMins >= 25 ? 'destructive' : waitMins >= 12 ? 'warning' : 'success';
-                const waitLabel = waitMins >= 25 ? t.queue.longWait : waitMins >= 12 ? t.queue.moderateWait : t.queue.onTrack;
-
-                return (
-                  <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant={timerVariant} className={cn('min-w-0 shrink font-semibold', waitMins >= 25 && 'animate-pulse')}>
-                        <IconTime className="size-3" />
-                        <span>{formatWaitingMins(waitMins, t)} · {waitLabel}</span>
-                      </Badge>
-                      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <AppointmentStatusSelect appointment={appt} compact />
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <Button
-                        size="sm"
-                        className="w-full font-bold shadow-xs transition-all active:scale-[0.98]"
-                        onClick={(e) => { e.stopPropagation(); router.push(ROUTES.VISIT(appt.id)); }}
-                      >
-                        <IconPlay className="me-1.5 size-3.5 fill-current" />
-                        {t.queue.startConsultation}
-                      </Button>
-                    </div>
+        {statuses.map((status) => {
+          const list = columns[status];
+          const placeholder = slotFor(status);
+          const [EmptyIcon, emptyText] = emptyStates[status];
+          return (
+            <StageColumn
+              key={status}
+              single={single}
+              zoneProps={zoneProps(status)}
+              over={drag?.zone === status}
+              blocked={!!dragged && dragged.status !== status && !dropAllowed(dragged.status, status)}
+              placeholder={placeholder}
+              title={statusConfig[status].label}
+              count={loading ? undefined : list.length}
+              dotClassName={statusConfig[status].dotClassName}
+            >
+              {loading ? <QueueColumnSkeleton count={3} /> : list.length === 0 && !placeholder ? (
+                <EmptyState framed={false} icon={EmptyIcon} title={emptyText} className="flex-1 px-3 py-8" />
+              ) : (
+                list.map((appt) => (
+                  <QueueCard
+                    key={appt.id}
+                    appointment={appt}
+                    dragging={drag?.id === appt.id}
+                    {...bind(appt, appt.id)}
+                    onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}
+                  >
+                    {cardBody(appt)}
                   </QueueCard>
-                );
-              })
-            )}
-          </StageColumn>
-        )}
-
-        {isVisible(QUEUE_STAGE.IN_PROGRESS) && (
-          <StageColumn
-            single={single}
-            zoneProps={zoneProps(QUEUE_STAGE.IN_PROGRESS)}
-            over={drag?.zone === QUEUE_STAGE.IN_PROGRESS}
-            placeholder={slotFor(QUEUE_STAGE.IN_PROGRESS)}
-            title={t.queue.inSession}
-            count={loading ? undefined : inProgressList.length}
-            accentClass="bg-info"
-            badgeVariant="info"
-            icon={<IconService className="size-4 text-info" />}
-          >
-            {loading ? <QueueColumnSkeleton /> : inProgressList.length === 0 && !slotFor(QUEUE_STAGE.IN_PROGRESS) ? (
-              <EmptyState framed={false}
-                icon={IconService}
-                title={t.queue.noConsultationsInSession}
-                className="flex-1 px-3 py-8"
-              />
-            ) : (
-              inProgressList.map((appt) => {
-                const sessionMins = elapsedMinutesSince(
-                  appt.inProgressAt || appt.statusUpdatedAt || appt.scheduledAt,
-                  now,
-                );
-                const isLong = sessionMins > appt.durationMins;
-
-                return (
-                  <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge
-                        variant={isLong ? 'destructive' : 'info'}
-                        className={cn('min-w-0 shrink font-semibold', isLong && 'animate-pulse')}
-                      >
-                        <IconTimer className="size-3 animate-spin" />
-                        <span>{formatWaitingMins(sessionMins, t)} / {appt.durationMins}{t.appointments.minutesShort}</span>
-                      </Badge>
-                      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <AppointmentStatusSelect appointment={appt} compact />
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <Button
-                        size="sm"
-                        className="w-full font-bold shadow-xs transition-all active:scale-[0.98]"
-                        onClick={(e) => { e.stopPropagation(); router.push(ROUTES.VISIT(appt.id)); }}
-                      >
-                        <IconCheckCircle className="me-1.5 size-3.5" />
-                        {t.queue.finishConsultation}
-                      </Button>
-                    </div>
-                  </QueueCard>
-                );
-              })
-            )}
-          </StageColumn>
-        )}
-
-        {isVisible(QUEUE_STAGE.COMPLETED) && (
-          <StageColumn
-            single={single}
-            zoneProps={zoneProps(QUEUE_STAGE.COMPLETED)}
-            over={drag?.zone === QUEUE_STAGE.COMPLETED}
-            placeholder={slotFor(QUEUE_STAGE.COMPLETED)}
-            title={t.queue.completed}
-            count={loading ? undefined : completedList.length}
-            accentClass="bg-success"
-            badgeVariant="success"
-            icon={<IconCheckCircle className="size-4 text-success" />}
-          >
-            {loading ? <QueueColumnSkeleton /> : completedList.length === 0 && !slotFor(QUEUE_STAGE.COMPLETED) ? (
-              <EmptyState framed={false}
-                icon={IconCheckCircle}
-                title={t.queue.noCompletedVisitsToday}
-                className="flex-1 px-3 py-8"
-              />
-            ) : (
-              completedList.map((appt) => (
-                <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
-                  <div className="flex items-center justify-between gap-2">
-                    <Badge variant="success" className="min-w-0 shrink font-semibold">
-                      <IconCheckCircle className="size-3" />
-                      <span>{t.appointments.markCompleted}</span>
-                    </Badge>
-                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                      <AppointmentStatusSelect appointment={appt} compact />
-                    </div>
-                  </div>
-
-                    {canManagePayments ? (
-                      <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-2xs">
-                        <span className="font-medium text-muted-foreground">{t.appointments.paymentStatus}:</span>
-                        {appt.isPaid ? (
-                          <Badge variant="success"><IconCreditCard className="size-3" />{t.appointments.paid}</Badge>
-                        ) : (
-                          <Badge asChild variant="warning">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(ROUTES.VISIT(appt.id));
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <IconCreditCard className="size-3" />
-                              {t.appointments.unpaid} · {t.visits.openVisit}
-                            </button>
-                          </Badge>
-                        )}
-                      </div>
-                    ) : null}
-                </QueueCard>
-              ))
-            )}
-          </StageColumn>
-        )}
-
-        {isVisible(QUEUE_STAGE.CLOSED) && (
-          <StageColumn
-            single={single}
-            zoneProps={zoneProps(QUEUE_STAGE.CLOSED)}
-            over={drag?.zone === QUEUE_STAGE.CLOSED}
-            placeholder={slotFor(QUEUE_STAGE.CLOSED)}
-            title={t.queue.cancelledStage}
-            count={loading ? undefined : closedList.length}
-            accentClass="bg-muted-foreground"
-            badgeVariant="muted"
-            icon={<IconBan className="size-4 text-muted-foreground" />}
-          >
-            {loading ? <QueueColumnSkeleton /> : closedList.length === 0 && !slotFor(QUEUE_STAGE.CLOSED) ? (
-              <EmptyState framed={false}
-                icon={IconBan}
-                title={t.queue.noClosedVisitsToday}
-                className="flex-1 px-3 py-8"
-              />
-            ) : (
-              closedList.map((appt) => (
-                <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
-                  <div className="flex items-center justify-between gap-2">
-                    <Badge variant="muted" className="min-w-0 shrink font-semibold">
-                      <IconTime className="size-3" />
-                      <span>{formatApptTimeRange(appt, lang)}</span>
-                    </Badge>
-                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                      <AppointmentStatusSelect appointment={appt} compact />
-                    </div>
-                  </div>
-                </QueueCard>
-              ))
-            )}
-          </StageColumn>
-        )}
+                ))
+              )}
+            </StageColumn>
+          );
+        })}
       </div>
+      {!single && pager.overflow ? (
+        <nav aria-label={t.queue.waitingQueue} className="flex shrink-0 items-center justify-center pb-1.5 sm:pb-2">
+          {statuses.map((status, index) => {
+            const current = pager.visible.includes(index);
+            return (
+              <button
+                key={status}
+                type="button"
+                aria-label={statusConfig[status].label}
+                aria-current={current || undefined}
+                onClick={() => jumpTo(index)}
+                className="group flex h-5 items-center px-[3px] outline-none"
+              >
+                <span
+                  className={cn(
+                    'block h-1.5 rounded-full transition-all duration-300 group-focus-visible:ring-2 group-focus-visible:ring-ring',
+                    current ? 'w-4 bg-foreground/60' : 'w-1.5 bg-muted-foreground/30 group-hover:bg-muted-foreground/60',
+                  )}
+                />
+              </button>
+            );
+          })}
+        </nav>
+      ) : null}
 
       {appointmentPopover ? (
         <AppointmentPopover
@@ -637,15 +541,13 @@ export function WaitingQueueBoard({
       <QueueMoveDialog
         open={!!move}
         name={move ? patientDisplayName(move.appointment, lang) : ''}
-        destination={moveDestination}
+        destination={move ? statusConfig[move.stage].label : ''}
         note={moveNote}
-        pending={markWaiting.isPending || startVisit.isPending || updateAppointment.isPending}
-        closing={move?.stage === QUEUE_STAGE.CLOSED}
+        pending={presence.isPending || startVisit.isPending || updateAppointment.isPending}
+        closing={move?.stage === CANCELLED}
         onNoteChange={setMoveNote}
         onCancel={() => setMove(null)}
         onConfirm={() => void confirmMove()}
-        onNoShow={() => void closeMove(APPOINTMENT_STATUS.NO_SHOW)}
-        onCancelAppointment={() => void closeMove(APPOINTMENT_STATUS.CANCELLED)}
       />
     </div>
   );
@@ -655,51 +557,48 @@ function StageColumn({
   single,
   zoneProps,
   over,
+  blocked,
   placeholder,
   title,
   count,
-  accentClass,
-  badgeVariant,
-  icon,
+  dotClassName,
   children,
 }: {
   single: boolean;
   zoneProps: { 'data-drop-zone': string };
   over: boolean;
+  blocked: boolean;
   placeholder: React.ReactNode;
   title: string;
   count: number | undefined;
-  accentClass: string;
-  badgeVariant: BadgeVariant;
-  icon: React.ReactNode;
+  dotClassName: string;
   children: React.ReactNode;
 }) {
   return (
-    <div
+    <section
       {...zoneProps}
+      data-board-column=""
+      aria-label={title}
       className={cn(
-        'card-aura flex min-h-0 flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs transition-shadow sm:rounded-2xl',
+        'flex min-h-0 shrink-0 flex-col transition-[opacity,background-color,box-shadow] duration-200',
         single
-          ? 'h-full max-h-none'
-          : 'max-h-(--app-queue-col-max) lg:h-full lg:max-h-none',
-        over && 'ring-2 ring-primary/40',
-        !single && 'h-[min(78dvh,38rem)] max-h-none sm:h-auto sm:max-h-(--app-queue-col-max)',
+          ? 'w-full'
+          : 'w-[85%] snap-start rounded-xl bg-muted/50 sm:w-72 sm:rounded-2xl lg:w-auto lg:min-w-60 lg:flex-1 dark:bg-muted/30',
+        over && 'bg-primary/10 ring-2 ring-inset ring-primary/30 dark:bg-primary/10',
+        blocked && 'opacity-40',
       )}
     >
-      <div className="flex shrink-0 items-center justify-between border-b bg-muted/25 p-2.5 sm:p-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className={cn('size-2 rounded-full ring-2 ring-background', accentClass)} />
-          <span className="text-muted-foreground">{icon}</span>
-          <h3 className="text-xs font-bold tracking-tight text-foreground">{title}</h3>
-        </div>
-        <Badge variant={badgeVariant} className="font-bold">
-          {count === undefined ? <Skeleton className="h-4 w-4" /> : count}
-        </Badge>
+      <header className="flex shrink-0 items-center gap-2 px-3 pb-2 pt-3">
+        <span className={cn('size-2 shrink-0 rounded-full', dotClassName)} />
+        <h3 className="min-w-0 truncate text-2xs font-semibold uppercase text-muted-foreground">{title}</h3>
+        <span className="ms-auto min-w-5 shrink-0 rounded-full bg-background/70 px-1.5 text-center text-2xs font-semibold tabular-nums text-muted-foreground">
+          {count === undefined ? <Skeleton className="my-0.5 h-3 w-3" /> : count}
+        </span>
+      </header>
+      <div data-drag-scroll="y" className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-2 pb-2">
+        <div className="flex min-h-full flex-1 flex-col gap-2">{children}{placeholder}</div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain p-3 touch-pan-y">
-        <div className="flex min-h-full flex-1 flex-col gap-2.5">{children}{placeholder}</div>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -714,9 +613,8 @@ function QueueCard({
   onClick: (event: React.MouseEvent<HTMLDivElement>) => void;
   dragging?: boolean;
   children: React.ReactNode;
-} & Pick<React.ComponentProps<'div'>, 'onPointerDown' | 'onClickCapture'>) {
+} & Pick<React.ComponentProps<'div'>, 'ref' | 'onPointerDown' | 'onClickCapture'>) {
   const { t, lang } = useLanguage();
-  const accent = STATUS_COLORS[appt.status];
   const docLabel = doctorDisplayName(appt.doctor, lang);
 
   return (
@@ -724,8 +622,10 @@ function QueueCard({
       {...dragProps}
       onClick={onClick}
       data-queue-card=""
-      className={cn('group relative flex flex-col rounded-xl border-2 bg-card p-3 shadow-xs transition-[color,opacity] duration-200 hover:shadow-md cursor-pointer sm:p-3.5', dragging && 'opacity-40')}
-      style={{ borderColor: accent }}
+      className={cn(
+        'group relative flex shrink-0 cursor-pointer select-none flex-col rounded-xl bg-card p-3 shadow-xs ring-1 ring-border/60 transition-[box-shadow,opacity] duration-200 [-webkit-touch-callout:none] hover:shadow-md',
+        dragging && 'opacity-40',
+      )}
     >
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">

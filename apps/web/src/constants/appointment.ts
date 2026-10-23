@@ -114,13 +114,8 @@ export type ScheduleView = 'day' | 'week' | 'month' | 'doctors' | 'queue';
 
 export const QUEUE_STAGE = {
   ALL: 'all',
-  WAITING: 'waiting',
-  IN_PROGRESS: 'in_progress',
-  UPCOMING: 'upcoming',
-  COMPLETED: 'completed',
-  CLOSED: 'closed',
 } as const;
-export type QueueStage = (typeof QUEUE_STAGE)[keyof typeof QUEUE_STAGE];
+export type QueueStage = typeof QUEUE_STAGE.ALL | AppointmentStatus;
 
 export const VIEW_TO_FC: Record<ScheduleView, string> = {
   day: 'timeGridDay',

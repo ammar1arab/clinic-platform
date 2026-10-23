@@ -23,8 +23,6 @@ interface Props {
   onNoteChange: (note: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
-  onNoShow: () => void;
-  onCancelAppointment: () => void;
 }
 
 export function QueueMoveDialog({
@@ -37,8 +35,6 @@ export function QueueMoveDialog({
   onNoteChange,
   onCancel,
   onConfirm,
-  onNoShow,
-  onCancelAppointment,
 }: Props) {
   const { t } = useLanguage();
   const cancelReady = note.trim().length > 0;
@@ -54,7 +50,7 @@ export function QueueMoveDialog({
           className="space-y-3"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!closing) onConfirm();
+            if (!closing || cancelReady) onConfirm();
           }}
         >
           <Textarea
@@ -70,10 +66,7 @@ export function QueueMoveDialog({
               <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
                 {t.common.cancel}
               </Button>
-              <Button type="button" variant="outline" onClick={onNoShow} disabled={pending}>
-                {t.appointments.noShow}
-              </Button>
-              <Button type="button" variant="destructive" onClick={onCancelAppointment} disabled={pending || !cancelReady}>
+              <Button type="submit" variant="destructive" disabled={pending || !cancelReady}>
                 {t.appointments.cancelAppointment}
               </Button>
             </DialogFooter>

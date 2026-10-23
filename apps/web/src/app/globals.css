@@ -2149,6 +2149,10 @@ body.is-dragging {
   user-select: none;
 }
 
+body.is-dragging [data-drag-scroll] {
+  scroll-snap-type: none;
+}
+
 .drop-slot {
   animation: dropSlot var(--overlay-duration) var(--overlay-ease) both;
 }
