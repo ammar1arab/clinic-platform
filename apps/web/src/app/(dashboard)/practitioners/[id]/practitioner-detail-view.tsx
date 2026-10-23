@@ -3,7 +3,7 @@
 import {
   EmptyState,
   ErrorState,
-  FormPageSkeleton,
+  ProfileViewSkeleton,
   PageBack,
 } from '@/components/primitives';
 import { PractitionerProfile } from '@/components/blocks/practitioners';
@@ -25,12 +25,7 @@ export function PractitionerDetailView({ id }: { id: string }) {
   const backHref = isPractitioner ? ROUTES.DASHBOARD : ROUTES.PRACTITIONERS;
 
   if (isLoading) {
-    return (
-      <div className="page-stack space-y-4">
-        <PageBack backHref={backHref} />
-        <FormPageSkeleton sections={[1, 6, 4]} />
-      </div>
-    );
+    return <ProfileViewSkeleton variant="practitioner" backHref={backHref} canManage={canManage} />;
   }
   if (isError) {
     return (

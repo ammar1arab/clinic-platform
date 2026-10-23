@@ -3,14 +3,14 @@
 import type { ReactNode } from 'react';
 import type { DoctorTimeOffEntry } from '@clinic/types';
 import {
-  ProfileEmpty,
-  ProfileInfoField,
-  ProfileInfoGrid,
+  CountBadge,
+  EmptyState,
   ProfileSection,
   ProfileSoftRow,
 } from '@/components/primitives';
 import { formatDate, formatDateTimeRange } from '@/lib/datetime';
 import { useLanguage } from '@/providers';
+import { IconCalendar, IconCalendarClock } from '@/constants/icons';
 
 export function PractitionerTimeOffSection({
   title,
@@ -34,17 +34,18 @@ export function PractitionerTimeOffSection({
       title={title}
       action={action}
       className="h-full"
-      contentClassName="max-h-56 overflow-y-auto overscroll-y-contain"
+      contentClassName="flex flex-col gap-3"
     >
       {summary ? (
-        <ProfileInfoGrid>
-          <ProfileInfoField label={summary.label} value={String(summary.value)} />
-        </ProfileInfoGrid>
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2.5">
+          <span className="text-xs text-muted-foreground">{summary.label}</span>
+          <CountBadge count={summary.value} />
+        </div>
       ) : null}
       {entries.length === 0 ? (
-        <ProfileEmpty>{emptyLabel}</ProfileEmpty>
+        <EmptyState icon={dateOnly ? IconCalendar : IconCalendarClock} title={emptyLabel} size="compact" className="flex-1" />
       ) : (
-        <div className="space-y-1.5">
+        <div className="max-h-56 space-y-1.5 overflow-y-auto overscroll-y-contain">
           {entries.map((block, index) => (
             <ProfileSoftRow
               key={block.id ?? `${block.startDate}-${index}`}

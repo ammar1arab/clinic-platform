@@ -10,7 +10,8 @@ import {
   PhoneLink,
   EmptyState,
   PreviewableAvatar,
-  FormPageSkeleton,
+  ProfileViewSkeleton,
+  ErrorState,
   RowActionsMenu,
   ProfileHero,
   ProfileInfoField,
@@ -41,13 +42,14 @@ export function PatientProfile({ patientId }: { patientId: string }) {
   const canManage = user?.role !== ROLE.PRACTITIONER;
   const clinicId = useClinicId();
   const { t, lang } = useLanguage();
-  const { data: patient, isLoading } = usePatient(patientId);
+  const { data: patient, isLoading, isError, refetch } = usePatient(patientId);
   const toggleStatus = useTogglePatientStatus();
   const deleteMutation = useDeletePatient();
   const downloadReport = useDownloadPatientReport(clinicId);
   const del = useTwoStepDelete<{ id: string; name: string }>();
 
-  if (isLoading) return <FormPageSkeleton />;
+  if (isLoading) return <ProfileViewSkeleton variant="patient" backHref={ROUTES.PATIENTS} canManage={canManage} />;
+  if (isError) return <ProfileShell backHref={ROUTES.PATIENTS}><ErrorState onRetry={() => void refetch()} /></ProfileShell>;
   if (!patient) {
     return (
       <EmptyState

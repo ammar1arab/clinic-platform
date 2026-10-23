@@ -20,7 +20,7 @@ import {
   DirectoryActions,
   SoftTip,
   type DirectoryColumn,
-  TableSkeleton,
+  DirectoryViewSkeleton,
   RowActionsMenu,
   TableFrame,
 } from "@/components/primitives";
@@ -247,12 +247,7 @@ export function PractitionersList({
 
   if (isLoading) {
     return (
-      <TableSkeleton
-        className="page-fill"
-        rows={20}
-        cols={10}
-        hasHeader={false}
-      />
+      <DirectoryViewSkeleton variant="practitioner" />
     );
   }
 

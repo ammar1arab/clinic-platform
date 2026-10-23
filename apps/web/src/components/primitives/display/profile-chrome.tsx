@@ -100,7 +100,7 @@ export function ProfileSection({
   className,
   contentClassName,
 }: {
-  title: string;
+  title: ReactNode;
   description?: string;
   action?: ReactNode;
   children: ReactNode;
@@ -235,9 +235,9 @@ export function ProfileSoftRow({
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2.5 text-sm">
       <div className="min-w-0">
-        <TruncatedText className="font-medium">{title}</TruncatedText>
+        <TruncatedText className="block font-medium">{title}</TruncatedText>
         {detail ? (
-          <TruncatedText className="text-xs text-muted-foreground">
+          <TruncatedText className="block text-xs text-muted-foreground">
             {detail}
           </TruncatedText>
         ) : null}

@@ -20,7 +20,7 @@ import {
   DirectoryIdentity,
   DirectoryActions,
   type DirectoryColumn,
-  TableSkeleton,
+  DirectoryViewSkeleton,
   RowActionsMenu,
   SoftTip,
 } from "@/components/primitives";
@@ -231,12 +231,7 @@ export function PatientsList({
 
   if (isLoading) {
     return (
-      <TableSkeleton
-        className="page-fill"
-        rows={20}
-        cols={6}
-        hasHeader={false}
-      />
+      <DirectoryViewSkeleton variant="patient" canManage={canManage} />
     );
   }
 
@@ -282,20 +277,16 @@ export function PatientsList({
                 </div>
               }
               subtitle={p.email ? <EmailLink copyable value={p.email} /> : undefined}
-              tags={
-                <>
-                  {gender(p)}
-                  <span className="text-xs text-muted-foreground">
-                    {patientAgeLabel(p.dob, t)}
-                  </span>
-                </>
-              }
+              tags={gender(p)}
               footer={
-                <PhoneLink
+                <div dir="ltr" className="flex w-full min-w-0 items-center justify-between gap-3 text-xs text-muted-foreground">
+                  <bdi dir="auto" className="shrink-0">{patientAgeLabel(p.dob, t)}</bdi>
+                  <PhoneLink
                   copyable
                   value={p.phone}
-                  className="text-xs text-muted-foreground"
+                  className="min-w-0 text-xs text-muted-foreground"
                 />
+                </div>
               }
               actions={canManage ? controls(p) : undefined}
               active={p.isActive}
