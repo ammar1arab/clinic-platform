@@ -10,7 +10,7 @@ import { ROUTES } from '@/constants/routes';
 import { schedulePath } from '@/components/blocks/appointments/schedule/schedule-nav';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { useSidebar } from '@/providers/sidebar-provider';
-import { EntityAvatar, IconWell, SoftTip, type IconWellAccent } from '@/components/primitives';
+import { EntityAvatar, IconWell, SoftTip } from '@/components/primitives';
 import { useAuth, useLanguage } from '@/providers';
 import { ClinicLockup, ProfileLink } from '@/components/layout/clinic-identity';
 import {
@@ -36,7 +36,6 @@ type NavItem = {
   href: string;
   icon?: LucideIcon;
   avatar?: { src?: string | null; seed: string };
-  accent: IconWellAccent;
 };
 
 function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 'clinicUserId'> | null): NavItem[] {
@@ -45,35 +44,34 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
     label: t.common.accountProfile,
     href: ROUTES.PROFILE,
     avatar: { src: user?.imageUrl, seed: user?.clinicUserId ?? 'profile' },
-    accent: 'success' as const,
   };
   if (role === ROLE.PRACTITIONER) {
     return [
       profile,
-      { label: t.layout.titles.home, href: ROUTES.HOME, icon: IconDashboard, accent: 'default' },
-      { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'violet' },
-      { label: t.queue.waitingQueue, href: ROUTES.HOME_QUEUE, icon: IconTimer, accent: 'warning' },
-      { label: t.layout.sidebar.visits, href: ROUTES.VISITS, icon: IconClinicalRecord, accent: 'teal' },
-      { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
-      { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'orange' },
-      { label: t.notifications.title, href: ROUTES.NOTIFICATIONS, icon: IconBell, accent: 'indigo' },
-      { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings, accent: 'cyan' },
+      { label: t.layout.titles.home, href: ROUTES.HOME, icon: IconDashboard },
+      { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule },
+      { label: t.queue.waitingQueue, href: ROUTES.HOME_QUEUE, icon: IconTimer },
+      { label: t.layout.sidebar.visits, href: ROUTES.VISITS, icon: IconClinicalRecord },
+      { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients },
+      { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports },
+      { label: t.notifications.title, href: ROUTES.NOTIFICATIONS, icon: IconBell },
+      { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings },
     ];
   }
   const items: NavItem[] = [
     profile,
-    { label: t.layout.sidebar.dashboard, href: ROUTES.DASHBOARD, icon: IconDashboard, accent: 'default' },
-    { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule, accent: 'teal' },
-      { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer, accent: 'warning' },
-      { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconService, accent: 'violet' },
-      { label: t.layout.sidebar.visits, href: ROUTES.VISITS, icon: IconClinicalRecord, accent: 'teal' },
-    { label: t.layout.titles.noteTemplates, href: ROUTES.NOTE_TEMPLATES, icon: IconNoteTemplate, accent: 'indigo' },
-    { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients, accent: 'success' },
-    { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner, accent: 'indigo' },
-    { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports, accent: 'orange' },
-    { label: t.emails.title, href: ROUTES.EMAILS, icon: IconMail, accent: 'pink' },
-    { label: t.notifications.title, href: ROUTES.NOTIFICATIONS, icon: IconBell, accent: 'indigo' },
-    { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings, accent: 'cyan' },
+    { label: t.layout.sidebar.dashboard, href: ROUTES.DASHBOARD, icon: IconDashboard },
+    { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule },
+    { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer },
+    { label: t.appointments.doctorTimeline, href: schedulePath('doctors'), icon: IconService },
+    { label: t.layout.sidebar.visits, href: ROUTES.VISITS, icon: IconClinicalRecord },
+    { label: t.layout.titles.noteTemplates, href: ROUTES.NOTE_TEMPLATES, icon: IconNoteTemplate },
+    { label: t.layout.sidebar.patients, href: ROUTES.PATIENTS, icon: IconPatients },
+    { label: t.layout.sidebar.practitioners, href: ROUTES.PRACTITIONERS, icon: IconPractitioner },
+    { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports },
+    { label: t.emails.title, href: ROUTES.EMAILS, icon: IconMail },
+    { label: t.notifications.title, href: ROUTES.NOTIFICATIONS, icon: IconBell },
+    { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings },
   ];
   return items.filter((item) => canSeeNavHref(item.href, role));
 }
@@ -140,7 +138,6 @@ function SideMenuLink({
   label,
   icon,
   avatar,
-  accent,
   active,
   open,
   index,
@@ -150,7 +147,6 @@ function SideMenuLink({
   label: string;
   icon?: LucideIcon;
   avatar?: { src?: string | null; seed: string };
-  accent: IconWellAccent;
   active: boolean;
   open: boolean;
   index: number;
@@ -173,7 +169,7 @@ function SideMenuLink({
         {avatar ? (
           <EntityAvatar priority src={avatar.src} seed={avatar.seed} size="lg" className="bg-transparent ring-0" />
         ) : icon ? (
-          <IconWell icon={icon} size="lg" accent={accent} />
+          <IconWell icon={icon} size="lg" accent="default" />
         ) : null}
         <span
           className={cn(
@@ -230,14 +226,13 @@ export function SidebarBlock() {
       >
         <nav className="flex-1 overflow-y-auto overscroll-y-contain px-4 pt-3">
           <div className="flex flex-col gap-2.5">
-            {navItems.map(({ label, href, icon, avatar, accent }, index) => (
+            {navItems.map(({ label, href, icon, avatar }, index) => (
               <SideMenuLink
                 key={href}
                 href={href}
                 label={label}
                 icon={icon}
                 avatar={avatar}
-                accent={accent}
                 active={isActivePath(pathname, href, scheduleView)}
                 open={mobileOpen}
                 index={index}

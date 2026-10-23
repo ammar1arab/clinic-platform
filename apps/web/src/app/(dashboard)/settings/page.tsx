@@ -16,14 +16,13 @@ export default function SettingsPage() {
   return (
     <div className="w-full min-w-0 space-y-4">
       <div className="flex flex-col gap-2.5">
-        {settingsLinks.map(({ key, href, title, description, icon: Icon, accent }) => (
+        {settingsLinks.map(({ key, href, title, description, icon: Icon }) => (
           <IconCard
             key={key}
             href={href}
             title={title}
             description={description}
             icon={Icon}
-            accent={accent}
             endContent={
               <ChevronIcon className="size-4 text-muted-foreground/70 transition-transform duration-300 group-hover:text-foreground" />
             }

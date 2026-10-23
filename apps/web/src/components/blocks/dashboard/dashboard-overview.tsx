@@ -50,23 +50,23 @@ export function DashboardOverview() {
   const action = (href: string, label: string, kind: 'add' | 'view') => (can(href) ? { href, label, kind } : undefined);
 
   const overview = [
-    { label: t.dashboard.todaysAppointments, value: kpis.data?.total ?? 0, icon: IconTodaysAppointments, accent: 'default', action: action(ROUTES.SCHEDULE_NEW, t.appointments.addAppointment, 'add') },
-    { label: t.dashboard.waiting, value: kpis.data?.waitingCount ?? 0, icon: IconTimer, accent: 'warning', action: action(schedulePath('queue'), t.common.view, 'view') },
-    { label: t.dashboard.inProgress, value: kpis.data?.inProgress ?? 0, icon: IconTime, accent: 'teal', action: action(ROUTES.VISITS, t.common.view, 'view') },
-    { label: t.dashboard.completed, value: kpis.data?.completed ?? 0, icon: IconCheckCircle, accent: 'success', action: action(ROUTES.VISITS, t.common.view, 'view') },
-    { label: t.dashboard.avgWait, value: formatWaitingMins(kpis.data?.avgWaitingMins, t), icon: IconHourglass, accent: 'error', action: action(schedulePath('queue'), t.common.view, 'view') },
-    { label: t.dashboard.rooms, value: kpis.data?.roomCount ?? 0, icon: IconRoom, accent: 'muted', action: action(createHref(ROUTES.SETTINGS_ROOMS), t.settings.addRoom, 'add') },
+    { label: t.dashboard.todaysAppointments, value: kpis.data?.total ?? 0, icon: IconTodaysAppointments, action: action(ROUTES.SCHEDULE_NEW, t.appointments.addAppointment, 'add') },
+    { label: t.dashboard.waiting, value: kpis.data?.waitingCount ?? 0, icon: IconTimer, action: action(schedulePath('queue'), t.common.view, 'view') },
+    { label: t.dashboard.inProgress, value: kpis.data?.inProgress ?? 0, icon: IconTime, action: action(ROUTES.VISITS, t.common.view, 'view') },
+    { label: t.dashboard.completed, value: kpis.data?.completed ?? 0, icon: IconCheckCircle, action: action(ROUTES.VISITS, t.common.view, 'view') },
+    { label: t.dashboard.avgWait, value: formatWaitingMins(kpis.data?.avgWaitingMins, t), icon: IconHourglass, action: action(schedulePath('queue'), t.common.view, 'view') },
+    { label: t.dashboard.rooms, value: kpis.data?.roomCount ?? 0, icon: IconRoom, action: action(createHref(ROUTES.SETTINGS_ROOMS), t.settings.addRoom, 'add') },
   ] satisfies ComponentProps<typeof KpiCardBlock>[];
 
   const shortcuts = ([
-    { href: ROUTES.PATIENTS, label: t.layout.titles.patients, query: patients, icon: IconPatients, accent: 'indigo', action: action(ROUTES.PATIENT_NEW, t.patient.addPatient, 'add') },
-    { href: ROUTES.PRACTITIONERS, label: t.layout.titles.practitioners, query: practitioners, icon: IconPractitioner, accent: 'violet', action: action(ROUTES.PRACTITIONERS_NEW, t.practitioner.addPractitioner, 'add') },
-    { href: ROUTES.SETTINGS_DEPARTMENTS, label: t.layout.titles.departments, query: departments, icon: IconDepartment, accent: 'teal', action: action(createHref(ROUTES.SETTINGS_DEPARTMENTS), t.settings.addDepartment, 'add') },
-    { href: ROUTES.SETTINGS_SERVICES, label: t.layout.titles.services, query: services, icon: IconService, accent: 'success', action: action(createHref(ROUTES.SETTINGS_SERVICES), t.settings.addService, 'add') },
-    { href: ROUTES.SETTINGS_PACKAGES, label: t.layout.titles.packages, query: packages, icon: IconPackage, accent: 'warning', action: action(createHref(ROUTES.SETTINGS_PACKAGES), t.settings.addPackage, 'add') },
-    { href: ROUTES.NOTE_TEMPLATES, label: t.layout.titles.noteTemplates, query: templates, icon: IconNoteCard, accent: 'default', action: action(ROUTES.NOTE_TEMPLATE_NEW, t.visits.newTemplate, 'add') },
+    { href: ROUTES.PATIENTS, label: t.layout.titles.patients, query: patients, icon: IconPatients, action: action(ROUTES.PATIENT_NEW, t.patient.addPatient, 'add') },
+    { href: ROUTES.PRACTITIONERS, label: t.layout.titles.practitioners, query: practitioners, icon: IconPractitioner, action: action(ROUTES.PRACTITIONERS_NEW, t.practitioner.addPractitioner, 'add') },
+    { href: ROUTES.SETTINGS_DEPARTMENTS, label: t.layout.titles.departments, query: departments, icon: IconDepartment, action: action(createHref(ROUTES.SETTINGS_DEPARTMENTS), t.settings.addDepartment, 'add') },
+    { href: ROUTES.SETTINGS_SERVICES, label: t.layout.titles.services, query: services, icon: IconService, action: action(createHref(ROUTES.SETTINGS_SERVICES), t.settings.addService, 'add') },
+    { href: ROUTES.SETTINGS_PACKAGES, label: t.layout.titles.packages, query: packages, icon: IconPackage, action: action(createHref(ROUTES.SETTINGS_PACKAGES), t.settings.addPackage, 'add') },
+    { href: ROUTES.NOTE_TEMPLATES, label: t.layout.titles.noteTemplates, query: templates, icon: IconNoteCard, action: action(ROUTES.NOTE_TEMPLATE_NEW, t.visits.newTemplate, 'add') },
   ] as const).filter((card) => can(card.href) && (card.href !== ROUTES.NOTE_TEMPLATES || user?.role === ROLE.OWNER))
-    .map(({ label, query, icon, accent, action: cardAction }) => ({ label, value: query.data?.length, icon, accent, action: cardAction, isLoading: query.isLoading }));
+    .map(({ label, query, icon, action: cardAction }) => ({ label, value: query.data?.length, icon, action: cardAction, isLoading: query.isLoading }));
 
   const retry = () => {
     void kpis.refetch();
