@@ -15,6 +15,7 @@ import {
   Pagination,
   PreviewableAvatar,
   SearchInput,
+  TableFrame,
   TableSkeleton,
   TruncatedText,
   type DirectoryColumn,
@@ -111,15 +112,19 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
   ];
 
   const body = query.isLoading ? (
-    <TableSkeleton className="page-fill" rows={10} cols={columns.length} hasHeader={false} />
+    <TableSkeleton className="page-fill min-h-0 flex-1" rows={10} cols={columns.length} hasHeader={false} />
   ) : query.isError ? (
-    <ErrorState className="page-fill" onRetry={() => void query.refetch()} />
+    <TableFrame className="page-fill min-h-0 flex-1">
+      <ErrorState className="page-fill" onRetry={() => void query.refetch()} />
+    </TableFrame>
   ) : rows.length === 0 ? (
-    <EmptyState
-      className="page-fill"
-      icon={IconCalendarClock}
-      title={view.group === 'pending' ? copy.empty : copy.emptyHistory}
-    />
+    <TableFrame className="page-fill min-h-0 flex-1">
+      <EmptyState
+        className="page-fill"
+        icon={IconCalendarClock}
+        title={view.group === 'pending' ? copy.empty : copy.emptyHistory}
+      />
+    </TableFrame>
   ) : (
     <>
       <DirectoryTable rows={rows} columns={columns} rowKey={(row) => row.id} className="hidden md:flex" tableClassName="min-w-[46rem]" />
@@ -186,4 +191,3 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
     </div>
   );
 }
-
