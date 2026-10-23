@@ -451,7 +451,6 @@ export const emailComposerSchema = emailContentSchema.extend({
   ]),
   ids: z.array(z.string().uuid()).max(500),
   search: z.string().max(100),
-  roles: z.array(z.enum(['owner', 'admin', 'practitioner', 'financial'])),
   doctorId: z.string(),
   departmentId: z.string(),
   serviceId: z.string(),

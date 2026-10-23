@@ -30,9 +30,6 @@ export function emailSelectionFor(
       ...(!everyone && values.ids.length && { ids: values.ids }),
       ...(term && { search: term }),
       ...(values.departmentId && { departmentId: values.departmentId }),
-      ...(!term &&
-        values.audience === "staff" &&
-        values.roles.length && { roles: values.roles }),
       ...(patient && {
         ...(values.doctorId && { doctorId: values.doctorId }),
         ...(values.serviceId && { serviceId: values.serviceId }),
@@ -75,7 +72,6 @@ function recipientFilters(values: EmailComposerValues) {
   return {
     audience: values.audience,
     search: values.search,
-    roles: values.roles,
     doctorId: values.doctorId,
     departmentId: values.departmentId,
     serviceId: values.serviceId,
@@ -103,7 +99,6 @@ export function useEmailComposer(
       audience: "all",
       ids: [],
       search: "",
-      roles: [],
       doctorId: "",
       departmentId: "",
       serviceId: "",

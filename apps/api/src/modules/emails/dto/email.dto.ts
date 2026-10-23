@@ -24,7 +24,7 @@ import {
   ValidateNested,
   Matches,
 } from "class-validator";
-import { AppointmentStatus, Role, EmailRecipientStatus } from "@prisma/client";
+import { AppointmentStatus, EmailRecipientStatus } from "@prisma/client";
 import {
   EMAIL_AUDIENCE,
   EMAIL_DELIVERY_GROUPS,
@@ -51,14 +51,6 @@ export class EmailFiltersDto {
   @IsString()
   @MaxLength(100)
   search?: string;
-
-  @ValidateIf((_object, value: unknown) => value !== undefined)
-  @IsArray()
-  @ArrayMinSize(1)
-  @ArrayMaxSize(4)
-  @ArrayUnique()
-  @IsEnum(Role, { each: true })
-  roles?: Role[];
 
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsUUID()

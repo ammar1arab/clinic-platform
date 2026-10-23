@@ -3,7 +3,6 @@ import type {
   EmailAudience,
   EmailDeliveryStatus,
   Locale,
-  Role,
 } from './enums';
 
 export type EmailLocale = Locale;
@@ -13,7 +12,6 @@ export interface EmailRecipientFilters {
   audience: EmailAudience | 'all';
   ids?: string[];
   search?: string;
-  roles?: Role[];
   doctorId?: string;
   departmentId?: string;
   serviceId?: string;

@@ -103,7 +103,7 @@ export class EmailAudienceRepository {
     if (!Object.values(EMAIL_AUDIENCE).includes(filters.audience)) {
       throw new BadRequestException(emailError("invalidEmailSelection"));
     }
-    const { audience, doctorId, serviceId, roles } = filters;
+    const { audience, doctorId, serviceId } = filters;
 
     if (
       filters.appointmentFrom &&
@@ -124,14 +124,7 @@ export class EmailAudienceRepository {
 
     const isPatients = audience === EMAIL_AUDIENCE.PATIENTS;
 
-    if ((!isPatients && hasAppointments) || (isPatients && roles?.length)) {
-      throw new BadRequestException(emailError("emailFiltersIncompatible"));
-    }
-
-    if (
-      audience === EMAIL_AUDIENCE.PRACTITIONERS &&
-      roles?.some((role) => role !== Role.practitioner)
-    ) {
+    if (!isPatients && hasAppointments) {
       throw new BadRequestException(emailError("emailFiltersIncompatible"));
     }
 
@@ -150,7 +143,6 @@ export class EmailAudienceRepository {
   ): Promise<EmailRecipientPreview[]> {
     if (
       filters.ids?.length ||
-      filters.roles?.length ||
       filters.doctorId ||
       filters.serviceId ||
       filters.appointmentStatuses?.length ||
@@ -161,7 +153,7 @@ export class EmailAudienceRepository {
       throw new BadRequestException(emailError("emailFiltersIncompatible"));
     }
     await this.validateReferences(clinicId, filters);
-    const shared = { ...filters, ids: undefined, roles: undefined };
+    const shared = { ...filters, ids: undefined };
     const [patients, staff] = await Promise.all([
       this.findPatients(
         clinicId,
@@ -264,7 +256,7 @@ export class EmailAudienceRepository {
     clinicId: string,
     filters: EmailFiltersDto,
   ): Promise<EmailRecipientPreview[]> {
-    const { audience, ids, search, departmentId, roles } = filters;
+    const { audience, ids, search, departmentId } = filters;
 
     const staff = await this.prisma.clinicUser.findMany({
       where: {
@@ -279,7 +271,7 @@ export class EmailAudienceRepository {
               ? { role: Role.owner }
               : audience === EMAIL_AUDIENCE.ADMINS
                 ? { role: Role.admin }
-                : roles && { role: { in: roles } }),
+                : {}),
         ...(departmentId && { departmentId }),
         ...(search && {
           OR: [

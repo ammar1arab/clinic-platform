@@ -15,7 +15,7 @@ import {
   DatePicker,
   ErrorState,
   FormField,
-  ChoiceField,
+  MultiSelect,
   OptionList,
   SearchablePicker,
   SearchInput,
@@ -70,7 +70,6 @@ export function EmailRecipientFields({
     Boolean(watched.departmentId),
     isPatients && Boolean(watched.doctorId),
     isPatients && Boolean(watched.serviceId),
-    audience === AUDIENCE.STAFF && watched.roles.length > 0,
     isPatients && watched.appointmentStatuses.length > 0,
     isPatients && Boolean(watched.appointmentFrom),
     isPatients && Boolean(watched.appointmentTo),
@@ -80,7 +79,6 @@ export function EmailRecipientFields({
     setValue("departmentId", "");
     setValue("doctorId", "");
     setValue("serviceId", "");
-    setValue("roles", []);
     setValue("appointmentStatuses", []);
     setValue("appointmentFrom", "");
     setValue("appointmentTo", "");
@@ -208,25 +206,6 @@ export function EmailRecipientFields({
                   />
                 </FormField>
               ))}
-              {audience === AUDIENCE.STAFF && (
-                <FormField label={t.emails.roles}>
-                  <Controller
-                    control={control}
-                    name="roles"
-                    render={({ field }) => (
-                      <ChoiceField
-                        multiple
-                        label={t.emails.roles}
-                        value={field.value}
-                        onChange={field.onChange}
-                        options={Object.entries(t.emails.roleLabels).map(
-                          ([value, label]) => ({ value, label }),
-                        )}
-                      />
-                    )}
-                  />
-                </FormField>
-              )}
               {audience === AUDIENCE.PATIENTS && (
                 <>
                   <FormField label={t.emails.appointmentStatuses}>
@@ -234,15 +213,15 @@ export function EmailRecipientFields({
                       control={control}
                       name="appointmentStatuses"
                       render={({ field }) => (
-                        <ChoiceField
-                          multiple
-                          label={t.emails.appointmentStatuses}
+                        <MultiSelect
                           value={field.value}
                           onChange={field.onChange}
+                          placeholder={t.common.all}
                           options={STATUS_OPTIONS.map((status) => ({
                             value: status,
                             label: statuses[status].label,
                           }))}
+                          className="w-full"
                         />
                       )}
                     />
