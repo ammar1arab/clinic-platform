@@ -1375,7 +1375,7 @@ export const ar: Translations = {
     reportAmended: "عُدّل التقرير",
     downloadPdf: "تنزيل PDF",
     signedImmutable: "تبقى النسخة المعتمدة كما أُصدرت. التعديل إصدار جديد.",
-    invoiceReadOnly: "يمكنك مراجعة الفاتورة. السعر والدفع عند العيادة.",
+    invoiceReadOnly: "السعر والدفع عند العيادة.",
     invoiceWaiting: "تُحضَّر الفاتورة بعد انتهاء الزيارة.",
     flagDiscrepancy: "ملاحظة على الفاتورة",
     feedbackSent: "أُرسلت الملاحظة",

@@ -8,14 +8,15 @@ import { IconPayment } from '@/constants/icons';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { usePaymentMethods } from '@/hooks/api/use-payment-methods';
 import { useCorrectInvoice, useDownloadVisitPdf, useInvoiceFeedback, useIssueInvoice, useRecordPayment, useReleaseDocument, useResolveInvoiceFeedback, useReversePayment, useSaveInvoice, useVoidInvoice } from '@/hooks/api/use-visits';
+import { formatDateTime } from '@/lib/datetime';
 import { formatClinicAmount } from '@/lib/package-balance';
 import { useLanguage } from '@/providers';
 
 export function InvoiceReview({ appointmentId, workspace }: { appointmentId: string; workspace: VisitWorkspace }) {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const clinicId = useClinicId();
   const invoice = workspace.invoice;
-  const methods = usePaymentMethods(clinicId, workspace.allowedActions.recordPayment);
+  const methods = usePaymentMethods(clinicId, workspace.allowedActions.recordPayment || (invoice?.payments.length ?? 0) > 0);
   const save = useSaveInvoice(appointmentId);
   const issue = useIssueInvoice(appointmentId);
   const feedback = useInvoiceFeedback(appointmentId);
@@ -54,38 +55,80 @@ export function InvoiceReview({ appointmentId, workspace }: { appointmentId: str
 
   const editable = workspace.allowedActions.reviewInvoice || workspace.allowedActions.correctInvoice;
   const readOnly = !editable;
+  const money = (value: string) => formatClinicAmount(value, invoice.currency);
+  const isZero = (value: string) => Number(value) === 0;
+  const methodName = (id: string | null) => methods.data?.find((method) => method.id === id)?.name ?? null;
+  // Adjustments show only when they carry a value; the statement never repeats a figure.
+  const statement = [
+    { label: t.visits.subtotal, value: invoice.subtotal },
+    { label: t.visits.discount, value: invoice.discount, optional: true },
+    { label: t.visits.tax, value: invoice.tax, optional: true },
+    { label: t.visits.packageCoverage, value: invoice.packageCoverage, optional: true },
+    { label: t.visits.prepayment, value: invoice.prepayment, optional: true },
+  ].filter((row) => !row.optional || !isZero(row.value));
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={invoice.status === INVOICE_STATUS.ISSUED ? 'success' : 'warning'}>{t.visits.invoiceStatuses[invoice.status]}</Badge>
-        <Badge variant="muted">{t.visits.paymentStatuses[invoice.paymentStatus]}</Badge>
-        {invoice.number ? <span className="text-sm text-muted-foreground">{invoice.number}</span> : null}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="min-w-0 text-sm text-muted-foreground">
+          {[invoice.number, invoice.issuedAt ? formatDateTime(invoice.issuedAt, undefined, lang) : null].filter(Boolean).join(' · ')}
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          <Badge variant={invoice.status === INVOICE_STATUS.ISSUED ? 'success' : 'warning'}>{t.visits.invoiceStatuses[invoice.status]}</Badge>
+          <Badge variant="muted">{t.visits.paymentStatuses[invoice.paymentStatus]}</Badge>
+        </div>
       </div>
-      {readOnly ? <p className="text-sm text-muted-foreground">{t.visits.invoiceReadOnly}</p> : null}
-      <div className="space-y-3">
-        {lines.map((line, index) => (
-          <div key={line.id} className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-[1fr_6rem_8rem]">
-            <Input disabled={!editable} value={line.description} aria-label={t.visits.lineDescription} onChange={(event) => setLines(lines.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item))} />
-            <Input disabled={!editable} value={line.quantity} inputMode="decimal" aria-label={t.visits.quantity} onChange={(event) => setLines(lines.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: event.target.value } : item))} />
-            <Input disabled={!editable} value={line.unitPrice} inputMode="decimal" aria-label={t.visits.unitPrice} onChange={(event) => setLines(lines.map((item, itemIndex) => itemIndex === index ? { ...item, unitPrice: event.target.value } : item))} />
+      {readOnly ? <p className="truncate text-sm text-muted-foreground">{t.visits.invoiceReadOnly}</p> : null}
+
+      {editable ? (
+        <div className="space-y-3">
+          {lines.map((line, index) => (
+            <div key={line.id} className="grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-[1fr_6rem_8rem]">
+              <Input value={line.description} aria-label={t.visits.lineDescription} onChange={(event) => setLines(lines.map((item, itemIndex) => itemIndex === index ? { ...item, description: event.target.value } : item))} />
+              <Input value={line.quantity} inputMode="decimal" aria-label={t.visits.quantity} onChange={(event) => setLines(lines.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: event.target.value } : item))} />
+              <Input value={line.unitPrice} inputMode="decimal" aria-label={t.visits.unitPrice} onChange={(event) => setLines(lines.map((item, itemIndex) => itemIndex === index ? { ...item, unitPrice: event.target.value } : item))} />
+            </div>
+          ))}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <FormField label={t.visits.discount} htmlFor="invoice-discount"><Input id="invoice-discount" value={discount} inputMode="decimal" onChange={(event) => setDiscount(event.target.value)} /></FormField>
+            <FormField label={t.visits.tax} htmlFor="invoice-tax"><Input id="invoice-tax" value={tax} inputMode="decimal" onChange={(event) => setTax(event.target.value)} /></FormField>
+          </div>
+        </div>
+      ) : (
+        <ul className="divide-y rounded-xl border text-sm">
+          {invoice.lineItems.map((line) => (
+            <li key={line.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
+              <div className="min-w-0">
+                <p className="truncate font-medium">{line.description}</p>
+                <p className="text-xs tabular-nums text-muted-foreground">{line.quantity} × {money(line.unitPrice)}</p>
+              </div>
+              <span className="shrink-0 tabular-nums">{money(line.total)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <dl className="divide-y rounded-xl border text-sm tabular-nums">
+        {statement.map((row) => (
+          <div key={row.label} className="flex items-center justify-between gap-3 px-3 py-2">
+            <dt className="text-muted-foreground">{row.label}</dt>
+            <dd>{money(row.value)}</dd>
           </div>
         ))}
-      </div>
-      {editable ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <FormField label={t.visits.discount} htmlFor="invoice-discount"><Input id="invoice-discount" value={discount} inputMode="decimal" onChange={(event) => setDiscount(event.target.value)} /></FormField>
-          <FormField label={t.visits.tax} htmlFor="invoice-tax"><Input id="invoice-tax" value={tax} inputMode="decimal" onChange={(event) => setTax(event.target.value)} /></FormField>
+        <div className="flex items-center justify-between gap-3 px-3 py-2 font-semibold">
+          <dt>{t.visits.total}</dt>
+          <dd>{money(invoice.total)}</dd>
         </div>
-      ) : null}
-      <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
-        <div><dt className="text-muted-foreground">{t.visits.subtotal}</dt><dd>{formatClinicAmount(invoice.subtotal, invoice.currency)}</dd></div>
-        <div><dt className="text-muted-foreground">{t.visits.packageCoverage}</dt><dd>{formatClinicAmount(invoice.packageCoverage, invoice.currency)}</dd></div>
-        <div><dt className="text-muted-foreground">{t.visits.prepayment}</dt><dd>{formatClinicAmount(invoice.prepayment, invoice.currency)}</dd></div>
-        <div><dt className="text-muted-foreground">{t.visits.total}</dt><dd className="font-semibold">{formatClinicAmount(invoice.total, invoice.currency)}</dd></div>
-        <div><dt className="text-muted-foreground">{t.visits.paid}</dt><dd>{formatClinicAmount(invoice.paid, invoice.currency)}</dd></div>
-        <div><dt className="text-muted-foreground">{t.visits.balance}</dt><dd>{formatClinicAmount(invoice.balance, invoice.currency)}</dd></div>
+        <div className="flex items-center justify-between gap-3 px-3 py-2">
+          <dt className="text-muted-foreground">{t.visits.paid}</dt>
+          <dd>{money(invoice.paid)}</dd>
+        </div>
+        <div className="flex items-center justify-between gap-3 px-3 py-2 font-semibold">
+          <dt>{t.visits.balance}</dt>
+          <dd>{money(invoice.balance)}</dd>
+        </div>
       </dl>
+
       <div className="flex flex-wrap gap-2">
         {editable && workspace.visitId ? (
           <Button type="button" variant="outline" disabled={save.isPending} onClick={() => save.mutate({ visitId: workspace.visitId!, body: { lineItems: lines, discount, tax, revision: invoice.revision } })}>{t.common.save}</Button>
@@ -109,10 +152,31 @@ export function InvoiceReview({ appointmentId, workspace }: { appointmentId: str
           <Button type="button" variant="outline" disabled={download.isPending} onClick={() => download.mutate({ kind: 'invoice', visitId: workspace.visitId! })}>{t.visits.downloadPdf}</Button>
         ) : null}
       </div>
+
+      {invoice.payments.length > 0 ? (
+        <ul className="divide-y rounded-xl border text-sm">
+          {invoice.payments.map((item) => {
+            const reversed = item.amount.startsWith('-');
+            const details = [formatDateTime(item.createdAt, undefined, lang), methodName(item.methodId), item.reference, item.reason]
+              .filter(Boolean)
+              .join(' · ');
+            return (
+              <li key={item.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                <div className="min-w-0">
+                  <p className="tabular-nums">{money(item.amount)}</p>
+                  <p className="truncate text-xs text-muted-foreground">{details}</p>
+                </div>
+                {workspace.allowedActions.reversePayment && !reversed ? <Button type="button" size="sm" variant="ghost" onClick={() => setReverseId(item.id)}>{t.visits.reverse}</Button> : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
       {invoice.versions.length > 0 ? (
-        <ul className="space-y-2 text-sm">
+        <ul className="divide-y rounded-xl border text-sm">
           {invoice.versions.map((version) => (
-            <li key={version.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
+            <li key={version.id} className="flex items-center justify-between gap-3 px-3 py-2">
               <span>{t.visits.version} {version.revision}</span>
               <span className="flex gap-2">
                 <Button type="button" size="sm" variant="ghost" onClick={() => workspace.visitId && download.mutate({ kind: 'invoice', visitId: workspace.visitId, revision: version.revision })}>{t.visits.downloadPdf}</Button>
@@ -124,11 +188,12 @@ export function InvoiceReview({ appointmentId, workspace }: { appointmentId: str
           ))}
         </ul>
       ) : null}
+
       {invoice.feedback.length > 0 ? (
-        <ul className="space-y-2 text-sm">
+        <ul className="divide-y rounded-xl border text-sm">
           {invoice.feedback.map((item) => (
-            <li key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
-              <span>{item.message}</span>
+            <li key={item.id} className="flex items-center justify-between gap-3 px-3 py-2">
+              <span className="min-w-0">{item.message}</span>
               {workspace.allowedActions.resolveInvoiceFeedback && !item.resolvedAt && workspace.visitId ? (
                 <Button type="button" size="sm" variant="ghost" onClick={() => setResolveId(item.id)}>{t.visits.resolveFeedback}</Button>
               ) : null}
@@ -136,16 +201,7 @@ export function InvoiceReview({ appointmentId, workspace }: { appointmentId: str
           ))}
         </ul>
       ) : null}
-      {invoice.payments.length > 0 ? (
-        <ul className="space-y-2 text-sm">
-          {invoice.payments.map((item) => (
-            <li key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2">
-              <span>{formatClinicAmount(item.amount, invoice.currency)}</span>
-              {workspace.allowedActions.reversePayment && item.amount.startsWith('-') === false ? <Button type="button" size="sm" variant="ghost" onClick={() => setReverseId(item.id)}>{t.visits.reverse}</Button> : null}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+
       <ReasonDialog open={feedbackOpen} title={t.visits.flagDiscrepancy} pending={feedback.isPending} onOpenChange={setFeedbackOpen} onSubmit={(message) => workspace.visitId && feedback.mutate({ visitId: workspace.visitId, message }, { onSuccess: () => setFeedbackOpen(false) })} />
       <ReasonDialog open={!!resolveId} title={t.visits.resolveFeedback} pending={resolve.isPending} onOpenChange={(open) => { if (!open) setResolveId(null); }} onSubmit={(reason) => workspace.visitId && resolveId && resolve.mutate({ visitId: workspace.visitId, feedbackId: resolveId, reason }, { onSuccess: () => setResolveId(null) })} />
       <ReasonDialog open={correctOpen} title={t.visits.correctInvoice} pending={correct.isPending} onOpenChange={setCorrectOpen} onSubmit={(reason) => workspace.visitId && correct.mutate({ visitId: workspace.visitId, body: { lineItems: lines, discount, tax, revision: invoice.revision, reason } }, { onSuccess: () => setCorrectOpen(false) })} />

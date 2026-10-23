@@ -1386,7 +1386,7 @@ export const en = {
     reportAmended: "Report amended",
     downloadPdf: "Download PDF",
     signedImmutable: "This signed copy stays as issued. An amendment is a new version.",
-    invoiceReadOnly: "You can review this invoice. Price and payment stay with the clinic.",
+    invoiceReadOnly: "Price and payment stay with the clinic.",
     invoiceWaiting: "The invoice is prepared after the visit ends.",
     flagDiscrepancy: "Flag discrepancy",
     feedbackSent: "Discrepancy sent",
