@@ -47,7 +47,7 @@ export function Pagination({
   return (
     <nav
       aria-label={`${t.common.showing} (${page}/${pageCount})`}
-      className="flex w-full shrink-0 items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/90 px-3.5 py-2 shadow-xs backdrop-blur-xs"
+      className="sticky bottom-0 z-20 mt-auto flex w-full shrink-0 items-center justify-between gap-3 rounded-xl border border-border/70 bg-card/95 px-3.5 py-2 shadow-xs backdrop-blur-xs"
     >
       <p className="min-w-0 truncate text-xs text-muted-foreground">
         <span className="hidden sm:inline">{t.common.showing} </span>

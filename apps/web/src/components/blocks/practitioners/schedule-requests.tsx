@@ -112,15 +112,15 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
   ];
 
   const body = query.isLoading ? (
-    <TableSkeleton className="page-fill min-h-0 flex-1" rows={10} cols={columns.length} hasHeader={false} />
+    <TableSkeleton className="page-fill-always" rows={10} cols={columns.length} hasHeader={false} />
   ) : query.isError ? (
-    <TableFrame className="page-fill min-h-0 flex-1">
-      <ErrorState className="page-fill" onRetry={() => void query.refetch()} />
+    <TableFrame className="page-fill-always">
+      <ErrorState className="page-fill-always" onRetry={() => void query.refetch()} />
     </TableFrame>
   ) : rows.length === 0 ? (
-    <TableFrame className="page-fill min-h-0 flex-1">
+    <TableFrame className="page-fill-always">
       <EmptyState
-        className="page-fill"
+        className="page-fill-always"
         icon={IconCalendarClock}
         title={view.group === 'pending' ? copy.empty : copy.emptyHistory}
       />
@@ -128,7 +128,7 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
   ) : (
     <>
       <DirectoryTable rows={rows} columns={columns} rowKey={(row) => row.id} className="hidden md:flex" tableClassName="min-w-[46rem]" />
-      <div className="page-fill overflow-y-auto overscroll-y-contain md:hidden">
+      <div className="page-fill-always overflow-y-auto overscroll-y-contain md:hidden">
         <div className="grid grid-cols-1 gap-3">
           {rows.map((row) => (
             <EntityMobileCard
@@ -147,7 +147,7 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
   );
 
   return (
-    <div className="page-fill min-h-0 gap-2.5">
+    <div className="page-fill-always min-h-0 gap-2.5">
       <SettingsPageBack
         search={<SearchInput value={search} onChange={setSearch} placeholder={copy.search} />}
         actions={

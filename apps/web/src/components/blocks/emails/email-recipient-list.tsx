@@ -254,15 +254,13 @@ export function EmailRecipientList({
       </div>
 
       {pageCount > 1 && (
-        <div className="sticky bottom-0 z-20 bg-background lg:static lg:shrink-0">
-          <Pagination
-            page={currentPage}
-            totalItems={visible.length}
-            pageSize={PAGE_SIZE}
-            resetScroll={false}
-            onPageChange={setPage}
-          />
-        </div>
+        <Pagination
+          page={currentPage}
+          totalItems={visible.length}
+          pageSize={PAGE_SIZE}
+          resetScroll={false}
+          onPageChange={setPage}
+        />
       )}
     </div>
   );
