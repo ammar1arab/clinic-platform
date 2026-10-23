@@ -7,6 +7,7 @@ import { APPOINTMENT_STATUS } from '@clinic/types';
 import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@/components/ui';
 import { CountBadge, EmptyState, EntityAvatar, ErrorState, IconWell, LiveClock, PreviewableAvatar } from '@/components/primitives';
 import { StatusBadgeBlock } from '@/components/blocks/appointments/shared/status-badge';
+import { KpiCardBlock } from './kpi-card';
 import { useAppointments } from '@/hooks/api/use-appointments';
 import { useClinicRealtime } from '@/hooks/api/use-clinic-realtime';
 import { usePractitioner } from '@/hooks/api/use-practitioners';
@@ -19,8 +20,10 @@ import { schedulePath } from '@/components/blocks/appointments/schedule/schedule
 import {
   IconHeart,
   IconCalendarClock,
+  IconCheckCircle,
   IconTime,
   IconTimer,
+  IconTodaysAppointments,
 } from '@/constants/icons';
 
 const WELCOME_PULSE = 'M0 20h110l10-4 12 10 16-23 17 31 13-14h182';
@@ -52,6 +55,17 @@ export function PractitionerHome() {
     item.status !== APPOINTMENT_STATUS.COMPLETED,
   ).slice(0, 3);
 
+  const waiting = ordered.filter((item) =>
+    item.status === APPOINTMENT_STATUS.WAITING || item.status === APPOINTMENT_STATUS.CHECKED_IN,
+  ).length;
+  const completed = ordered.filter((item) => item.status === APPOINTMENT_STATUS.COMPLETED).length;
+  const nextVisit = ordered.find((item) =>
+    new Date(item.scheduledAt).getTime() >= today.getTime() &&
+    item.status !== APPOINTMENT_STATUS.COMPLETED &&
+    item.status !== APPOINTMENT_STATUS.CANCELLED &&
+    item.status !== APPOINTMENT_STATUS.NO_SHOW,
+  );
+
   if ((appointments.isError && !appointments.data) || (profile.isError && !profile.data)) {
     return <ErrorState onRetry={() => { void appointments.refetch(); void profile.refetch(); }} className="page-fill" />;
   }
@@ -79,7 +93,7 @@ export function PractitionerHome() {
   ].filter((fact) => fact.value);
 
   return (
-    <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-4 sm:gap-5">
+    <div className="fade-in flex min-h-full w-full min-w-0 shrink-0 flex-col gap-4 motion-reduce:animate-none sm:gap-5">
       <Card className="card-aura relative isolate shrink-0 gap-0 overflow-hidden py-0 ring-0">
         <CardContent className="relative z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 pb-14 pt-4 sm:gap-4 sm:p-4 sm:pb-14 sm:pt-5 lg:pb-5 lg:pe-[min(30%,24rem)]">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
@@ -108,6 +122,13 @@ export function PractitionerHome() {
           </dl>
         </CardContent>
       </Card>
+
+      <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
+        <KpiCardBlock label={t.dashboard.todaysAppointments} value={ordered.length} icon={IconTodaysAppointments} accent="default" />
+        <KpiCardBlock label={t.dashboard.waiting} value={waiting} icon={IconTimer} accent="warning" />
+        <KpiCardBlock label={t.dashboard.completed} value={completed} icon={IconCheckCircle} accent="success" />
+        <KpiCardBlock label={t.queue.upcomingToday} value={nextVisit ? formatTime(nextVisit.scheduledAt, undefined, lang) : 0} icon={IconTime} accent="teal" />
+      </div>
 
       <div className="grid min-w-0 flex-1 items-stretch gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)]">
         <HomeListCard
@@ -200,8 +221,9 @@ function HomeListCard({
 }
 
 function PractitionerHomeSkeleton() {
+  const { t } = useLanguage();
   return (
-    <div className="flex min-h-full w-full min-w-0 shrink-0 flex-col gap-4 sm:gap-5" aria-hidden>
+    <div className="fade-in flex min-h-full w-full min-w-0 shrink-0 flex-col gap-4 motion-reduce:animate-none sm:gap-5" aria-hidden>
       <Card className="card-aura relative isolate shrink-0 gap-0 overflow-hidden py-0 ring-0">
         <CardContent className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 p-3 pb-14 pt-4 sm:gap-4 sm:p-4 sm:pb-14 sm:pt-5 lg:pb-5 lg:pe-[min(30%,24rem)]">
           <Skeleton className="size-12 shrink-0 rounded-full ring-2 ring-primary/15 sm:size-20" />
@@ -216,30 +238,59 @@ function PractitionerHomeSkeleton() {
         </CardContent>
       </Card>
 
+      <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
+        <KpiCardBlock label={t.dashboard.todaysAppointments} value={undefined} isLoading icon={IconTodaysAppointments} accent="default" />
+        <KpiCardBlock label={t.dashboard.waiting} value={undefined} isLoading icon={IconTimer} accent="warning" />
+        <KpiCardBlock label={t.dashboard.completed} value={undefined} isLoading icon={IconCheckCircle} accent="success" />
+        <KpiCardBlock label={t.queue.upcomingToday} value={undefined} isLoading icon={IconTime} accent="teal" />
+      </div>
+
       <div className="grid min-w-0 flex-1 items-stretch gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)]">
-        {[0, 1].map((card) => (
-          <Card key={card} className={HOME_CARD_CLASS}>
-            <div className={HOME_CARD_HEADER}>
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-5 min-w-5 w-6 rounded-full" />
-            </div>
-            <div className={HOME_CARD_BODY}>
-              <div className="space-y-2">
-                {[0, 1, 2].map((row) => (
-                  <div key={row} className={HOME_ROW_CLASS}>
-                    <Skeleton className={card === 0 ? 'h-9 w-14 shrink-0 rounded-lg' : 'size-9 shrink-0 rounded-full'} />
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <Skeleton className="h-4 w-28 max-w-full" />
-                      <Skeleton className="h-3 w-36 max-w-full" />
-                    </div>
-                    {card === 0 ? <Skeleton className="h-6 w-16 rounded-full" /> : <Skeleton className="h-6 w-14 rounded-md" />}
-                  </div>
-                ))}
+        <HomeListCard
+          title={t.dashboard.todaySchedule}
+          count={<Skeleton className="h-5 min-w-5 w-6 rounded-full" />}
+          footer={
+            <Button asChild variant="outline" className="w-full gap-2">
+              <Link href={schedulePath('month')}><IconCalendarClock className="size-4" />{t.appointments.calendar}</Link>
+            </Button>
+          }
+        >
+          <div className="space-y-2">
+            {[0, 1, 2].map((row) => (
+              <div key={row} className={`${HOME_ROW_CLASS} items-center`}>
+                <Skeleton className="h-9 w-14 shrink-0 rounded-lg" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-4 w-28 max-w-full" />
+                  <Skeleton className="h-3 w-36 max-w-full" />
+                </div>
+                <Skeleton className="h-6 w-16 rounded-full" />
               </div>
-              <div className={HOME_CARD_FOOTER}><Skeleton className="h-9 w-full rounded-md" /></div>
-            </div>
-          </Card>
-        ))}
+            ))}
+          </div>
+        </HomeListCard>
+
+        <HomeListCard
+          title={t.dashboard.nextVisits}
+          count={<Skeleton className="h-5 min-w-5 w-6 rounded-full" />}
+          footer={
+            <Button asChild variant="outline" className="w-full gap-2">
+              <Link href={ROUTES.HOME_QUEUE}><IconTimer className="size-4" />{t.queue.waitingQueue}</Link>
+            </Button>
+          }
+        >
+          <div className="space-y-2">
+            {[0, 1, 2].map((row) => (
+              <div key={row} className={HOME_ROW_CLASS}>
+                <Skeleton className="size-9 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-4 w-28 max-w-full" />
+                  <Skeleton className="h-3 w-36 max-w-full" />
+                </div>
+                <Skeleton className="h-6 w-14 rounded-md" />
+              </div>
+            ))}
+          </div>
+        </HomeListCard>
       </div>
     </div>
   );
