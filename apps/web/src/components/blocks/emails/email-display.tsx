@@ -153,6 +153,9 @@ export function EmailPreviewSkeleton({ className }: { className?: string }) {
   );
 }
 
+export const EMAIL_PANE_HEIGHT =
+  "h-[calc(100dvh-var(--app-header-height)-2*var(--app-main-pad-y)-3.5rem)] lg:h-[calc(100cqh-4px)]";
+
 export function EmailPreviewPane({
   preview,
   empty = false,
@@ -174,7 +177,7 @@ export function EmailPreviewPane({
   return (
     <div
       data-email-preview
-      className="flex h-[calc(100dvh-var(--app-header-height)-2*var(--app-main-pad-y)-3.5rem)] min-h-0 min-w-0 flex-col lg:h-[calc(100cqh-4px)]"
+      className={cn("flex min-h-0 min-w-0 flex-col", EMAIL_PANE_HEIGHT)}
       dir={dir}
     >
       {empty ? (

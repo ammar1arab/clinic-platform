@@ -19,7 +19,11 @@ import {
   SelectionToggle,
   SoftTip,
 } from "@/components/primitives";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui";
+import { FormActions } from "@/components/primitives";
 import { useLanguage } from "@/providers";
+import { EMAIL_PANE_HEIGHT } from "./email-display";
+import { cn } from "@/lib/utils";
 import { getBilingualName } from "@/i18n";
 import { IconClose, IconDelete, IconMail } from "@/constants/icons";
 
@@ -41,6 +45,7 @@ export function EmailRecipientList({
   const { t, lang } = useLanguage();
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const visible = onExclude
     ? recipients.filter((row) => !excluded.includes(row.email))
     : recipients;
@@ -167,8 +172,8 @@ export function EmailRecipientList({
 
   if (!recipients.length || !visible.length) {
     return (
-      <Card>
-        <CardContent>
+      <Card className={cn("flex flex-col", EMAIL_PANE_HEIGHT)}>
+        <CardContent className="flex flex-1 items-center justify-center">
           <EmptyState icon={IconMail} title={t.emails.noRecipients} size="compact" />
         </CardContent>
       </Card>
@@ -179,40 +184,23 @@ export function EmailRecipientList({
     <div className="@container space-y-2 lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:space-y-0 lg:gap-2">
       {onExcludeMany && (
         <div
-          className={`flex shrink-0 items-center justify-between gap-2 ${chosen.length ? "" : "@[40rem]:hidden"}`}
+          className={`flex shrink-0 items-center justify-between gap-2 px-3 ${chosen.length ? "" : "@[40rem]:hidden"}`}
         >
           <div className="@[40rem]:hidden">{selectAll}</div>
           {chosen.length > 0 && (
-            <div className="ms-auto flex items-center gap-2">
-              <SoftTip label={t.common.clearSelection}>
-                <Button
-                  type="button"
-                  aria-label={t.common.clearSelection}
-                  size="icon"
-                  variant="ghost"
-                  disabled={disabled}
-                  onClick={() => setSelected(new Set())}
-                >
-                  <IconClose className="size-4" />
-                </Button>
-              </SoftTip>
-              <SoftTip label={`${t.common.remove} (${chosen.length})`}>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  aria-label={`${t.common.remove} (${chosen.length})`}
-                  className="text-destructive hover:text-destructive"
-                  disabled={disabled}
-                  onClick={() => {
-                    onExcludeMany(chosen.map((row) => row.email));
-                    setSelected(new Set());
-                  }}
-                >
-                  <IconDelete className="size-4" />
-                </Button>
-              </SoftTip>
-            </div>
+            <SoftTip label={`${t.common.remove} (${chosen.length})`}>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                aria-label={`${t.common.remove} (${chosen.length})`}
+                className="ms-auto text-destructive hover:text-destructive"
+                disabled={disabled}
+                onClick={() => setConfirmRemove(true)}
+              >
+                <IconDelete className="size-4" />
+              </Button>
+            </SoftTip>
           )}
         </div>
       )}
@@ -252,6 +240,32 @@ export function EmailRecipientList({
         />
 
       </div>
+
+      {onExcludeMany && (
+        <Dialog open={confirmRemove} onOpenChange={setConfirmRemove}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t.emails.removeRecipientsTitle}</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              {t.emails.removeRecipientsDesc.replace("{count}", String(chosen.length))}
+            </p>
+            <DialogFooter>
+              <FormActions
+                variant="dialog"
+                disabled={disabled}
+                submitLabel={t.common.remove}
+                onCancel={() => setConfirmRemove(false)}
+                onSubmitClick={() => {
+                  onExcludeMany(chosen.map((row) => row.email));
+                  setSelected(new Set());
+                  setConfirmRemove(false);
+                }}
+              />
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {pageCount > 1 && (
         <Pagination

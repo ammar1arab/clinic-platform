@@ -94,6 +94,8 @@ export const en = {
   "confirmHint": "After submission, the email is queued for delivery. This action cannot be recalled.",
   "queuedSuccess": "Email queued. Check delivery status in history.",
   "noRecipients": "No deliverable recipients match. Change the filters or exclusions.",
+  "removeRecipientsTitle": "Remove recipients?",
+  "removeRecipientsDesc": "The {count} selected recipients will be removed from this email.",
   "reviewChanged": "The draft changed. Review it again before sending.",
   "include": "Include",
   "exclude": "Exclude",

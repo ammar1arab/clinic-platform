@@ -373,10 +373,13 @@ export function EmailHistory() {
                       prefetch(ROUTES.EMAIL_DETAIL(message.id))
                     }
                     onClick={() => go(ROUTES.EMAIL_DETAIL(message.id))}
-                    tags={
-                      message.isTest ? (
-                        <Badge variant="outline">{t.emails.test}</Badge>
-                      ) : undefined
+                    actions={
+                      <div className="flex max-w-[55%] flex-wrap justify-end gap-1.5">
+                        {message.isTest ? (
+                          <Badge variant="outline">{t.emails.test}</Badge>
+                        ) : null}
+                        <EmailDeliveryCounts counts={message.counts} />
+                      </div>
                     }
                     meta={
                       <DirectoryMeta
@@ -385,7 +388,6 @@ export function EmailHistory() {
                         ids={["audience", "recipients", "created", "sender"]}
                       />
                     }
-                    footer={<EmailDeliveryCounts counts={message.counts} />}
                   />
                 ))}
               </div>

@@ -95,6 +95,8 @@ export const ar: Translations = {
   "confirmHint": "بعد الإرسال، يُدرج البريد في قائمة الانتظار للتسليم. لا يمكن التراجع عن هذا الإجراء.",
   "queuedSuccess": "أُرسل البريد.",
   "noRecipients": "لا يوجد مستلمون. غيّر البحث أو الفلاتر.",
+  "removeRecipientsTitle": "إزالة المستلمين؟",
+  "removeRecipientsDesc": "سيتم إزالة {count} من المستلمين المحددين من هذا البريد.",
   "reviewChanged": "تغيّر البريد. راجعه مرة أخرى.",
   "include": "إرسال",
   "exclude": "استبعاد",
