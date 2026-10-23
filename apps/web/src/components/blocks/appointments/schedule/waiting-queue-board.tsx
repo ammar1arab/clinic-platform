@@ -90,6 +90,7 @@ export function WaitingQueueBoard({
   const { t, lang } = useLanguage();
   const router = useRouter();
   const [stageTab, setStageTab] = useState<QueueStage>(QUEUE_STAGE.ALL);
+  const single = stageTab !== QUEUE_STAGE.ALL;
   const [appointmentPopover, setAppointmentPopover] =
     useState<AppointmentPopoverState | null>(null);
   const now = useNow(10_000);
@@ -261,8 +262,9 @@ export function WaitingQueueBoard({
       data-schedule-host=""
       aria-busy={loading || undefined}
       className={cn(
-        'relative page-fill flex-1 min-h-0 overflow-hidden border bg-card shadow-xs',
-        focused ? 'rounded-none border-0' : 'card-aura rounded-xl sm:rounded-2xl',
+        'relative page-fill-always overflow-hidden',
+        single ? 'bg-card' : 'border bg-card shadow-xs',
+        !single && (focused ? 'rounded-none border-0' : 'card-aura rounded-xl sm:rounded-2xl'),
       )}
     >
       {slot ? createPortal(
@@ -280,18 +282,19 @@ export function WaitingQueueBoard({
       ) : null}
       <div
         className={cn(
-          'grid min-h-0 flex-1 grid-cols-1 gap-2.5 overflow-y-auto overscroll-y-contain p-2.5',
+          'grid min-h-0 flex-1 grid-cols-1 overflow-y-auto overscroll-y-contain',
+          single
+            ? 'grid-rows-[minmax(0,1fr)] gap-0 p-0 lg:grid-cols-1 lg:overflow-hidden'
+            : cn(
+                'gap-2.5 p-2.5 lg:grid-flow-col lg:auto-cols-[minmax(14rem,1fr)] lg:overflow-x-auto lg:overflow-y-hidden lg:grid-rows-[minmax(0,1fr)] lg:items-stretch',
+                focused ? 'px-0 pb-2 pt-0 sm:gap-2 md:gap-2' : 'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
+              ),
           focused && 'h-0',
-          focused ? 'px-0 pb-2 pt-0 sm:gap-2 md:gap-2' : 'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
-          stageTab === QUEUE_STAGE.ALL
-            ? 'lg:grid-flow-col lg:auto-cols-[minmax(14rem,1fr)] lg:overflow-x-auto lg:overflow-y-hidden'
-            : 'lg:grid-cols-1 lg:overflow-hidden',
-          'lg:grid-rows-[minmax(0,1fr)] lg:items-stretch',
         )}
       >
         {isVisible(QUEUE_STAGE.WAITING) && (
           <StageColumn
-            roomy={stageTab === QUEUE_STAGE.ALL}
+            single={single}
             zoneProps={zoneProps(QUEUE_STAGE.WAITING)}
             over={drag?.zone === QUEUE_STAGE.WAITING}
             placeholder={slotFor(QUEUE_STAGE.WAITING)}
@@ -305,7 +308,7 @@ export function WaitingQueueBoard({
               <EmptyState
                 icon={IconTimer}
                 title={t.queue.noPatientsWaiting}
-                className="min-h-72 px-3 py-8"
+                className="flex-1 px-3 py-8"
               />
             ) : (
               waitingList.map((appt) => {
@@ -347,7 +350,7 @@ export function WaitingQueueBoard({
 
         {isVisible(QUEUE_STAGE.IN_PROGRESS) && (
           <StageColumn
-            roomy={stageTab === QUEUE_STAGE.ALL}
+            single={single}
             zoneProps={zoneProps(QUEUE_STAGE.IN_PROGRESS)}
             over={drag?.zone === QUEUE_STAGE.IN_PROGRESS}
             placeholder={slotFor(QUEUE_STAGE.IN_PROGRESS)}
@@ -361,7 +364,7 @@ export function WaitingQueueBoard({
               <EmptyState
                 icon={IconService}
                 title={t.queue.noConsultationsInSession}
-                className="min-h-72 px-3 py-8"
+                className="flex-1 px-3 py-8"
               />
             ) : (
               inProgressList.map((appt) => {
@@ -404,7 +407,7 @@ export function WaitingQueueBoard({
 
         {isVisible(QUEUE_STAGE.UPCOMING) && (
           <StageColumn
-            roomy={stageTab === QUEUE_STAGE.ALL}
+            single={single}
             zoneProps={zoneProps(QUEUE_STAGE.UPCOMING)}
             over={drag?.zone === QUEUE_STAGE.UPCOMING}
             placeholder={slotFor(QUEUE_STAGE.UPCOMING)}
@@ -418,7 +421,7 @@ export function WaitingQueueBoard({
               <EmptyState
                 icon={IconCalendarClock}
                 title={t.queue.noUpcomingVisitsToday}
-                className="min-h-72 px-3 py-8"
+                className="flex-1 px-3 py-8"
               />
             ) : (
               upcomingList.map((appt) => (
@@ -452,7 +455,7 @@ export function WaitingQueueBoard({
 
         {isVisible(QUEUE_STAGE.COMPLETED) && (
           <StageColumn
-            roomy={stageTab === QUEUE_STAGE.ALL}
+            single={single}
             zoneProps={zoneProps(QUEUE_STAGE.COMPLETED)}
             over={drag?.zone === QUEUE_STAGE.COMPLETED}
             placeholder={slotFor(QUEUE_STAGE.COMPLETED)}
@@ -466,7 +469,7 @@ export function WaitingQueueBoard({
               <EmptyState
                 icon={IconCheckCircle}
                 title={t.queue.noCompletedVisitsToday}
-                className="min-h-72 px-3 py-8"
+                className="flex-1 px-3 py-8"
               />
             ) : (
               completedList.map((appt) => (
@@ -511,7 +514,7 @@ export function WaitingQueueBoard({
 
         {isVisible(QUEUE_STAGE.CLOSED) && (
           <StageColumn
-            roomy={stageTab === QUEUE_STAGE.ALL}
+            single={single}
             zoneProps={zoneProps(QUEUE_STAGE.CLOSED)}
             over={drag?.zone === QUEUE_STAGE.CLOSED}
             placeholder={slotFor(QUEUE_STAGE.CLOSED)}
@@ -525,7 +528,7 @@ export function WaitingQueueBoard({
               <EmptyState
                 icon={IconBan}
                 title={t.queue.noClosedVisitsToday}
-                className="min-h-72 px-3 py-8"
+                className="flex-1 px-3 py-8"
               />
             ) : (
               closedList.map((appt) => (
@@ -562,7 +565,7 @@ export function WaitingQueueBoard({
 }
 
 function StageColumn({
-  roomy,
+  single,
   zoneProps,
   over,
   placeholder,
@@ -573,7 +576,7 @@ function StageColumn({
   icon,
   children,
 }: {
-  roomy: boolean;
+  single: boolean;
   zoneProps: { 'data-drop-zone': string };
   over: boolean;
   placeholder: React.ReactNode;
@@ -585,7 +588,17 @@ function StageColumn({
   children: React.ReactNode;
 }) {
   return (
-    <div {...zoneProps} className={cn('card-aura flex max-h-(--app-queue-col-max) min-h-0 flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs transition-shadow sm:rounded-2xl lg:h-full lg:max-h-none', over && 'ring-2 ring-primary/40', roomy && 'h-[min(78dvh,38rem)] max-h-none sm:h-auto sm:max-h-(--app-queue-col-max)')}>
+    <div
+      {...zoneProps}
+      className={cn(
+        'flex min-h-0 flex-col overflow-hidden transition-shadow',
+        single
+          ? 'h-full bg-card'
+          : 'card-aura max-h-(--app-queue-col-max) rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs sm:rounded-2xl lg:h-full lg:max-h-none',
+        over && 'ring-2 ring-primary/40',
+        !single && 'h-[min(78dvh,38rem)] max-h-none sm:h-auto sm:max-h-(--app-queue-col-max)',
+      )}
+    >
       <div className="flex shrink-0 items-center justify-between border-b bg-muted/25 p-2.5 sm:p-3">
         <div className="flex min-w-0 items-center gap-2">
           <span className={cn('size-2 rounded-full ring-2 ring-background', accentClass)} />
@@ -596,8 +609,8 @@ function StageColumn({
           {count === undefined ? <Skeleton className="h-4 w-4" /> : count}
         </Badge>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain p-3 touch-pan-y">
-        <div className="flex flex-col gap-2.5">{children}{placeholder}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain p-3 touch-pan-y">
+        <div className="flex min-h-full flex-1 flex-col gap-2.5">{children}{placeholder}</div>
       </div>
     </div>
   );

@@ -75,7 +75,7 @@ export default function PractitionerQueuePage() {
   );
 
   return (
-    <div className="page-fill">
+    <div className="page-fill-always">
       <ViewFocus label={t.queue.waitingQueue} storageKey={`${clinicId || 'none'}:practitioner-queue`}>
         {(focused) => (
           <>
