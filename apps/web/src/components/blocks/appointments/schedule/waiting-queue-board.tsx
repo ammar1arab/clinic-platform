@@ -591,10 +591,10 @@ function StageColumn({
     <div
       {...zoneProps}
       className={cn(
-        'flex min-h-0 flex-col overflow-hidden transition-shadow',
+        'card-aura flex min-h-0 flex-col overflow-hidden rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs transition-shadow sm:rounded-2xl',
         single
-          ? 'h-full bg-card'
-          : 'card-aura max-h-(--app-queue-col-max) rounded-xl border bg-card/75 shadow-xs backdrop-blur-xs sm:rounded-2xl lg:h-full lg:max-h-none',
+          ? 'h-full max-h-none'
+          : 'max-h-(--app-queue-col-max) lg:h-full lg:max-h-none',
         over && 'ring-2 ring-primary/40',
         !single && 'h-[min(78dvh,38rem)] max-h-none sm:h-auto sm:max-h-(--app-queue-col-max)',
       )}
