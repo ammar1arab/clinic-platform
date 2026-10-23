@@ -90,10 +90,10 @@ export function useDownloadPractitionerHours(clinicId: string) {
   return useApiMutation<
     ReportDownloadResult,
     TResponseError,
-    { practitionerId: string; format?: ReportFormat }
+    { practitionerId: string; format?: ReportFormat; from?: string; to?: string }
   >({
-    request: ({ practitionerId, format = 'pdf' }) =>
-      reportsService.downloadPractitionerHours(practitionerId, clinicId, format),
+    request: ({ practitionerId, format = 'pdf', from, to }) =>
+      reportsService.downloadPractitionerHours(practitionerId, clinicId, format, from, to),
     successMessage: downloaded,
   });
 }
@@ -102,13 +102,15 @@ export function useDownloadPractitionerExceptions(clinicId: string) {
   return useApiMutation<
     ReportDownloadResult,
     TResponseError,
-    { practitionerId: string; format?: ReportFormat }
+    { practitionerId: string; format?: ReportFormat; from?: string; to?: string }
   >({
-    request: ({ practitionerId, format = 'pdf' }) =>
+    request: ({ practitionerId, format = 'pdf', from, to }) =>
       reportsService.downloadPractitionerExceptions(
         practitionerId,
         clinicId,
         format,
+        from,
+        to,
       ),
     successMessage: downloaded,
   });

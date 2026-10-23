@@ -15,6 +15,7 @@ export interface DoctorTimeOffEntry {
   startDate: string;
   endDate: string;
   reason?: string | null;
+  kind?: 'leave' | 'vacation';
 }
 
 export interface DoctorAvailabilityOverrideEntry {

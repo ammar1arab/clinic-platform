@@ -91,6 +91,7 @@ export function toPractitionerFormValues(
       startDate: format(new Date(t.startDate), "yyyy-MM-dd'T'HH:mm"),
       endDate: format(new Date(t.endDate), "yyyy-MM-dd'T'HH:mm"),
       reason: t.reason ?? '',
+      kind: t.kind,
     })),
     availabilityOverrides: p.availabilityOverrides.map((entry) => ({
       startAt: format(new Date(entry.startAt), "yyyy-MM-dd'T'HH:mm"),
@@ -149,6 +150,7 @@ export function toPractitionerPayload(data: PractitionerFormData) {
       startDate: new Date(t.startDate).toISOString(),
       endDate: new Date(t.endDate).toISOString(),
       reason: clean(t.reason),
+      kind: t.kind,
     })),
     availabilityOverrides: data.availabilityOverrides.map((entry) => ({
       startAt: new Date(entry.startAt).toISOString(),

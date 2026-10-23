@@ -226,15 +226,25 @@ export class ReportsService {
     clinicId: string,
     practitionerId: string,
     format: ReportFormatDto = ReportFormatDto.pdf,
+    from?: string,
+    to?: string,
   ): Promise<ExportedReport> {
     const { clinic, practitioner } = await this.clinicAndPractitioner(
       clinicId,
       practitionerId,
     );
+    const { fromDate, toDate } = dayBounds(from, to);
+    const availabilities = (practitioner.availabilities ?? []).filter((slot) => {
+      if (!fromDate && !toDate) return true;
+      const starts = slot.effectiveFrom ? new Date(slot.effectiveFrom) : undefined;
+      const ends = slot.effectiveUntil ? new Date(slot.effectiveUntil) : undefined;
+      return (!toDate || !starts || starts <= toDate) && (!fromDate || !ends || ends >= fromDate);
+    });
     const doc = this.documents.buildPractitionerHours({
       clinic,
       practitionerName: practitioner.name,
-      availabilities: practitioner.availabilities ?? [],
+      availabilities,
+      periodLabel: periodLabel(from, to),
     });
     return this.exporterFactory.export(doc, format);
   }
@@ -243,16 +253,22 @@ export class ReportsService {
     clinicId: string,
     practitionerId: string,
     format: ReportFormatDto = ReportFormatDto.pdf,
+    from?: string,
+    to?: string,
   ): Promise<ExportedReport> {
     const { clinic, practitioner } = await this.clinicAndPractitioner(
       clinicId,
       practitionerId,
     );
+    const { fromDate, toDate } = dayBounds(from, to);
+    const overlaps = (start: string, end: string) =>
+      (!toDate || new Date(start) <= toDate) && (!fromDate || new Date(end) >= fromDate);
     const doc = this.documents.buildPractitionerExceptions({
       clinic,
       practitionerName: practitioner.name,
-      timeOffs: practitioner.timeOffs ?? [],
-      overrides: practitioner.availabilityOverrides ?? [],
+      timeOffs: (practitioner.timeOffs ?? []).filter((entry) => overlaps(entry.startDate, entry.endDate)),
+      overrides: (practitioner.availabilityOverrides ?? []).filter((entry) => overlaps(entry.startAt, entry.endAt)),
+      periodLabel: periodLabel(from, to),
     });
     return this.exporterFactory.export(doc, format);
   }

@@ -145,11 +145,15 @@ export const reportsService = {
     practitionerId: string,
     clinicId: string,
     format: ReportFormat = "pdf",
+    from?: string,
+    to?: string,
   ) =>
     downloadReport(
       withQuery(ENDPOINTS.REPORTS.PRACTITIONER_HOURS(practitionerId), {
         clinicId,
         format,
+        from,
+        to,
       }),
       `practitioner-hours.${extFor(format)}`,
     ),
@@ -158,11 +162,15 @@ export const reportsService = {
     practitionerId: string,
     clinicId: string,
     format: ReportFormat = "pdf",
+    from?: string,
+    to?: string,
   ) =>
     downloadReport(
       withQuery(ENDPOINTS.REPORTS.PRACTITIONER_EXCEPTIONS(practitionerId), {
         clinicId,
         format,
+        from,
+        to,
       }),
       `practitioner-exceptions.${extFor(format)}`,
     ),

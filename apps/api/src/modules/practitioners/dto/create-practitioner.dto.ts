@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsEnum,
   IsInt,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -50,6 +51,10 @@ export class TimeOffEntryDto {
   @IsOptional()
   @IsString()
   reason?: string;
+
+  @IsOptional()
+  @IsIn(["leave", "vacation"])
+  kind?: "leave" | "vacation";
 }
 
 export class AvailabilityOverrideEntryDto {

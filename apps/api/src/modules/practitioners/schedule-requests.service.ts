@@ -176,6 +176,7 @@ export class ScheduleRequestsService {
                 startDate: row.startAt,
                 endDate: row.endAt,
                 reason: row.reason,
+                kind: row.kind === "vacation" ? "vacation" : "leave",
               },
             });
           } else {

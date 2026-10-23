@@ -180,7 +180,7 @@ export default function ReportsPage() {
           accent: 'default',
           title: t.reports.practitionerProfile,
           description: t.reports.practitionerProfileDesc,
-          filters: { practitioner: 'required' },
+          filters: { practitioner: 'required', dates: true },
         },
         {
           key: 'practitionerAppointments',
@@ -196,7 +196,7 @@ export default function ReportsPage() {
           accent: 'default',
           title: t.reports.practitionerHours,
           description: t.reports.practitionerHoursDesc,
-          filters: { practitioner: 'required' },
+          filters: { practitioner: 'required', dates: true },
         },
         {
           key: 'practitionerExceptions',
@@ -204,7 +204,7 @@ export default function ReportsPage() {
           accent: 'teal',
           title: t.reports.practitionerExceptions,
           description: t.reports.practitionerExceptionsDesc,
-          filters: { practitioner: 'required' },
+          filters: { practitioner: 'required', dates: true },
         },
       ],
     },
@@ -264,6 +264,7 @@ export default function ReportsPage() {
               accent: 'default',
               title: t.reports.practitionerHours,
               description: t.reports.practitionerHoursDesc,
+              filters: { dates: true },
             },
             {
               key: 'practitionerExceptions',
@@ -271,6 +272,7 @@ export default function ReportsPage() {
               accent: 'teal',
               title: t.reports.practitionerExceptions,
               description: t.reports.practitionerExceptionsDesc,
+              filters: { dates: true },
             },
           ],
         },
@@ -302,7 +304,7 @@ export default function ReportsPage() {
 
   const exportDisabled =
     (active?.filters?.patient === 'required' && !patientId) ||
-    (active?.filters?.practitioner === 'required' && !practitionerId);
+    (active?.filters?.practitioner === 'required' && !scopedPractitionerId);
 
   const helperText =
     activeKey === 'patientsDirectory'
@@ -326,10 +328,10 @@ export default function ReportsPage() {
         downloadPractitionerProfile.mutate({ practitionerId: scopedPractitionerId, format });
         break;
       case 'practitionerHours':
-        downloadPractitionerHours.mutate({ practitionerId: scopedPractitionerId, format });
+        downloadPractitionerHours.mutate({ practitionerId: scopedPractitionerId, format, from: fromDate || undefined, to: toDate || undefined });
         break;
       case 'practitionerExceptions':
-        downloadPractitionerExceptions.mutate({ practitionerId: scopedPractitionerId, format });
+        downloadPractitionerExceptions.mutate({ practitionerId: scopedPractitionerId, format, from: fromDate || undefined, to: toDate || undefined });
         break;
       case 'practitionerAppointments':
         downloadPractitionerAppointments.mutate({

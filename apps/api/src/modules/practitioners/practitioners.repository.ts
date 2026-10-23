@@ -433,6 +433,10 @@ export class PractitionersRepository {
       const existing = await tx.doctorTimeOff.findFirst({ where: { doctorId, startDate: startAt, endDate: endAt }, select: { id: true } });
       if (!existing) await this.assertLeaveAvailable(tx, clinicId, doctorId, startAt, endAt);
     }
+    const existingEntries = await tx.doctorTimeOff.findMany({
+      where: { doctorId },
+      select: { startDate: true, endDate: true, kind: true },
+    });
     await tx.doctorTimeOff.deleteMany({ where: { doctorId } });
     if (!entries.length) return;
     await tx.doctorTimeOff.createMany({
@@ -441,6 +445,9 @@ export class PractitionersRepository {
         startDate: new Date(entry.startDate),
         endDate: new Date(entry.endDate),
         reason: entry.reason?.trim() || null,
+        kind: entry.kind ?? existingEntries.find(
+          (current) => current.startDate.getTime() === new Date(entry.startDate).getTime() && current.endDate.getTime() === new Date(entry.endDate).getTime(),
+        )?.kind ?? "leave",
       })),
     });
   }

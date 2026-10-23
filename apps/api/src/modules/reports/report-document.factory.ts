@@ -539,6 +539,7 @@ export class ReportDocumentFactory {
     clinic: ClinicLetterheadRow;
     practitionerName: string;
     availabilities: HourSlot[];
+    periodLabel?: string;
   }): ReportDocument {
     const rows = sortHourSlots(input.availabilities).map((slot) => ({
       day: weekdayName(slot.dayOfWeek),
@@ -549,11 +550,12 @@ export class ReportDocumentFactory {
     return reportDocument({
       type: "practitioner_hours",
       title: `Weekly Hours - ${input.practitionerName}`,
-      filename: ["practitioner-hours", input.practitionerName],
+      filename: ["practitioner-hours", input.practitionerName, ...(input.periodLabel && input.periodLabel !== "all" ? [input.periodLabel] : [])],
       clinic: input.clinic,
       summary: [
         { label: "Practitioner", value: input.practitionerName },
         { label: "Blocks", value: String(rows.length) },
+        ...(input.periodLabel && input.periodLabel !== "all" ? [{ label: "Period", value: input.periodLabel }] : []),
       ],
       columns: [
         { key: "day", header: "Day" },
@@ -571,23 +573,27 @@ export class ReportDocumentFactory {
       startDate: string;
       endDate: string;
       reason?: string | null;
+      kind?: "leave" | "vacation";
     }>;
     overrides: Array<{
       startAt: string;
       endAt: string;
       reason?: string | null;
     }>;
+    periodLabel?: string;
   }): ReportDocument {
     const { clinic, practitionerName, timeOffs, overrides } = input;
     return reportDocument({
       type: "practitioner_exceptions",
       title: `Leave & Extra Hours - ${practitionerName}`,
-      filename: ["practitioner-exceptions", practitionerName],
+      filename: ["practitioner-exceptions", practitionerName, ...(input.periodLabel && input.periodLabel !== "all" ? [input.periodLabel] : [])],
       clinic,
       summary: [
         { label: "Practitioner", value: practitionerName },
-        { label: "Leave blocks", value: String(timeOffs.length) },
+        { label: "Leave blocks", value: String(timeOffs.filter((entry) => entry.kind !== "vacation").length) },
+        { label: "Vacation blocks", value: String(timeOffs.filter((entry) => entry.kind === "vacation").length) },
         { label: "Extra hours", value: String(overrides.length) },
+        ...(input.periodLabel && input.periodLabel !== "all" ? [{ label: "Period", value: input.periodLabel }] : []),
       ],
       columns: [
         { key: "kind", header: "Type" },
@@ -597,7 +603,7 @@ export class ReportDocumentFactory {
       ],
       rows: [
         ...timeOffs.map((entry) => ({
-          kind: "Leave",
+          kind: entry.kind === "vacation" ? "Vacation" : "Leave",
           start: formatDisplayDateTime(entry.startDate, clinic.timezone),
           end: formatDisplayDateTime(entry.endDate, clinic.timezone),
           reason: cell(entry.reason),

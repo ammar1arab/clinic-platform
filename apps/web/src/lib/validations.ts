@@ -251,6 +251,7 @@ const timeOffSchema = z.object({
     .string()
     .min(1, { error: () => getTranslations().validation.required }),
   reason: z.string().optional().or(z.literal('')),
+  kind: z.enum(['leave', 'vacation']).optional(),
 });
 
 const availabilityOverrideSchema = z.object({

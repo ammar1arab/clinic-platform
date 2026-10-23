@@ -160,6 +160,8 @@ export class ReportsController {
         user.clinicId,
         this.practitionerScope(user, practitionerId),
         query.format ?? ReportFormatDto.pdf,
+        query.from,
+        query.to,
       ),
     );
   }
@@ -182,6 +184,8 @@ export class ReportsController {
         user.clinicId,
         this.practitionerScope(user, practitionerId),
         query.format ?? ReportFormatDto.pdf,
+        query.from,
+        query.to,
       ),
     );
   }
