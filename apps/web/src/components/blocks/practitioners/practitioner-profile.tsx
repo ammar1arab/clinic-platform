@@ -37,6 +37,7 @@ import {
   useReactivatePractitioner,
 } from '@/hooks/api/use-practitioners';
 import { calcAge } from '@/lib/age';
+import { leaveEntries, vacationDaysInYear, vacationsInYear } from './time-off';
 import { formatDate, formatDateTime, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
 import { IconMail, IconActivate, IconCalendar, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
@@ -84,6 +85,10 @@ export function PractitionerProfile({
   const dobText = practitioner.dob
     ? `${formatDate(practitioner.dob, undefined, lang)}${calcAge(practitioner.dob) != null ? ` (${calcAge(practitioner.dob)} ${t.common.years})` : ''}`
     : null;
+
+  const currentYear = new Date().getFullYear();
+  const vacations = vacationsInYear(practitioner.timeOffs, currentYear);
+  const leaves = leaveEntries(practitioner.timeOffs);
 
   return (
     <ProfileShell
@@ -327,15 +332,39 @@ export function PractitionerProfile({
         </ProfileSection>
 
         <ProfileSection
+          title={t.scheduleRequests.kinds.vacation}
+          className="h-full"
+          contentClassName="max-h-56 overflow-y-auto overscroll-y-contain"
+        >
+          <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+            <span className="text-muted-foreground">{t.practitioner.vacationDaysThisYear}</span>
+            <span className="font-semibold tabular-nums text-foreground">{vacationDaysInYear(practitioner.timeOffs, currentYear)}</span>
+          </div>
+          {vacations.length === 0 ? (
+            <ProfileEmpty>{t.practitioner.noVacations}</ProfileEmpty>
+          ) : (
+            <div className="space-y-1.5">
+              {vacations.map((block, index) => (
+                <ProfileSoftRow
+                  key={block.id ?? `${block.startDate}-${index}`}
+                  title={`${formatDate(block.startDate, undefined, lang)} - ${formatDate(block.endDate, undefined, lang)}`}
+                  detail={block.reason}
+                />
+              ))}
+            </div>
+          )}
+        </ProfileSection>
+
+        <ProfileSection
           title={t.practitioner.leave}
           className="h-full"
           contentClassName="max-h-56 overflow-y-auto overscroll-y-contain"
         >
-          {practitioner.timeOffs.length === 0 ? (
+          {leaves.length === 0 ? (
             <ProfileEmpty>{t.practitioner.noLeaveBlocks}</ProfileEmpty>
           ) : (
             <div className="space-y-1.5">
-              {practitioner.timeOffs.map((block, index) => (
+              {leaves.map((block, index) => (
                 <ProfileSoftRow
                   key={block.id ?? `${block.startDate}-${index}`}
                   title={`${formatDateTime(block.startDate, undefined, lang)} - ${formatDateTime(block.endDate, undefined, lang)}`}

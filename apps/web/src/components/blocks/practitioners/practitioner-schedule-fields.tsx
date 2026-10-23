@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import {
   Controller,
   type Control,
@@ -227,6 +228,23 @@ export function LeaveBlocksFields({
             onRemove={() => void onRemove(index)}
           >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <FormField label={t.scheduleRequests.type} className="sm:col-span-2">
+                <Controller
+                  control={control}
+                  name={`timeOffs.${index}.kind`}
+                  render={({ field: f }) => (
+                    <Select value={f.value ?? 'leave'} onValueChange={f.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="leave">{t.scheduleRequests.kinds.leave}</SelectItem>
+                        <SelectItem value="vacation">{t.scheduleRequests.kinds.vacation}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </FormField>
               <Controller
                 control={control}
                 name={`timeOffs.${index}.startDate`}

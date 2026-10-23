@@ -759,6 +759,8 @@ export const en = {
     noServicesAssigned: "No services assigned.",
     noWeeklyPatterns: "No weekly patterns.",
     noLeaveBlocks: "No leave blocks.",
+    vacationDaysThisYear: "Vacation days this year",
+    noVacations: "No vacations this year.",
     timeOffSaved: "Time off successfully saved.",
     deleted: "Practitioner successfully deleted.",
     loadingPractitioner: "Loading practitioner...",

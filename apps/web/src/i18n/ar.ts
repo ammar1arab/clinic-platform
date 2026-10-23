@@ -763,6 +763,8 @@ export const ar: Translations = {
     noServicesAssigned: "لا توجد خدمات محددة.",
     noWeeklyPatterns: "لا يوجد جدول أسبوعي.",
     noLeaveBlocks: "لا توجد إجازات.",
+    vacationDaysThisYear: "أيام العطلة هذا العام",
+    noVacations: "لا توجد عطل هذا العام.",
     timeOffSaved: "تم حفظ الإجازة بنجاح.",
     deleted: "تم حذف الطبيب بنجاح.",
     loadingPractitioner: "جاري تحميل الطبيب...",

@@ -44,7 +44,8 @@ export class ScheduleRequestsService {
       !Number.isFinite(endAt.getTime()) ||
       startAt <= new Date() ||
       endAt <= startAt ||
-      endAt.getTime() - startAt.getTime() > 366 * 86400000
+      endAt.getTime() - startAt.getTime() > 366 * 86400000 ||
+      (dto.kind === "leave" && endAt.getTime() - startAt.getTime() > 86400000)
     ) {
       throw new BadRequestException({
         code: "scheduleRequestRange",

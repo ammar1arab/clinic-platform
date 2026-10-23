@@ -19,6 +19,7 @@ import { useAuth, useLanguage } from '@/providers';
 import { ROUTES } from '@/constants/routes';
 import { NotePreference } from '@/components/blocks/visits/note-preference';
 import { ScheduleEntryList } from './practitioner-hours-summary';
+import { leaveEntries, vacationDaysInYear, vacationsInYear } from './time-off';
 
 const WEEKDAY_KEYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 
@@ -215,8 +216,15 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
         <ProfileSection title={t.practitioner.extraAvailability} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
           {practitioner.availabilityOverrides.length ? <ScheduleEntryList entries={practitioner.availabilityOverrides.map((entry) => ({ title: entry.reason, start: entry.startAt, end: entry.endAt }))} fallback={t.practitioner.extraAvailability} /> : <ProfileEmpty>{t.practitioner.noExtraAvailability}</ProfileEmpty>}
         </ProfileSection>
+        <ProfileSection title={t.scheduleRequests.kinds.vacation} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
+          <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+            <span className="text-muted-foreground">{t.practitioner.vacationDaysThisYear}</span>
+            <span className="font-semibold tabular-nums text-foreground">{vacationDaysInYear(practitioner.timeOffs, new Date().getFullYear())}</span>
+          </div>
+          {vacationsInYear(practitioner.timeOffs, new Date().getFullYear()).length ? <ScheduleEntryList entries={vacationsInYear(practitioner.timeOffs, new Date().getFullYear()).map((entry) => ({ title: entry.reason, start: entry.startDate, end: entry.endDate }))} fallback={t.scheduleRequests.kinds.vacation} /> : <ProfileEmpty>{t.practitioner.noVacations}</ProfileEmpty>}
+        </ProfileSection>
         <ProfileSection title={t.practitioner.leave} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
-          {practitioner.timeOffs.length ? <ScheduleEntryList entries={practitioner.timeOffs.map((entry) => ({ title: entry.reason, start: entry.startDate, end: entry.endDate }))} fallback={t.practitioner.leave} /> : <ProfileEmpty>{t.practitioner.noLeaveBlocks}</ProfileEmpty>}
+          {leaveEntries(practitioner.timeOffs).length ? <ScheduleEntryList entries={leaveEntries(practitioner.timeOffs).map((entry) => ({ title: entry.reason, start: entry.startDate, end: entry.endDate }))} fallback={t.practitioner.leave} /> : <ProfileEmpty>{t.practitioner.noLeaveBlocks}</ProfileEmpty>}
         </ProfileSection>
       </div>
       <Card className="card-aura gap-0 py-0 ring-0">
