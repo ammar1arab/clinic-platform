@@ -64,6 +64,10 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
       {copy.statuses[row.status]}
     </Badge>
   );
+  const KIND_VARIANT = { leave: 'teal', vacation: 'violet', extra: 'cyan' } as const;
+  const kindBadge = (row: ScheduleRequest) => (
+    <Badge variant={KIND_VARIANT[row.kind]}>{copy.kinds[row.kind]}</Badge>
+  );
   const period = (row: ScheduleRequest) => (
     <div className="space-y-0.5 text-xs tabular-nums">
       <time dateTime={row.startAt} className="block">{formatDateTime(row.startAt, undefined, lang)}</time>
@@ -133,15 +137,19 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
           {rows.map((row) => (
             <EntityMobileCard
               key={row.id}
-              avatar={practitioner ? undefined : <PreviewableAvatar src={row.doctor.imageUrl} seed={row.doctorId} />}
+              avatar={<PreviewableAvatar src={row.doctor.imageUrl} seed={row.doctorId} />}
               title={<>
-                <span className="block truncate">{practitioner ? copy.kinds[row.kind] : getStaffName(row.doctor, lang)}</span>
-                {practitioner ? null : <span className="block truncate text-xs font-normal text-muted-foreground">{copy.kinds[row.kind]}</span>}
+                <span className="block truncate">{getStaffName(row.doctor, lang)}</span>
                 <span className="mt-1 flex">{statusBadge(row)}</span>
               </>}
               actions={<div className="text-end">{period(row)}</div>}
               meta={<div className="col-span-2">{reasonText(row)}</div>}
-              footer={actions(row)}
+              footer={
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  {kindBadge(row)}
+                  {actions(row)}
+                </div>
+              }
             />
           ))}
         </div>
