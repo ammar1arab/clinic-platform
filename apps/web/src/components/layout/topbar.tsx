@@ -86,11 +86,13 @@ export function TopbarBlock({ showNav = true }: { showNav?: boolean }) {
       >
         <div className="flex min-w-0 items-center gap-2.5">
           {showNav ? (
-            <SoftTip label={mobileOpen ? t.layout.sideMenu.close : t.layout.sideMenu.open}>
-              <span className="md:hidden">
-                <MobileMenuToggle open={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)} />
-              </span>
-            </SoftTip>
+            <div className="md:hidden">
+              <SoftTip label={mobileOpen ? t.layout.sideMenu.close : t.layout.sideMenu.open}>
+                <span>
+                  <MobileMenuToggle open={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)} />
+                </span>
+              </SoftTip>
+            </div>
           ) : null}
 
           <div className="flex items-center md:hidden">

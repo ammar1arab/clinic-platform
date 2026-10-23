@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui';
-import { EmptyState, ErrorState } from '@/components/primitives';
+import { ErrorState } from '@/components/primitives';
 import { usePatients } from '@/hooks/api/use-patients';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useClinicStaff } from '@/hooks/api/use-clinic-staff';
@@ -20,7 +20,6 @@ import { toast } from 'sonner';
 import type { ReportFormat } from '@/services/reports.service';
 import { ROLE } from '@clinic/types';
 import { useAuth, useLanguage } from '@/providers';
-import { IconPatients } from '@/constants/icons';
 
 const INITIAL_FILTERS: PatientFilterState = {
   search: '',
@@ -115,7 +114,7 @@ export default function PatientsPage() {
     Boolean(filters.dobTo);
 
   return (
-    <div className="page-fill gap-2.5">
+    <div className="page-fill flex-1 gap-2.5">
       <div className="shrink-0">
         <PatientFiltersBlock
           values={filters}
@@ -132,14 +131,6 @@ export default function PatientsPage() {
 
       {isError && !patients ? (
         <ErrorState onRetry={() => void refetch()} className="page-fill" />
-      ) : !searchLoading && patients?.length === 0 ? (
-        <EmptyState
-          icon={IconPatients}
-          title={hasActiveFilters ? t.patient.noMatches : t.patient.noPatients}
-          description={hasActiveFilters ? t.patient.noMatchesDesc : t.patient.noPatientsDesc}
-          className="page-fill"
-          action={!isPractitioner ? <Button asChild><Link href={ROUTES.PATIENT_NEW}>Create patient</Link></Button> : undefined}
-        />
       ) : (
         <PatientsList
           patients={patients}
@@ -148,7 +139,7 @@ export default function PatientsPage() {
           canManage={!isPractitioner}
           emptyAction={
             <Button asChild>
-              <Link href={ROUTES.PATIENT_NEW}>Create patient</Link>
+              <Link href={ROUTES.PATIENT_NEW}>{t.patient.createPatient}</Link>
             </Button>
           }
         />

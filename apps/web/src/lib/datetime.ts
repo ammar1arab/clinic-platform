@@ -127,7 +127,7 @@ export function formatWeekdayDate(
   empty = EMPTY,
   lang = 'en',
 ) {
-  return formatDatePattern(value, lang === 'ar' ? 'EEE، d MMM yyyy' : 'EEE, MMM d, yyyy', empty, lang);
+  return formatDatePattern(value, getTranslations(lang).time.weekdayDatePattern, empty, lang);
 }
 
 export function formatDateTime(
@@ -169,4 +169,37 @@ export function todayAppointmentRange(daysAhead = 0) {
 
 export function toTimeParam(date: Date) {
   return toClockValue(date.getHours(), date.getMinutes());
+}
+
+function zonedParts(instant: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).formatToParts(instant);
+  const read = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value);
+  return { year: read('year'), month: read('month'), day: read('day'), hour: read('hour'), minute: read('minute') };
+}
+
+export function browserTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+export function clinicDateTimeToIso(date: string, time: string, timeZone: string) {
+  const guess = new Date(`${date}T${time}:00Z`);
+  const local = zonedParts(guess, timeZone);
+  const offset = Date.UTC(local.year, local.month - 1, local.day, local.hour, local.minute) - guess.getTime();
+  return new Date(guess.getTime() - offset).toISOString();
+}
+
+export function isoToClinicDateTime(value: string | Date, timeZone: string) {
+  const local = zonedParts(new Date(value), timeZone);
+  return {
+    date: `${local.year}-${pad2(local.month)}-${pad2(local.day)}`,
+    time: `${pad2(local.hour)}:${pad2(local.minute)}`,
+  };
 }

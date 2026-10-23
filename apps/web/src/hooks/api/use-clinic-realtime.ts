@@ -4,8 +4,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getSocket } from '@/lib/socket';
 import { createLogger } from '@/lib/logger';
-import { QUERY_KEYS } from '@/constants/query-keys';
-import { INVALIDATE } from '../query';
 
 const log = createLogger('hooks/realtime');
 
@@ -29,8 +27,7 @@ export function useClinicRealtime(
 
       const join = () => {
         socket.emit('join-clinic', clinicId);
-        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.visits.all }, { cancelRefetch: false });
-        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.practitioners.all }, { cancelRefetch: false });
+        void queryClient.invalidateQueries();
         log.debug('joined', { clinicId });
         onStoreChange();
       };
@@ -49,12 +46,7 @@ export function useClinicRealtime(
 
       const refreshAppointments = () => {
         log.debug('appointment_changed', { clinicId });
-        for (const key of INVALIDATE.appointmentWrite) {
-          void queryClient.invalidateQueries({ queryKey: key }, { cancelRefetch: false });
-        }
-        void queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.patientPackages.all,
-        });
+        void queryClient.invalidateQueries();
         if (notify) {
           const copy = getTranslations().notifications;
           toast.message(copy.schedule, {
@@ -66,20 +58,15 @@ export function useClinicRealtime(
 
       const refreshReferrals = () => {
         log.debug('referral_changed', { clinicId });
-        void queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.referrals.all,
-        });
+        void queryClient.invalidateQueries();
       };
 
       const refreshVisits = () => {
-        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.visits.all }, { cancelRefetch: false });
+        void queryClient.invalidateQueries();
       };
 
-      const refreshRequests = (event?: { availabilityChanged?: boolean }) => {
-        if (event?.availabilityChanged) {
-          for (const queryKey of INVALIDATE.appointmentWrite) void queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false });
-        }
-        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.practitioners.all }, { cancelRefetch: false });
+      const refreshRequests = () => {
+        void queryClient.invalidateQueries();
       };
       socket.on('schedule-request-changed', refreshRequests);
       socket.on('appointment-changed', refreshAppointments);

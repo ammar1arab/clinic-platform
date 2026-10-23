@@ -30,7 +30,7 @@ export function PractitionerHoursForm({
     setValue,
     formState: { errors },
   } = useForm<PractitionerHoursData>({
-    resolver: zodResolver(practitionerHoursSchema) as never,
+    resolver: zodResolver(practitionerHoursSchema),
     defaultValues: toHoursFormValues(practitioner),
   });
 

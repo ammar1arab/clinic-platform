@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ComponentProps } from 'react';
+import type { ComponentProps } from 'react';
 import { useDashboardKpis, useRoomUtilization, useDashboardRealtime } from '@/hooks/api/use-dashboard';
 import { KpiCardBlock } from './kpi-card';
 import { RoomUtilizationCardBlock } from './room-utilization-card';
@@ -8,7 +8,7 @@ import { ViewFocus } from '@/components/blocks/appointments';
 import { schedulePath } from '@/components/blocks/appointments/schedule/schedule-nav';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { formatWaitingMins } from '@/lib/waiting-time';
-import { IconCheckCircle, IconDepartment, IconHourglass, IconNoteCard, IconPackage, IconPatients, IconPractitioner, IconRoom, IconService, IconTime, IconTimer, IconTodaysAppointments } from '@/constants/icons';
+import { IconCheckCircle, IconDepartment, IconHourglass, IconNoteTemplate, IconPackage, IconPatients, IconPractitioner, IconRoom, IconService, IconTime, IconTimer, IconTodaysAppointments } from '@/constants/icons';
 import { ROUTES } from '@/constants/routes';
 import { canSeeNavHref } from '@/constants/nav-access';
 import { createHref } from '@/hooks/shared/use-create-dialog';
@@ -20,7 +20,7 @@ import { usePackages } from '@/hooks/api/use-packages';
 import { useClinicalNoteTemplates } from '@/hooks/api/use-clinical-note-templates';
 import { useAuth, useLanguage } from '@/providers';
 import { ROLE } from '@clinic/types';
-import { EmptyState, ErrorState, FoldSection } from '@/components/primitives';
+import { EmptyState, ErrorState } from '@/components/primitives';
 
 const KPI_GRID = 'grid grid-cols-2 gap-2.5 pt-2.5 lg:grid-cols-3 xl:grid-cols-6';
 
@@ -33,13 +33,6 @@ export function DashboardOverview() {
   const rooms = useRoomUtilization(clinicId, practitionerId, !!user);
 
   useDashboardRealtime(clinicId, { notifyOnAppointmentChange: true });
-  const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(['overview', 'shortcuts']));
-  const toggle = (key: string) => setOpen((current) => {
-    const next = new Set(current);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    return next;
-  });
   const can = (href: string) => canSeeNavHref(href, user?.role);
   const patients = usePatients({ clinicId }, { enabled: can(ROUTES.PATIENTS) });
   const practitioners = usePractitioners(can(ROUTES.PRACTITIONERS) ? clinicId : '');
@@ -64,7 +57,7 @@ export function DashboardOverview() {
     { href: ROUTES.SETTINGS_DEPARTMENTS, label: t.layout.titles.departments, query: departments, icon: IconDepartment, action: action(createHref(ROUTES.SETTINGS_DEPARTMENTS), t.settings.addDepartment, 'add') },
     { href: ROUTES.SETTINGS_SERVICES, label: t.layout.titles.services, query: services, icon: IconService, action: action(createHref(ROUTES.SETTINGS_SERVICES), t.settings.addService, 'add') },
     { href: ROUTES.SETTINGS_PACKAGES, label: t.layout.titles.packages, query: packages, icon: IconPackage, action: action(createHref(ROUTES.SETTINGS_PACKAGES), t.settings.addPackage, 'add') },
-    { href: ROUTES.NOTE_TEMPLATES, label: t.layout.titles.noteTemplates, query: templates, icon: IconNoteCard, action: action(ROUTES.NOTE_TEMPLATE_NEW, t.visits.newTemplate, 'add') },
+    { href: ROUTES.NOTE_TEMPLATES, label: t.layout.titles.noteTemplates, query: templates, icon: IconNoteTemplate, action: action(ROUTES.NOTE_TEMPLATE_NEW, t.visits.newTemplate, 'add') },
   ] as const).filter((card) => can(card.href) && (card.href !== ROUTES.NOTE_TEMPLATES || user?.role === ROLE.OWNER))
     .map(({ label, query, icon, action: cardAction }) => ({ label, value: query.data?.length, icon, action: cardAction, isLoading: query.isLoading }));
 
@@ -74,19 +67,15 @@ export function DashboardOverview() {
   };
 
   return (
-    <div className="page-fill gap-2.5">
-      <div data-focus-hide="" className="shrink-0 space-y-2.5">
-        <FoldSection label={t.dashboard.overview} open={open.has('overview')} onToggle={() => toggle('overview')}>
-          <div className={KPI_GRID}>
-            {overview.map((card) => <KpiCardBlock key={card.label} {...card} isLoading={kpis.isLoading} />)}
-          </div>
-        </FoldSection>
+    <div className="page-fill-always gap-2.5">
+      <div data-focus-hide="" className="shrink-0 space-y-2.5 max-h-[45dvh] overflow-y-auto overscroll-y-contain md:max-h-none">
+        <div className={KPI_GRID}>
+          {overview.map((card) => <KpiCardBlock key={card.label} {...card} isLoading={kpis.isLoading} />)}
+        </div>
         {shortcuts.length ? (
-          <FoldSection label={t.dashboard.quickActions} open={open.has('shortcuts')} onToggle={() => toggle('shortcuts')}>
-            <div className={KPI_GRID}>
-              {shortcuts.map((card) => <KpiCardBlock key={card.label} {...card} />)}
-            </div>
-          </FoldSection>
+          <div className={KPI_GRID}>
+            {shortcuts.map((card) => <KpiCardBlock key={card.label} {...card} />)}
+          </div>
         ) : null}
       </div>
 
@@ -96,7 +85,7 @@ export function DashboardOverview() {
         <EmptyState icon={IconTodaysAppointments} title={t.appointments.noAppointments} description={t.appointments.noAppointmentsDesc} className="page-fill" />
       ) : (
         <ViewFocus label={t.dashboard.roomUtilizationToday} storageKey={`${clinicId || 'none'}:dashboard-room-utilization`}>
-          {(focused) => <RoomUtilizationCardBlock rooms={rooms.data} isLoading={rooms.isLoading} focused={focused} />}
+          <RoomUtilizationCardBlock rooms={rooms.data} isLoading={rooms.isLoading} />
         </ViewFocus>
       )}
     </div>

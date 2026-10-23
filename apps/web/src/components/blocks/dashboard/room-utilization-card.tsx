@@ -19,7 +19,6 @@ import { useRooms } from '@/hooks/api/use-rooms';
 interface Props {
   rooms: RoomUtilization[] | undefined;
   isLoading: boolean;
-  focused?: boolean;
 }
 
 type RoomGroup = {
@@ -34,7 +33,7 @@ function barColor(percent: number) {
   return 'bg-success';
 }
 
-export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: Props) {
+export function RoomUtilizationCardBlock({ rooms, isLoading }: Props) {
   const { t, lang } = useLanguage();
   const clinicId = useClinicId();
   const { data: catalogRooms } = useRooms(clinicId);
@@ -88,7 +87,7 @@ export function RoomUtilizationCardBlock({ rooms, isLoading, focused = false }: 
   };
 
   return (
-    <Card className={cn('page-fill', focused && 'rounded-none')}>
+    <Card className="page-fill flex-1 min-h-0">
       <CardContent className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-y-contain">
         {isLoading &&
           Array.from({ length: 4 }).map((_, group) => (

@@ -1,4 +1,4 @@
-import { validateSections, validateValues } from "./clinical-validation";
+import { storedClinicalSections, storedReportSections, storedInvoiceLines, validateSections, validateValues } from "./clinical-validation";
 import type { ClinicalSection } from "@clinic/types";
 import { SEED_TEMPLATES } from "./seed-templates";
 
@@ -63,5 +63,21 @@ describe("validateSections", () => {
     ])("rejects %j", (values) => {
       expect(() => validateValues(sections, values)).toThrow();
     });
+  });
+});
+
+describe("stored clinical JSON", () => {
+  it("rejects corrupted stored sections before note rendering", () => {
+    expect(() => storedClinicalSections([{ title: "Broken", fields: null }])).toThrow();
+  });
+  it("rejects non-text report fields", () => {
+    expect(() => storedReportSections({ reason: 42 })).toThrow();
+  });
+  it("rejects invoice lines that omit totals", () => {
+    expect(() => storedInvoiceLines([{ id: "line", description: "Visit", quantity: "1", unitPrice: "25" }])).toThrow();
+  });
+  it("preserves the stored monetary strings", () => {
+    const lines = [{ id: "line", description: "Visit", quantity: "1", unitPrice: "25.000", total: "25.000" }];
+    expect(storedInvoiceLines(lines)).toEqual(lines);
   });
 });

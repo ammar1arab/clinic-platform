@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/forms/button";
 
 export interface IconCardProps extends Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
-  "title"
-> {
+  "title" | keyof React.DOMAttributes<HTMLButtonElement>
+>, React.DOMAttributes<HTMLElement> {
   icon: LucideIcon;
   title: React.ReactNode;
   description?: string;
@@ -100,7 +100,7 @@ export const IconCard = forwardRef<HTMLButtonElement, IconCardProps>(
         >
           <Link
             href={href}
-            onClick={onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>}
+            onClick={onClick}
             aria-current={active ? 'page' : undefined}
           >
             {isHorizontal ? content : <div className={wrapperClasses}>{content}</div>}
@@ -125,7 +125,7 @@ export const IconCard = forwardRef<HTMLButtonElement, IconCardProps>(
       return (
         <div
           className={cn(baseClasses, 'md:border-border')}
-          {...(divProps as unknown as React.HTMLAttributes<HTMLDivElement>)}
+          {...divProps}
         >
           {isHorizontal ? content : <div className={wrapperClasses}>{content}</div>}
         </div>

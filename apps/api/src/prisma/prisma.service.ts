@@ -14,7 +14,7 @@ export class PrismaService
       ssl: { rejectUnauthorized: false },
     });
     const adapter = new PrismaPg(pool, { disposeExternalPool: true });
-    super({ adapter });
+    super({ adapter, transactionOptions: { timeout: 30_000, maxWait: 10_000 } });
   }
 
   async onModuleInit() {

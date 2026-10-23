@@ -74,7 +74,7 @@ export function PractitionerForm({ clinicId, practitioner, onCancel, onSuccess }
     setError,
     formState: { errors },
   } = useForm<PractitionerFormData>({
-    resolver: zodResolver(practitionerSchema) as never,
+    resolver: zodResolver(practitionerSchema),
     defaultValues: practitioner
       ? toPractitionerFormValues(practitioner)
       : emptyPractitionerValues(),

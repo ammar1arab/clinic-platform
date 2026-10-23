@@ -99,6 +99,7 @@ export function ProfileSection({
   children,
   className,
   contentClassName,
+  fixedHeight = false,
 }: {
   title: ReactNode;
   description?: string;
@@ -106,11 +107,12 @@ export function ProfileSection({
   children: ReactNode;
   className?: string;
   contentClassName?: string;
+  fixedHeight?: boolean;
 }) {
-  const fillHeight = Boolean(className?.includes('h-full'));
+  const fillHeight = Boolean(className?.includes('h-full')) || fixedHeight;
 
   return (
-    <Card className={cn('card-aura flex flex-col gap-0 py-0 ring-0', className)}>
+    <Card className={cn('card-aura flex flex-col gap-0 py-0 ring-0', fixedHeight && 'h-64 sm:h-72', className)}>
       <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
         <div className="min-w-0 space-y-0.5">
           <CardTitle className="text-base font-semibold tracking-tight">
@@ -125,7 +127,7 @@ export function ProfileSection({
       <CardContent
         className={cn(
           'px-4 pb-4 sm:px-5 sm:pb-5',
-          fillHeight && 'flex-1',
+          fillHeight && 'min-h-0 flex-1 overflow-y-auto overscroll-y-contain',
           contentClassName,
         )}
       >
@@ -168,7 +170,7 @@ export function ProfileInfoField({
       <p className="w-32 shrink-0 text-xs font-medium text-muted-foreground sm:w-auto">
         {label}
       </p>
-      <div className={cn('flex min-w-0 flex-1 justify-end text-end text-sm font-medium leading-snug text-foreground sm:flex-none sm:justify-start sm:text-start', dir === 'rtl' && 'sm:justify-end sm:text-end')}>
+      <div className={cn('flex min-w-0 flex-1 justify-end text-end text-sm font-medium leading-snug text-foreground sm:flex-none sm:justify-start sm:text-start')}>
         {children ? (
           <span dir={dir} className="min-w-0">
             {children}
@@ -249,7 +251,7 @@ export function ProfileSoftRow({
 
 export function ProfileEmpty({ children }: { children: ReactNode }) {
   return (
-    <EmptyState
+    <EmptyState framed={false}
       icon={null}
       title={children}
       className="items-start gap-0 py-0 text-start [&>p]:font-normal [&>p]:text-muted-foreground"

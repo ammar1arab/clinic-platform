@@ -10,6 +10,7 @@ export function EmptyState({
   iconClassName,
   iconContainerClassName,
   size = 'default',
+  framed = true,
 }: {
   icon?: LucideIcon | null;
   title: React.ReactNode;
@@ -19,6 +20,7 @@ export function EmptyState({
   iconClassName?: string;
   iconContainerClassName?: string;
   size?: 'inline' | 'compact' | 'default';
+  framed?: boolean;
 }) {
   const compact = size === 'compact';
   const inline = size === 'inline';
@@ -30,6 +32,7 @@ export function EmptyState({
         'empty-state-enter flex min-w-0 flex-col items-center justify-center gap-2 px-4 py-10 text-center',
         compact && 'gap-1 px-3 py-4',
         inline && 'flex-row justify-start gap-3 px-3 py-3 text-start',
+        framed && !compact && !inline && 'rounded-xl border bg-card card-aura',
         className,
       )}
     >

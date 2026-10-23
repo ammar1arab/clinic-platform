@@ -61,7 +61,14 @@ describe("PractitionersService availability rules", () => {
         { provide: PractitionersRepository, useValue: repo },
         { provide: EmailService, useValue: { send: jest.fn() } },
         { provide: AuthService, useValue: {} },
-        { provide: PrismaService, useValue: {} },
+        {
+          provide: PrismaService,
+          useValue: {
+            clinic: {
+              findUnique: jest.fn().mockResolvedValue({ workingHoursStart: "08:00", workingHoursEnd: "20:00", timezone: "UTC" }),
+            },
+          },
+        },
       ],
     }).compile();
     service = module.get(PractitionersService);

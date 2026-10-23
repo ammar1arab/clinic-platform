@@ -1,12 +1,32 @@
 'use client';
 
 import Link from 'next/link';
-import { Button, Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { CountBadge, EmptyState, ProfileSection } from '@/components/primitives';
 import { WEEKDAY_OPTIONS } from '@/constants/practitioner';
+import { IconCalendarClock } from '@/constants/icons';
 import { formatDateTimeRange, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerHoursData } from '@/lib/validations';
 import { useLanguage } from '@/providers';
 import { cn } from '@/lib/utils';
+import { PractitionerTimeOffSection } from './practitioner-time-off-section';
+import { splitTimeOff } from './time-off';
+
+type WeeklySlot = PractitionerHoursData['availabilities'][number];
+
+function groupWeekly(slots: WeeklySlot[]) {
+  const sorted = [...slots].sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.startTime.localeCompare(b.startTime));
+  const groups: { days: number[]; startTime: string; endTime: string }[] = [];
+  for (const slot of sorted) {
+    const last = groups.at(-1);
+    if (last && last.startTime === slot.startTime && last.endTime === slot.endTime && last.days.at(-1) === slot.dayOfWeek - 1) {
+      last.days.push(slot.dayOfWeek);
+    } else {
+      groups.push({ days: [slot.dayOfWeek], startTime: slot.startTime, endTime: slot.endTime });
+    }
+  }
+  return groups;
+}
 
 export function PractitionerHoursSummary({
   hours,
@@ -16,68 +36,73 @@ export function PractitionerHoursSummary({
   href?: string;
 }) {
   const { t, lang } = useLanguage();
+  const { vacations, leaves, vacationDays } = splitTimeOff(hours.timeOffs, new Date().getFullYear());
+  const dayName = (day: number) => t.constants.weekdays[WEEKDAY_OPTIONS[day]];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">{t.practitioner.workingHours}</CardTitle>
-        {href ? (
-          <CardAction>
-            <Button asChild variant="outline" size="sm">
-              <Link href={href}>{t.common.edit}</Link>
-            </Button>
-          </CardAction>
-        ) : null}
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <section className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">{t.practitioner.weeklyAvailability}</p>
-          {hours.availabilities.length ? (
-            <ul className="max-h-56 space-y-1.5 overflow-y-auto overscroll-y-contain">
-              {hours.availabilities.map((slot, index) => (
-                <li
-                  key={`${slot.dayOfWeek}-${slot.startTime}-${index}`}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2 text-sm"
-                >
-                  <span>{t.constants.weekdays[WEEKDAY_OPTIONS[slot.dayOfWeek]]}</span>
-                  <span className="tabular-nums text-muted-foreground">
-                    {formatTimeRange(slot.startTime, slot.endTime, undefined, lang)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t.practitioner.noWeeklyPatterns}</p>
-          )}
-        </section>
+    <div className="space-y-3 sm:space-y-4">
+      <ProfileSection
+        title={t.practitioner.weeklyAvailability}
+        action={href ? (
+          <Button asChild variant="outline" size="sm">
+            <Link href={href}>{t.common.edit}</Link>
+          </Button>
+        ) : undefined}
+      >
+        {hours.availabilities.length ? (
+          <ul className="space-y-1.5">
+            {groupWeekly(hours.availabilities).map((group) => (
+              <li
+                key={`${group.days[0]}-${group.startTime}`}
+                className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2 text-sm"
+              >
+                <span>
+                  {group.days.length > 1
+                    ? `${dayName(group.days[0])} – ${dayName(group.days[group.days.length - 1])}`
+                    : dayName(group.days[0])}
+                </span>
+                <span className="tabular-nums text-muted-foreground">
+                  {formatTimeRange(group.startTime, group.endTime, undefined, lang)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState framed={false} size="compact" icon={IconCalendarClock} title={t.practitioner.noWeeklyPatterns} />
+        )}
+      </ProfileSection>
 
-        <section className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">{t.practitioner.extraAvailability}</p>
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
+        <ProfileSection
+          title={t.practitioner.extraAvailability}
+          action={<CountBadge count={hours.availabilityOverrides.length} />}
+          fixedHeight
+          contentClassName="flex flex-col"
+        >
           {hours.availabilityOverrides.length ? (
             <ScheduleEntryList
-              className="max-h-56 overflow-y-auto overscroll-y-contain"
               entries={hours.availabilityOverrides.map((entry) => ({ title: entry.reason, start: entry.startAt, end: entry.endAt }))}
               fallback={t.practitioner.extraAvailability}
             />
           ) : (
-            <p className="text-sm text-muted-foreground">{t.practitioner.noExtraAvailability}</p>
+            <EmptyState framed={false} size="compact" icon={IconCalendarClock} title={t.practitioner.extraAvailability} className="flex-1" />
           )}
-        </section>
-
-        <section className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">{t.practitioner.leave}</p>
-          {hours.timeOffs.length ? (
-            <ScheduleEntryList
-              className="max-h-56 overflow-y-auto overscroll-y-contain"
-              entries={hours.timeOffs.map((entry) => ({ title: entry.reason, start: entry.startDate, end: entry.endDate }))}
-              fallback={t.practitioner.leave}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">{t.practitioner.noLeaveBlocks}</p>
-          )}
-        </section>
-      </CardContent>
-    </Card>
+        </ProfileSection>
+        <PractitionerTimeOffSection
+          title={t.scheduleRequests.kinds.vacation}
+          entries={vacations}
+          emptyLabel={t.practitioner.noVacations}
+          count={vacationDays}
+          dateOnly
+        />
+        <PractitionerTimeOffSection
+          title={t.practitioner.leave}
+          entries={leaves}
+          emptyLabel={t.practitioner.noLeaveBlocks}
+          count={leaves.length}
+        />
+      </div>
+    </div>
   );
 }
 

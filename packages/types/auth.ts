@@ -61,6 +61,9 @@ export interface ClinicStaffMember {
   nameAr: string | null;
   role: Role | string;
   initials: string | null;
+  departmentId: string | null;
+  serviceIds: string[];
+  imageUrl: string | null;
 }
 
 export interface AuthSessionResponse { user: AuthMe | null; }

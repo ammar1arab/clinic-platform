@@ -44,6 +44,7 @@ function toMinutes(dateStr: string): number {
 export function layoutTimelineAppts(
   appts: Appointment[],
   doctors: Map<string, TimelineDoctor>,
+  startHour = TIMELINE_START_HOUR,
 ): PositionedAppt[] {
   const sorted = [...appts].sort(
     (a, b) =>
@@ -77,7 +78,7 @@ export function layoutTimelineAppts(
     }
 
     const top =
-      Math.max(0, startMin - TIMELINE_START_HOUR * 60) * TIMELINE_PX_PER_MIN;
+      Math.max(0, startMin - startHour * 60) * TIMELINE_PX_PER_MIN;
     const height = Math.max(32, appt.durationMins * TIMELINE_PX_PER_MIN);
     const gutter = maxCols > 1 ? 1.5 : 0;
 

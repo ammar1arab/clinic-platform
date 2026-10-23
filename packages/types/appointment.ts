@@ -95,6 +95,8 @@ export interface UpdateAppointmentInput {
   meetingUrl?: string;
 }
 
+export const NON_BILLABLE_APPOINTMENT_STATUSES = ['cancelled', 'no_show'] as const satisfies readonly AppointmentStatus[];
+
 export const APPOINTMENT_EDITABLE_STATUSES = ['unconfirmed', 'confirmed', 'no_show', 'cancelled'] as const;
 
 export const APPOINTMENT_STATUS_GROUPS = {

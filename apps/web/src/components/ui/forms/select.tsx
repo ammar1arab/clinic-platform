@@ -20,14 +20,14 @@ type ChipItem = { value: string; label: React.ReactNode; disabled?: boolean }
 
 const MAX_CHIP_OPTIONS = 12
 
-function collect(children: React.ReactNode, items: ChipItem[], trigger: { current?: Record<string, unknown> }) {
+function collect(children: React.ReactNode, items: ChipItem[], trigger: { current?: React.ComponentProps<typeof SelectTrigger> }) {
   React.Children.forEach(children, (child) => {
     if (!React.isValidElement<{ children?: React.ReactNode; value?: string; disabled?: boolean }>(child)) return
     if (child.type === SelectItem) {
       items.push({ value: String(child.props.value), label: child.props.children, disabled: child.props.disabled })
       return
     }
-    if (child.type === SelectTrigger) trigger.current = child.props as Record<string, unknown>
+    if (child.type === SelectTrigger) trigger.current = child.props
     collect(child.props.children, items, trigger)
   })
 }
@@ -36,7 +36,7 @@ function Select({ asChips = false, children, value, onValueChange, disabled, ...
   const [localValue, setLocalValue] = React.useState(props.defaultValue)
   const selected = value ?? localValue
   const items: ChipItem[] = []
-  const trigger: { current?: Record<string, unknown> } = {}
+  const trigger: { current?: React.ComponentProps<typeof SelectTrigger> } = {}
   if (asChips && props.open === undefined && !props.onOpenChange) collect(children, items, trigger)
   if (!items.length || items.length > MAX_CHIP_OPTIONS) {
     return (
@@ -53,9 +53,9 @@ function Select({ asChips = false, children, value, onValueChange, disabled, ...
       required={props.required}
       disabled={disabled}
       dir={props.dir}
-      id={trigger.current?.id as string | undefined}
-      aria-label={trigger.current?.["aria-label"] as string | undefined}
-      aria-invalid={trigger.current?.["aria-invalid"] as boolean | undefined}
+      id={trigger.current?.id}
+      aria-label={trigger.current?.["aria-label"]}
+      aria-invalid={trigger.current?.["aria-invalid"]}
       data-slot="select"
       className="flex flex-wrap gap-1.5"
     >

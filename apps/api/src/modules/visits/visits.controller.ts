@@ -38,6 +38,7 @@ import {
   PresenceDto,
   ReasonDto,
   ReportAmendDto,
+  StatusNoteDto,
   ReportDraftDto,
   ReversalDto,
   RevisionDto,
@@ -79,19 +80,21 @@ export class VisitsController {
     @Param("id", ParseUUIDPipe) id: string,
     @Body() body: PresenceDto,
   ) {
-    return this.visits.presence(actor, id, body.source);
+    return this.visits.presence(actor, id, body.source, false, body.statusReason);
   }
   @Post("appointments/:id/mark-waiting")
   @Header("Cache-Control", "no-store")
   waiting(
     @CurrentUser() actor: AuthUser,
     @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: StatusNoteDto,
   ) {
     return this.visits.presence(
       actor,
       id,
       actor.role === "practitioner" ? "practitioner" : "front_desk",
       true,
+      body.statusReason,
     );
   }
   @Post("appointments/:id/visits/start")
@@ -101,7 +104,7 @@ export class VisitsController {
     @Param("id", ParseUUIDPipe) id: string,
     @Body() body: StartVisitDto,
   ) {
-    return this.visits.start(actor, id, body.expectedAppointmentRevision);
+    return this.visits.start(actor, id, body.expectedAppointmentRevision, body.statusReason);
   }
   @Post("visits/:id/finish") @Header("Cache-Control", "no-store") finish(
     @CurrentUser() actor: AuthUser,

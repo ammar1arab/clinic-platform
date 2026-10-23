@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ROLE, type ScheduleRequest } from '@clinic/types';
-import { Badge, Button, Popover, SelectItem } from '@/components/ui';
+import { Badge, Button, Popover, SelectItem, Skeleton } from '@/components/ui';
 import {
   DIRECTORY_ACTION_CLASS,
   DirectoryTable,
@@ -16,7 +16,6 @@ import {
   PreviewableAvatar,
   SearchInput,
   TableFrame,
-  TableSkeleton,
   TruncatedText,
   type DirectoryColumn,
 } from '@/components/primitives';
@@ -72,7 +71,7 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'all' }: { docto
       {copy.statuses[row.status]}
     </Badge>
   );
-  const KIND_VARIANT = { leave: 'teal', vacation: 'violet', extra: 'cyan' } as const;
+  const KIND_VARIANT = { leave: 'teal', vacation: 'violet', extra: 'info' } as const;
   const kindBadge = (row: ScheduleRequest) => (
     <Badge variant={KIND_VARIANT[row.kind]}>{copy.kinds[row.kind]}</Badge>
   );
@@ -96,18 +95,18 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'all' }: { docto
   );
   const actions = (row: ScheduleRequest) =>
     row.status !== 'pending' ? null : (
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-1.5 rtl:flex-row-reverse">
         {practitioner ? (
           <Button type="button" size="sm" variant="outline" disabled={mutation.isPending} onClick={() => review(row, 'withdrawn')}>
             {copy.withdraw}
           </Button>
         ) : (
           <>
-            <Button type="button" size="sm" disabled={mutation.isPending} onClick={() => review(row, 'approved')}>
-              {copy.approve}
-            </Button>
             <Button type="button" size="sm" variant="outline" disabled={mutation.isPending} onClick={() => setDeclining(row)}>
               {copy.decline}
+            </Button>
+            <Button type="button" size="sm" disabled={mutation.isPending} onClick={() => review(row, 'approved')}>
+              {copy.approve}
             </Button>
           </>
         )}
@@ -123,15 +122,49 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'all' }: { docto
     { id: 'actions', className: 'w-[16%]', label: '', render: actions },
   ];
 
+  const skeletonRows = Array.from({ length: 14 }, (_, index) => index);
+  const skeletonColumns: DirectoryColumn<number>[] = [
+    ...(practitioner ? [] : [{ id: 'practitioner', className: 'w-[20%]', label: t.practitioner.practitioner, render: () => (
+      <div className="flex items-center gap-2"><Skeleton className="size-6 shrink-0 rounded-full" /><Skeleton className="h-3.5 w-28" /></div>
+    ) }]),
+    { id: 'kind', className: 'w-[12%]', label: copy.type, render: () => <Skeleton className="h-5 w-16 rounded-full" /> },
+    { id: 'period', className: 'w-[18%]', label: copy.period, render: () => (
+      <div className="space-y-1.5"><Skeleton className="h-3 w-32" /><Skeleton className="h-3 w-24" /></div>
+    ) },
+    { id: 'reason', className: practitioner ? 'w-[34%]' : 'w-[22%]', label: copy.reason, render: () => (
+      <div className="space-y-1.5"><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-2/3" /></div>
+    ) },
+    { id: 'status', className: 'w-[12%]', label: t.common.status, render: () => <Skeleton className="h-5 w-20 rounded-full" /> },
+    { id: 'actions', className: 'w-[16%]', label: '', render: () => (
+      <div className="flex gap-1.5 rtl:flex-row-reverse">
+        {practitioner ? null : <Skeleton className="h-8 w-20 rounded-lg" />}
+        <Skeleton className="h-8 w-20 rounded-lg" />
+      </div>
+    ) },
+  ];
+
   const body = query.isLoading ? (
-    <TableSkeleton className="page-fill-always" rows={24} cols={columns.length} hasHeader={false} />
+    <>
+      <DirectoryTable rows={skeletonRows} columns={skeletonColumns} rowKey={(row) => String(row)} className="hidden md:flex" tableClassName="min-w-[46rem]" />
+      <div className="page-fill-always overflow-y-auto overscroll-y-contain md:hidden">
+        <div className="grid grid-cols-1 gap-3">
+          {skeletonRows.slice(0, 6).map((row) => (
+            <div key={row} className="card-aura space-y-3 rounded-xl border bg-card p-3">
+              <div className="flex items-center gap-2"><Skeleton className="size-8 shrink-0 rounded-full" /><Skeleton className="h-3.5 w-32" /></div>
+              <div className="space-y-1.5"><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-2/3" /></div>
+              <div className="flex items-center justify-between gap-2"><Skeleton className="h-5 w-16 rounded-full" /><Skeleton className="h-8 w-28 rounded-lg" /></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   ) : query.isError ? (
     <TableFrame className="page-fill-always">
       <ErrorState className="page-fill-always" onRetry={() => void query.refetch()} />
     </TableFrame>
   ) : rows.length === 0 ? (
     <TableFrame className="page-fill-always">
-      <EmptyState
+      <EmptyState framed={false}
         className="page-fill-always"
         icon={IconCalendarClock}
         title={view.group === 'pending' ? copy.empty : view.group === 'history' ? copy.emptyHistory : copy.emptyAll}

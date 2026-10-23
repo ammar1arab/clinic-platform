@@ -61,6 +61,7 @@ export function NoteTemplateList() {
   const currentPage = Math.min(page, pageCount);
   const pageItems = others.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const loading = templates.isLoading || clinicDefault.isPending || starters.isLoading;
+  const emptyTemplates = !loading && !templates.isError && !others.length;
 
   const renderCard = (template: TemplateDTO, pinned = false) => {
     const name = getBilingualName(template.name, template.nameAr, lang);
@@ -94,8 +95,8 @@ export function NoteTemplateList() {
               </Badge>
             </SelectTrigger>
             <SelectContent>
-              {Object.values(TEMPLATE_STATUS).map((value) => (
-                <SelectItem key={value} value={value} disabled={value === template.status || value === TEMPLATE_STATUS.SCHEDULED}>{t.visits.templateStatuses[value]}</SelectItem>
+              {Object.values(TEMPLATE_STATUS).filter((value) => value !== TEMPLATE_STATUS.SCHEDULED).map((value) => (
+                <SelectItem key={value} value={value} disabled={value === template.status}>{t.visits.templateStatuses[value]}</SelectItem>
               ))}
             </SelectContent>
           </Select>}
@@ -117,7 +118,7 @@ export function NoteTemplateList() {
   };
 
   return (
-    <div className={cn('flex flex-col gap-3 sm:gap-4', loading && 'page-fill overflow-hidden [&>*]:shrink-0')}>
+    <div className={cn('flex flex-col gap-3 sm:gap-4', (loading || emptyTemplates) && 'page-fill-always [&>*]:shrink-0')}>
       <DirectoryToolbar
         search={search}
         onSearchChange={(value) => { setSearch(value); setPage(1); }}
@@ -161,7 +162,7 @@ export function NoteTemplateList() {
 
       {clinicDefault.isError ? <ErrorState onRetry={() => void clinicDefault.refetch()} /> : loading ? <NoteTemplateCardSkeleton /> : defaultTemplate ? renderCard(defaultTemplate, true) : null}
 
-      <section className="space-y-2.5 sm:space-y-3">
+      <section className={cn('space-y-2.5 sm:space-y-3', emptyTemplates && 'max-h-[45dvh] overflow-y-auto overscroll-y-contain md:max-h-none')}>
         <h2 className="text-xs font-semibold text-muted-foreground sm:text-sm">{t.visits.readyMade}</h2>
         {starters.isError ? <ErrorState onRetry={() => void starters.refetch()} /> : loading ? <div className={NOTE_TEMPLATE_GRID}>{Array.from({ length: 6 }, (_, index) => <NoteTemplateCardSkeleton key={index} />)}</div> : (
           <div className={NOTE_TEMPLATE_GRID}>
@@ -180,12 +181,12 @@ export function NoteTemplateList() {
         )}
       </section>
 
-      <section className="space-y-2.5 sm:space-y-3">
+      <section className={cn('space-y-2.5 sm:space-y-3', emptyTemplates && 'flex min-h-0 flex-1 flex-col')}>
         <h2 className="text-xs font-semibold text-muted-foreground sm:text-sm">{t.visits.createdTemplates}</h2>
         {templates.isError ? <ErrorState onRetry={() => void templates.refetch()} /> : null}
         {loading ? <div className={NOTE_TEMPLATE_GRID}>{Array.from({ length: 12 }, (_, index) => <NoteTemplateCardSkeleton key={index} />)}</div> : null}
         {!loading && !templates.isError && !others.length ? (
-          <EmptyState icon={IconFileText} title={t.visits.templates} description={t.visits.templatesDesc} />
+          <EmptyState className="flex-1" icon={IconFileText} title={t.visits.templates} description={t.visits.templatesDesc} />
         ) : null}
         {!loading && others.length ? <div className={NOTE_TEMPLATE_GRID}>{pageItems.map((item) => renderCard(item))}</div> : null}
         {!loading ? <Pagination page={currentPage} totalItems={others.length} pageSize={PAGE_SIZE} onPageChange={setPage} /> : null}

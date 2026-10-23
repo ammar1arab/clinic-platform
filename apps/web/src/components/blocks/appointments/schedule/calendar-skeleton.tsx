@@ -14,7 +14,7 @@ export function CalendarSkeleton({ view = 'month', focused = false }: { view?: S
 
   return (
     <div
-      className={cn('page-fill h-0 flex-1 min-h-0 overflow-hidden bg-card', focused ? 'rounded-none border-0 px-1.5 pb-1.5 sm:px-2 sm:pb-2' : 'card-aura rounded-xl border p-2 sm:p-2.5')}
+      className={cn('page-fill h-0 flex-1 min-h-0 overflow-hidden bg-card card-aura rounded-xl border', focused ? 'p-1.5 sm:p-2' : 'p-2 sm:p-2.5')}
       role="status"
       aria-label={t.appointments.calendarLoading}
     >

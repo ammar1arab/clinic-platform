@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Badge, Button } from '@/components/ui';
-import { EmptyState, ProfileSection } from '@/components/primitives';
+import { CountBadge, EmptyState, ProfileSection } from '@/components/primitives';
 import { StatusBadgeBlock } from '@/components/blocks/appointments';
 import {
   doctorDisplayName,
@@ -184,10 +184,10 @@ export function PatientTimelineBlock({ appointments, referrals = [] }: Props) {
   return (
     <ProfileSection
       title={t.patient.activity}
-      description={`${visitCount} ${visitCount === 1 ? t.patient.visit : t.patient.visits} · ${t.patient.referralsAndPayments}`}
+      action={<CountBadge count={visitCount} />}
     >
       {items.length === 0 ? (
-        <EmptyState
+        <EmptyState framed={false}
           icon={IconVisit}
           title={t.patient.noActivity}
           description={t.patient.noActivityDesc}

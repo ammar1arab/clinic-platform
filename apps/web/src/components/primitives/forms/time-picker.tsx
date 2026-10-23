@@ -30,6 +30,13 @@ interface Props {
   disabled?: boolean;
   className?: string;
   step?: 5 | 10 | 15 | 30;
+  isAvailable?: (hours: number, minutes: number) => boolean;
+  range?: { start: string; end: string };
+}
+
+function toMinutesOfDay(value: string) {
+  const parts = parseClock(value);
+  return parts ? parts.hours * 60 + parts.minutes : null;
 }
 
 function formatDisplay(value: string | undefined, lang: string) {
@@ -47,6 +54,8 @@ export function TimePicker({
   disabled,
   className,
   step = 5,
+  isAvailable,
+  range,
 }: Props) {
   const { t, lang } = useLanguage();
   const [open, setOpen] = React.useState(false);
@@ -59,6 +68,14 @@ export function TimePicker({
     for (let m = 0; m < 60; m += step) list.push(m);
     return list;
   }, [step]);
+
+  const rangeStart = range ? toMinutesOfDay(range.start) : null;
+  const rangeEnd = range ? toMinutesOfDay(range.end) : null;
+  const inRange = (h: number, m: number) => {
+    const total = h * 60 + m;
+    return (rangeStart === null || total >= rangeStart) && (rangeEnd === null || total <= rangeEnd);
+  };
+  const allowed = (h: number, m: number) => inRange(h, m) && (!isAvailable || isAvailable(h, m));
 
   const hour = parsed?.hours ?? 9;
   const minute = parsed
@@ -143,6 +160,7 @@ export function TimePicker({
                   <SelectItem
                     key={h}
                     value={String(h)}
+                    disabled={!minutes.some((m) => allowed(h, m))}
                     className="cursor-pointer"
                   >
                     {formatHour(h, lang)}
@@ -164,6 +182,7 @@ export function TimePicker({
                   <SelectItem
                     key={m}
                     value={String(m)}
+                    disabled={!allowed(hour, m)}
                     className="cursor-pointer"
                   >
                     {pad2(m)}

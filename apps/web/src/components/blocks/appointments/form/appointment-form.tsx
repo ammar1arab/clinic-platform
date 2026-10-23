@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { appointmentAccess, canEditAppointment } from '@clinic/types';
 import { FormActions } from '@/components/primitives';
 import { useAppointmentFormResources } from '@/hooks/api/use-appointment-form';
+import { usePractitioner } from '@/hooks/api/use-practitioners';
+import { isPractitionerAvailable } from '@/lib/practitioner-availability';
 import { useNow } from '@/hooks/shared/use-now';
 import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useClinic } from '@/hooks/api/use-clinic';
@@ -36,7 +38,7 @@ import {
   toUpdateAppointmentInput,
   type AppliedDiscount,
 } from './appointment-form.mapper';
-import { formatDate, formatTime } from '@/lib/datetime';
+import { browserTimeZone, formatDate, formatTime } from '@/lib/datetime';
 import { getBilingualName } from '@/i18n';
 import { formatDoctorLabel, patientDisplayName } from '../shared/appointment-display';
 
@@ -76,7 +78,7 @@ export function AppointmentForm({
       return zodResolver(appointmentSchema)(values, context, options);
     },
     defaultValues: appointment
-      ? toAppointmentFormValues(appointment)
+      ? toAppointmentFormValues(appointment, clinic?.timezone || browserTimeZone())
       : emptyAppointmentValues({
           date: defaultDate,
           time: defaultTime,
@@ -89,6 +91,14 @@ export function AppointmentForm({
 
   const sessionType = useWatch({ control, name: 'sessionType' });
   const serviceId = useWatch({ control, name: 'serviceId' });
+  const doctorId = useWatch({ control, name: 'doctorId' });
+  const date = useWatch({ control, name: 'date' });
+  const durationMins = useWatch({ control, name: 'durationMins' });
+  const practitioner = usePractitioner(doctorId);
+  const schedule = practitioner.data;
+  const isTimeAvailable = schedule && date
+    ? (hours: number, minutes: number) => isPractitionerAvailable(schedule, date, hours, minutes, Number(durationMins) || 0, clinic?.timezone || browserTimeZone())
+    : undefined;
   const patientId = useWatch({ control, name: 'patientId' });
   const feeOverride = useWatch({ control, name: 'feeOverride' });
   const discount = useWatch({ control, name: 'discount' });
@@ -198,7 +208,12 @@ export function AppointmentForm({
     }
   };
 
-  const onSubmit = async (data: AppointmentFormData) => {
+  const onSubmit = async (input: AppointmentFormData) => {
+    const practitioner = staff?.find((member) => member.id === input.doctorId);
+    const data: AppointmentFormData = {
+      ...input,
+      departmentId: practitioner ? (practitioner.departmentId ?? '') : input.departmentId,
+    };
     if (fixedExceedsFee) {
       toast.error(t.appointments.fixedDiscountExceedsFee);
       return;
@@ -225,7 +240,7 @@ export function AppointmentForm({
           data: toUpdateAppointmentInput(data, appliedCodeId, {
             status,
             cancelReason: status === 'cancelled' ? cancelReason.trim() : undefined,
-          }, user?.role),
+          }, user?.role, clinic?.timezone || browserTimeZone()),
         },
         {
           onSuccess: (res) => onSuccess(res.id),
@@ -235,7 +250,7 @@ export function AppointmentForm({
       return;
     }
 
-    createMutation.mutate(toCreateAppointmentInput(data, appliedCodeId), {
+    createMutation.mutate(toCreateAppointmentInput(data, appliedCodeId, clinic?.timezone || browserTimeZone()), {
       onSuccess: async (res) => {
         if (pendingPackageId) {
           try {
@@ -315,7 +330,7 @@ export function AppointmentForm({
         }}
       />
 
-      <AppointmentScheduleFields locked={!access.schedule} values={readOnly} />
+      <AppointmentScheduleFields locked={!access.schedule} values={readOnly} isTimeAvailable={isTimeAvailable} />
 
       <AppointmentSessionFields
         sessionType={sessionType}

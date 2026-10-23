@@ -9,6 +9,7 @@ import {
 } from '@/components/blocks/appointments';
 import { PageBack, FormPageSkeleton } from '@/components/primitives';
 import { useAuth, useLanguage } from '@/providers';
+import { ROLE } from '@clinic/types';
 
 function NewAppointmentInner() {
   const router = useRouter();
@@ -18,7 +19,7 @@ function NewAppointmentInner() {
 
   const defaultDate = params.get('date') ?? '';
   const defaultTime = params.get('time') ?? '';
-  const defaultDoctorId = params.get('doctorId') ?? user?.clinicUserId ?? '';
+  const defaultDoctorId = params.get('doctorId') ?? (user?.role === ROLE.PRACTITIONER ? user.clinicUserId : '');
   const backHref = schedulePath(parseScheduleView(params.get('view')));
 
   return (

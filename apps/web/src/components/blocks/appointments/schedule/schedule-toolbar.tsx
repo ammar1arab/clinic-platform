@@ -1,16 +1,20 @@
 'use client';
 
-import { APPOINTMENT_STATUS_GROUPS } from '@clinic/types';
-
 import {
   Button,
   DropdownMenu,
+  DropdownMenuContent,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Badge,
+  Popover,
 } from '@/components/ui';
 import {
-  SearchInput,
+  DirectoryToolbar,
+  DIRECTORY_ACTION_CLASS,
+  FilterPanel,
+  FilterTrigger,
+  FormField,
   SearchablePicker,
   SoftTip,
 } from '@/components/primitives';
@@ -20,7 +24,7 @@ import type { ScheduleView } from './schedule-nav';
 import { FORM_ALL } from '@/constants/form';
 import { cn } from '@/lib/utils';
 import { IconAdd, IconChevronDown, IconNewPatient } from '@/constants/icons';
-import { StatusMenuContent, StatusFilterItems } from '../shared/status-menu';
+import { StatusFilterItems } from '../shared/status-menu';
 import { useLanguage } from '@/providers';
 
 interface Props {
@@ -35,6 +39,8 @@ interface Props {
   onClearStatuses: () => void;
   onNewPatient?: () => void;
   onNewAppointment?: () => void;
+  extraFilterCount?: number;
+  onClearExtraFilters?: () => void;
   pickerSlotRef?: (element: HTMLDivElement | null) => void;
 }
 
@@ -48,7 +54,7 @@ function StatusFilterDropdown({
   onClear: () => void;
 }) {
   const { t } = useLanguage();
-  const count = Object.values(APPOINTMENT_STATUS_GROUPS).filter((statuses) => statuses.some((status) => active.has(status))).length;
+  const count = active.size;
 
   return (
     <DropdownMenu>
@@ -58,11 +64,11 @@ function StatusFilterDropdown({
           variant="outline"
           size="sm"
           className={cn(
-            'h-8 shrink-0 gap-1 border-border/70 bg-background/50 px-2.5 font-semibold shadow-2xs',
+            'h-8 w-full justify-between gap-1.5 bg-background px-2.5 font-normal',
             count > 0 && 'border-primary/35 bg-primary/5 text-foreground',
           )}
         >
-          <span className="truncate text-muted-foreground">{t.appointments.status}</span>
+          <span className="min-w-0 flex-1 truncate text-start">{t.appointments.status}</span>
           {count > 0 ? (
             <Badge variant="info" className="h-5 min-h-0 min-w-5 justify-center px-1 font-bold">
               {count}
@@ -71,9 +77,9 @@ function StatusFilterDropdown({
           <IconChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
-      <StatusMenuContent
+      <DropdownMenuContent
         align="start"
-        className="z-80 status-menu-flat"
+        className="z-120 w-(--radix-dropdown-menu-trigger-width) max-h-[min(20rem,var(--radix-dropdown-menu-content-available-height))]"
       >
         <StatusFilterItems active={active} onToggle={onToggle} />
         {count > 0 && (
@@ -88,7 +94,7 @@ function StatusFilterDropdown({
             </button>
           </>
         )}
-      </StatusMenuContent>
+      </DropdownMenuContent>
     </DropdownMenu>
   );
 }
@@ -106,6 +112,8 @@ export function ScheduleToolbar({
   onNewPatient,
   onNewAppointment,
   pickerSlotRef,
+  extraFilterCount = 0,
+  onClearExtraFilters,
 }: Props) {
   const { t, lang } = useLanguage();
 
@@ -115,21 +123,41 @@ export function ScheduleToolbar({
       ? t.appointments.searchPatients
       : t.appointments.searchPlaceholder;
 
-  return (
-    <div
-      data-schedule-toolbar=""
-      data-focus-hide=""
-      className="card-aura flex shrink-0 flex-col gap-1.5 rounded-xl border bg-card/90 p-1.5 shadow-xs backdrop-blur-md sm:rounded-xl sm:p-2"
-    >
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        <SearchInput
-          value={search}
-          onChange={onSearchChange}
-          placeholder={searchPlaceholder}
-          className="min-w-0 flex-1"
-        />
+  const count = Number(Boolean(departmentId)) + Number(statusFilters.size > 0) + extraFilterCount;
+  const clear = () => {
+    onDepartmentChange('');
+    onClearStatuses();
+    onClearExtraFilters?.();
+  };
 
-        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
+  return (
+    <div data-schedule-toolbar="" data-focus-hide="" className="shrink-0">
+      <DirectoryToolbar search={search} onSearchChange={onSearchChange} searchPlaceholder={searchPlaceholder} actions={
+        <>
+          <Popover>
+            <FilterTrigger count={count} />
+            <FilterPanel count={count} onClear={clear}>
+              <FormField label={t.appointments.departments}>
+                <SearchablePicker
+                  size="sm"
+                  options={(departments ?? []).map((dept) => ({ value: dept.id, label: (lang === 'ar' && dept.nameAr) || dept.name }))}
+                  value={departmentId || FORM_ALL}
+                  onChange={(next) => onDepartmentChange(next === FORM_ALL ? '' : next)}
+                  extraOption={{ value: FORM_ALL, label: t.appointments.departments }}
+                  placeholder={t.appointments.departments}
+                  searchPlaceholder={t.appointments.searchPlaceholder}
+                />
+              </FormField>
+              {view === 'doctors' || view === 'queue' ? (
+                <FormField label={view === 'doctors' ? t.practitioner.practitioner : t.queue.waitingQueue}>
+                  <div ref={pickerSlotRef} className="min-w-0" />
+                </FormField>
+              ) : null}
+              <FormField label={t.appointments.status}>
+                <StatusFilterDropdown active={statusFilters} onToggle={onToggleStatus} onClear={onClearStatuses} />
+              </FormField>
+            </FilterPanel>
+          </Popover>
           {onNewPatient && (
             <SoftTip label={t.appointments.addPatient}>
               <Button
@@ -137,7 +165,7 @@ export function ScheduleToolbar({
                 size="sm"
                 onClick={onNewPatient}
                 aria-label={t.appointments.addPatient}
-                className="size-8 shrink-0 px-0 shadow-2xs active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
+                className={DIRECTORY_ACTION_CLASS}
               >
                 <IconNewPatient className="size-3.5 shrink-0 text-muted-foreground" />
                 <span className="hidden font-semibold sm:inline">{t.appointments.patient}</span>
@@ -150,39 +178,15 @@ export function ScheduleToolbar({
                 size="sm"
                 onClick={onNewAppointment}
                 aria-label={t.appointments.addAppointment}
-                className="size-8 shrink-0 px-0 active:scale-95 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
+                className={DIRECTORY_ACTION_CLASS}
               >
                 <IconAdd className="size-3.5 shrink-0" />
                 <span className="hidden font-semibold sm:inline">{t.appointments.appointment}</span>
               </Button>
             </SoftTip>
           )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1.5 border-t border-border/40 pt-1.5 sm:gap-2">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-          <SearchablePicker
-            size="sm"
-            options={(departments ?? []).map((dept) => ({
-              value: dept.id,
-              label: (lang === 'ar' && dept.nameAr) || dept.name,
-            }))}
-            value={departmentId || FORM_ALL}
-            onChange={(next) => onDepartmentChange(next === FORM_ALL ? '' : next)}
-            extraOption={{ value: FORM_ALL, label: t.appointments.departments }}
-            placeholder={t.appointments.departments}
-            searchPlaceholder={t.appointments.searchPlaceholder}
-            className="h-8 min-w-[9rem] flex-1 bg-background/50 sm:w-52 sm:max-w-56 sm:flex-none"
-          />
-          {view === 'doctors' || view === 'queue' ? <div ref={pickerSlotRef} className="contents" /> : null}
-        </div>
-        <StatusFilterDropdown
-          active={statusFilters}
-          onToggle={onToggleStatus}
-          onClear={onClearStatuses}
-        />
-      </div>
+        </>
+      } />
     </div>
   );
 }

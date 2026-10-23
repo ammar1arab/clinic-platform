@@ -21,7 +21,6 @@ import {
 } from '@/components/ui';
 import {
   BilingualNameFields,
-  DatePicker,
   EmptyState,
   ChoiceField,
   FormField,
@@ -37,7 +36,7 @@ import {
 } from '@/components/primitives';
 import { ROUTES } from '@/constants/routes';
 import { TEMPLATE_STATUS_VARIANT } from '@/constants/status';
-import { IconFieldText, IconFieldParagraph, IconFieldNumber, IconFieldSelect, IconFieldMultiSelect, IconFieldBoolean, IconFieldMeasurement, IconFieldScale, IconFieldMedication, IconTime, IconCalendar, IconGrip, IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconFileText, IconArchive, IconCopy, IconFilters, IconRotateCcw } from '@/constants/icons';
+import { IconFieldText, IconFieldParagraph, IconFieldNumber, IconFieldSelect, IconFieldMultiSelect, IconFieldBoolean, IconFieldMeasurement, IconFieldScale, IconFieldMedication, IconTime, IconCalendar, IconGrip, IconAdd, IconArrowDown, IconArrowUp, IconDelete, IconFileText, IconCopy, IconFilters, IconArchive, IconRotateCcw, IconSend, type LucideIcon } from '@/constants/icons';
 import { useDepartments } from '@/hooks/api/use-departments';
 import { useServices } from '@/hooks/api/use-services';
 import { usePractitionerDirectory } from '@/hooks/api/use-practitioners';
@@ -61,7 +60,6 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
   const { draft, record, locked, selected, selectedField, selectedSection } = builder;
   const status = record?.status ?? TEMPLATE_STATUS.DRAFT;
   const statusVariant = TEMPLATE_STATUS_VARIANT[status];
-  const [scheduleDate, setScheduleDate] = useState('');
   const [pickKind, setPickKind] = useState<PickKind>(TEMPLATE_AUDIENCE.PRACTITIONERS);
   const audienceLabel = {
     [TEMPLATE_AUDIENCE.DEPARTMENTS]: t.visits.departments,
@@ -90,7 +88,7 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
         .join(' · ');
 
   return (
-    <Tabs ref={bind} defaultValue={readOnly ? 'publish' : 'settings'} className="page-fill gap-2">
+    <Tabs ref={bind} defaultValue={readOnly ? 'publish' : 'settings'} className="page-fill-always flex-1 gap-2">
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <PageBack backHref={ROUTES.NOTE_TEMPLATES} />
         <div className="hidden md:block">
@@ -104,11 +102,15 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
           ) : (
             <>
               <Badge variant={statusVariant}>{t.visits.templateStatuses[status]}</Badge>
-              <SoftTip label={t.visits.clone}>
-                <Button type="button" size="icon" variant="ghost" className="size-7 sm:size-8" disabled={builder.cloning} aria-label={t.visits.clone} onClick={builder.clone}>
-                  <IconCopy className="size-4" />
-                </Button>
-              </SoftTip>
+              {readOnly || builder.isDefault ? null : status === TEMPLATE_STATUS.ARCHIVED ? (
+                <IconAction label={t.visits.restoreTemplate} icon={IconRotateCcw} disabled={builder.pending} onClick={builder.restore} />
+              ) : (
+                <IconAction label={t.visits.archive} icon={IconArchive} disabled={builder.pending || locked} onClick={builder.archive} />
+              )}
+              <IconAction label={t.visits.clone} icon={IconCopy} disabled={builder.cloning} onClick={builder.clone} />
+              {readOnly || builder.isDefault || status === TEMPLATE_STATUS.ARCHIVED ? null : (
+                <IconAction label={t.visits.publish} icon={IconSend} variant="default" disabled={builder.pending || locked} onClick={builder.publish} />
+              )}
             </>
           )}
         </div>
@@ -118,8 +120,8 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
         <BuilderTabsList variant="fill" />
       </div>
 
-      <TabsContent value="settings" className="min-h-0 space-y-4 overflow-y-auto p-1">
-        <Card className="overflow-visible">
+      <TabsContent value="settings" className="flex min-h-0 flex-col gap-4 overflow-y-auto p-1">
+        <Card className="min-w-0 flex-1 shrink-0 overflow-visible">
           <CardHeader className="space-y-1">
             <p className="text-sm font-semibold">{t.visits.template}</p>
           </CardHeader>
@@ -178,7 +180,7 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
           <Card size="sm" className="min-h-0 min-w-0 overflow-visible">
             <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">
             {!draft.sections.length ? (
-              <EmptyState icon={IconFileText} title={t.visits.emptyCanvas} description={t.visits.emptyCanvasCta} action={<Button type="button" disabled={locked} onClick={builder.addSection}><IconAdd className="size-4" />{t.visits.addSection}</Button>} />
+              <EmptyState framed={false} icon={IconFileText} title={t.visits.emptyCanvas} description={t.visits.emptyCanvasCta} action={<Button type="button" disabled={locked} onClick={builder.addSection}><IconAdd className="size-4" />{t.visits.addSection}</Button>} />
             ) : null}
             {draft.sections.map((section, sectionIndex) => (
               <Card key={section.id} data-drop-target={section.id} className={cn('group/drop overflow-visible transition-[border-color,background-color] duration-200 motion-reduce:transition-none data-[drag-over=true]:bg-primary/5', selected?.sectionId === section.id && !selected.fieldId && 'ring-1 ring-primary')}>
@@ -269,40 +271,20 @@ export function NoteTemplateBuilder({ template, readOnly = false }: { template?:
         </div>
       </TabsContent>
 
-      <TabsContent value="publish" className="min-h-0 space-y-4 overflow-y-auto p-1">
-        {record && !readOnly ? (
-          <Card>
-            <CardContent className="space-y-3">
-              {builder.isDefault ? <p className="text-xs leading-relaxed text-muted-foreground">{t.visits.defaultTemplateRule}</p> : status === TEMPLATE_STATUS.ARCHIVED ? (
-                <Button type="button" size="sm" variant="outline" disabled={builder.pending} onClick={builder.restore}>
-                  <IconRotateCcw className="size-4" />{t.visits.restoreTemplate}
-                </Button>
-              ) : (
-                <>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" size="sm" disabled={builder.pending || locked} onClick={builder.publish}>{t.visits.publish}</Button>
-                    <Button type="button" size="sm" variant="outline" disabled={builder.pending || locked || status === TEMPLATE_STATUS.DRAFT} onClick={builder.makeDraft}>{t.visits.saveDraft}</Button>
-                    <Button type="button" size="sm" variant="outline" disabled={builder.pending || locked} onClick={builder.archive}><IconArchive className="size-4" />{t.visits.archive}</Button>
-                  </div>
-                  <div className="flex flex-wrap items-end gap-2">
-                    <FormField label={t.visits.schedulePlaceholder} labelClassName="text-xs">
-                      <DatePicker value={scheduleDate} onChange={setScheduleDate} placeholder={t.visits.schedulePlaceholder} fromDate={new Date(new Date().setHours(24, 0, 0, 0))} />
-                    </FormField>
-                    <Button type="button" size="sm" variant="outline" disabled={builder.pending || locked || !scheduleDate} onClick={() => builder.schedule(new Date(`${scheduleDate}T00:00:00`).toISOString())}>
-                      <IconCalendar className="size-4" />{t.visits.scheduleConfirm}
-                    </Button>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        ) : null}
+      <TabsContent value="publish" className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-1">
         <TemplatePreview key={JSON.stringify(previewSections(draft))} sections={previewSections(draft)} title={getBilingualName(draft.name, draft.nameAr, lang)} />
-        {record?.status === TEMPLATE_STATUS.SCHEDULED && record.scheduledAt ? (
-          <p className="text-xs text-muted-foreground">{t.visits.scheduleAt} {new Date(record.scheduledAt).toLocaleDateString(lang === 'ar' ? 'ar' : 'en')}</p>
-        ) : null}
       </TabsContent>
     </Tabs>
+  );
+}
+
+function IconAction({ label, icon: Icon, disabled, onClick, variant = 'ghost' }: { label: string; icon: LucideIcon; disabled: boolean; onClick: () => void; variant?: 'ghost' | 'default' }) {
+  return (
+    <SoftTip label={label}>
+      <Button type="button" size="icon" variant={variant} className="size-7 sm:size-8" disabled={disabled} aria-label={label} onClick={onClick}>
+        <Icon className="size-4" />
+      </Button>
+    </SoftTip>
   );
 }
 
@@ -312,7 +294,7 @@ function BuilderTabsList({ variant }: { variant: 'pill' | 'fill' }) {
     <TabsList variant={variant} className={variant === 'pill' ? 'mx-auto' : undefined}>
       <TabsTrigger value="settings">{t.visits.builderSettings}</TabsTrigger>
       <TabsTrigger value="build">{t.visits.builderBuild}</TabsTrigger>
-      <TabsTrigger value="publish">{t.visits.builderPublish}</TabsTrigger>
+      <TabsTrigger value="publish">{t.visits.builderPreview}</TabsTrigger>
     </TabsList>
   );
 }
@@ -322,13 +304,13 @@ function TemplatePreview({ sections, title }: { sections: ClinicalSection[]; tit
   const [values, setValues] = useState<Record<string, ClinicalValue>>({});
   const [focusedId, setFocusedId] = useState(sections[0]?.id ?? '');
   return (
-    <Card className="overflow-visible">
+    <Card className="min-h-0 min-w-0 flex-1 overflow-visible">
       <CardHeader>
         <p className="text-sm font-semibold">{title || t.visits.preview}</p>
       </CardHeader>
-      <CardContent>
-        <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="mx-auto min-w-0 space-y-4">
-          {sections.length ? <ClinicalFields sections={sections} values={values} lang={lang} focusedId={focusedId} onFocusSection={setFocusedId} onChange={(id, value) => setValues((current) => { const next = { ...current }; if (value === undefined) delete next[id]; else next[id] = value; return next; })} /> : <EmptyState icon={IconFileText} title={t.visits.previewIncomplete} />}
+      <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain">
+        <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="mx-auto flex w-full min-w-0 flex-1 flex-col gap-4">
+          {sections.length ? <ClinicalFields sections={sections} values={values} lang={lang} focusedId={focusedId} onFocusSection={setFocusedId} onChange={(id, value) => setValues((current) => { const next = { ...current }; if (value === undefined) delete next[id]; else next[id] = value; return next; })} /> : <EmptyState framed={false} className="flex-1" icon={IconFileText} title={t.visits.previewIncomplete} />}
         </div>
       </CardContent>
     </Card>

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui';
 import { Appointment, type AppointmentStatus } from '@/services/appointments.service';
 import { AppointmentStatusSelect } from '../shared/appointment-status-select';
+import { QueueMoveDialog } from './queue-move-dialog';
 import { doctorDisplayName, formatApptTimeRange, patientDisplayName } from '../shared/appointment-display';
 import { STATUS_COLORS } from '../shared/status-badge';
 import {
@@ -29,7 +30,7 @@ import {
   type AppointmentPopoverState,
 } from './appointment-popovers';
 import { cn } from '@/lib/utils';
-import { EmptyState, PreviewableAvatar, QueueColumnSkeleton, SoftTip } from '@/components/primitives';
+import { EmptyState, PreviewableAvatar, QueueColumnSkeleton } from '@/components/primitives';
 import { elapsedMinutesSince, formatWaitingMins } from '@/lib/waiting-time';
 import { IconActivate, IconBan, IconCalendarClock, IconCheckCircle, IconCreditCard, IconOnline, IconPatients, IconPlay, IconRoom, IconService, IconTime, IconTimer } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
@@ -51,21 +52,14 @@ const STAGE_OF: Record<AppointmentStatus, QueueStage> = {
   [APPOINTMENT_STATUS.CANCELLED]: QUEUE_STAGE.CLOSED,
 };
 
-type DropReason = 'dropLocked' | 'dropClosed' | 'dropConfirmFirst' | 'dropArriveFirst' | 'dropFinishInVisit' | 'dropInSession' | 'dropUseStatusMenu';
-
-/** `null` means the move is allowed, `'same'` means the card is already there. */
-function dropVerdict(status: AppointmentStatus, stage: QueueStage): DropReason | 'same' | null {
-  if (STAGE_OF[status] === stage) return 'same';
-  if (status === APPOINTMENT_STATUS.COMPLETED) return 'dropLocked';
-  if (STAGE_OF[status] === QUEUE_STAGE.CLOSED) return 'dropClosed';
-  if (stage === QUEUE_STAGE.CLOSED) return 'dropUseStatusMenu';
-  if (stage === QUEUE_STAGE.COMPLETED) return 'dropFinishInVisit';
-  if (status === APPOINTMENT_STATUS.IN_PROGRESS) return 'dropInSession';
-  const arrived = STAGE_OF[status] === QUEUE_STAGE.WAITING;
-  if (stage === QUEUE_STAGE.UPCOMING) return null;
-  if (status === APPOINTMENT_STATUS.UNCONFIRMED) return 'dropConfirmFirst';
-  if (stage === QUEUE_STAGE.IN_PROGRESS && !arrived) return 'dropArriveFirst';
-  return null;
+/** A card can be dropped into a column only when the workflow can move it there. Completion happens in the visit page. */
+function dropAllowed(status: AppointmentStatus, stage: QueueStage): boolean {
+  if (STAGE_OF[status] === stage) return false;
+  if (stage === QUEUE_STAGE.COMPLETED) return status === APPOINTMENT_STATUS.IN_PROGRESS;
+  if (STAGE_OF[status] === QUEUE_STAGE.CLOSED || status === APPOINTMENT_STATUS.COMPLETED) return false;
+  if (status === APPOINTMENT_STATUS.IN_PROGRESS) return false;
+  if (stage === QUEUE_STAGE.UPCOMING) return status === APPOINTMENT_STATUS.CHECKED_IN || status === APPOINTMENT_STATUS.WAITING;
+  return true;
 }
 
 type PendingMove = DragSize & { id: string; from: AppointmentStatus; stage: QueueStage };
@@ -74,6 +68,8 @@ interface Props {
   appointments: Appointment[] | undefined;
   isLoading: boolean;
   toolbarSlot?: HTMLElement | null;
+  stage?: QueueStage;
+  onStageChange?: (stage: QueueStage) => void;
   focused?: boolean;
   canManagePayments?: boolean;
   onEventClick: (appointment: Appointment) => void;
@@ -83,53 +79,131 @@ export function WaitingQueueBoard({
   appointments,
   isLoading,
   toolbarSlot,
+  stage,
+  onStageChange,
   focused = false,
   canManagePayments = true,
   onEventClick,
 }: Props) {
   const { t, lang } = useLanguage();
   const router = useRouter();
-  const [stageTab, setStageTab] = useState<QueueStage>(QUEUE_STAGE.ALL);
+  const [localStage, setLocalStage] = useState<QueueStage>(QUEUE_STAGE.ALL);
+  const stageTab = stage ?? localStage;
+  const setStageTab = onStageChange ?? setLocalStage;
   const single = stageTab !== QUEUE_STAGE.ALL;
   const [appointmentPopover, setAppointmentPopover] =
     useState<AppointmentPopoverState | null>(null);
   const now = useNow(10_000);
   const markWaiting = useApiMutation({
-    request: (appointment: Appointment) =>
+    request: ({ appointment, statusReason }: { appointment: Appointment; statusReason?: string }) =>
       appointment.sessionType === SESSION_TYPE.ONLINE
-        ? visitsService.checkIn(appointment.id, PRESENCE_SOURCE.ONLINE_MANUAL)
-        : visitsService.markWaiting(appointment.id),
+        ? visitsService.checkIn(appointment.id, PRESENCE_SOURCE.ONLINE_MANUAL, statusReason)
+        : visitsService.markWaiting(appointment.id, statusReason),
     invalidateQueries: [...INVALIDATE.visitWrite],
     successMessage: t.visits.presenceSaved,
   });
 
   const updateAppointment = useUpdateAppointment();
+  const finishVisit = useApiMutation({
+    request: (input: { visitId: string; expectedRevision: number }) => visitsService.finish(input.visitId, input.expectedRevision),
+    invalidateQueries: [...INVALIDATE.visitWrite],
+  });
   const startVisit = useApiMutation({
-    request: (appointmentId: string) => visitsService.start(appointmentId),
+    request: ({ appointmentId, statusReason }: { appointmentId: string; statusReason?: string }) =>
+      visitsService.start(appointmentId, undefined, statusReason),
     invalidateQueries: [...INVALIDATE.visitWrite],
   });
   const [pending, setPending] = useState<PendingMove | null>(null);
+  const [move, setMove] = useState<PendingMove & { appointment: Appointment } | null>(null);
+  const [moveNote, setMoveNote] = useState('');
   const moving = pending && appointments?.find((a) => a.id === pending.id)?.status === pending.from ? pending : null;
   const movingId = moving?.id;
 
   const { drag, bind, zoneProps } = useDragDrop<Appointment>({
-    canDrop: (appt, stage) => dropVerdict(appt.status, stage as QueueStage) === null,
-    onReject: (appt, stage) => {
-      const verdict = dropVerdict(appt.status, stage as QueueStage);
-      if (verdict && verdict !== 'same') toast.error(t.queue[verdict]);
-    },
+    canDrop: (appt, stage) => dropAllowed(appt.status, stage as QueueStage),
     onDrop: (appt, zone, size) => {
       const stage = zone as QueueStage;
-      const onError = (error: ApiErrorLike) => {
-        setPending(null);
-        toast.error(extractErrorMessage(error) || t.appointments.statusUpdateFailed);
-      };
-      setPending({ id: appt.id, from: appt.status, stage, ...size });
-      if (stage === QUEUE_STAGE.WAITING) markWaiting.mutate(appt, { onError });
-      else if (stage === QUEUE_STAGE.IN_PROGRESS) startVisit.mutate(appt.id, { onError });
-      else updateAppointment.mutate({ id: appt.id, data: { status: APPOINTMENT_STATUS.CONFIRMED } }, { onError });
+      if (stage === QUEUE_STAGE.COMPLETED) {
+        void completeFromQueue(appt).catch((error: ApiErrorLike) => {
+          toast.error(extractErrorMessage(error) || t.appointments.statusUpdateFailed);
+        });
+        return;
+      }
+      setMoveNote('');
+      setMove({ appointment: appt, id: appt.id, from: appt.status, stage, ...size });
     },
   });
+
+  const completeFromQueue = async (appointment: Appointment) => {
+    const workspace = await visitsService.workspace(appointment.id);
+    if (workspace.visitId && workspace.allowedActions.finish) {
+      await finishVisit.mutateAsync({ visitId: workspace.visitId, expectedRevision: workspace.visitRevision });
+      return;
+    }
+    router.push(ROUTES.VISIT(appointment.id));
+  };
+
+  const runMove = async (appointment: Appointment, stage: QueueStage, statusReason?: string) => {
+    const { id, status } = appointment;
+    const arrived = status === APPOINTMENT_STATUS.CHECKED_IN || status === APPOINTMENT_STATUS.WAITING;
+    if (stage === QUEUE_STAGE.UPCOMING) {
+      await updateAppointment.mutateAsync({ id, data: { status: APPOINTMENT_STATUS.CONFIRMED, statusReason } });
+      return;
+    }
+    if (status === APPOINTMENT_STATUS.UNCONFIRMED) {
+      await updateAppointment.mutateAsync({ id, data: { status: APPOINTMENT_STATUS.CONFIRMED } });
+    }
+    if (stage === QUEUE_STAGE.WAITING) {
+      await markWaiting.mutateAsync({ appointment, statusReason });
+      return;
+    }
+    if (!arrived) await markWaiting.mutateAsync({ appointment });
+    await startVisit.mutateAsync({ appointmentId: id, statusReason });
+  };
+
+  const closeMove = async (status: typeof APPOINTMENT_STATUS.NO_SHOW | typeof APPOINTMENT_STATUS.CANCELLED) => {
+    if (!move) return;
+    const note = moveNote.trim() || undefined;
+    setPending(move);
+    setMove(null);
+    try {
+      await updateAppointment.mutateAsync({
+        id: move.appointment.id,
+        data: {
+          status,
+          statusReason: note,
+          cancelReason: status === APPOINTMENT_STATUS.CANCELLED ? note : undefined,
+        },
+      });
+    } catch (error) {
+      toast.error(extractErrorMessage(error as ApiErrorLike) || t.appointments.statusUpdateFailed);
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const confirmMove = async () => {
+    if (!move) return;
+    const { appointment, stage } = move;
+    setPending(move);
+    setMove(null);
+    try {
+      await runMove(appointment, stage, moveNote.trim() || undefined);
+    } catch (error) {
+      toast.error(extractErrorMessage(error as ApiErrorLike) || t.appointments.statusUpdateFailed);
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const stageNames: Partial<Record<QueueStage, string>> = {
+    [QUEUE_STAGE.WAITING]: t.queue.waiting,
+    [QUEUE_STAGE.IN_PROGRESS]: t.queue.inSession,
+    [QUEUE_STAGE.UPCOMING]: t.queue.upcomingToday,
+    [QUEUE_STAGE.COMPLETED]: t.queue.completed,
+    [QUEUE_STAGE.CLOSED]: t.queue.cancelledStage,
+  };
+  const moveDestination = move ? (stageNames[move.stage] ?? '') : '';
 
   const slotFor = (stage: QueueStage) => {
     const size = drag?.zone === stage ? drag : moving?.stage === stage ? moving : null;
@@ -217,13 +291,20 @@ export function WaitingQueueBoard({
     icon: React.ReactNode;
     variant: BadgeVariant;
   }[] = [
-    { key: QUEUE_STAGE.ALL, label: t.common.all, short: t.common.all, icon: null, variant: 'default' },
+    { key: QUEUE_STAGE.ALL, label: t.queue.allStages, short: t.queue.allStages, icon: null, variant: 'default' },
+    {
+      key: QUEUE_STAGE.UPCOMING,
+      label: withCount(t.queue.upcomingToday, upcomingList.length),
+      short: withCount(t.queue.upcomingToday, upcomingList.length),
+      icon: <IconPatients className="size-3" />,
+      variant: 'violet',
+    },
     {
       key: QUEUE_STAGE.WAITING,
       label: withCount(t.queue.waiting, waitingList.length),
       short: withCount(t.queue.waiting, waitingList.length),
       icon: <IconTimer className="size-3" />,
-      variant: 'warning',
+      variant: 'teal',
     },
     {
       key: QUEUE_STAGE.IN_PROGRESS,
@@ -231,13 +312,6 @@ export function WaitingQueueBoard({
       short: withCount(t.queue.inSession, inProgressList.length),
       icon: <IconService className="size-3" />,
       variant: 'info',
-    },
-    {
-      key: QUEUE_STAGE.UPCOMING,
-      label: withCount(t.queue.upcomingToday, upcomingList.length),
-      short: withCount(t.queue.upcomingToday, upcomingList.length),
-      icon: <IconPatients className="size-3" />,
-      variant: 'muted',
     },
     {
       key: QUEUE_STAGE.COMPLETED,
@@ -251,7 +325,7 @@ export function WaitingQueueBoard({
       label: withCount(t.queue.cancelledStage, closedList.length),
       short: withCount(t.queue.cancelledStage, closedList.length),
       icon: <IconBan className="size-3" />,
-      variant: 'destructive',
+      variant: 'muted',
     },
   ];
 
@@ -264,12 +338,12 @@ export function WaitingQueueBoard({
       className={cn(
         'relative page-fill-always overflow-hidden',
         single ? 'bg-card' : 'border bg-card shadow-xs',
-        !single && (focused ? 'rounded-none border-0' : 'card-aura rounded-xl sm:rounded-2xl'),
+        !single && 'card-aura rounded-xl sm:rounded-2xl',
       )}
     >
       {slot ? createPortal(
         <Select value={stageTab} onValueChange={(value) => setStageTab(value as QueueStage)}>
-          <SelectTrigger size="sm" aria-label={t.queue.waitingQueue} className="h-8 min-w-[9rem] flex-1 bg-background/50 sm:w-52 sm:max-w-56 sm:flex-none">
+          <SelectTrigger size="sm" aria-label={t.queue.waitingQueue} className="h-8 w-full">
             <span className="min-w-0 flex-1 truncate text-start">
               <SelectValue />
             </span>
@@ -287,11 +361,59 @@ export function WaitingQueueBoard({
             ? 'grid-rows-[minmax(0,1fr)] gap-0 p-0 lg:grid-cols-1 lg:overflow-hidden'
             : cn(
                 'gap-2.5 p-2.5 lg:grid-flow-col lg:auto-cols-[minmax(14rem,1fr)] lg:overflow-x-auto lg:overflow-y-hidden lg:grid-rows-[minmax(0,1fr)] lg:items-stretch',
-                focused ? 'px-0 pb-2 pt-0 sm:gap-2 md:gap-2' : 'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
+                focused ? 'p-1.5 sm:gap-2 sm:p-2 md:gap-2' : 'sm:gap-3 sm:p-3 md:gap-4 md:p-4',
               ),
           focused && 'h-0',
         )}
       >
+        {isVisible(QUEUE_STAGE.UPCOMING) && (
+          <StageColumn
+            single={single}
+            zoneProps={zoneProps(QUEUE_STAGE.UPCOMING)}
+            over={drag?.zone === QUEUE_STAGE.UPCOMING}
+            placeholder={slotFor(QUEUE_STAGE.UPCOMING)}
+            title={t.queue.upcomingToday}
+            count={loading ? undefined : upcomingList.length}
+            accentClass="bg-accent-violet"
+            badgeVariant="violet"
+            icon={<IconCalendarClock className="size-4 text-accent-violet" />}
+          >
+            {loading ? <QueueColumnSkeleton /> : upcomingList.length === 0 && !slotFor(QUEUE_STAGE.UPCOMING) ? (
+              <EmptyState framed={false}
+                icon={IconCalendarClock}
+                title={t.queue.noUpcomingVisitsToday}
+                className="flex-1 px-3 py-8"
+              />
+            ) : (
+              upcomingList.map((appt) => (
+                <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="muted" className="min-w-0 shrink font-semibold">
+                      <IconTime className="size-3" />
+                      <span>{formatApptTimeRange(appt, lang)}</span>
+                    </Badge>
+                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <AppointmentStatusSelect appointment={appt} compact />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
+                      disabled={markWaiting.isPending}
+                      onClick={(e) => { e.stopPropagation(); markWaiting.mutate({ appointment: appt }); }}
+                    >
+                      <IconActivate className="me-1.5 size-3.5 text-primary" />
+                      {t.queue.patientArrived}
+                    </Button>
+                  </div>
+                </QueueCard>
+              ))
+            )}
+          </StageColumn>
+        )}
+
         {isVisible(QUEUE_STAGE.WAITING) && (
           <StageColumn
             single={single}
@@ -300,12 +422,12 @@ export function WaitingQueueBoard({
             placeholder={slotFor(QUEUE_STAGE.WAITING)}
             title={t.queue.waiting}
             count={loading ? undefined : waitingList.length}
-            accentClass="bg-warning"
-            badgeVariant="warning"
-            icon={<IconTimer className="size-4 text-warning" />}
+            accentClass="bg-accent-teal"
+            badgeVariant="teal"
+            icon={<IconTimer className="size-4 text-accent-teal" />}
           >
             {loading ? <QueueColumnSkeleton /> : waitingList.length === 0 && !slotFor(QUEUE_STAGE.WAITING) ? (
-              <EmptyState
+              <EmptyState framed={false}
                 icon={IconTimer}
                 title={t.queue.noPatientsWaiting}
                 className="flex-1 px-3 py-8"
@@ -356,12 +478,12 @@ export function WaitingQueueBoard({
             placeholder={slotFor(QUEUE_STAGE.IN_PROGRESS)}
             title={t.queue.inSession}
             count={loading ? undefined : inProgressList.length}
-            accentClass="bg-primary"
+            accentClass="bg-info"
             badgeVariant="info"
-            icon={<IconService className="size-4 text-primary" />}
+            icon={<IconService className="size-4 text-info" />}
           >
             {loading ? <QueueColumnSkeleton /> : inProgressList.length === 0 && !slotFor(QUEUE_STAGE.IN_PROGRESS) ? (
-              <EmptyState
+              <EmptyState framed={false}
                 icon={IconService}
                 title={t.queue.noConsultationsInSession}
                 className="flex-1 px-3 py-8"
@@ -405,54 +527,6 @@ export function WaitingQueueBoard({
           </StageColumn>
         )}
 
-        {isVisible(QUEUE_STAGE.UPCOMING) && (
-          <StageColumn
-            single={single}
-            zoneProps={zoneProps(QUEUE_STAGE.UPCOMING)}
-            over={drag?.zone === QUEUE_STAGE.UPCOMING}
-            placeholder={slotFor(QUEUE_STAGE.UPCOMING)}
-            title={t.queue.upcomingToday}
-            count={loading ? undefined : upcomingList.length}
-            accentClass="bg-muted-foreground"
-            badgeVariant="muted"
-            icon={<IconCalendarClock className="size-4 text-muted-foreground" />}
-          >
-            {loading ? <QueueColumnSkeleton /> : upcomingList.length === 0 && !slotFor(QUEUE_STAGE.UPCOMING) ? (
-              <EmptyState
-                icon={IconCalendarClock}
-                title={t.queue.noUpcomingVisitsToday}
-                className="flex-1 px-3 py-8"
-              />
-            ) : (
-              upcomingList.map((appt) => (
-                <QueueCard key={appt.id} appointment={appt} dragging={drag?.id === appt.id} {...bind(appt, appt.id)} onClick={(event) => setAppointmentPopover({ appointment: appt, anchor: popoverAnchorFromElement(event.currentTarget) })}>
-                  <div className="flex items-center justify-between gap-2">
-                    <Badge variant="muted" className="min-w-0 shrink font-semibold">
-                      <IconTime className="size-3" />
-                      <span>{formatApptTimeRange(appt, lang)}</span>
-                    </Badge>
-                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                      <AppointmentStatusSelect appointment={appt} compact />
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full font-semibold hover:bg-primary/10 hover:text-primary active:scale-[0.98] transition-all"
-                      disabled={markWaiting.isPending}
-                      onClick={(e) => { e.stopPropagation(); markWaiting.mutate(appt); }}
-                    >
-                      <IconActivate className="me-1.5 size-3.5 text-primary" />
-                      {t.queue.patientArrived}
-                    </Button>
-                  </div>
-                </QueueCard>
-              ))
-            )}
-          </StageColumn>
-        )}
-
         {isVisible(QUEUE_STAGE.COMPLETED) && (
           <StageColumn
             single={single}
@@ -466,7 +540,7 @@ export function WaitingQueueBoard({
             icon={<IconCheckCircle className="size-4 text-success" />}
           >
             {loading ? <QueueColumnSkeleton /> : completedList.length === 0 && !slotFor(QUEUE_STAGE.COMPLETED) ? (
-              <EmptyState
+              <EmptyState framed={false}
                 icon={IconCheckCircle}
                 title={t.queue.noCompletedVisitsToday}
                 className="flex-1 px-3 py-8"
@@ -520,12 +594,12 @@ export function WaitingQueueBoard({
             placeholder={slotFor(QUEUE_STAGE.CLOSED)}
             title={t.queue.cancelledStage}
             count={loading ? undefined : closedList.length}
-            accentClass="bg-destructive"
-            badgeVariant="destructive"
-            icon={<IconBan className="size-4 text-destructive" />}
+            accentClass="bg-muted-foreground"
+            badgeVariant="muted"
+            icon={<IconBan className="size-4 text-muted-foreground" />}
           >
             {loading ? <QueueColumnSkeleton /> : closedList.length === 0 && !slotFor(QUEUE_STAGE.CLOSED) ? (
-              <EmptyState
+              <EmptyState framed={false}
                 icon={IconBan}
                 title={t.queue.noClosedVisitsToday}
                 className="flex-1 px-3 py-8"
@@ -560,6 +634,19 @@ export function WaitingQueueBoard({
           }}
         />
       ) : null}
+      <QueueMoveDialog
+        open={!!move}
+        name={move ? patientDisplayName(move.appointment, lang) : ''}
+        destination={moveDestination}
+        note={moveNote}
+        pending={markWaiting.isPending || startVisit.isPending || updateAppointment.isPending}
+        closing={move?.stage === QUEUE_STAGE.CLOSED}
+        onNoteChange={setMoveNote}
+        onCancel={() => setMove(null)}
+        onConfirm={() => void confirmMove()}
+        onNoShow={() => void closeMove(APPOINTMENT_STATUS.NO_SHOW)}
+        onCancelAppointment={() => void closeMove(APPOINTMENT_STATUS.CANCELLED)}
+      />
     </div>
   );
 }

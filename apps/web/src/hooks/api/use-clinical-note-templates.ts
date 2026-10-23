@@ -74,17 +74,6 @@ export function usePublishClinicalNoteTemplate() {
   });
 }
 
-export function useScheduleClinicalNoteTemplate() {
-  const { t } = useLanguage();
-  return useApiMutation({
-    request: (input: { id: string; revision: number; scheduledAt: string }) =>
-      clinicalNoteTemplatesService.schedule(input.id, input.revision, input.scheduledAt),
-    invalidateQueries: [QUERY_KEYS.clinicalNoteTemplates.all, QUERY_KEYS.notePreference],
-    successMessage: t.visits.templateScheduled,
-    errorMessage: errorText,
-  });
-}
-
 export function useArchiveClinicalNoteTemplate() {
   const { t } = useLanguage();
   return useApiMutation({

@@ -9,13 +9,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui';
-import { SearchInput } from '@/components/primitives';
+import { EmptyState, SearchInput } from '@/components/primitives';
 import { cn } from '@/lib/utils';
-import { IconCheck, IconChevronsUpDown } from '@/constants/icons';
+import { IconCheck, IconChevronsUpDown, IconSearch } from '@/constants/icons';
+import { Skeleton } from '@/components/ui';
 
 export type PickerOption = {
   value: string;
   label: string;
+  leading?: ReactNode;
   end?: ReactNode;
 };
 
@@ -49,6 +51,8 @@ export function SearchablePicker({
   placeholder,
   searchPlaceholder,
   emptyText,
+  loading = false,
+  disabled = false,
   extraOption,
   leading,
   className,
@@ -60,6 +64,8 @@ export function SearchablePicker({
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
+  loading?: boolean;
+  disabled?: boolean;
   extraOption?: PickerOption;
   leading?: ReactNode;
   className?: string;
@@ -99,6 +105,7 @@ export function SearchablePicker({
           role="combobox"
           aria-expanded={open}
           size={size === 'sm' ? 'sm' : 'default'}
+          disabled={disabled}
           className={cn(
             'w-full min-w-0 justify-between gap-1.5 overflow-hidden font-normal',
             'h-8 text-control',
@@ -111,7 +118,7 @@ export function SearchablePicker({
               !selected && 'text-muted-foreground',
             )}
           >
-            {leading}
+            {selected?.leading ?? leading}
             <span className={'min-w-0 flex-1 truncate text-start'}>
               {selected?.label ?? placeholder ?? t.ui.select}
             </span>
@@ -139,10 +146,12 @@ export function SearchablePicker({
           />
         </div>
         <div className="p-1">
-          {filtered.length === 0 ? (
-            <p className="px-2.5 py-4 text-center text-control text-muted-foreground">
-              {emptyText ?? t.common.noMatches}
-            </p>
+          {loading ? (
+            <div className="space-y-1 p-1.5">
+              {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-8 w-full rounded-md" />)}
+            </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState size="compact" icon={IconSearch} title={emptyText ?? t.common.noMatches} />
           ) : (
             filtered.map((option) => (
               <button
@@ -154,8 +163,9 @@ export function SearchablePicker({
                   option.value === value && 'bg-muted',
                 )}
               >
-                <span className="min-w-0 flex-1 text-start leading-snug wrap-break-word">
-                  {option.label}
+                <span className="flex min-w-0 flex-1 items-center gap-2 text-start leading-snug wrap-break-word">
+                  {option.leading}
+                  <span className="min-w-0 flex-1">{option.label}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5">
                   <IconCheck className={cn('size-4 shrink-0 text-primary', option.value !== value && 'invisible')} />

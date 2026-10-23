@@ -13,7 +13,7 @@ export default function NewMedicalNoteTemplatePage() {
     return <EmptyState icon={IconFileText} title={t.visits.templates} description={t.visits.noteHidden} />;
   }
   return (
-    <div className="page-fill gap-2.5">
+    <div className="page-fill-always flex-1 gap-2.5">
       <NoteTemplateBuilder />
     </div>
   );

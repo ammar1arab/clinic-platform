@@ -1,5 +1,5 @@
 import { DEFAULT_DURATION_MINS } from '@/constants/appointment';
-import { toDateParam, toTimeParam } from '@/lib/datetime';
+import { clinicDateTimeToIso, isoToClinicDateTime } from '@/lib/datetime';
 import { formatClinicAmount } from '@/lib/package-balance';
 import { getTranslations } from '@/i18n';
 import type { AppointmentFormData } from '@/lib/validations';
@@ -43,16 +43,16 @@ export function emptyAppointmentValues(
   };
 }
 
-export function toAppointmentFormValues(appt: Appointment): AppointmentFormData {
-  const dt = new Date(appt.scheduledAt);
+export function toAppointmentFormValues(appt: Appointment, timeZone: string): AppointmentFormData {
+  const local = isoToClinicDateTime(appt.scheduledAt, timeZone);
   return {
     patientId: appt.patientId,
     doctorId: appt.doctorId,
     departmentId: appt.departmentId ?? '',
     roomId: appt.roomId ?? '',
     serviceId: appt.serviceId ?? '',
-    date: toDateParam(dt),
-    time: toTimeParam(dt),
+    date: local.date,
+    time: local.time,
     durationMins: String(appt.durationMins),
     sessionType: appt.sessionType,
     meetingUrl: appt.meetingUrl ?? '',
@@ -94,14 +94,14 @@ export function discountExceedsFee(
   );
 }
 
-function sharedWriteFields(data: AppointmentFormData): CreateAppointmentInput {
+function sharedWriteFields(data: AppointmentFormData, timeZone: string): CreateAppointmentInput {
   return {
     patientId: data.patientId,
     doctorId: data.doctorId,
     departmentId: data.departmentId || undefined,
     roomId: data.sessionType === 'in_person' ? data.roomId || undefined : undefined,
     serviceId: data.serviceId || undefined,
-    scheduledAt: new Date(`${data.date}T${data.time}:00`).toISOString(),
+    scheduledAt: clinicDateTimeToIso(data.date, data.time, timeZone),
     durationMins: Number(data.durationMins),
     sessionType: data.sessionType,
     meetingUrl: data.sessionType === 'online' ? data.meetingUrl.trim() : undefined,
@@ -123,17 +123,19 @@ function discountFields(data: AppointmentFormData, appliedCodeId: string | null)
 export function toCreateAppointmentInput(
   data: AppointmentFormData,
   appliedCodeId: string | null,
+  timeZone: string,
 ): CreateAppointmentInput {
-  return { ...sharedWriteFields(data), ...discountFields(data, appliedCodeId) };
+  return { ...sharedWriteFields(data, timeZone), ...discountFields(data, appliedCodeId) };
 }
 
 export function toUpdateAppointmentInput(
   data: AppointmentFormData,
   appliedCodeId: string | null,
   extra: Pick<UpdateAppointmentInput, 'status' | 'cancelReason'>,
-  role?: Role | null,
+  role: Role | null | undefined,
+  timeZone: string,
 ): UpdateAppointmentInput {
-  const shared: Partial<CreateAppointmentInput> = sharedWriteFields(data);
+  const shared: Partial<CreateAppointmentInput> = sharedWriteFields(data, timeZone);
   delete shared.patientId;
   const discount = discountFields(data, appliedCodeId);
   const body: UpdateAppointmentInput = {

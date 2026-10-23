@@ -211,6 +211,8 @@ export interface ScheduleRequest extends CreateScheduleRequestInput {
   doctor: { name: string; nameAr: string | null; imageUrl: string | null };
 }
 
+export type ScheduleRequestMutationResult = Omit<ScheduleRequest, 'doctor'>;
+
 export interface ScheduleRequestPage {
   items: ScheduleRequest[];
   total: number;

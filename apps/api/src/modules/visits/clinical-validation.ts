@@ -1,9 +1,30 @@
-import type {
-  ClinicalSection,
-  ClinicalValue,
-  ReportSections,
+import { HttpException } from "@nestjs/common";
+import {
+  VISIT_ERROR_MESSAGES,
+  type ClinicalField,
+  type ClinicalSection,
+  type InvoiceLine,
+  type ClinicalValue,
+  type ReportSections,
 } from "@clinic/types";
+import { getLocale } from "@/infrastructure/i18n.context";
 import { visitError } from "./visit-errors";
+
+function invalidFieldError(field: ClinicalField) {
+  const unit = field.unit ? ` ${field.unit}` : "";
+  const range =
+    field.min !== undefined || field.max !== undefined
+      ? ` (${field.min ?? ""} - ${field.max ?? ""}${unit})`
+      : "";
+  return new HttpException(
+    {
+      code: "clinicalValuesInvalid",
+      field: field.id,
+      message: `${field.label}: ${VISIT_ERROR_MESSAGES.clinicalValuesInvalid[getLocale()]}${range}`,
+    },
+    400,
+  );
+}
 export function object(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
@@ -161,6 +182,11 @@ export function validateSections(
         visitError("clinicalTemplateInvalid");
     }
 }
+export function storedClinicalSections(value: unknown): ClinicalSection[] {
+  validateSections(value);
+  return value;
+}
+
 export function validateValues(
   sections: ClinicalSection[],
   values: unknown,
@@ -259,7 +285,7 @@ export function validateValues(
           new Date(value).toISOString().startsWith(value);
         break;
     }
-    if (!valid) visitError("clinicalValuesInvalid");
+    if (!valid) throw invalidFieldError(field);
   }
 }
 export const blankReport = (): ReportSections => ({
@@ -269,3 +295,25 @@ export const blankReport = (): ReportSections => ({
   plan: "",
   followUp: "",
 });
+
+export function storedReportSections(value: unknown): ReportSections {
+  if (!object(value) || typeof value.reason !== "string" ||
+    typeof value.summary !== "string" || typeof value.assessment !== "string" ||
+    typeof value.plan !== "string" || typeof value.followUp !== "string") {
+    visitError("clinicalTemplateInvalid");
+  }
+  return { reason: value.reason, summary: value.summary, assessment: value.assessment,
+    plan: value.plan, followUp: value.followUp };
+}
+
+export function storedInvoiceLines(value: unknown): InvoiceLine[] {
+  if (!Array.isArray(value)) visitError("clinicalTemplateInvalid");
+  return value.map((line: unknown) => {
+    if (!object(line) || typeof line.id !== "string" || typeof line.description !== "string" ||
+      typeof line.quantity !== "string" || typeof line.unitPrice !== "string" || typeof line.total !== "string") {
+      visitError("clinicalTemplateInvalid");
+    }
+    return { id: line.id, description: line.description, quantity: line.quantity,
+      unitPrice: line.unitPrice, total: line.total };
+  });
+}

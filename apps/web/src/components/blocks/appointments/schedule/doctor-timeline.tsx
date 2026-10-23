@@ -22,9 +22,6 @@ import {
   layoutTimelineAppts,
   TIMELINE_DOCTOR_COLORS,
   TIMELINE_HOUR_HEIGHT,
-  TIMELINE_HOURS,
-  TIMELINE_START_HOUR,
-  TIMELINE_TOTAL_HEIGHT,
   TIMELINE_PX_PER_MIN,
   type PositionedAppt,
   type TimelineDoctor,
@@ -45,6 +42,8 @@ import { useNow } from '@/hooks/shared/use-now';
 import { IconAdd, IconCalendar, IconChevronLeft, IconChevronRight, IconOnline, IconPatients, IconRoom, IconService } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
 import { useLanguage } from '@/providers';
+import { useClinicHours } from '@/hooks/api/use-clinic';
+import { parseClock } from '@/lib/datetime';
 
 interface Props {
   appointments: Appointment[] | undefined;
@@ -53,8 +52,15 @@ interface Props {
   focused?: boolean;
   canManageAppointments?: boolean;
   toolbarSlot?: HTMLElement | null;
+  doctorId?: string;
+  onDoctorChange?: (id: string) => void;
   onSelectSlot: (date: Date, doctorId?: string) => void;
   onEventClick: (appointment: Appointment) => void;
+}
+
+function clockMinutes(value: string, fallback: number) {
+  const parts = parseClock(value);
+  return parts ? parts.hours * 60 + parts.minutes : fallback;
 }
 
 function TimelineEventBlock({
@@ -230,14 +236,23 @@ export function DoctorTimeline({
   focused = false,
   canManageAppointments = true,
   toolbarSlot,
+  doctorId,
+  onDoctorChange,
   onSelectSlot,
   onEventClick,
 }: Props) {
   const { t, lang } = useLanguage();
+  const clinicHours = useClinicHours();
+  const startHour = Math.floor(clockMinutes(clinicHours.start, 8 * 60) / 60);
+  const endHour = Math.max(startHour + 1, Math.ceil(clockMinutes(clinicHours.end, 20 * 60) / 60));
+  const hours = useMemo(() => Array.from({ length: endHour - startHour }, (_, i) => i + startHour), [startHour, endHour]);
+  const totalHeight = hours.length * TIMELINE_HOUR_HEIGHT;
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d;
   });
-  const [activeDoctorId, setActiveDoctorId] = useState<string>('all');
+  const [localDoctorId, setLocalDoctorId] = useState<string>('all');
+  const activeDoctorId = doctorId ?? localDoctorId;
+  const setActiveDoctorId = onDoctorChange ?? setLocalDoctorId;
   const [appointmentPopover, setAppointmentPopover] =
     useState<AppointmentPopoverState | null>(null);
   const now = useNow(30_000);
@@ -299,15 +314,15 @@ export function DoctorTimeline({
   }, [dayAppointmentsAll, activeDoctorId]);
 
   const positioned = useMemo(
-    () => layoutTimelineAppts(dayAppts, doctorMap),
-    [dayAppts, doctorMap],
+    () => layoutTimelineAppts(dayAppts, doctorMap, startHour),
+    [dayAppts, doctorMap, startHour],
   );
 
   const nowTop = useMemo(() => {
     if (!isToday) return null;
     const currentMin = now.getHours() * 60 + now.getMinutes();
-    return Math.max(0, currentMin - TIMELINE_START_HOUR * 60) * TIMELINE_PX_PER_MIN;
-  }, [isToday, now]);
+    return Math.max(0, currentMin - startHour * 60) * TIMELINE_PX_PER_MIN;
+  }, [isToday, now, startHour]);
 
   const attachTimelineScroll = useCallback(
     (el: HTMLDivElement | null) => {
@@ -315,14 +330,14 @@ export function DoctorTimeline({
       if (isToday) {
         const current = new Date();
         const marker =
-          (current.getHours() * 60 + current.getMinutes() - TIMELINE_START_HOUR * 60) *
+          (current.getHours() * 60 + current.getMinutes() - startHour * 60) *
           TIMELINE_PX_PER_MIN;
         el.scrollTop = Math.max(0, marker - 120);
         return;
       }
-      el.scrollTop = (9 - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT;
+      el.scrollTop = Math.max(0, 9 - startHour) * TIMELINE_HOUR_HEIGHT;
     },
-    [isToday],
+    [isToday, startHour],
   );
 
   const shiftDate = useCallback((delta: number) => {
@@ -356,15 +371,15 @@ export function DoctorTimeline({
       const rect = e.currentTarget.getBoundingClientRect();
       const offsetY = e.clientY - rect.top + e.currentTarget.scrollTop;
       const pxPerMin = TIMELINE_HOUR_HEIGHT / 60;
-      const maxMins = TIMELINE_HOURS.length * 60 - 1;
+      const maxMins = hours.length * 60 - 1;
       const totalMin =
-        TIMELINE_START_HOUR * 60 +
+        startHour * 60 +
         Math.max(0, Math.min(Math.floor(offsetY / pxPerMin), maxMins));
       const slot = new Date(selectedDate);
       slot.setHours(Math.floor(totalMin / 60), totalMin % 60, 0, 0);
       onSelectSlot(slot, activeDoctorId === 'all' ? undefined : activeDoctorId);
     },
-    [canManageAppointments, selectedDate, activeDoctorId, onSelectSlot],
+    [canManageAppointments, selectedDate, activeDoctorId, onSelectSlot, hours.length, startHour],
   );
 
   const slot = toolbarSlot;
@@ -376,7 +391,7 @@ export function DoctorTimeline({
       counts={doctorDayCounts}
       extraOption={{ value: 'all', label: t.appointments.allDoctors }}
       placeholder={t.appointments.selectDoctor}
-      className={slot ? 'h-8 min-w-[9rem] flex-1 sm:w-52 sm:max-w-56 sm:flex-none' : 'w-full max-w-md'}
+      className={slot ? 'w-full' : 'w-full max-w-md'}
       size="sm"
     />
   );
@@ -384,7 +399,7 @@ export function DoctorTimeline({
   if (isLoading) {
     return (
       <>
-        {slot ? createPortal(<Skeleton className="h-8 min-w-[9rem] flex-1 rounded-lg sm:w-52 sm:max-w-56 sm:flex-none" />, slot) : null}
+        {slot ? createPortal(<Skeleton className="h-8 w-full rounded-lg" />, slot) : null}
         <TimelineSkeleton />
       </>
     );
@@ -392,23 +407,21 @@ export function DoctorTimeline({
 
   if (allDoctors.length === 0) {
     return (
-      <div className="flex min-h-64 items-center justify-center rounded-2xl border bg-card shadow-xs">
-        <EmptyState
-          icon={IconPatients}
-          title={t.appointments.noDoctorsFound}
-          description={t.appointments.noDoctorsDesc}
-          className="flex-1 px-5 py-10"
-          action={canManageAppointments ? (
-            <Button size="sm" onClick={() => {
-              const slot = new Date(selectedDate);
-              slot.setHours(9, 0, 0, 0);
-              onSelectSlot(slot);
-            }}>
-              <IconAdd className="me-1.5 size-3.5" /> {t.appointments.bookAppointment}
-            </Button>
-          ) : undefined}
-        />
-      </div>
+    <EmptyState
+      icon={IconPatients}
+      title={t.appointments.noDoctorsFound}
+      description={t.appointments.noDoctorsDesc}
+      className="page-fill px-5 py-10"
+      action={canManageAppointments ? (
+        <Button size="sm" onClick={() => {
+          const slot = new Date(selectedDate);
+          slot.setHours(9, 0, 0, 0);
+          onSelectSlot(slot);
+        }}>
+          <IconAdd className="me-1.5 size-3.5" /> {t.appointments.bookAppointment}
+        </Button>
+      ) : undefined}
+    />
     );
   }
 
@@ -417,11 +430,12 @@ export function DoctorTimeline({
       data-schedule-host=""
       className={cn(
         'relative page-fill flex-1 min-h-0 overflow-hidden bg-card',
-        focused ? 'rounded-none border-0 px-1.5 pb-1.5 pt-0 sm:px-2 sm:pb-2' : 'card-aura rounded-xl border p-2 sm:p-2.5',
+        'card-aura rounded-xl border',
+        focused ? 'p-1.5 sm:p-2' : 'p-2 sm:p-2.5',
       )}
     >
 
-      {slot ? createPortal(doctorPicker, slot) : focused ? null : <div className="mb-2 shrink-0">{doctorPicker}</div>}
+      {slot ? createPortal(doctorPicker, slot) : focused || toolbarSlot !== undefined ? null : <div className="mb-2 shrink-0">{doctorPicker}</div>}
       <div className="mb-2 grid shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 sm:gap-3">
         <div className="flex items-center gap-0.5">
           <Button variant="ghost" size="icon-xs" aria-label={t.appointments.previousDay} onClick={() => shiftDate(-1)}>
@@ -454,14 +468,14 @@ export function DoctorTimeline({
         onClick={handleGridClick}
         className="relative page-fill flex-1 min-h-0 cursor-pointer overflow-auto overscroll-contain rounded-lg border border-border/60"
       >
-        <div className="relative flex min-w-[20rem]" style={{ height: `${TIMELINE_TOTAL_HEIGHT}px` }}>
+        <div className="relative flex min-w-[20rem]" style={{ height: `${totalHeight}px` }}>
 
           <div className="sticky start-0 z-10 w-12 shrink-0 border-e bg-card/95 backdrop-blur-md">
-            {TIMELINE_HOURS.map((h) => (
+            {hours.map((h) => (
               <div
                 key={h}
                 className="absolute end-0 flex w-12 items-start justify-end pe-1.5 text-2xs font-semibold text-muted-foreground/60"
-                style={{ top: `${(h - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT}px`, height: `${TIMELINE_HOUR_HEIGHT}px` }}
+                style={{ top: `${(h - startHour) * TIMELINE_HOUR_HEIGHT}px`, height: `${TIMELINE_HOUR_HEIGHT}px` }}
               >
                 <span className="mt-0.5">{formatHourLabel(h, lang)}</span>
               </div>
@@ -469,18 +483,18 @@ export function DoctorTimeline({
           </div>
 
           <div className="relative flex-1">
-            {TIMELINE_HOURS.map((h) => (
+            {hours.map((h) => (
               <div
                 key={h}
                 className="absolute inset-x-0 border-t border-border/30"
-                style={{ top: `${(h - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT}px` }}
+                style={{ top: `${(h - startHour) * TIMELINE_HOUR_HEIGHT}px` }}
               />
             ))}
-            {TIMELINE_HOURS.map((h) => (
+            {hours.map((h) => (
               <div
                 key={`${h}h`}
                 className="absolute inset-x-0 border-t border-border/15 border-dashed"
-                style={{ top: `${(h - TIMELINE_START_HOUR) * TIMELINE_HOUR_HEIGHT + TIMELINE_HOUR_HEIGHT / 2}px` }}
+                style={{ top: `${(h - startHour) * TIMELINE_HOUR_HEIGHT + TIMELINE_HOUR_HEIGHT / 2}px` }}
               />
             ))}
 

@@ -32,8 +32,6 @@ export function StatusBadgeBlock({
   const { t } = useLanguage();
   const config = getStatusConfig(t)[status];
   const translatedLabel = config.label;
-  const translatedShort = config.short;
-  const text = compact ? translatedShort : translatedLabel;
 
   return (
     <SoftTip label={tip ? translatedLabel : undefined}>
@@ -52,7 +50,7 @@ export function StatusBadgeBlock({
             config.dotClassName,
           )}
         />
-        <span>{text}</span>
+        <span>{translatedLabel}</span>
         {trailing}
       </Badge>
     </SoftTip>

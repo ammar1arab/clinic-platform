@@ -16,6 +16,8 @@ import {
 import { ButtonSpinner, ChoiceChips, DatePicker, FormField, TimePicker } from '@/components/primitives';
 import { scheduleRequestSchema, type ScheduleRequestData } from '@/lib/validations';
 import { useLanguage } from '@/providers';
+import { useClinicHours } from '@/hooks/api/use-clinic';
+import { SettingsFormDialog } from '@/components/blocks/settings/settings-navigation';
 
 type When = { from: string; to: string; start: string; end: string };
 
@@ -42,6 +44,7 @@ export function ScheduleRequestDialog({
 }) {
   const { t } = useLanguage();
   const copy = t.scheduleRequests;
+  const clinicHours = useClinicHours();
   const [when, setWhen] = useState<When>({ ...DEFAULT_WHEN, from: date, to: date });
   const [kind, setKind] = useState<ScheduleRequestKind>('leave');
   const {
@@ -55,6 +58,18 @@ export function ScheduleRequestDialog({
   });
   const days = kind === 'vacation';
 
+  const coversClinicDay = (w: When) =>
+    w.start <= clinicHours.start && w.end >= clinicHours.end;
+
+  const submitRequest = handleSubmit((data) =>
+    onSubmit({ ...data, startAt: new Date(data.startAt).toISOString(), endAt: new Date(data.endAt).toISOString() }),
+  );
+
+  const changeTime = (patch: Partial<When>) => {
+    const next = { ...when, ...patch };
+    change(kind === 'extra' ? kind : coversClinicDay(next) ? 'vacation' : 'leave', patch);
+  };
+
   const change = (nextKind: ScheduleRequestKind, patch: Partial<When>) => {
     const next = { ...when, ...patch };
     const range = compose(nextKind, next);
@@ -66,19 +81,16 @@ export function ScheduleRequestDialog({
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !pending && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{copy.newRequest}</DialogTitle>
-        </DialogHeader>
-        <form
-          id="schedule-request-form"
-          noValidate
-          className="space-y-4"
-          onSubmit={handleSubmit((data) =>
-            onSubmit({ ...data, startAt: new Date(data.startAt).toISOString(), endAt: new Date(data.endAt).toISOString() }),
-          )}
-        >
+    <SettingsFormDialog
+      open
+      onOpenChange={(open) => !open && !pending && onClose()}
+      editing={false}
+      addTitle={copy.newRequest}
+      pending={pending}
+      disabled={false}
+      onSubmit={() => void submitRequest()}
+    >
+        <div className="space-y-4">
           <ChoiceChips
             label={copy.type}
             value={kind}
@@ -101,10 +113,10 @@ export function ScheduleRequestDialog({
               </FormField>
               <div className="grid grid-cols-2 gap-3">
                 <FormField label={t.common.from}>
-                  <TimePicker value={when.start} onChange={(start) => change(kind, { start })} />
+                  <TimePicker value={when.start} onChange={(start) => changeTime({ start })} range={clinicHours} />
                 </FormField>
                 <FormField label={t.common.to} error={errors.endAt?.message}>
-                  <TimePicker value={when.end} onChange={(end) => change(kind, { end })} />
+                  <TimePicker value={when.end} onChange={(end) => changeTime({ end })} range={clinicHours} />
                 </FormField>
               </div>
             </>
@@ -112,18 +124,8 @@ export function ScheduleRequestDialog({
           <FormField label={`${copy.reason} (${t.common.optional})`} error={errors.reason?.message}>
             <Textarea rows={3} maxLength={500} {...register('reason')} />
           </FormField>
-        </form>
-        <DialogFooter>
-          <Button type="button" variant="outline" disabled={pending} onClick={onClose}>
-            {t.common.cancel}
-          </Button>
-          <Button type="submit" form="schedule-request-form" disabled={pending}>
-            {pending ? <ButtonSpinner /> : null}
-            {copy.submit}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </SettingsFormDialog>
   );
 }
 

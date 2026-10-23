@@ -49,10 +49,13 @@ export class ReasonDto {
   @MaxLength(1000)
   reason: string;
 }
-export class StartVisitDto {
+export class StatusNoteDto {
+  @ValidateIf(optional) @IsString() @MaxLength(500) statusReason?: string;
+}
+export class StartVisitDto extends StatusNoteDto {
   @ValidateIf(optional) @IsInt() @Min(0) expectedAppointmentRevision?: number;
 }
-export class PresenceDto {
+export class PresenceDto extends StatusNoteDto {
   @IsIn(Object.values(PRESENCE_SOURCE))
   source: (typeof PRESENCE_SOURCE)[keyof typeof PRESENCE_SOURCE];
 }

@@ -5,7 +5,6 @@ import { DEFAULT_PAGE_SIZE } from "@/components/primitives/display/pagination";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui";
 import {
-  TableFrame,
   useTwoStepDelete,
   TwoStepDeleteDialogs,
   PreviewableAvatar,
@@ -237,18 +236,17 @@ export function PatientsList({
 
   if (!patients || patients.length === 0) {
     return (
-      <TableFrame className="page-fill">
-        <EmptyState
-          icon={IconPatients}
-          title={hasActiveFilters ? t.patient.noMatches : t.patient.noPatients}
-          description={
-            hasActiveFilters
-              ? t.patient.noMatchesDesc
-              : t.patient.noPatientsDesc
-          }
-          action={canManage && !hasActiveFilters ? emptyAction : undefined}
-        />
-      </TableFrame>
+      <EmptyState
+        className="page-fill flex-1"
+        icon={IconPatients}
+        title={hasActiveFilters ? t.patient.noMatches : t.patient.noPatients}
+        description={
+          hasActiveFilters
+            ? t.patient.noMatchesDesc
+            : t.patient.noPatientsDesc
+        }
+        action={canManage && !hasActiveFilters ? emptyAction : undefined}
+      />
     );
   }
 

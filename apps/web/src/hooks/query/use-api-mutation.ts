@@ -94,8 +94,9 @@ export function useApiMutation<
       : undefined,
     onSuccess: (data, variables, context) => {
       for (const key of invalidateKeys(invalidateQueries)) {
-        void queryClient.invalidateQueries({ queryKey: key });
+        void queryClient.invalidateQueries({ queryKey: key, refetchType: 'none' });
       }
+      void queryClient.invalidateQueries();
       const message = resolveMessage(successMessage, data, variables);
       if (message) toast.success(message);
       log.debug('ok', { message: message ?? null });

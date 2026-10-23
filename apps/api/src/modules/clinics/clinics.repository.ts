@@ -23,13 +23,17 @@ export class ClinicsRepository {
         nameAr: true,
         role: true,
         initials: true,
+        departmentId: true,
+        imageUrl: true,
         user: { select: { email: true } },
+        services: { select: { serviceId: true } },
       },
       orderBy: { name: "asc" },
     });
-    return members.map(({ user, ...member }) => ({
+    return members.map(({ user, services, ...member }) => ({
       ...member,
       email: user.email,
+      serviceIds: services.map((link) => link.serviceId),
     }));
   }
 

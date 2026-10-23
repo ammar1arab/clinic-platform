@@ -11,8 +11,7 @@ export type IconWellAccent =
   | 'indigo'
   | 'violet'
   | 'pink'
-  | 'orange'
-  | 'cyan';
+  | 'orange';
 
 type IconWellSize = 'sm' | 'md' | 'lg';
 
@@ -37,7 +36,6 @@ const accentMap: Record<IconWellAccent, string> = {
   violet: 'bg-accent-violet/12 text-accent-violet ring-1 ring-inset ring-accent-violet/15',
   pink: 'bg-accent-violet/12 text-accent-violet ring-1 ring-inset ring-accent-violet/15',
   orange: 'bg-warning/12 text-warning ring-1 ring-inset ring-warning/15',
-  cyan: 'bg-accent-teal/12 text-accent-teal ring-1 ring-inset ring-accent-teal/15',
 };
 
 interface Props {

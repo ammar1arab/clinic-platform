@@ -19,8 +19,8 @@ function EditMedicalNoteTemplateInner() {
     return <EmptyState icon={IconFileText} title={t.visits.templates} description={t.visits.noteHidden} />;
   }
   return (
-    <div className="page-fill gap-2.5">
-      {template.isLoading ? <NoteTemplateBuilderSkeleton /> : null}
+    <div className="page-fill-always flex-1 gap-2.5">
+      {template.isLoading ? <NoteTemplateBuilderSkeleton view={readOnly ? 'publish' : 'settings'} /> : null}
       {template.isError ? <ErrorState onRetry={() => void template.refetch()} /> : null}
       {template.data ? <NoteTemplateBuilder key={readOnly ? 'view' : 'edit'} template={template.data} readOnly={readOnly} /> : null}
     </div>
@@ -29,7 +29,7 @@ function EditMedicalNoteTemplateInner() {
 
 export default function EditMedicalNoteTemplatePage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<NoteTemplateBuilderSkeleton />}>
       <EditMedicalNoteTemplateInner />
     </Suspense>
   );

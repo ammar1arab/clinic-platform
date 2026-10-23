@@ -1,4 +1,5 @@
 import { SHARED_EN } from "@clinic/types";
+import { formatClockRange } from "./availability-rules";
 import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import {
   BadRequestException,
@@ -65,12 +66,33 @@ export class ScheduleRequestsService {
         },
       });
       if (!doctor) throw new ForbiddenException();
+      const clinic = await tx.clinic.findUnique({
+        where: { id: actor.clinicId },
+        select: { workingHoursStart: true, workingHoursEnd: true, timezone: true },
+      });
+      const opening = clinic?.workingHoursStart ?? "00:00";
+      const closing = clinic?.workingHoursEnd ?? "23:59";
+      const localTime = new Intl.DateTimeFormat("en-GB", {
+        timeZone: clinic?.timezone || "UTC",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      });
+      const from = localTime.format(startAt);
+      const to = localTime.format(endAt);
+      const kind = dto.kind === "leave" && from <= opening && to >= closing ? "vacation" : dto.kind;
+      if (kind !== "vacation" && (from < opening || to > closing)) {
+        throw new BadRequestException({
+          code: "scheduleRequestClinicHours",
+          message: `Choose a time within clinic hours (${formatClockRange(opening, closing)})`,
+        });
+      }
       if (
         await tx.practitionerScheduleRequest.findFirst({
           where: {
             clinicId: actor.clinicId,
             doctorId: doctor.id,
-            kind: dto.kind,
+            kind,
             status: "pending",
             startAt: { lt: endAt },
             endAt: { gt: startAt },
@@ -86,7 +108,7 @@ export class ScheduleRequestsService {
         data: {
           clinicId: actor.clinicId,
           doctorId: doctor.id,
-          kind: dto.kind,
+          kind,
           startAt,
           endAt,
           reason: dto.reason.trim(),

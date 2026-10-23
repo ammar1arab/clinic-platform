@@ -50,7 +50,7 @@ export function InvoiceReview({ appointmentId, workspace }: { appointmentId: str
   }
 
   if (!invoice) {
-    return <EmptyState icon={IconPayment} title={t.visits.invoice} description={t.visits.invoiceWaiting} />;
+    return <EmptyState framed={false} icon={IconPayment} title={t.visits.invoice} description={t.visits.invoiceWaiting} />;
   }
 
   const editable = workspace.allowedActions.reviewInvoice || workspace.allowedActions.correctInvoice;

@@ -1,5 +1,10 @@
-import { APPOINTMENT_EDITABLE_STATUSES, NOTIFICATION_TYPE } from "@clinic/types";
+import {
+  APPOINTMENT_EDITABLE_STATUSES,
+  NON_BILLABLE_APPOINTMENT_STATUSES,
+  NOTIFICATION_TYPE,
+} from "@clinic/types";
 import { visitError } from "@/modules/visits/visit-errors";
+import { formatClockRange } from "@/modules/practitioners/availability-rules";
 import {
   Injectable,
   NotFoundException,
@@ -35,6 +40,9 @@ import {
   SessionTypeDto,
   DiscountTypeDto,
 } from "./dto";
+
+const isNonBillable = (status: string) =>
+  (NON_BILLABLE_APPOINTMENT_STATUSES as readonly string[]).includes(status);
 
 function asDate(value: Date | string | null | undefined) {
   if (value == null || value === "") return null;
@@ -273,6 +281,22 @@ export class AppointmentsService {
       where: { id: clinicId },
     });
     const timezone = clinic?.timezone || "UTC";
+    const opening = clinic?.workingHoursStart ?? "00:00";
+    const closing = clinic?.workingHoursEnd ?? "23:59";
+    const appointmentStart = clinicClock(scheduledAt, timezone);
+    const appointmentEnd = clinicClock(
+      new Date(scheduledAt.getTime() + durationMins * 60_000),
+      timezone,
+    );
+    if (
+      appointmentStart.day.getTime() !== appointmentEnd.day.getTime() ||
+      appointmentStart.time < opening ||
+      appointmentEnd.time > closing
+    ) {
+      throw new BadRequestException(
+        `Appointment must be within clinic hours (${formatClockRange(opening, closing)})`,
+      );
+    }
 
     const hasSchedule = await this.prisma.doctorAvailability.count({
       where: { doctorId, isActive: true },
@@ -325,7 +349,16 @@ export class AppointmentsService {
           },
         );
         if (!override) {
-          throw new BadRequestException("Doctor is not available at this time");
+          const daySlots = await this.prisma.doctorAvailability.findMany({
+            where: { doctorId, dayOfWeek, isActive: true },
+            orderBy: { startTime: "asc" },
+            select: { startTime: true, endTime: true },
+          });
+          throw new BadRequestException(
+            daySlots.length
+              ? `Practitioner works ${daySlots.map((slot) => formatClockRange(slot.startTime, slot.endTime)).join(", ")} on this day`
+              : "Practitioner does not work on this day",
+          );
         }
       }
     }
@@ -478,6 +511,9 @@ export class AppointmentsService {
     const becomingNonBillable =
       nextStatus === AppointmentStatusDto.cancelled ||
       nextStatus === AppointmentStatusDto.no_show;
+    if (becomingNonBillable && existing.isPaid && !existing.patientPackageId) {
+      throw new BadRequestException("Mark the appointment unpaid before cancelling or marking no-show");
+    }
     if (existing.patientPackageId && !becomingNonBillable) {
       const pricingTouched =
         dto.feeOverride !== undefined ||
@@ -683,6 +719,9 @@ export class AppointmentsService {
   ) {
     const existing = await this.findOne(clinicId, id);
     if (await this.prisma.visit.count({ where: { appointmentId: id, clinicId } })) visitError('visitUseInvoice', 409);
+    if (isNonBillable(existing.status)) {
+      throw new BadRequestException("Cancelled or no-show appointments cannot be paid");
+    }
     if (existing.patientPackageId) {
       throw new BadRequestException(
         "Release package coverage before marking paid with a payment method",
@@ -741,6 +780,9 @@ export class AppointmentsService {
   ) {
     const existing = await this.findOne(clinicId, id);
     if (await this.prisma.visit.count({ where: { appointmentId: id, clinicId } })) visitError('visitUseInvoice', 409);
+    if (isNonBillable(existing.status)) {
+      throw new BadRequestException("Cancelled or no-show appointments cannot be covered by a package");
+    }
     if (existing.patientPackageId) {
       throw new BadRequestException(
         "This appointment is already covered by a package",

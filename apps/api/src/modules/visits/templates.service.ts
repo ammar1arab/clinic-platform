@@ -8,23 +8,35 @@ import {
   type WorkspaceRow,
 } from "./visits.repository";
 import { TemplateDto, UpdateTemplateDto } from "./visits.dto";
-import { validateSections } from "./clinical-validation";
+import { object, storedClinicalSections, validateSections } from "./clinical-validation";
 import { visitError } from "./visit-errors";
 import { SEED_TEMPLATES } from "./seed-templates";
 export const toJson = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
-export const snapshotOf = (
-  row: ClinicalNoteTemplate,
-): ClinicalTemplateInput => ({
+function storedAssignments(value: unknown): ClinicalTemplateInput["assignments"] {
+  if (!object(value)) visitError("clinicalTemplateInvalid");
+  const ids = (value: unknown): string[] => {
+    if (!Array.isArray(value) || !value.every((id): id is string => typeof id === "string")) {
+      visitError("clinicalTemplateInvalid");
+    }
+    return value;
+  };
+  return { practitionerIds: ids(value.practitionerIds), departmentIds: ids(value.departmentIds), serviceIds: ids(value.serviceIds) };
+}
+export const snapshotOf = (row: ClinicalNoteTemplate): ClinicalTemplateInput => ({
   name: row.name,
   nameAr: row.nameAr ?? undefined,
   availableToAll: row.availableToAll,
-  assignments:
-    row.assignments as unknown as ClinicalTemplateInput["assignments"],
-  sections: row.sections as unknown as ClinicalTemplateInput["sections"],
+  assignments: storedAssignments(row.assignments),
+  sections: storedClinicalSections(row.sections),
 });
-export const publishedSnapshot = (row: ClinicalNoteTemplate) =>
-  row.published as unknown as ClinicalTemplateInput;
+export function publishedSnapshot(row: ClinicalNoteTemplate): ClinicalTemplateInput {
+  const value = row.published;
+  if (!object(value) || typeof value.name !== "string" || typeof value.availableToAll !== "boolean" ||
+    (value.nameAr !== undefined && typeof value.nameAr !== "string")) visitError("clinicalTemplateInvalid");
+  return { name: value.name, nameAr: value.nameAr, availableToAll: value.availableToAll,
+    assignments: storedAssignments(value.assignments), sections: storedClinicalSections(value.sections) };
+}
 const isPublished = { publishedAt: { not: null } } satisfies Prisma.ClinicalNoteTemplateWhereInput;
 @Injectable()
 export class TemplatesService {

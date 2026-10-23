@@ -43,7 +43,10 @@ for (const file of files(path.join(root, '.agents')).concat(files(path.join(root
   }
 }
 
-const tasks = JSON.parse(fs.readFileSync(path.join(root, '.vscode/tasks.json'), 'utf8'));
+const taskFile = path.join(root, '.vscode/tasks.json');
+const tasks = fs.existsSync(taskFile)
+  ? JSON.parse(fs.readFileSync(taskFile, 'utf8'))
+  : { tasks: [] };
 for (const task of tasks.tasks.filter(task => task.label.startsWith('Cureva:'))) {
   if (task.command !== 'rtk' || task.args[0] !== 'proxy') errors.push(`${task.label}: expected RTK wrapper`);
   if (!fs.existsSync(path.join(root, task.args[2]))) errors.push(`${task.label}: script does not exist`);

@@ -22,7 +22,6 @@ import {
   type DirectoryColumn,
   DirectoryViewSkeleton,
   RowActionsMenu,
-  TableFrame,
 } from "@/components/primitives";
 import { Badge } from "@/components/ui";
 import {
@@ -253,22 +252,21 @@ export function PractitionersList({
 
   if (totalItems === 0) {
     return (
-      <TableFrame className="page-fill">
-        <EmptyState
-          icon={IconPractitioner}
-          title={
-            hasActiveFilters
-              ? t.practitioner.noMatches
-              : t.practitioner.noPractitioners
-          }
-          description={
-            hasActiveFilters
-              ? t.practitioner.noMatchesDesc
-              : t.practitioner.noPractitionersDesc
-          }
-          action={hasActiveFilters ? undefined : emptyAction}
-        />
-      </TableFrame>
+      <EmptyState
+        className="page-fill"
+        icon={IconPractitioner}
+        title={
+          hasActiveFilters
+            ? t.practitioner.noMatches
+            : t.practitioner.noPractitioners
+        }
+        description={
+          hasActiveFilters
+            ? t.practitioner.noMatchesDesc
+            : t.practitioner.noPractitionersDesc
+        }
+        action={hasActiveFilters ? undefined : emptyAction}
+      />
     );
   }
 

@@ -26,7 +26,7 @@ import {
   UpdatePractitionerDto,
   SelfProfileDto,
 } from "./dto";
-import { hasSameDayOverlap } from "./availability-rules";
+import { formatClockRange, hasSameDayOverlap } from "./availability-rules";
 import { filterPractitioners } from "./practitioner-directory";
 import {
   initialsFromName,
@@ -70,6 +70,7 @@ export class PractitionersService {
 
   async create(dto: CreatePractitionerDto) {
     this.assertAvailabilityRules(dto);
+    await this.assertWithinClinicHours(dto.clinicId, dto);
     await this.assertRefs(dto.clinicId, dto);
     this.assertCommission(dto.employmentType, dto.commissionPercent);
 
@@ -118,6 +119,7 @@ export class PractitionersService {
   async update(id: string, dto: UpdatePractitionerDto, clinicId: string) {
     this.assertAvailabilityRules(dto);
     const existing = await this.findOne(id, clinicId);
+    await this.assertWithinClinicHours(existing.clinicId, dto);
     await this.assertRefs(existing.clinicId, {
       departmentId: dto.departmentId ?? existing.departmentId ?? undefined,
       defaultRoomId:
@@ -203,6 +205,7 @@ export class PractitionersService {
   ) {
     this.assertAvailabilityRules(dto);
     await this.findOne(id, clinicId);
+    await this.assertWithinClinicHours(clinicId, dto);
     return mapPractitioner(
       await this.repo.replaceAvailability(id, dto.availabilities),
     );
@@ -243,6 +246,37 @@ export class PractitionersService {
           "Commission percent (0-100) is required for commission or mixed employment",
         );
       }
+    }
+  }
+
+  private async assertWithinClinicHours(
+    clinicId: string,
+    input: {
+      availabilities?: Array<{ startTime: string; endTime: string }>;
+      availabilityOverrides?: Array<{ startAt: string; endAt: string }>;
+    },
+  ) {
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      select: { workingHoursStart: true, workingHoursEnd: true, timezone: true },
+    });
+    if (!clinic) return;
+    const opening = clinic.workingHoursStart;
+    const closing = clinic.workingHoursEnd;
+    const localTime = new Intl.DateTimeFormat("en-GB", {
+      timeZone: clinic.timezone || "UTC",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    });
+    const outside = (start: string, end: string) => start < opening || end > closing;
+
+    if (input.availabilities?.some(({ startTime, endTime }) => outside(startTime, endTime))) {
+      throw new BadRequestException(`Working hours must be within clinic hours (${formatClockRange(opening, closing)})`);
+    }
+    if (input.availabilityOverrides?.some(({ startAt, endAt }) =>
+      outside(localTime.format(new Date(startAt)), localTime.format(new Date(endAt))))) {
+      throw new BadRequestException(`Extra availability must be within clinic hours (${formatClockRange(opening, closing)})`);
     }
   }
 

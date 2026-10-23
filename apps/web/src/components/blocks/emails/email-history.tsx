@@ -200,7 +200,7 @@ export function EmailHistory() {
   ];
 
   return (
-    <div className="page-fill gap-2.5">
+    <div className="page-fill-always gap-2.5">
       <div className="shrink-0">
         <DirectoryToolbar
           search={search}
@@ -343,15 +343,14 @@ export function EmailHistory() {
         !searchLoading &&
         query.data &&
         (query.data.total === 0 ? (
-          <TableFrame className="page-fill">
-            <EmptyState
-              icon={IconMail}
-              title={t.emails.empty}
-              description={t.emails.emptyDesc}
-            />
-          </TableFrame>
+          <EmptyState
+            className="flex-1"
+            icon={IconMail}
+            title={t.emails.empty}
+            description={t.emails.emptyDesc}
+          />
         ) : (
-          <div className="page-fill min-h-0 gap-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
             <DirectoryTable
               rows={query.data.items}
               columns={columns}
@@ -363,7 +362,7 @@ export function EmailHistory() {
               className="hidden md:flex"
               tableClassName="min-w-[60rem]"
             />
-            <div className="page-fill overflow-y-auto overscroll-y-contain md:hidden">
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain md:hidden">
               <div className="grid grid-cols-1 gap-4">
                 {query.data.items.map((message) => (
                   <EntityMobileCard

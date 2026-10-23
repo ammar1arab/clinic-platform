@@ -154,10 +154,10 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
       </Card>
 
       {closed ? (
-        <Card className="flex-1 gap-0 py-0"><EmptyState className="flex-1" icon={IconClinicalRecord} title={t.visits.closedVisit} description={t.visits.closedVisitDesc} /></Card>
+        <Card className="flex-1 gap-0 py-0"><EmptyState framed={false} className="flex-1" icon={IconClinicalRecord} title={t.visits.closedVisit} description={t.visits.closedVisitDesc} /></Card>
       ) : (
-          <Card className="min-w-0 flex-1 gap-0 py-0">
-            <CardContent className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-3 sm:p-4">
+          <Card className="min-h-fit min-w-0 flex-auto shrink-0 gap-0 py-0">
+            <CardContent className="flex flex-1 flex-col p-3 sm:p-4">
               <TabsContent value="note" className="flex flex-1 flex-col [&>[role=status]]:flex-1">
                 {data.note || user?.role === ROLE.PRACTITIONER ? (
                   data.allowedActions.editNote && !data.note && templates.isPending ? (
@@ -166,7 +166,7 @@ export function VisitWorkspace({ appointmentId }: { appointmentId: string }) {
                     <ErrorState onRetry={() => void templates.refetch()} />
                   ) : <ClinicalNoteEditor appointmentId={appointmentId} workspace={data} templates={templates.data ?? []} />
                 ) : (
-                  <EmptyState icon={IconClinicalRecord} title={t.visits.note} description={t.visits.noteHidden} className="py-6" />
+                  <EmptyState framed={false} icon={IconClinicalRecord} title={t.visits.note} description={user?.role === ROLE.OWNER ? t.visits.noteNotRecorded : t.visits.noteHidden} className="py-6" />
                 )}
               </TabsContent>
               <TabsContent value="report" className="flex flex-1 flex-col [&>[role=status]]:flex-1">

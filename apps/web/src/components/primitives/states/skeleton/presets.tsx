@@ -205,9 +205,9 @@ export function NoteTemplateCardSkeleton() {
   );
 }
 
-export function NoteTemplateBuilderSkeleton({ className }: { className?: string }) {
+export function NoteTemplateBuilderSkeleton({ className, view = 'settings' }: { className?: string; view?: 'settings' | 'publish' }) {
   return (
-    <div className={cn('page-fill gap-2', className)} aria-busy="true">
+    <div className={cn('page-fill flex-1 gap-2', className)} aria-busy="true">
       <div className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         <Skeleton className="h-8 w-16" />
         <Skeleton className="hidden h-9 w-72 justify-self-center rounded-full md:block" />
@@ -218,10 +218,16 @@ export function NoteTemplateBuilderSkeleton({ className }: { className?: string 
         </div>
       </div>
       <Skeleton className="h-12 w-full shrink-0 rounded-xl md:hidden" />
-      <div className="min-h-0 flex-1 space-y-4 overflow-hidden p-1">
-        <Card className="overflow-visible">
-          <CardContent className="space-y-4">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-1">
+        <Card className="min-w-0 flex-1 shrink-0 overflow-visible">
+          <CardContent className="flex flex-1 flex-col gap-4">
             <Skeleton className="h-5 w-24" />
+            {view === 'publish' ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-6 py-10">
+                <Skeleton className="size-32 rounded-2xl" />
+                <Skeleton className="h-5 w-full max-w-sm" />
+              </div>
+            ) : <>
             <div className="grid gap-4 sm:grid-cols-2">
               {[0, 1].map((field) => (
                 <div key={field} className="space-y-1.5"><Skeleton className="h-4 w-28" /><Skeleton className="h-8 w-full rounded-lg" /></div>
@@ -231,6 +237,7 @@ export function NoteTemplateBuilderSkeleton({ className }: { className?: string 
               <Skeleton className="h-4 w-28" />
               <Skeleton className="h-9 w-44 rounded-full" />
             </div>
+            </>}
           </CardContent>
         </Card>
       </div>

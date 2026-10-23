@@ -24,6 +24,8 @@ import {
   TwoStepDeleteDialogs,
   useTwoStepDelete,
   ProfileEmpty,
+  CountBadge,
+  EmptyState,
   ProfileHero,
   ProfileInfoField,
   ProfileInfoGrid,
@@ -40,9 +42,9 @@ import {
 import { calcAge } from '@/lib/age';
 import { PractitionerTimeOffSection } from './practitioner-time-off-section';
 import { splitTimeOff } from './time-off';
-import { formatDate, formatDateTime, formatTimeRange } from '@/lib/datetime';
+import { formatDate, formatTimeRange } from '@/lib/datetime';
 import type { PractitionerDetail } from '@/services/practitioners.service';
-import { IconMail, IconActivate, IconCalendar, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
+import { IconMail, IconActivate, IconCalendar, IconCalendarClock, IconDeactivate, IconDelete, IconEdit } from '@/constants/icons';
 import { useAuth, useLanguage } from '@/providers';
 import { getBilingualName, getStaffName } from '@/i18n';
 
@@ -247,24 +249,18 @@ export function PractitionerProfile({
         </ProfileInfoGrid>
       </ProfileSection>
 
-      {bioText.trim() ? (
-        <ProfileSection title={t.practitioner.bio}>
-          <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-            {bioText}
-          </p>
-        </ProfileSection>
-      ) : null}
-
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
+        {bioText.trim() ? (
+          <ProfileSection title={t.practitioner.bio} fixedHeight>
+            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+              {bioText}
+            </p>
+          </ProfileSection>
+        ) : null}
         <ProfileSection
           title={t.practitioner.services}
-          description={
-            practitioner.services.length
-              ? `${practitioner.services.length} ${t.practitioner.assigned}`
-              : undefined
-          }
-          className="h-full"
-          contentClassName="max-h-56 overflow-y-auto overscroll-y-contain"
+          action={<CountBadge count={practitioner.services.length} />}
+          fixedHeight
         >
           {practitioner.services.length === 0 ? (
             <ProfileEmpty>{t.practitioner.noServicesAssigned}</ProfileEmpty>
@@ -289,8 +285,7 @@ export function PractitionerProfile({
 
         <ProfileSection
           title={t.practitioner.weeklyAvailability}
-          className="h-full"
-          contentClassName="max-h-56 overflow-y-auto overscroll-y-contain"
+          fixedHeight
         >
           {practitioner.availabilities.length === 0 ? (
             <ProfileEmpty>{t.practitioner.noWeeklyPatterns}</ProfileEmpty>
@@ -312,11 +307,10 @@ export function PractitionerProfile({
 
         <ProfileSection
           title={t.practitioner.extraAvailability}
-          className="h-full"
-          contentClassName="max-h-56 overflow-y-auto overscroll-y-contain"
+          fixedHeight
         >
           {practitioner.availabilityOverrides.length === 0 ? (
-            <ProfileEmpty>{t.practitioner.noExtraAvailability}</ProfileEmpty>
+            <EmptyState framed={false} icon={IconCalendarClock} title={t.practitioner.extraAvailability} />
           ) : (
             <div className="space-y-1.5">
               {practitioner.availabilityOverrides.map((entry, index) => (
@@ -338,13 +332,14 @@ export function PractitionerProfile({
           title={t.scheduleRequests.kinds.vacation}
           entries={vacations}
           emptyLabel={t.practitioner.noVacations}
-          summary={{ label: t.practitioner.vacationDaysThisYear, value: vacationDays }}
+          count={vacationDays}
           dateOnly
         />
         <PractitionerTimeOffSection
           title={t.practitioner.leave}
           entries={leaves}
           emptyLabel={t.practitioner.noLeaveBlocks}
+          count={leaves.length}
         />
       </div>
 

@@ -1,4 +1,4 @@
-import type { CreateScheduleRequestInput, ReviewScheduleRequestInput, ScheduleRequestPage } from "@clinic/types";
+import type { CreateScheduleRequestInput, ReviewScheduleRequestInput, ScheduleRequestMutationResult, ScheduleRequestPage } from "@clinic/types";
 import type { Translations } from '@/i18n';
 import { practitionersService, type ScheduleRequestListFilters } from '@/services/practitioners.service';
 import type {
@@ -106,7 +106,7 @@ export function useScheduleRequests(clinicId: string, doctorId: string | undefin
 
 export function useScheduleRequestMutation(clinicId: string) {
   const { t } = useLanguage();
-  return useApiMutation<unknown, Error, CreateScheduleRequestInput | { id: string; data: ReviewScheduleRequestInput }>({
+  return useApiMutation<ScheduleRequestMutationResult, Error, CreateScheduleRequestInput | { id: string; data: ReviewScheduleRequestInput }>({
     request: (input) => 'id' in input ? practitionersService.reviewSchedule(input.id, input.data) : practitionersService.requestSchedule(input),
     invalidateQueries: [...writeKeys(clinicId), QUERY_KEYS.dashboard.kpisAll, QUERY_KEYS.dashboard.roomUtilizationAll],
     successMessage: t.scheduleRequests.saved,

@@ -91,7 +91,6 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
     <>
       <ProfileSection
         title={t.referral.referralsAndConsults}
-        description={t.referral.crossDoctorRequests}
         action={
           <Button
             type="button"
@@ -107,7 +106,7 @@ export function PatientReferralsBlock({ clinicId, patientId, appointments }: Pro
         }
       >
         {!referrals?.length ? (
-          <EmptyState
+          <EmptyState framed={false}
             title={t.referral.noReferrals}
             description={t.referral.noReferralsDesc}
             className="py-8"

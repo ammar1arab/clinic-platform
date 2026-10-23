@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
+import { extractErrorMessage, type ApiErrorLike } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { DRAFT_SAVE_PHASE, NOTE_STATUS, type ClinicalSection, type ClinicalValue, type DraftSavePhase, type TemplateDTO, type VisitErrorCode, type VisitWorkspace } from '@clinic/types';
 import { Badge, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Skeleton } from '@/components/ui';
@@ -37,6 +38,7 @@ export function ClinicalNoteEditor({
   templates: TemplateDTO[];
 }) {
   const { lang, t } = useLanguage();
+  const templateSelectId = useId();
   const queryClient = useQueryClient();
   const note = workspace.note;
   const preference = useNotePreference(workspace.allowedActions.editNote && !note);
@@ -44,6 +46,7 @@ export function ClinicalNoteEditor({
   const addendum = useNoteAddendum(appointmentId);
   const history = useNoteHistory(workspace.visitId ?? '', !!note?.signedAt);
   const [phase, setPhase] = useState<DraftSavePhase>(DRAFT_SAVE_PHASE.IDLE);
+  const [saveError, setSaveError] = useState('');
   const [dirty, setDirty] = useState(false);
   const [focusedId, setFocusedId] = useState('');
   const [addendumOpen, setAddendumOpen] = useState(false);
@@ -115,7 +118,7 @@ export function ClinicalNoteEditor({
         const templateConfirm: VisitErrorCode = 'clinicalTemplateChangeConfirmationRequired';
         if (code === revisionConflict) setPhase(DRAFT_SAVE_PHASE.CONFLICT);
         else if (code === templateConfirm) setPhase(DRAFT_SAVE_PHASE.CONFIRM_TEMPLATE);
-        else setPhase(DRAFT_SAVE_PHASE.ERROR);
+        else { setSaveError(extractErrorMessage(error as ApiErrorLike)); setPhase(DRAFT_SAVE_PHASE.ERROR); }
         return null;
       }
     })();
@@ -159,28 +162,29 @@ export function ClinicalNoteEditor({
   };
 
   const picking = canEdit && !note && !templateId;
-  const phaseLabel = phase === DRAFT_SAVE_PHASE.SAVING ? t.visits.saving : phase === DRAFT_SAVE_PHASE.SAVED ? t.visits.saved : phase === DRAFT_SAVE_PHASE.ERROR ? t.visits.saveError : phase === DRAFT_SAVE_PHASE.CONFLICT ? t.visits.conflict : null;
+  const phaseLabel = phase === DRAFT_SAVE_PHASE.SAVING ? t.visits.saving : phase === DRAFT_SAVE_PHASE.SAVED ? t.visits.saved : phase === DRAFT_SAVE_PHASE.ERROR ? saveError || t.visits.saveError : phase === DRAFT_SAVE_PHASE.CONFLICT ? t.visits.conflict : null;
 
   if (!workspace.visitId) {
-    return <EmptyState icon={IconFileText} title={t.visits.clinicNote} description={t.visits.startBeforeNote} />;
+    return <EmptyState framed={false} icon={IconFileText} title={t.visits.clinicNote} description={t.visits.startBeforeNote} />;
   }
   if (!canEdit && !note) {
-    return <EmptyState icon={IconFileText} title={t.visits.clinicNote} description={workspace.noteStatus === 'locked' ? t.visits.lockedNote : t.visits.noTemplateDesc} />;
+    return <EmptyState framed={false} icon={IconFileText} title={t.visits.clinicNote} description={workspace.noteStatus === 'locked' ? t.visits.lockedNote : t.visits.noTemplateDesc} />;
   }
   if (canEdit && !note && preference.isPending) return <Skeleton className="h-24 w-full rounded-xl" />;
   if (canEdit && !note && preference.isError) return <ErrorState onRetry={() => void preference.refetch()} />;
   if (canEdit && !note && !published.length) {
-    return <EmptyState icon={IconFileText} title={t.visits.noTemplate} description={t.visits.noTemplateDesc} />;
+    return <EmptyState framed={false} icon={IconFileText} title={t.visits.noTemplate} description={t.visits.noTemplateDesc} />;
   }
 
   return (
     <div ref={bind} className="space-y-4">
       {(canEdit && published.length > 0) || workspace.noteStatus !== NOTE_STATUS.DRAFT || phaseLabel ? (
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           {canEdit && published.length > 0 ? (
-            <div className="min-w-0 flex-1 sm:max-w-xs">
+            <div className="flex min-w-0 flex-1 items-center gap-2 sm:max-w-lg">
+              <label htmlFor={templateSelectId} className="shrink-0 text-xs font-medium text-muted-foreground">{t.visits.noteTemplate}</label>
               <Select value={templateId} onValueChange={chooseTemplate}>
-                <SelectTrigger aria-label={t.visits.pickTemplate} className="h-8 w-full rounded-lg">
+                <SelectTrigger id={templateSelectId} className="h-8 min-w-0 flex-1 rounded-lg">
                   <SelectValue placeholder={t.visits.pickTemplate} />
                 </SelectTrigger>
                 <SelectContent>

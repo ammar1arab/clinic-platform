@@ -13,18 +13,14 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui';
 import { DatePicker, FormField, TimePicker } from '@/components/primitives';
 import { IconDelete } from '@/constants/icons';
 import { WEEKDAY_OPTIONS } from '@/constants/practitioner';
 import { useIsMobile } from '@/hooks/shared/use-media-query';
+import { useClinicHours } from '@/hooks/api/use-clinic';
 import { keepNestedPortals } from '@/lib/overlay';
+import { SettingsFormDialog } from '@/components/blocks/settings/settings-navigation';
 import { formatTimeRange, parseClock, toClockValue, toDateParam } from '@/lib/datetime';
 import { cn } from '@/lib/utils';
 import type { PractitionerHoursData } from '@/lib/validations';
@@ -40,7 +36,6 @@ import {
 import { AvailabilityOverridesFields, LeaveBlocksFields } from './practitioner-schedule-fields';
 import { useHoursFields } from './use-hours-fields';
 
-type AvailabilitySlot = PractitionerHoursData['availabilities'][number];
 type SlotEditor =
   | { mode: 'create'; dayOfWeek: number; startTime: string; endTime: string }
   | { mode: 'edit'; index: number };
@@ -69,19 +64,12 @@ function clockToFc(minutes: number) {
   return `${toClockValue(Math.floor(clamped / 60), clamped % 60)}:00`;
 }
 
-function visibleDayWindow(slots: AvailabilitySlot[]) {
-  if (!slots.length) return { min: '08:00:00', max: '18:00:00' };
-  let minM = 8 * 60;
-  let maxM = 18 * 60;
-  for (const slot of slots) {
-    const start = parseClock(slot.startTime);
-    const end = parseClock(slot.endTime);
-    if (start) minM = Math.min(minM, start.hours * 60 + start.minutes - 30);
-    if (end) maxM = Math.max(maxM, end.hours * 60 + end.minutes + 30);
-  }
+function clinicDayWindow(workingHoursStart: string, workingHoursEnd: string) {
+  const start = parseClock(workingHoursStart);
+  const end = parseClock(workingHoursEnd);
   return {
-    min: clockToFc(Math.max(6 * 60, minM)),
-    max: clockToFc(Math.min(23 * 60, Math.max(maxM, minM + 60))),
+    min: clockToFc(start ? start.hours * 60 + start.minutes : 8 * 60),
+    max: clockToFc((end ? end.hours * 60 + end.minutes : 20 * 60) + 60),
   };
 }
 
@@ -115,9 +103,10 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
   const isMobile = useIsMobile();
   const [editor, setEditor] = useState<SlotEditor | null>(null);
   const weekStart = useMemo(() => startOfWeek(new Date(), { weekStartsOn: 0 }), []);
+  const clinicHours = useClinicHours();
   const dayWindow = useMemo(
-    () => visibleDayWindow(values.availabilities),
-    [values.availabilities],
+    () => clinicDayWindow(clinicHours.start, clinicHours.end),
+    [clinicHours.start, clinicHours.end],
   );
   const events = useMemo(
     () =>
@@ -224,10 +213,6 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
 
   const selectedIndex = editor?.mode === 'edit' ? editor.index : null;
   const activeSlot = selectedIndex === null ? undefined : values.availabilities[selectedIndex];
-  const editorDay =
-    editor?.mode === 'create'
-      ? editor.dayOfWeek
-      : activeSlot?.dayOfWeek;
   const editorOpen =
     editor?.mode === 'create' ||
     (editor?.mode === 'edit' && Boolean(activeSlot));
@@ -271,9 +256,6 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">
-            {isMobile ? t.practitioner.tapDayToSetHours : t.practitioner.dragToAddAvailability}
-          </p>
         </CardHeader>
         <CardContent>
           <div
@@ -296,6 +278,9 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
               allDaySlot={false}
               slotMinTime={dayWindow.min}
               slotMaxTime={dayWindow.max}
+              businessHours={{ daysOfWeek: [0, 1, 2, 3, 4, 5, 6], startTime: clinicHours.start, endTime: clinicHours.end }}
+              selectConstraint="businessHours"
+              eventConstraint="businessHours"
               slotDuration="00:30:00"
               slotLabelInterval="01:00:00"
               snapDuration="00:15:00"
@@ -323,156 +308,139 @@ export function AvailabilityStudio<T extends PractitionerHoursData>({
         </CardContent>
       </Card>
 
-      <Dialog open={editorOpen} onOpenChange={(open) => !open && closeSlot()}>
-        <DialogContent
-          preventClose={false}
-          onInteractOutside={keepNestedPortals}
-          className="gap-4"
-        >
-          <DialogHeader>
-            <DialogTitle>
-              {editor?.mode === 'create'
-                ? t.practitioner.addWorkingHours
-                : t.practitioner.setWorkingHours}
-            </DialogTitle>
-            <DialogDescription>
-              {editorDay !== undefined
-                ? t.constants.weekdays[WEEKDAY_OPTIONS[editorDay]]
-                : t.practitioner.selectedAvailability}
-            </DialogDescription>
-          </DialogHeader>
-
-          {editor?.mode === 'create' ? (
+      <SettingsFormDialog
+        open={editorOpen}
+        onOpenChange={(open) => !open && closeSlot()}
+        editing={editor?.mode === 'edit'}
+        addTitle={t.practitioner.addWorkingHours}
+        pending={false}
+        disabled={editor?.mode === 'create' ? !createValid : false}
+        onInteractOutside={keepNestedPortals}
+        onSubmit={() => {
+          if (editor?.mode !== 'create') {
+            closeSlot();
+            return;
+          }
+          if (!createValid) return;
+          if (overlapsDay(editor.dayOfWeek, editor.startTime, editor.endTime)) {
+            rejectOverlap();
+            return;
+          }
+          onAddAvailability({
+            dayOfWeek: editor.dayOfWeek,
+            startTime: editor.startTime,
+            endTime: editor.endTime,
+            effectiveFrom: '',
+            effectiveUntil: '',
+          });
+          closeSlot();
+        }}
+      >
+        {editor?.mode === 'create' ? (
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <TimePicker
+              value={editor.startTime}
+              onChange={(startTime) => setEditor({ ...editor, startTime })}
+              className="h-11"
+              range={clinicHours}
+            />
+            <span aria-hidden className="text-muted-foreground">
+              -
+            </span>
+            <TimePicker
+              value={editor.endTime}
+              onChange={(endTime) => setEditor({ ...editor, endTime })}
+              className="h-11"
+              range={clinicHours}
+            />
+          </div>
+        ) : selectedIndex !== null && activeSlot ? (
+          <>
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-              <TimePicker
-                value={editor.startTime}
-                onChange={(startTime) => setEditor({ ...editor, startTime })}
-                className="h-11"
+              <Controller
+                control={hoursControl}
+                name={`availabilities.${selectedIndex}.startTime`}
+                render={({ field }) => (
+                  <TimePicker value={field.value} onChange={field.onChange} className="h-11" range={clinicHours} />
+                )}
               />
               <span aria-hidden className="text-muted-foreground">
                 -
               </span>
-              <TimePicker
-                value={editor.endTime}
-                onChange={(endTime) => setEditor({ ...editor, endTime })}
-                className="h-11"
+              <Controller
+                control={hoursControl}
+                name={`availabilities.${selectedIndex}.endTime`}
+                render={({ field }) => (
+                  <TimePicker value={field.value} onChange={field.onChange} className="h-11" range={clinicHours} />
+                )}
               />
             </div>
-          ) : selectedIndex !== null && activeSlot ? (
-            <>
-              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                <Controller
+            <div className="space-y-2 rounded-xl bg-muted/40 p-3">
+              <p className="text-sm font-medium">{t.practitioner.repeatSchedule}</p>
+              <div className="grid grid-cols-1 gap-2">
+                <DateController
                   control={hoursControl}
-                  name={`availabilities.${selectedIndex}.startTime`}
-                  render={({ field }) => (
-                    <TimePicker value={field.value} onChange={field.onChange} className="h-11" />
-                  )}
+                  name={`availabilities.${selectedIndex}.effectiveFrom`}
+                  label={t.common.from}
                 />
-                <span aria-hidden className="text-muted-foreground">
-                  -
-                </span>
-                <Controller
+                <DateController
                   control={hoursControl}
-                  name={`availabilities.${selectedIndex}.endTime`}
-                  render={({ field }) => (
-                    <TimePicker value={field.value} onChange={field.onChange} className="h-11" />
-                  )}
+                  name={`availabilities.${selectedIndex}.effectiveUntil`}
+                  label={t.common.to}
                 />
               </div>
-              <div className="space-y-2 rounded-xl bg-muted/40 p-3">
-                <p className="text-sm font-medium">{t.practitioner.repeatSchedule}</p>
-                <p className="text-xs text-muted-foreground">{t.practitioner.repeatScheduleDesc}</p>
-                <div className="grid grid-cols-1 gap-2">
-                  <DateController
-                    control={hoursControl}
-                    name={`availabilities.${selectedIndex}.effectiveFrom`}
-                    label={t.common.from}
-                  />
-                  <DateController
-                    control={hoursControl}
-                    name={`availabilities.${selectedIndex}.effectiveUntil`}
-                    label={t.common.to}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    hoursSetValue(
-                      `availabilities.${selectedIndex}.effectiveFrom`,
-                      toDateParam(weekStart),
-                      { shouldDirty: true },
-                    );
-                    hoursSetValue(
-                      `availabilities.${selectedIndex}.effectiveUntil`,
-                      toDateParam(addDays(weekStart, 6)),
-                      { shouldDirty: true },
-                    );
-                  }}
-                >
-                  {t.practitioner.thisWeekOnly}
-                </Button>
-              </div>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 className="w-full"
-                onClick={() =>
-                  setEditor({
-                    mode: 'create',
-                    dayOfWeek: activeSlot.dayOfWeek,
-                    startTime: DEFAULT_START,
-                    endTime: DEFAULT_END,
-                  })
-                }
-              >
-                {t.practitioner.addAnotherHours}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                className="w-full"
-                onClick={async () => {
-                  const removed = await onRemoveAvailability(selectedIndex);
-                  if (removed !== false) closeSlot();
-                }}
-              >
-                <IconDelete />
-                {t.common.remove}
-              </Button>
-            </>
-          ) : null}
-
-          {editor?.mode === 'create' ? (
-            <DialogFooter>
-              <Button
-                type="button"
-                className="w-full sm:w-auto"
-                disabled={!createValid}
                 onClick={() => {
-                  if (editor.mode !== 'create' || !createValid) return;
-                  if (overlapsDay(editor.dayOfWeek, editor.startTime, editor.endTime)) {
-                    rejectOverlap();
-                    return;
-                  }
-                  onAddAvailability({
-                    dayOfWeek: editor.dayOfWeek,
-                    startTime: editor.startTime,
-                    endTime: editor.endTime,
-                    effectiveFrom: '',
-                    effectiveUntil: '',
-                  });
-                  closeSlot();
+                  hoursSetValue(
+                    `availabilities.${selectedIndex}.effectiveFrom`,
+                    toDateParam(weekStart),
+                    { shouldDirty: true },
+                  );
+                  hoursSetValue(
+                    `availabilities.${selectedIndex}.effectiveUntil`,
+                    toDateParam(addDays(weekStart, 6)),
+                    { shouldDirty: true },
+                  );
                 }}
               >
-                {t.common.add}
+                {t.practitioner.thisWeekOnly}
               </Button>
-            </DialogFooter>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() =>
+                setEditor({
+                  mode: 'create',
+                  dayOfWeek: activeSlot.dayOfWeek,
+                  startTime: DEFAULT_START,
+                  endTime: DEFAULT_END,
+                })
+              }
+            >
+              {t.practitioner.addAnotherHours}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="w-full"
+              onClick={async () => {
+                const removed = await onRemoveAvailability(selectedIndex);
+                if (removed !== false) closeSlot();
+              }}
+            >
+              <IconDelete />
+              {t.common.remove}
+            </Button>
+          </>
+        ) : null}
+
+      </SettingsFormDialog>
 
       <AvailabilityOverridesFields
         control={hoursControl}

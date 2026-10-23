@@ -5,6 +5,7 @@ const PROTECTED_OVERLAY =
   '[data-slot="dropdown-menu-content"], [data-slot="select-content"], [data-slot="popover-content"], [data-slot="dialog-content"], [data-slot="calendar"], [data-radix-select-content], [data-radix-popper-content-wrapper], [data-calendar-popover], .fc-popover';
 
 type DismissEvent = {
+  readonly defaultPrevented: boolean;
   target: EventTarget | null;
   currentTarget: EventTarget | null;
   preventDefault: () => void;
@@ -74,17 +75,17 @@ function handOffToNextTrigger(event: DismissEvent) {
   });
 }
 
-export function overlayDismissProps<TPointer>(handlers?: {
+export function overlayDismissProps<TPointer extends DismissEvent>(handlers?: {
   onPointerDownOutside?: (event: TPointer) => void;
   preventOwnTrigger?: boolean;
 }) {
   return {
     onPointerDownOutside: (event: TPointer) => {
       if (handlers?.preventOwnTrigger !== false) {
-        preventDismissOnOwnTrigger(event as DismissEvent);
+        preventDismissOnOwnTrigger(event);
       }
       handlers?.onPointerDownOutside?.(event);
-      if (!(event as unknown as Event).defaultPrevented) handOffToNextTrigger(event as DismissEvent);
+      if (!event.defaultPrevented) handOffToNextTrigger(event);
     },
     onCloseAutoFocus: (event: Event) => {
       event.preventDefault();
@@ -92,14 +93,14 @@ export function overlayDismissProps<TPointer>(handlers?: {
   };
 }
 
-export function overlayPointerProps<TPointer, TInteract>(handlers?: {
+export function overlayPointerProps<TPointer extends DismissEvent, TInteract extends DismissEvent>(handlers?: {
   onPointerDownOutside?: (event: TPointer) => void;
   onInteractOutside?: (event: TInteract) => void;
 }) {
   return {
     ...overlayDismissProps(handlers),
     onInteractOutside: (event: TInteract) => {
-      preventDismissOnOwnTrigger(event as DismissEvent);
+      preventDismissOnOwnTrigger(event);
       handlers?.onInteractOutside?.(event);
     },
   };

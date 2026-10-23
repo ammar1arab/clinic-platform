@@ -1,12 +1,10 @@
+import { storedClinicalSections, storedReportSections, storedInvoiceLines } from "./clinical-validation";
 import { Prisma } from "@prisma/client";
 import type { AuthUser } from "@/modules/auth/types";
 import type {
   ClinicalNoteDTO,
-  ClinicalSection,
   ClinicalValue,
   InvoiceDTO,
-  InvoiceLine,
-  ReportSections,
   VisitAuditEvent,
   VisitReportDTO,
   VisitSummary,
@@ -53,7 +51,7 @@ export function invoiceDto(visit: VisitRow): InvoiceDTO | null {
         : "unpaid",
     number: invoice.number,
     currency: invoice.currency,
-    lineItems: invoice.lineItems as unknown as InvoiceLine[],
+    lineItems: storedInvoiceLines(invoice.lineItems),
     subtotal: invoice.subtotal.toFixed(3),
     discount: invoice.discount.toFixed(3),
     tax: invoice.tax.toFixed(3),
@@ -174,7 +172,7 @@ export function workspaceDto(
   const doctor =
     actor.role === "practitioner" && actor.clinicUserId === row.doctorId;
   const owner = actor.role === "owner";
-  const clinical = doctor;
+  const clinical = doctor || owner;
   const live = !!visit && !visit.finishedAt;
   const active = !["cancelled", "no_show"].includes(row.status);
   const writable =
@@ -185,8 +183,7 @@ export function workspaceDto(
           id: visit.note.id,
           visitId: visit.id,
           templateId: visit.note.templateId,
-          sectionsSnapshot: visit.note
-            .sectionsSnapshot as unknown as ClinicalSection[],
+          sectionsSnapshot: storedClinicalSections(visit.note.sectionsSnapshot),
           values: visit.note.values as Record<string, ClinicalValue>,
           status: summary(row, now).noteStatus,
           revision: visit.note.revision,
@@ -210,12 +207,12 @@ export function workspaceDto(
         }
       : null;
   const report: VisitReportDTO | null =
-    visit?.report && (clinical || (owner && !!visit.report.signedAt))
+    visit?.report && clinical
       ? {
           id: visit.report.id,
           visitId: visit.id,
           revision: visit.report.revision,
-          sections: visit.report.sections as unknown as ReportSections,
+          sections: storedReportSections(visit.report.sections),
           status: visit.reportStatus as VisitReportDTO["status"],
           sourceNoteRevisionId: visit.report.sourceNoteRevisionId,
           signedById: visit.report.signedById,

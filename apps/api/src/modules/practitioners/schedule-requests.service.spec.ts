@@ -38,6 +38,7 @@ const pending = {
 
 describe("Schedule requests", () => {
   const tx = {
+    clinic: { findUnique: jest.fn().mockResolvedValue({ workingHoursStart: "00:00", workingHoursEnd: "23:59", timezone: "UTC" }) },
     clinicUser: { findFirst: jest.fn() },
     practitionerScheduleRequest: {
       findFirst: jest.fn(),

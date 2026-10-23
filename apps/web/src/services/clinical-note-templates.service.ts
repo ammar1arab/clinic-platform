@@ -24,9 +24,6 @@ export const clinicalNoteTemplatesService = {
   publish: (id: string, revision: number) =>
     api.post<TemplateDTO>(ENDPOINTS.CLINICAL_NOTE_TEMPLATES.PUBLISH(id), { revision }).then((r) => r.data),
 
-  schedule: (id: string, revision: number, scheduledAt: string) =>
-    api.post<TemplateDTO>(ENDPOINTS.CLINICAL_NOTE_TEMPLATES.SCHEDULE(id), { revision, scheduledAt }).then((r) => r.data),
-
   archive: (id: string, revision: number) =>
     api.post<TemplateDTO>(ENDPOINTS.CLINICAL_NOTE_TEMPLATES.ARCHIVE(id), { revision }).then((r) => r.data),
 

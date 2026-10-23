@@ -18,7 +18,7 @@ export const STATUS_BADGE_VARIANT: Record<AppointmentStatus, BadgeVariant> = {
   [APPOINTMENT_STATUS.UNCONFIRMED]: 'warning',
   [APPOINTMENT_STATUS.CONFIRMED]: 'violet',
   [APPOINTMENT_STATUS.CHECKED_IN]: 'teal',
-  [APPOINTMENT_STATUS.WAITING]: 'cyan',
+  [APPOINTMENT_STATUS.WAITING]: 'teal',
   [APPOINTMENT_STATUS.IN_PROGRESS]: 'info',
   [APPOINTMENT_STATUS.COMPLETED]: 'success',
   [APPOINTMENT_STATUS.NO_SHOW]: 'destructive',
@@ -29,7 +29,7 @@ export const STATUS_COLORS: Record<AppointmentStatus, string> = {
   [APPOINTMENT_STATUS.UNCONFIRMED]: 'var(--color-warning)',
   [APPOINTMENT_STATUS.CONFIRMED]: 'var(--color-accent-violet)',
   [APPOINTMENT_STATUS.CHECKED_IN]: 'var(--color-accent-teal)',
-  [APPOINTMENT_STATUS.WAITING]: 'var(--color-accent-cyan)',
+  [APPOINTMENT_STATUS.WAITING]: 'var(--color-accent-teal)',
   [APPOINTMENT_STATUS.IN_PROGRESS]: 'var(--color-info)',
   [APPOINTMENT_STATUS.COMPLETED]: 'var(--color-success)',
   [APPOINTMENT_STATUS.NO_SHOW]: 'var(--color-error)',
@@ -40,7 +40,7 @@ export const getStatusConfig = (
   t: Translations,
 ): Record<
   AppointmentStatus,
-  { label: string; short: string; dotClassName: string }
+  { label: string; dotClassName: string }
 > => ({
   unconfirmed: {
     ...t.constants.status.unconfirmed,
@@ -56,7 +56,7 @@ export const getStatusConfig = (
   },
   waiting: {
     ...t.constants.status.waiting,
-    dotClassName: 'bg-accent-cyan',
+    dotClassName: 'bg-accent-teal',
   },
   in_progress: {
     ...t.constants.status.in_progress,

@@ -142,7 +142,7 @@ export function NotificationsPage() {
         </div>
       ) : !filtered.length ? (
         <EmptyState icon={IconBell} title={items.length ? t.common.noResults : t.notifications.empty}
-          description={items.length ? t.notifications.noMatchesDesc : t.notifications.emptyDesc} className="page-fill-always" />
+          description={items.length ? t.notifications.noMatchesDesc : t.notifications.emptyDesc} className="flex-1" />
       ) : (
         <div className="page-fill-always gap-3">
           <ul ref={listRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-1">

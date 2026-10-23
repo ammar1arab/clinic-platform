@@ -1,7 +1,8 @@
 'use client';
 
+import { NON_BILLABLE_APPOINTMENT_STATUSES } from '@clinic/types';
 import { Controller, useFormContext } from 'react-hook-form';
-import { Badge, Button, Input, Switch } from '@/components/ui';
+import { Badge, Button, Input, Switch, Tabs, TabsList, TabsTrigger } from '@/components/ui';
 import { FormField, ButtonSpinner, ReadOnlyMark } from '@/components/primitives';
 import { CLINIC_CURRENCY } from '@/constants/appointment';
 import { IconCreditCard, IconWarning } from '@/constants/icons';
@@ -15,7 +16,6 @@ import { PatientBalancePanel } from './patient-balance-panel';
 import {
   FormSection,
   OptionalSelect,
-  SegmentedToggle,
   SummaryRow,
 } from './appointment-form-controls';
 import { packageCreditLabel, paymentStatusMeta } from './appointment-form.mapper';
@@ -83,6 +83,7 @@ export function AppointmentBillingFields({
     formState: { errors },
   } = useFormContext<AppointmentFormData>();
   const payment = appointment ? paymentStatusMeta(appointment, lang) : null;
+  const billable = !appointment || !(NON_BILLABLE_APPOINTMENT_STATUSES as readonly string[]).includes(appointment.status);
 
   return (
     <FormSection
@@ -142,15 +143,12 @@ export function AppointmentBillingFields({
               control={control}
               name="discountType"
               render={({ field }) => (
-                <SegmentedToggle
-                  value={field.value}
-                  disabled={pricingLocked}
-                  onChange={field.onChange}
-                  options={[
-                    { value: 'fixed', label: CLINIC_CURRENCY },
-                    { value: 'percentage', label: '%' },
-                  ]}
-                />
+                <Tabs value={field.value} onValueChange={field.onChange}>
+                  <TabsList variant="pill" className="h-8 shrink-0">
+                    <TabsTrigger value="fixed" disabled={pricingLocked}>{CLINIC_CURRENCY}</TabsTrigger>
+                    <TabsTrigger value="percentage" disabled={pricingLocked}>%</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               )}
             />
           </div>
@@ -187,7 +185,7 @@ export function AppointmentBillingFields({
       </>
       ) : null}
 
-      {canManage && hasPatient ? (
+      {canManage && hasPatient && billable ? (
         <PatientBalancePanel
           billing={billing}
           isLoading={billingLoading}
@@ -261,7 +259,7 @@ export function AppointmentBillingFields({
               >
                 {releasePending ? <ButtonSpinner className="me-0" /> : t.appointments.removePackage}
               </Button>
-            ) : canManage ? (
+            ) : canManage && billable ? (
               <Switch
                 checked={appointment.isPaid}
                 disabled={paidPending}
@@ -269,7 +267,7 @@ export function AppointmentBillingFields({
               />
             ) : null}
           </div>
-          {canManage && !appointment.isPaid && !appointment.patientPackageId && (
+          {canManage && billable && !appointment.isPaid && !appointment.patientPackageId && (
             <FormField label={t.settings.paymentMethod}>
               <OptionalSelect
                 value={payMethodId}

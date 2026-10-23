@@ -105,3 +105,12 @@ export function bindClinicBrand(
   }
   return applyClinicBrandChrome(brand);
 }
+
+export function useClinicHours() {
+  const clinicId = useClinicId();
+  const { data: clinic } = useClinic(clinicId);
+  return {
+    start: clinic?.workingHoursStart ?? '08:00',
+    end: clinic?.workingHoursEnd ?? '20:00',
+  };
+}

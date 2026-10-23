@@ -8,6 +8,7 @@ import { IconInPerson, IconOnline, IconTimer } from '@/constants/icons';
 import type { AppointmentFormData } from '@/lib/validations';
 import { formatWaitingMins } from '@/lib/waiting-time';
 import { useLanguage } from '@/providers';
+import { useClinicHours } from '@/hooks/api/use-clinic';
 import type { AppointmentStatus } from '@/services/appointments.service';
 import type { Room } from '@/services/rooms.service';
 import type { ServiceItem } from '@/services/services.service';
@@ -34,11 +35,14 @@ export type AppointmentReadOnly = {
 export function AppointmentScheduleFields({
   locked = false,
   values,
+  isTimeAvailable,
 }: {
   locked?: boolean;
   values?: Pick<AppointmentReadOnly, 'date' | 'time' | 'duration'>;
+  isTimeAvailable?: (hours: number, minutes: number) => boolean;
 }) {
   const { t } = useLanguage();
+  const clinicHours = useClinicHours();
   const {
     control,
     register,
@@ -89,6 +93,8 @@ export function AppointmentScheduleFields({
               placeholder={t.common.selectTime}
               className="h-10"
               step={5}
+              range={clinicHours}
+              isAvailable={isTimeAvailable}
             />
           )}
         />

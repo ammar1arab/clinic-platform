@@ -2,7 +2,7 @@
 
 import type { Role } from '@clinic/types';
 import { canSeeNavHref } from '@/constants/nav-access';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { ROUTES } from '@/constants/routes';
 import {
   IconBadgePercent,
@@ -145,6 +145,7 @@ export function SettingsFormDialog({
   pending,
   disabled,
   onSubmit,
+  onInteractOutside,
   children,
 }: {
   open: boolean;
@@ -154,12 +155,13 @@ export function SettingsFormDialog({
   pending: boolean;
   disabled: boolean;
   onSubmit: () => void;
+  onInteractOutside?: ComponentProps<typeof DialogContent>['onInteractOutside'];
   children: ReactNode;
 }) {
   const { t } = useLanguage();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" onInteractOutside={onInteractOutside}>
         <DialogHeader>
           <DialogTitle>{editing ? t.common.edit : addTitle}</DialogTitle>
         </DialogHeader>

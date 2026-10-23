@@ -1,3 +1,4 @@
+import { storedClinicalSections, storedReportSections, storedInvoiceLines } from "./clinical-validation";
 import { REPORT_TYPE, getSharedTranslations } from "@clinic/types";
 import { getLocale } from "@/infrastructure/i18n.context";
 import { Injectable } from "@nestjs/common";
@@ -7,7 +8,6 @@ import { DashboardGateway } from "@/modules/dashboard/dashboard.gateway";
 import { NotificationsService } from "@/modules/notifications/notifications.service";
 import {
   NOTIFICATION_TYPE,
-  type ClinicalSection,
   type InvoiceLine,
   type ReportSections,
   type VisitListResponse,
@@ -318,7 +318,7 @@ export class VisitsService {
       };
     });
   }
-  async presence(actor: AuthUser, id: string, source: string, waiting = false) {
+  async presence(actor: AuthUser, id: string, source: string, waiting = false, statusReason?: string) {
     if (!["owner", "admin", "practitioner"].includes(actor.role))
       visitError("visitForbidden", 403);
     let arrival: WorkspaceRow | null = null;
@@ -357,6 +357,7 @@ export class VisitsService {
             presenceConfirmedById: actor.clinicUserId,
             presenceSource: source,
             status: waiting ? "waiting" : "checked_in",
+            ...(statusReason ? { statusReason } : {}),
             waitingStartedAt: waiting
               ? (row.waitingStartedAt ?? now)
               : row.waitingStartedAt,
@@ -373,7 +374,7 @@ export class VisitsService {
     if (arrival) await this.notifyArrival(actor, arrival);
     return result;
   }
-  async start(actor: AuthUser, appointmentId: string, expected?: number) {
+  async start(actor: AuthUser, appointmentId: string, expected?: number, statusReason?: string) {
     this.permit(actor, "clinical");
     const result = await this.repo.withAppointment(
       actor,
@@ -455,6 +456,7 @@ export class VisitsService {
           where: { id: appointmentId },
           data: {
             status: "in_progress",
+            ...(statusReason ? { statusReason } : {}),
             inProgressAt: now,
             statusUpdatedAt: now,
             statusUpdatedBy: actor.userId,
@@ -536,7 +538,7 @@ export class VisitsService {
         if (!template) visitError("clinicalTemplateNotFound", 404);
         const sections =
           !switching && visit.note
-            ? (visit.note.sectionsSnapshot as unknown as ClinicalSection[])
+            ? storedClinicalSections(visit.note.sectionsSnapshot)
             : publishedSnapshot(template).sections;
         validateValues(sections, input.values);
         const data = {
@@ -583,7 +585,7 @@ export class VisitsService {
           visitError("clinicalNoteNotReady", 409);
         this.revision(visit.note.revision, revision);
         validateValues(
-          visit.note.sectionsSnapshot as unknown as ClinicalSection[],
+          storedClinicalSections(visit.note.sectionsSnapshot),
           visit.note.values,
           true,
         );
@@ -600,7 +602,7 @@ export class VisitsService {
         const report = blankReport();
         const values = visit.note.values as Record<string, unknown>;
         const fields = (
-          visit.note.sectionsSnapshot as unknown as ClinicalSection[]
+          storedClinicalSections(visit.note.sectionsSnapshot)
         ).flatMap((section) => section.fields);
         for (const key of Object.keys(report) as (keyof ReportSections)[]) {
           const field = fields.find((item) => item.id === key);
@@ -709,7 +711,8 @@ export class VisitsService {
     return result;
   }
   async history(actor: AuthUser, visitId: string, query: VisitHistoryQueryDto) {
-    this.permit(actor, "clinical");
+    this.permit(actor, "read");
+    if (actor.role !== "owner" && actor.role !== "practitioner") visitError("visitForbidden", 403);
     return this.repo.withVisit(actor, visitId, async (tx) => {
       const where = {
         visitId,
@@ -834,7 +837,7 @@ export class VisitsService {
           return workspaceDto(row, actor).report;
         const sections =
           amendment?.sections ??
-          (visit.report.sections as unknown as ReportSections);
+          storedReportSections(visit.report.sections);
         if (
           !sections.reason.trim() ||
           !sections.summary.trim() ||
@@ -1132,7 +1135,7 @@ export class VisitsService {
         if (invoice.issuedAt) return invoiceDto(visit);
         this.revision(invoice.revision, revision);
         const number = `INV-${new Date().getUTCFullYear()}-${invoice.id.toUpperCase()}`;
-        const lines = invoice.lineItems as unknown as InvoiceLine[];
+        const lines = storedInvoiceLines(invoice.lineItems);
         const snapshot = this.documentSnapshot(row, `Invoice ${number}`, [
           ...lines.map((line) => ({
             label: line.description,

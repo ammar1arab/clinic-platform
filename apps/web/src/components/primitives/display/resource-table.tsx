@@ -39,48 +39,46 @@ export function ResourceTable<T>({
   const showEmpty = !isLoading && pagination.totalItems === 0;
   return (
     <>
-      <div className="hidden md:block">
-        <TableFrame>
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow>
-                {columns.map((column) => (
-                  <TableHead key={column.id} className={column.className}>{column.header}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && LOADING_ROWS.map((index) => (
-                <TableRow key={index}>
-                  {columns.map((column) => (
-                    <TableCell key={column.id}><Skeleton className={column.skeleton} /></TableCell>
-                  ))}
-                </TableRow>
-              ))}
-              {showEmpty && (
+      <div className="hidden md:flex md:min-h-0 md:flex-1 md:flex-col">
+        <TableFrame className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col overflow-auto overscroll-contain">
+            <Table className="table-fixed">
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={columns.length} className="p-0"><EmptyState {...empty} /></TableCell>
-                </TableRow>
-              )}
-              {rows.map((item) => (
-                <TableRow key={rowKey(item)} className={inactive(item) ? 'opacity-60' : undefined}>
                   {columns.map((column) => (
-                    <TableCell key={column.id} className={column.cellClassName}>{column.render(item)}</TableCell>
+                    <TableHead key={column.id} className={column.className}>{column.header}</TableHead>
                   ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {isLoading && LOADING_ROWS.map((index) => (
+                  <TableRow key={index}>
+                    {columns.map((column) => (
+                      <TableCell key={column.id}><Skeleton className={column.skeleton} /></TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+                {rows.map((item) => (
+                  <TableRow key={rowKey(item)} className={inactive(item) ? 'opacity-60' : undefined}>
+                    {columns.map((column) => (
+                      <TableCell key={column.id} className={column.cellClassName}>{column.render(item)}</TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {showEmpty && <EmptyState framed={false} className="page-fill" {...empty} />}
+          </div>
         </TableFrame>
       </div>
 
-      <div className="space-y-2 md:hidden">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-y-contain md:hidden">
         {isLoading && LOADING_ROWS.map((index) => (
           <div key={index} className="rounded-xl border border-border/70 bg-card p-4">
             <Skeleton className="h-4 w-28" />
           </div>
         ))}
-        {showEmpty && <EmptyState {...empty} />}
+        {showEmpty && <EmptyState className="flex-1" {...empty} />}
         {rows.map(mobileCard)}
       </div>
 

@@ -281,7 +281,7 @@ export function DayAppointmentsPopover({
             );
           })
         ) : (
-          <EmptyState
+          <EmptyState framed={false}
             icon={IconCalendar}
             title={t.appointments.noAppointmentsFound}
             size="compact"

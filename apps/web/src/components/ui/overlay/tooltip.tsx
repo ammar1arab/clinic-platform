@@ -56,7 +56,11 @@ function TooltipContent({
         {...props}
       >
         <span className="tip-bubble-body">{children}</span>
-        <TooltipPrimitive.Arrow className="tip-bubble-arrow" width={10} height={5} />
+        <TooltipPrimitive.Arrow
+          className="tip-bubble-arrow [[data-side=top]_&]:-translate-y-[3px] [[data-side=bottom]_&]:translate-y-[3px] [[data-side=left]_&]:-translate-x-[3px] [[data-side=right]_&]:translate-x-[3px]"
+          width={10}
+          height={5}
+        />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );

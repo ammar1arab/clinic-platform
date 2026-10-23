@@ -1,5 +1,7 @@
 "use client";
 
+import { QUEUE_STAGE, type QueueStage } from '@/constants/appointment';
+
 import { Suspense, useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -72,6 +74,8 @@ function SchedulePageInner() {
     "",
   );
 
+  const [queueStage, setQueueStage] = useState<QueueStage>(QUEUE_STAGE.ALL);
+  const [timelineDoctorId, setTimelineDoctorId] = useState('all');
   const [pickerSlot, setPickerSlot] = useState<HTMLDivElement | null>(null);
   const [prevParam, setPrevParam] = useState<string | null>(null);
   if (viewParam !== prevParam) {
@@ -169,6 +173,8 @@ function SchedulePageInner() {
       statusFilters={new Set(statusFilters)}
       onToggleStatus={toggleStatus}
       onClearStatuses={clearStatuses}
+      extraFilterCount={activeView === 'queue' ? Number(queueStage !== QUEUE_STAGE.ALL) : activeView === 'doctors' ? Number(timelineDoctorId !== 'all') : 0}
+      onClearExtraFilters={() => { setQueueStage(QUEUE_STAGE.ALL); setTimelineDoctorId('all'); }}
       pickerSlotRef={setPickerSlot}
       {...(!isPractitioner && {
         onNewPatient: () =>
@@ -196,6 +202,8 @@ function SchedulePageInner() {
               <ErrorState onRetry={() => void refetch()} className="page-fill" />
             ) : activeView === "doctors" ? (
               <DoctorTimeline
+                doctorId={timelineDoctorId}
+                onDoctorChange={setTimelineDoctorId}
                 appointments={filteredAppointments}
                 doctors={practitioners}
                 isLoading={isLoading}
@@ -207,6 +215,8 @@ function SchedulePageInner() {
               />
             ) : activeView === "queue" ? (
               <WaitingQueueBoard
+              stage={queueStage}
+              onStageChange={setQueueStage}
                 appointments={filteredAppointments}
                 isLoading={isLoading}
                 focused={focused}

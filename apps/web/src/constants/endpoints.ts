@@ -144,7 +144,6 @@ export const ENDPOINTS = {
     BASE: "/clinical-note-templates",
     BY_ID: (id: string) => `/clinical-note-templates/${id}`,
     PUBLISH: (id: string) => `/clinical-note-templates/${id}/publish`,
-    SCHEDULE: (id: string) => `/clinical-note-templates/${id}/schedule`,
     ARCHIVE: (id: string) => `/clinical-note-templates/${id}/archive`,
     DRAFT: (id: string) => `/clinical-note-templates/${id}/draft`,
     RESTORE: (id: string) => `/clinical-note-templates/${id}/restore`,

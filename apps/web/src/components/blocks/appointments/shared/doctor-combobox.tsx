@@ -1,8 +1,9 @@
 'use client';
 
+import { IconPractitioner } from '@/constants/icons';
 import { Badge } from '@/components/ui';
-import { SearchablePicker } from '@/components/primitives';
-import { formatDoctorLabel, staffRoleLabel } from './appointment-display';
+import { EntityAvatar, SearchablePicker } from '@/components/primitives';
+import { formatDoctorLabel } from './appointment-display';
 import { useLanguage } from '@/providers';
 
 export type DoctorOption = {
@@ -10,6 +11,7 @@ export type DoctorOption = {
   name: string;
   nameAr?: string | null;
   role?: string | null;
+  imageUrl?: string | null;
 };
 
 function CountBadge({ count }: { count: number }) {
@@ -26,6 +28,7 @@ export function DoctorCombobox({
   onChange,
   placeholder,
   extraOption,
+  loading,
   counts,
   className,
   size = 'default',
@@ -35,6 +38,7 @@ export function DoctorCombobox({
   onChange: (id: string) => void;
   placeholder?: string;
   extraOption?: { value: string; label: string };
+  loading?: boolean;
   counts?: Record<string, number>;
   className?: string;
   size?: 'default' | 'sm';
@@ -43,9 +47,11 @@ export function DoctorCombobox({
 
   return (
     <SearchablePicker
+      loading={loading ?? doctors === undefined}
       options={(doctors ?? []).map((doctor) => ({
         value: doctor.id,
-        label: `${formatDoctorLabel(doctor, { lang })}${staffRoleLabel(doctor.role, lang)}`,
+        label: formatDoctorLabel(doctor, { lang }),
+        leading: <EntityAvatar src={doctor.imageUrl} seed={doctor.id} size="sm" />,
         end: counts ? <CountBadge count={counts[doctor.id] ?? 0} /> : undefined,
       }))}
       value={value}
@@ -61,6 +67,7 @@ export function DoctorCombobox({
             }
           : undefined
       }
+      leading={<IconPractitioner className="size-4 shrink-0 opacity-70" />}
       className={className}
       size={size}
     />

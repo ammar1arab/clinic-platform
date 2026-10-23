@@ -18,6 +18,7 @@ import type {
 } from '@clinic/types';
 import { authService } from '@/services/auth.service';
 import { useApiMutation } from '@/hooks/query/use-api-mutation';
+import type { TResponseError } from '@/hooks/query/query-normalize';
 
 type AuthCommand =
   | { action: 'login'; data: AuthLoginInput }
@@ -28,7 +29,7 @@ type AuthCommand =
   | { action: 'setPassword' | 'resetPassword'; data: AuthPasswordInput };
 
 export function useAuthMutation() {
-  return useApiMutation<AuthLoginResponse | AuthRecovery | AuthReset, unknown, AuthCommand>({
+  return useApiMutation<AuthLoginResponse | AuthRecovery | AuthReset, TResponseError, AuthCommand>({
     request: command => {
       switch (command.action) {
         case 'login': return authService.login(command.data);

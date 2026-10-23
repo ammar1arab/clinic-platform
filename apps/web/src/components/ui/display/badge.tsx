@@ -29,8 +29,6 @@ const badgeVariants = cva(
           "border-accent-teal/25 bg-accent-teal/10 text-accent-teal shadow-none",
         violet:
           "border-accent-violet/25 bg-accent-violet/10 text-accent-violet shadow-none",
-        cyan:
-          "border-accent-cyan/25 bg-accent-cyan/10 text-accent-cyan shadow-none",
         muted:
           "border-border/80 bg-muted/80 text-muted-foreground",
         fill:

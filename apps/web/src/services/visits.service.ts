@@ -58,14 +58,14 @@ export const visitsService = {
   workspace: (appointmentId: string) =>
     api.get<VisitWorkspace>(ENDPOINTS.VISITS.WORKSPACE(appointmentId)).then((r) => r.data),
 
-  checkIn: (appointmentId: string, source: PresenceSource) =>
-    api.post<VisitWorkspace>(ENDPOINTS.VISITS.CHECK_IN(appointmentId), { source }).then((r) => r.data),
+  checkIn: (appointmentId: string, source: PresenceSource, statusReason?: string) =>
+    api.post<VisitWorkspace>(ENDPOINTS.VISITS.CHECK_IN(appointmentId), { source, statusReason }).then((r) => r.data),
 
-  markWaiting: (appointmentId: string) =>
-    api.post<VisitWorkspace>(ENDPOINTS.VISITS.MARK_WAITING(appointmentId), {}).then((r) => r.data),
+  markWaiting: (appointmentId: string, statusReason?: string) =>
+    api.post<VisitWorkspace>(ENDPOINTS.VISITS.MARK_WAITING(appointmentId), { statusReason }).then((r) => r.data),
 
-  start: (appointmentId: string, expectedAppointmentRevision?: number) =>
-    api.post<VisitWorkspace>(ENDPOINTS.VISITS.START(appointmentId), { expectedAppointmentRevision }).then((r) => r.data),
+  start: (appointmentId: string, expectedAppointmentRevision?: number, statusReason?: string) =>
+    api.post<VisitWorkspace>(ENDPOINTS.VISITS.START(appointmentId), { expectedAppointmentRevision, statusReason }).then((r) => r.data),
 
   finish: (visitId: string, expectedRevision: number) =>
     api.post<VisitWorkspace>(ENDPOINTS.VISITS.FINISH(visitId), { expectedRevision }).then((r) => r.data),

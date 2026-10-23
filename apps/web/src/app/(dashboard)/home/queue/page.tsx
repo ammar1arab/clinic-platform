@@ -1,5 +1,7 @@
 'use client';
 
+import { QUEUE_STAGE, type QueueStage } from '@/constants/appointment';
+
 import { useCallback, useMemo, useState } from 'react';
 import {
   ScheduleToolbar,
@@ -29,6 +31,7 @@ export default function PractitionerQueuePage() {
   const [search, setSearch] = useSessionStorageState(`${clinicId || 'none'}:practitioner-queue-search`, '');
   const [departmentId, setDepartmentId] = useSessionStorageState(`${clinicId || 'none'}:practitioner-queue-department`, '');
   const [statusFilters, setStatusFilters] = useSessionStorageState<AppointmentStatus[]>(`${clinicId || 'none'}:practitioner-queue-status`, []);
+  const [queueStage, setQueueStage] = useState<QueueStage>(QUEUE_STAGE.ALL);
   const [pickerSlot, setPickerSlot] = useState<HTMLDivElement | null>(null);
   useClinicRealtime(clinicId);
   const { data: departments } = useDepartments(clinicId);
@@ -70,6 +73,8 @@ export default function PractitionerQueuePage() {
       statusFilters={new Set(statusFilters)}
       onToggleStatus={toggleStatus}
       onClearStatuses={() => setStatusFilters([])}
+      extraFilterCount={Number(queueStage !== QUEUE_STAGE.ALL)}
+      onClearExtraFilters={() => setQueueStage(QUEUE_STAGE.ALL)}
       pickerSlotRef={setPickerSlot}
     />
   );
@@ -80,6 +85,8 @@ export default function PractitionerQueuePage() {
         {(focused) => (
           <>
             <WaitingQueueBoard
+              stage={queueStage}
+              onStageChange={setQueueStage}
               appointments={filtered}
               isLoading={appointments.isLoading}
               focused={focused}

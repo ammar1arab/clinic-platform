@@ -43,6 +43,7 @@ export function OptionalSelect({
   placeholder,
   noneLabel,
   searchPlaceholder,
+  disabled,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -50,6 +51,7 @@ export function OptionalSelect({
   placeholder?: string;
   noneLabel?: string;
   searchPlaceholder?: string;
+  disabled?: boolean;
 }) {
   const { t } = useLanguage();
 
@@ -60,6 +62,7 @@ export function OptionalSelect({
       onChange={(next) => onChange(fromFormNone(next))}
       placeholder={placeholder ?? t.common.none}
       searchPlaceholder={searchPlaceholder ?? t.common.search}
+      disabled={disabled}
       extraOption={{ value: FORM_NONE, label: noneLabel ?? t.common.none }}
       className="w-full"
     />
@@ -93,49 +96,36 @@ export function ChoiceButton({
   );
 }
 
-export function SegmentedToggle({
-  value,
-  options,
-  disabled,
-  onChange,
-}: {
-  value: string;
-  options: { value: string; label: string }[];
-  disabled?: boolean;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="inline-flex overflow-hidden rounded-lg border border-border">
-      {options.map((option) => (
-        <Button
-          key={option.value}
-          type="button"
-          variant={value === option.value ? 'default' : 'ghost'}
-          size="sm"
-          disabled={disabled}
-          onClick={() => onChange(option.value)}
-          className="rounded-none"
-        >
-          {option.label}
-        </Button>
-      ))}
-    </div>
-  );
-}
-
 export function LockedValue({
   label,
   value,
   marked = false,
+  inline = false,
   className,
 }: {
   label: string;
   value: string;
   marked?: boolean;
+  inline?: boolean;
   className?: string;
 }) {
   const { t } = useLanguage();
   const text = value.trim();
+
+  if (inline) {
+    return (
+      <div className={cn('flex h-8 min-w-0 items-center gap-1.5 rounded-lg border border-input bg-background px-2.5 text-control dark:bg-input/30', className)}>
+        <span className="shrink-0 text-muted-foreground">{label}</span>
+        {text ? (
+          <>
+            <span className="shrink-0 text-muted-foreground">:</span>
+            <span className="min-w-0 truncate text-foreground">{text}</span>
+          </>
+        ) : null}
+        {marked ? <ReadOnlyMark label={t.common.readOnly} /> : null}
+      </div>
+    );
+  }
 
   return (
     <div className={cn('rounded-lg border border-border/70 bg-muted/30 px-3 py-2.5', className)}>

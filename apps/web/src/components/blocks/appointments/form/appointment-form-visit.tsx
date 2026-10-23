@@ -1,6 +1,6 @@
 'use client';
 
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { FormField, ReadOnlyMark } from '@/components/primitives';
 import { formatClinicAmount } from '@/lib/package-balance';
 import type { AppointmentFormData } from '@/lib/validations';
@@ -39,8 +39,15 @@ export function AppointmentVisitFields({
   const { t, lang } = useLanguage();
   const {
     control,
+    setValue,
     formState: { errors },
   } = useFormContext<AppointmentFormData>();
+  const doctorId = useWatch({ control, name: 'doctorId' });
+  const serviceId = useWatch({ control, name: 'serviceId' });
+  const selectedDoctor = staff?.find((member) => member.id === doctorId);
+  const doctorDepartment = departments?.find((dept) => dept.id === selectedDoctor?.departmentId);
+  const doctorServiceIds = selectedDoctor?.serviceIds ?? [];
+  const doctorServices = (services ?? []).filter((service) => doctorServiceIds.includes(service.id) || service.id === serviceId);
   const editable = [access.patient, access.doctor, access.department, access.service];
   const sectionLocked = editable.every((allowed) => !allowed);
   const partial = !sectionLocked && editable.some((allowed) => !allowed);
@@ -49,7 +56,7 @@ export function AppointmentVisitFields({
     <FormSection
       title={t.appointments.appointmentDetails}
       action={sectionLocked ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}
-      contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-2"
+      contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-end"
     >
       {access.patient ? (
       <FormField
@@ -95,7 +102,12 @@ export function AppointmentVisitFields({
             <DoctorCombobox
               doctors={staff}
               value={field.value}
-              onChange={field.onChange}
+              onChange={(id) => {
+                field.onChange(id);
+                const member = staff?.find((item) => item.id === id);
+                setValue('departmentId', member?.departmentId ?? '');
+                if (!(member?.serviceIds ?? []).includes(serviceId)) setValue('serviceId', '');
+              }}
               extraOption={
                 field.value && !staff?.some((member) => member.id === field.value) && currentDoctorName
                   ? { value: field.value, label: formatDoctorLabel(currentDoctorName, { lang }) }
@@ -114,34 +126,12 @@ export function AppointmentVisitFields({
         />
       )}
 
-      {access.department ? (
-      <FormField
+      <LockedValue
+        inline
         label={t.practitioner.department}
-        error={errors.departmentId?.message}
-      >
-        <Controller
-          control={control}
-          name="departmentId"
-          render={({ field }) => (
-            <OptionalSelect
-              value={field.value}
-              onChange={field.onChange}
-              searchPlaceholder={t.appointments.searchDepartments}
-              options={(departments ?? []).map((dept) => ({
-                value: dept.id,
-                label: (lang === 'ar' && dept.nameAr) || dept.name,
-              }))}
-            />
-          )}
-        />
-      </FormField>
-      ) : (
-        <LockedValue
-          label={t.practitioner.department}
-          value={readOnly?.department ?? ''}
-          marked={partial}
-        />
-      )}
+        value={doctorDepartment ? (lang === 'ar' && doctorDepartment.nameAr) || doctorDepartment.name : (readOnly?.department ?? '')}
+        marked={partial}
+      />
 
       {access.service ? (
       <FormField
@@ -160,7 +150,8 @@ export function AppointmentVisitFields({
                 if (id) onServiceChange(id);
               }}
               searchPlaceholder={t.appointments.searchServices}
-              options={(services ?? []).map((service) => {
+              disabled={!selectedDoctor}
+              options={doctorServices.map((service) => {
                 const svcName = (lang === 'ar' && service.nameAr) || service.name;
                 return {
                   value: service.id,

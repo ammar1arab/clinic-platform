@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { NON_BILLABLE_APPOINTMENT_STATUSES } from "@clinic/types";
 import { PrismaService } from "@/prisma/prisma.service";
 
 @Injectable()
@@ -90,7 +91,7 @@ export class ReportsRepository {
     return this.prisma.appointment.findMany({
       where: {
         clinicId,
-        status: { not: "cancelled" },
+        status: { notIn: [...NON_BILLABLE_APPOINTMENT_STATUSES] },
         ...(from || to
           ? {
               scheduledAt: {

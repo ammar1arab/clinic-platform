@@ -8,11 +8,11 @@ import { Badge, Button, Card, CardContent, Input, Textarea } from '@/components/
 import {
   ContactLine,
   ProfileViewSkeleton,
-  FormActions, FormField, PreviewableAvatar, ProfileEmpty, ProfileHero,
+  EmptyState, FormActions, FormField, PreviewableAvatar, ProfileEmpty, ProfileHero,
   ProfileInfoField, ProfileInfoGrid, ProfileSection, ProfileShell, ReadOnlyMark,
 } from '@/components/primitives';
 import { useUpdatePractitionerSelfProfile } from '@/hooks/api/use-practitioners';
-import { IconEdit } from '@/constants/icons';
+import { IconCalendarClock, IconEdit } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
 import { formatDate } from '@/lib/datetime';
 import type { PractitionerDetail, PractitionerSelfProfileInput } from '@/services/practitioners.service';
@@ -153,14 +153,14 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
           {practitioner.availabilities.length ? <div className="space-y-2">{practitioner.availabilities.map((slot) => <div key={slot.id ?? `${slot.dayOfWeek}-${slot.startTime}`} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{t.constants.weekdays[WEEKDAY_KEYS[slot.dayOfWeek]]}</span><span className="font-medium">{slot.startTime} - {slot.endTime}</span></div>)}</div> : <ProfileEmpty>{t.practitioner.noWeeklyPatterns}</ProfileEmpty>}
         </ProfileSection>
         <ProfileSection title={t.practitioner.extraAvailability} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
-          {practitioner.availabilityOverrides.length ? <ScheduleEntryList entries={practitioner.availabilityOverrides.map((entry) => ({ title: entry.reason, start: entry.startAt, end: entry.endAt }))} fallback={t.practitioner.extraAvailability} /> : <ProfileEmpty>{t.practitioner.noExtraAvailability}</ProfileEmpty>}
+          {practitioner.availabilityOverrides.length ? <ScheduleEntryList entries={practitioner.availabilityOverrides.map((entry) => ({ title: entry.reason, start: entry.startAt, end: entry.endAt }))} fallback={t.practitioner.extraAvailability} /> : <EmptyState framed={false} icon={IconCalendarClock} title={t.practitioner.extraAvailability} />}
         </ProfileSection>
         <PractitionerTimeOffSection
           title={t.scheduleRequests.kinds.vacation}
           entries={vacations}
           emptyLabel={t.practitioner.noVacations}
           action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}
-          summary={{ label: t.practitioner.vacationDaysThisYear, value: vacationDays }}
+          count={vacationDays}
           dateOnly
         />
         <PractitionerTimeOffSection
@@ -168,6 +168,7 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
           entries={leaves}
           emptyLabel={t.practitioner.noLeaveBlocks}
           action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}
+          count={leaves.length}
         />
       </div>
       <Card className="card-aura gap-0 py-0 ring-0">

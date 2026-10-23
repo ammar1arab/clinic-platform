@@ -17,14 +17,14 @@ export function PractitionerTimeOffSection({
   entries,
   emptyLabel,
   action,
-  summary,
+  count,
   dateOnly = false,
 }: {
   title: string;
   entries: DoctorTimeOffEntry[];
   emptyLabel: string;
   action?: ReactNode;
-  summary?: { label: string; value: number };
+  count: number;
   dateOnly?: boolean;
 }) {
   const { lang } = useLanguage();
@@ -32,20 +32,14 @@ export function PractitionerTimeOffSection({
   return (
     <ProfileSection
       title={title}
-      action={action}
-      className="h-full"
+      action={<div className="flex items-center gap-2">{action}<CountBadge count={count} /></div>}
+      fixedHeight
       contentClassName="flex flex-col gap-3"
     >
-      {summary ? (
-        <div className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2.5">
-          <span className="text-xs text-muted-foreground">{summary.label}</span>
-          <CountBadge count={summary.value} />
-        </div>
-      ) : null}
       {entries.length === 0 ? (
         <EmptyState icon={dateOnly ? IconCalendar : IconCalendarClock} title={emptyLabel} size="compact" className="flex-1" />
       ) : (
-        <div className="max-h-56 space-y-1.5 overflow-y-auto overscroll-y-contain">
+        <div className="space-y-1.5">
           {entries.map((block, index) => (
             <ProfileSoftRow
               key={block.id ?? `${block.startDate}-${index}`}

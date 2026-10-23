@@ -27,6 +27,7 @@ import {
   type LucideIcon,
 } from '@/constants/icons';
 import { useLanguage } from '@/providers';
+import { useClinicHours } from '@/hooks/api/use-clinic';
 
 type LeaveField = FieldArrayWithId<PractitionerHoursData, 'timeOffs'>;
 type OverrideField = FieldArrayWithId<PractitionerHoursData, 'availabilityOverrides'>;
@@ -124,13 +125,14 @@ export function DateTimeFields({
   timeLabel: string;
 }) {
   const { date, time } = splitDateTime(value);
+  const clinicHours = useClinicHours();
   return (
     <>
       <FormField label={dateLabel} error={dateError}>
         <DatePicker value={date} onChange={(next) => onChange(joinDateTime(next, time))} />
       </FormField>
       <FormField label={timeLabel}>
-        <TimePicker value={time} onChange={(next) => onChange(joinDateTime(date, next))} />
+        <TimePicker value={time} onChange={(next) => onChange(joinDateTime(date, next))} range={clinicHours} />
       </FormField>
     </>
   );

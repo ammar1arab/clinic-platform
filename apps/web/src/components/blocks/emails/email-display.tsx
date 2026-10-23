@@ -184,7 +184,7 @@ export function EmailPreviewPane({
     >
       {empty ? (
         <Card className="flex min-h-48 flex-1 items-center justify-center">
-          <EmptyState
+          <EmptyState framed={false}
             icon={IconMail}
             title={emptyTitle ?? t.emails.previewEmpty}
             size="compact"

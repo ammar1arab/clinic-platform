@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { NOTE_STATUS, REPORT_SECTION, REPORT_TYPE, VISIT_REPORT_STATUS, type ReportDetails, type ReportSectionKey, type ReportSections, type ReportType, type VisitWorkspace } from '@clinic/types';
 import { Badge, Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from '@/components/ui';
-import { DatePicker, EmptyState, FormField, ReasonDialog } from '@/components/primitives';
+import { CopyButton, DatePicker, EmptyState, FormField, ReasonDialog } from '@/components/primitives';
 import { IconFileText } from '@/constants/icons';
 import { useAmendReport, useDownloadVisitPdf, useReleaseDocument, useSaveReport, useSignReport } from '@/hooks/api/use-visits';
 import { useLanguage } from '@/providers';
@@ -30,10 +30,10 @@ export function MedicalReportEditor({ appointmentId, workspace }: { appointmentI
   }
 
   if (!report || (workspace.noteStatus !== NOTE_STATUS.SIGNED && workspace.reportStatus === VISIT_REPORT_STATUS.PENDING_NOTE)) {
-    return <EmptyState icon={IconFileText} title={t.visits.reportPending} description={t.visits.reportPendingDesc} />;
+    return <EmptyState framed={false} icon={IconFileText} title={t.visits.reportPending} description={t.visits.reportPendingDesc} />;
   }
   if (!report || !draft) {
-    return <EmptyState icon={IconFileText} title={t.visits.reportPending} description={t.visits.reportPendingDesc} />;
+    return <EmptyState framed={false} icon={IconFileText} title={t.visits.reportPending} description={t.visits.reportPendingDesc} />;
   }
 
   const labels: Record<ReportSectionKey, string> = {
@@ -48,12 +48,16 @@ export function MedicalReportEditor({ appointmentId, workspace }: { appointmentI
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant={signed ? 'success' : 'warning'}>{t.visits.reportStatuses[report.status]}</Badge>
+      <div className="flex min-h-8 flex-wrap items-center gap-3">
         {signed ? <span className="text-xs text-muted-foreground">{t.visits.signedImmutable}</span> : null}
-        <span className="ms-auto text-xs text-muted-foreground">
-          {t.visits.referenceNumber}: <span dir="ltr" className="font-mono">{report.referenceNumber}</span>
-        </span>
+        <div className="ms-auto flex min-w-0 items-center gap-3">
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-sm leading-5">
+            <span className="shrink-0 text-muted-foreground">{t.visits.referenceNumber}:</span>
+            <bdi dir="ltr" className="whitespace-nowrap font-medium text-foreground">{report.referenceNumber}</bdi>
+            <CopyButton value={report.referenceNumber} />
+          </span>
+          <Badge variant={signed ? 'success' : 'warning'}>{t.visits.reportStatuses[report.status]}</Badge>
+        </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField label={t.visits.reportTypeLabel} htmlFor="report-type">
@@ -100,19 +104,21 @@ export function MedicalReportEditor({ appointmentId, workspace }: { appointmentI
           </FormField>
         </div>
       ) : null}
-      {Object.values(REPORT_SECTION).map((key) => (
-        <FormField key={key} label={labels[key]} htmlFor={`report-${key}`}>
-          <Textarea
-            id={`report-${key}`}
-            rows={key === REPORT_SECTION.SUMMARY || key === REPORT_SECTION.ASSESSMENT ? 6 : 4}
-            className="min-h-28 text-base leading-relaxed"
-            disabled={!editable}
-            value={draft[key]}
-            onChange={(event) => setDraft({ ...draft, [key]: event.target.value })}
-          />
-        </FormField>
-      ))}
-      <div className="flex flex-wrap gap-2">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {Object.values(REPORT_SECTION).map((key) => (
+          <FormField key={key} label={labels[key]} htmlFor={`report-${key}`} className={key === REPORT_SECTION.FOLLOW_UP ? 'sm:col-span-2' : undefined}>
+            <Textarea
+              id={`report-${key}`}
+              rows={4}
+              className="min-h-28 text-base leading-relaxed"
+              disabled={!editable}
+              value={draft[key]}
+              onChange={(event) => setDraft({ ...draft, [key]: event.target.value })}
+            />
+          </FormField>
+        ))}
+      </div>
+      <div className="flex flex-wrap justify-end gap-2">
         {editable ? (
           <Button type="button" variant="outline" disabled={save.isPending || !workspace.visitId} onClick={() => workspace.visitId && save.mutate({ visitId: workspace.visitId, body: { sections: draft, details, revision: report.revision } })}>
             {t.common.save}

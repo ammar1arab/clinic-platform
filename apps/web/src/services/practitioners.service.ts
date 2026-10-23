@@ -1,4 +1,4 @@
-import type { CreateScheduleRequestInput, ReviewScheduleRequestInput, ScheduleRequestPage } from "@clinic/types";
+import type { CreateScheduleRequestInput, ReviewScheduleRequestInput, ScheduleRequestMutationResult, ScheduleRequestPage } from "@clinic/types";
 import { api } from "@/lib/api";
 import { ENDPOINTS } from "@/constants/endpoints";
 import { z } from "zod";
@@ -53,8 +53,8 @@ export const practitionersService = {
         params: { doctorId, departmentId: filters.departmentId, group: filters.group === 'all' ? undefined : filters.group, sort: filters.sort === 'newest' ? undefined : filters.sort, page: filters.page, kind: filters.kind, search: filters.search || undefined },
       })
       .then((r) => r.data),
-  requestSchedule: (data: CreateScheduleRequestInput) => api.post(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUESTS, data).then((r) => r.data),
-  reviewSchedule: (id: string, data: ReviewScheduleRequestInput) => api.patch(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUEST(id), data).then((r) => r.data),
+  requestSchedule: (data: CreateScheduleRequestInput) => api.post<ScheduleRequestMutationResult>(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUESTS, data).then((r) => r.data),
+  reviewSchedule: (id: string, data: ReviewScheduleRequestInput) => api.patch<ScheduleRequestMutationResult>(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUEST(id), data).then((r) => r.data),
 
   getAll: () =>
     api

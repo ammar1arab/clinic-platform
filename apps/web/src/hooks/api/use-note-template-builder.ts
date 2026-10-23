@@ -26,7 +26,6 @@ import {
   useCloneClinicalNoteTemplate,
   useCreateClinicalNoteTemplate,
   usePublishClinicalNoteTemplate,
-  useScheduleClinicalNoteTemplate,
   useSilentUpdateClinicalNoteTemplate,
   useUpdateClinicalNoteTemplate,
   useClinicNoteDefault,
@@ -54,14 +53,13 @@ export function useNoteTemplateBuilder(template?: TemplateDTO, readOnly = false)
   const update = useUpdateClinicalNoteTemplate(record?.id ?? '');
   const autosave = useSilentUpdateClinicalNoteTemplate(record?.id ?? '');
   const publishMutation = usePublishClinicalNoteTemplate();
-  const scheduleMutation = useScheduleClinicalNoteTemplate();
   const archiveMutation = useArchiveClinicalNoteTemplate();
   const cloneMutation = useCloneClinicalNoteTemplate();
   const draftMutation = useDraftClinicalNoteTemplate();
   const restoreMutation = useRestoreClinicalNoteTemplate();
   const clinicDefault = useClinicNoteDefault();
   const isDefault = !!record && clinicDefault.data?.templateId === record.id;
-  const transitioning = publishMutation.isPending || scheduleMutation.isPending || archiveMutation.isPending || draftMutation.isPending || restoreMutation.isPending;
+  const transitioning = publishMutation.isPending || archiveMutation.isPending || draftMutation.isPending || restoreMutation.isPending;
   const locked = readOnly || record?.status === TEMPLATE_STATUS.ARCHIVED || transitioning || clinicDefault.isPending || clinicDefault.isError;
   const pending = create.isPending || update.isPending || autosave.isPending || transitioning;
 
@@ -268,10 +266,6 @@ export function useNoteTemplateBuilder(template?: TemplateDTO, readOnly = false)
       if (!record || readOnly || pending) return;
       restoreMutation.mutate({ id: record.id, revision: record.revision }, { onSuccess: (saved) => applySaved(saved, draftRef.current) });
     },
-    schedule: (scheduledAt: string) => {
-      if (isDefault) return;
-      void withSavedRecord((id, revision) => scheduleMutation.mutate({ id, revision, scheduledAt }, { onSuccess: (saved) => applySaved(saved, draftRef.current) }));
-    },
     archive: () => {
       if (isDefault) return;
       void withSavedRecord((id, revision) => archiveMutation.mutate({ id, revision }, { onSuccess: (saved) => applySaved(saved, draftRef.current) }));
@@ -283,7 +277,6 @@ export function useNoteTemplateBuilder(template?: TemplateDTO, readOnly = false)
       });
     },
     publishing: publishMutation.isPending || update.isPending || autosave.isPending,
-    scheduling: scheduleMutation.isPending || update.isPending || autosave.isPending,
     archiving: archiveMutation.isPending,
     restoring: restoreMutation.isPending,
     cloning: cloneMutation.isPending,

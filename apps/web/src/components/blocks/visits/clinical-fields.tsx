@@ -238,11 +238,11 @@ export function ClinicalFields({
           </Select>
         </div>
       ) : null}
-      <div className={cn('space-y-6', columns && 'lg:block lg:columns-2 lg:gap-x-10 lg:space-y-0')}>
-        {sections.map((section) => (
+      <div className={cn('space-y-6', columns && 'lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-8 lg:gap-y-6 lg:space-y-0')}>
+        {sections.map((section, index) => (
           <section
             key={section.id}
-            className={cn('space-y-3', columns && 'lg:mb-6 lg:break-inside-avoid', sections.length > 1 && section.id !== focused?.id && (compact ? 'hidden' : 'hidden lg:block'))}
+            className={cn('min-w-0 space-y-3', columns && sections.length % 2 === 1 && index === sections.length - 1 && 'lg:col-span-2', sections.length > 1 && section.id !== focused?.id && (compact ? 'hidden' : 'hidden lg:block'))}
           >
             <h3 className="flex items-center gap-2 text-sm font-semibold"><span aria-hidden className="h-4 w-1 rounded-full bg-primary/70" />{clinicalText(lang, section.title, section.titleAr)}</h3>
             <div className={cn('grid gap-x-4 gap-y-4 sm:grid-cols-2', columns && 'lg:grid-cols-1 xl:grid-cols-2')}>
@@ -250,7 +250,7 @@ export function ClinicalFields({
               const render = CLINICAL_FIELD_RENDERERS[field.type];
               if (!render) return null;
               return (
-                <div key={field.id} className={cn('min-w-0', WIDE_FIELDS.has(field.type) && 'sm:col-span-2')}>
+                <div key={field.id} className={cn('min-w-0', WIDE_FIELDS.has(field.type) && 'sm:col-span-2', columns && WIDE_FIELDS.has(field.type) && 'lg:col-span-1 xl:col-span-2')}>
                   {render({
                     field,
                     lang,

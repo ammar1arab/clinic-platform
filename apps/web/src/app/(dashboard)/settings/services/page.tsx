@@ -142,7 +142,7 @@ export default function ServicesPage() {
   );
 
   return (
-    <div className="w-full min-w-0 space-y-4">
+    <div className="page-fill-always min-w-0 gap-4">
       <SettingsPageBack
         search={
           <SearchInput
