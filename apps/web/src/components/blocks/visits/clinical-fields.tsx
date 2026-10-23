@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { CLINICAL_FIELD_TYPE, VISIBILITY_OPERATOR, type ClinicalField, type ClinicalFieldType, type ClinicalSection, type ClinicalValue, type MedicationRow } from '@clinic/types';
-import { Button, Input, Textarea } from '@/components/ui';
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from '@/components/ui';
 import { ChoiceChips, ChoiceField, DatePicker, FormField, TimePicker } from '@/components/primitives';
 import { IconAdd, IconClose } from '@/constants/icons';
 import { cn } from '@/lib/utils';
@@ -225,20 +225,17 @@ export function ClinicalFields({
   return (
     <div className="space-y-4">
       {sections.length > 1 ? (
-        <div className={cn('flex gap-2 overflow-x-auto pb-1', !compact && 'lg:hidden')}>
-          {sections.map((section) => (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => onFocusSection?.(section.id)}
-              className={cn(
-                'shrink-0 rounded-full border px-3 py-1.5 text-sm',
-                section.id === focused?.id ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-foreground',
-              )}
-            >
-              {clinicalText(lang, section.title, section.titleAr)}
-            </button>
-          ))}
+        <div className={cn('w-full sm:max-w-xs', !compact && 'lg:hidden')}>
+          <Select value={focused?.id} onValueChange={(id) => onFocusSection?.(id)}>
+            <SelectTrigger aria-label={t.visits.sections} className="h-8 w-full rounded-lg">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {sections.map((section) => (
+                <SelectItem key={section.id} value={section.id}>{clinicalText(lang, section.title, section.titleAr)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       ) : null}
       <div className={cn('space-y-6', columns && 'lg:block lg:columns-2 lg:gap-x-10 lg:space-y-0')}>

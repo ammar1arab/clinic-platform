@@ -1552,6 +1552,7 @@ export const en = {
     identityWhen: "Date and time",
     identityClinician: "Clinician",
     pickTemplate: "Choose a clinic note template",
+    sections: "Section",
     continueDraft: "Continue draft",
     unpublishedChanges: "Unpublished changes",
     publishHint: "Preview uses the same fields as the visit note. Publish snapshots this version. Later edits become a draft until you publish again.",

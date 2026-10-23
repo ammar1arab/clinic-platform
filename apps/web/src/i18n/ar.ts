@@ -1541,6 +1541,7 @@ export const ar: Translations = {
     identityWhen: "التاريخ والوقت",
     identityClinician: "الطبيب",
     pickTemplate: "اختر قالب ملاحظة العيادة",
+    sections: "القسم",
     continueDraft: "متابعة المسودة",
     unpublishedChanges: "تغييرات غير منشورة",
     publishHint: "المعاينة تستخدم الحقول نفسها في ملاحظة الزيارة. النشر يثبت هذا الإصدار. التعديلات اللاحقة تصبح مسودة حتى تنشر مرة أخرى.",
