@@ -54,13 +54,15 @@ export function EmailStatus({
 
 export function EmailDeliveryCounts({
   counts,
+  className,
 }: {
   counts: EmailMessageSummary["counts"];
+  className?: string;
 }) {
   const { t } = useLanguage();
   const variants = { pending: 'warning', sent: 'success', attention: 'destructive', skipped: 'muted' } as const;
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className={cn("flex flex-wrap gap-1.5", className)}>
       {(Object.keys(EMAIL_DELIVERY_GROUPS) as EmailDeliveryGroup[]).map((group) => {
         const count = EMAIL_DELIVERY_GROUPS[group].reduce((sum, status) => sum + (counts[status] ?? 0), 0);
         return count > 0 ? <Badge key={group} variant={variants[group]}>{t.emails.deliveryGroups[group]} {count}</Badge> : null;

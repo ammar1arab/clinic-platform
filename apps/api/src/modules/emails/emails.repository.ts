@@ -200,7 +200,6 @@ export class EmailsRepository {
       if (
         entry.audience === "patients" ||
         entry.audience === "practitioners" ||
-        entry.audience === "staff" ||
         entry.audience === "financial" ||
         entry.audience === "owners" ||
         entry.audience === "admins" ||

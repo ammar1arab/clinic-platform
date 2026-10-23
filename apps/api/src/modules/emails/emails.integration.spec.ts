@@ -499,7 +499,7 @@ integration("Clinic email HTTP and PostgreSQL invariants", () => {
       .set("Authorization", "owner")
       .send({
         filters: {
-          audience: "staff",
+          audience: "owners",
           doctorId: doctor.clinicUserId,
         },
       })

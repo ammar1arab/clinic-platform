@@ -40,19 +40,17 @@ export const EMAIL_DELIVERY_STATUS = {
 } as const satisfies Record<string, EmailDeliveryStatus>;
 
 export type EmailAudience =
+  | 'owners'
   | 'patients'
   | 'practitioners'
-  | 'staff'
   | 'financial'
-  | 'owners'
   | 'admins';
 
 export const EMAIL_AUDIENCE = {
+  OWNERS: 'owners',
   PATIENTS: 'patients',
   PRACTITIONERS: 'practitioners',
-  STAFF: 'staff',
   FINANCIAL: 'financial',
-  OWNERS: 'owners',
   ADMINS: 'admins',
 } as const satisfies Record<string, EmailAudience>;
 

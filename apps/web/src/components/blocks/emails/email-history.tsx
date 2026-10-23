@@ -374,11 +374,14 @@ export function EmailHistory() {
                     }
                     onClick={() => go(ROUTES.EMAIL_DETAIL(message.id))}
                     actions={
-                      <div className="flex max-w-[55%] flex-wrap justify-end gap-1.5">
+                      <div className="flex shrink-0 items-center gap-1.5">
                         {message.isTest ? (
                           <Badge variant="outline">{t.emails.test}</Badge>
                         ) : null}
-                        <EmailDeliveryCounts counts={message.counts} />
+                        <EmailDeliveryCounts
+                          counts={message.counts}
+                          className="flex-nowrap"
+                        />
                       </div>
                     }
                     meta={

@@ -441,11 +441,10 @@ export const emailContentSchema = z.object({
 
 export const emailComposerSchema = emailContentSchema.extend({
   audience: z.enum([
+    'owners',
     'patients',
     'practitioners',
-    'staff',
     'financial',
-    'owners',
     'admins',
     'all',
   ]),

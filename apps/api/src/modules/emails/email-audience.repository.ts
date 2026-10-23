@@ -3,7 +3,11 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { plainToInstance } from "class-transformer";
 import { isEmail, validateSync } from "class-validator";
 import { Prisma, Role } from "@prisma/client";
-import { EMAIL_AUDIENCE, type EmailRecipientPreview } from "@clinic/types";
+import {
+  EMAIL_AUDIENCE,
+  type EmailAudience,
+  type EmailRecipientPreview,
+} from "@clinic/types";
 import { PrismaService } from "@/prisma/prisma.service";
 import { EmailFiltersDto, EmailSelectionDto } from "./dto/email.dto";
 
@@ -11,6 +15,20 @@ export const MAX_EMAIL_RECIPIENTS = 500;
 
 export const normalizeEmail = (value: string): string =>
   value.trim().toLowerCase();
+
+const ROLE_BY_AUDIENCE: Partial<Record<EmailAudience | "all", Role>> = {
+  [EMAIL_AUDIENCE.OWNERS]: Role.owner,
+  [EMAIL_AUDIENCE.ADMINS]: Role.admin,
+  [EMAIL_AUDIENCE.PRACTITIONERS]: Role.practitioner,
+  [EMAIL_AUDIENCE.FINANCIAL]: Role.financial,
+};
+
+const AUDIENCE_BY_ROLE: Record<Role, EmailAudience> = {
+  [Role.owner]: EMAIL_AUDIENCE.OWNERS,
+  [Role.admin]: EMAIL_AUDIENCE.ADMINS,
+  [Role.practitioner]: EMAIL_AUDIENCE.PRACTITIONERS,
+  [Role.financial]: EMAIL_AUDIENCE.FINANCIAL,
+};
 
 @Injectable()
 export class EmailAudienceRepository {
@@ -160,10 +178,7 @@ export class EmailAudienceRepository {
         { ...shared, audience: EMAIL_AUDIENCE.PATIENTS },
         Boolean(filters.departmentId),
       ),
-      this.findStaff(clinicId, {
-        ...shared,
-        audience: EMAIL_AUDIENCE.STAFF,
-      }),
+      this.findStaff(clinicId, { ...shared, audience: "all" }),
     ]);
     return [...patients, ...staff];
   }
@@ -257,21 +272,14 @@ export class EmailAudienceRepository {
     filters: EmailFiltersDto,
   ): Promise<EmailRecipientPreview[]> {
     const { audience, ids, search, departmentId } = filters;
+    const role = ROLE_BY_AUDIENCE[audience];
 
     const staff = await this.prisma.clinicUser.findMany({
       where: {
         clinicId,
         isActive: true,
         ...(ids && { id: { in: ids } }),
-        ...(audience === EMAIL_AUDIENCE.PRACTITIONERS
-          ? { role: Role.practitioner }
-          : audience === EMAIL_AUDIENCE.FINANCIAL
-            ? { role: Role.financial }
-            : audience === EMAIL_AUDIENCE.OWNERS
-              ? { role: Role.owner }
-              : audience === EMAIL_AUDIENCE.ADMINS
-                ? { role: Role.admin }
-                : {}),
+        ...(role && { role }),
         ...(departmentId && { departmentId }),
         ...(search && {
           OR: [
@@ -303,18 +311,7 @@ export class EmailAudienceRepository {
 
     return staff.map((member) => ({
       sourceId: member.id,
-      audience:
-        audience === EMAIL_AUDIENCE.STAFF || audience === "all"
-          ? member.role === Role.practitioner
-            ? EMAIL_AUDIENCE.PRACTITIONERS
-            : member.role === Role.financial
-              ? EMAIL_AUDIENCE.FINANCIAL
-              : member.role === Role.owner
-                ? EMAIL_AUDIENCE.OWNERS
-                : member.role === Role.admin
-                  ? EMAIL_AUDIENCE.ADMINS
-                  : EMAIL_AUDIENCE.STAFF
-          : audience,
+      audience: AUDIENCE_BY_ROLE[member.role],
       name: member.name,
       nameAr: member.nameAr ?? undefined,
       email: member.user.email,
