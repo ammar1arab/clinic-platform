@@ -40,16 +40,17 @@ import { useClinicId } from '@/hooks/shared/use-clinic-id';
 import { useListFilter } from '@/hooks/shared/use-list-filter';
 import { useCreateDialog } from '@/hooks/shared/use-create-dialog';
 import { useLanguage } from '@/providers';
+import { formatClinicAmount, formatClinicNumber } from '@/lib/package-balance';
 import type { ClinicPackage } from '@/services/packages.service';
 import type { DiscountType } from '@/services/appointments.service';
 
 const searchFields = (p: ClinicPackage) => [p.name, p.description ?? ''];
 
 function formatPackageDiscount(p: ClinicPackage) {
-  if (!p.discountType || p.discountValue == null) return '—';
+  if (!p.discountType || p.discountValue == null) return '0';
   return p.discountType === 'percentage'
     ? `${Number(p.discountValue)}%`
-    : Number(p.discountValue).toFixed(3);
+    : formatClinicNumber(p.discountValue);
 }
 
 export default function PackagesPage() {
@@ -195,7 +196,7 @@ export default function PackagesPage() {
             cellClassName: 'text-muted-foreground',
             skeleton: 'h-4 w-10',
             render: (p) => (
-              <>{p.sessionCount ?? '—'}</>
+              <>{p.sessionCount ?? 0}</>
             ),
           },
           {
@@ -205,7 +206,7 @@ export default function PackagesPage() {
             cellClassName: 'font-mono text-xs',
             skeleton: 'h-4 w-14',
             render: (p) => (
-              <>{p.price != null ? `${Number(p.price).toFixed(3)} JOD` : '—'}</>
+              <>{formatClinicAmount(p.price)}</>
             ),
           },
           {
@@ -245,14 +246,11 @@ export default function PackagesPage() {
             activeDisabled={isToggling}
             actions={rowActions(p)}
             meta={
-              <>
-                <EntityMetaStat label={t.settings.sessions} value={p.sessionCount ?? '—'} />
-                <EntityMetaStat
-                  label={t.common.fee}
-                  value={p.price != null ? Number(p.price).toFixed(3) : '—'}
-                />
+              <div className="col-span-2 grid grid-cols-3 gap-2">
+                <EntityMetaStat label={t.settings.sessions} value={p.sessionCount ?? 0} />
+                <EntityMetaStat label={t.common.fee} value={formatClinicNumber(p.price)} />
                 <EntityMetaStat label={t.appointments.discount} value={formatPackageDiscount(p)} />
-              </>
+              </div>
             }
           />
         )}
