@@ -71,10 +71,13 @@ function handOffToNextTrigger(event: DismissEvent) {
 
 export function overlayDismissProps<TPointer>(handlers?: {
   onPointerDownOutside?: (event: TPointer) => void;
+  preventOwnTrigger?: boolean;
 }) {
   return {
     onPointerDownOutside: (event: TPointer) => {
-      preventDismissOnOwnTrigger(event as DismissEvent);
+      if (handlers?.preventOwnTrigger !== false) {
+        preventDismissOnOwnTrigger(event as DismissEvent);
+      }
       handlers?.onPointerDownOutside?.(event);
       if (!(event as unknown as Event).defaultPrevented) handOffToNextTrigger(event as DismissEvent);
     },

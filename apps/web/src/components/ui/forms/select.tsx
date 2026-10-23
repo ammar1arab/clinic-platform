@@ -152,7 +152,7 @@ function SelectContent({
         avoidCollisions={avoidCollisions}
         collisionPadding={collisionPadding}
         {...props}
-        {...overlayDismissProps({ onPointerDownOutside })}
+        {...overlayDismissProps({ onPointerDownOutside, preventOwnTrigger: false })}
       >
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport
