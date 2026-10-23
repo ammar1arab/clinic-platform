@@ -1,6 +1,8 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { BadRequestException } from "@nestjs/common";
 import { EmailService } from "@/infrastructure";
+import { AuthService } from "@/modules/auth/auth.service";
+import { PrismaService } from "@/prisma/prisma.service";
 import { PractitionersService } from "./practitioners.service";
 import { PractitionersRepository } from "./practitioners.repository";
 
@@ -58,6 +60,8 @@ describe("PractitionersService availability rules", () => {
         PractitionersService,
         { provide: PractitionersRepository, useValue: repo },
         { provide: EmailService, useValue: { send: jest.fn() } },
+        { provide: AuthService, useValue: {} },
+        { provide: PrismaService, useValue: {} },
       ],
     }).compile();
     service = module.get(PractitionersService);
@@ -70,7 +74,7 @@ describe("PractitionersService availability rules", () => {
           { dayOfWeek: 1, startTime: "09:00", endTime: "13:00" },
           { dayOfWeek: 1, startTime: "12:00", endTime: "17:00" },
         ],
-      }),
+      }, "clinic"),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(repo.replaceAvailability).not.toHaveBeenCalled();
   });
@@ -82,7 +86,7 @@ describe("PractitionersService availability rules", () => {
           { dayOfWeek: 1, startTime: "09:00", endTime: "12:00" },
           { dayOfWeek: 1, startTime: "12:00", endTime: "17:00" },
         ],
-      }),
+      }, "clinic"),
     ).resolves.toBeDefined();
     expect(repo.replaceAvailability).toHaveBeenCalled();
   });

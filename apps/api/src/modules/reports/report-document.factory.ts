@@ -574,7 +574,7 @@ export class ReportDocumentFactory {
       startDate: string;
       endDate: string;
       reason?: string | null;
-      kind?: "leave" | "vacation";
+      kind?: string;
     }>;
     overrides: Array<{
       startAt: string;

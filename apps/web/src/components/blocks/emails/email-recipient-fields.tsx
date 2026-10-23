@@ -39,6 +39,14 @@ const AUDIENCE = {
   ALL: "all",
 } as const;
 
+const AUDIENCE_ORDER = [
+  AUDIENCE.OWNERS,
+  AUDIENCE.ADMINS,
+  AUDIENCE.FINANCIAL,
+  AUDIENCE.PRACTITIONERS,
+  AUDIENCE.PATIENTS,
+] as const;
+
 const PAYMENT = {
   ALL: "all",
   YES: "true",
@@ -84,7 +92,8 @@ export function EmailRecipientFields({
     setValue("appointmentTo", "");
     setValue("isPaid", PAYMENT.ALL);
   };
-  const audienceKeys = (audiences.data?.audiences ?? []).filter((key) => key !== AUDIENCE.ALL);
+  const offered = new Set<string>(audiences.data?.audiences ?? []);
+  const audienceKeys = AUDIENCE_ORDER.filter((key) => offered.has(key));
   const changeAudience = (apply: (key: string) => void, key: string) => {
     apply(key);
     setValue("ids", []);

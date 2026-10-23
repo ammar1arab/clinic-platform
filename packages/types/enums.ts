@@ -48,10 +48,10 @@ export type EmailAudience =
 
 export const EMAIL_AUDIENCE = {
   OWNERS: 'owners',
-  PATIENTS: 'patients',
-  PRACTITIONERS: 'practitioners',
-  FINANCIAL: 'financial',
   ADMINS: 'admins',
+  FINANCIAL: 'financial',
+  PRACTITIONERS: 'practitioners',
+  PATIENTS: 'patients',
 } as const satisfies Record<string, EmailAudience>;
 
 export type SessionType = 'in_person' | 'online';
