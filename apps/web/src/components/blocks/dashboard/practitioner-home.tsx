@@ -124,10 +124,10 @@ export function PractitionerHome() {
       </Card>
 
       <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
-        <KpiCardBlock label={t.dashboard.todaysAppointments} value={ordered.length} icon={IconTodaysAppointments} accent="default" />
-        <KpiCardBlock label={t.dashboard.waiting} value={waiting} icon={IconTimer} accent="warning" />
-        <KpiCardBlock label={t.dashboard.completed} value={completed} icon={IconCheckCircle} accent="success" />
-        <KpiCardBlock label={t.queue.upcomingToday} value={nextVisit ? formatTime(nextVisit.scheduledAt, undefined, lang) : 0} icon={IconTime} accent="teal" />
+        <KpiCardBlock label={t.dashboard.todaysAppointments} value={ordered.length} icon={IconTodaysAppointments} />
+        <KpiCardBlock label={t.dashboard.waiting} value={waiting} icon={IconTimer} />
+        <KpiCardBlock label={t.dashboard.completed} value={completed} icon={IconCheckCircle} />
+        <KpiCardBlock label={t.queue.upcomingToday} value={nextVisit ? formatTime(nextVisit.scheduledAt, undefined, lang) : 0} icon={IconTime} />
       </div>
 
       <div className="grid min-w-0 flex-1 items-stretch gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)]">
@@ -239,10 +239,10 @@ function PractitionerHomeSkeleton() {
       </Card>
 
       <div className="grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
-        <KpiCardBlock label={t.dashboard.todaysAppointments} value={undefined} isLoading icon={IconTodaysAppointments} accent="default" />
-        <KpiCardBlock label={t.dashboard.waiting} value={undefined} isLoading icon={IconTimer} accent="warning" />
-        <KpiCardBlock label={t.dashboard.completed} value={undefined} isLoading icon={IconCheckCircle} accent="success" />
-        <KpiCardBlock label={t.queue.upcomingToday} value={undefined} isLoading icon={IconTime} accent="teal" />
+        <KpiCardBlock label={t.dashboard.todaysAppointments} value={undefined} isLoading icon={IconTodaysAppointments} />
+        <KpiCardBlock label={t.dashboard.waiting} value={undefined} isLoading icon={IconTimer} />
+        <KpiCardBlock label={t.dashboard.completed} value={undefined} isLoading icon={IconCheckCircle} />
+        <KpiCardBlock label={t.queue.upcomingToday} value={undefined} isLoading icon={IconTime} />
       </div>
 
       <div className="grid min-w-0 flex-1 items-stretch gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(19rem,1fr)]">
