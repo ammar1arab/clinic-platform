@@ -134,9 +134,11 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
             <EntityMobileCard
               key={row.id}
               avatar={practitioner ? undefined : <PreviewableAvatar src={row.doctor.imageUrl} seed={row.doctorId} />}
-              title={practitioner ? copy.kinds[row.kind] : getStaffName(row.doctor, lang)}
-              subtitle={practitioner ? undefined : copy.kinds[row.kind]}
-              tags={statusBadge(row)}
+              title={<>
+                <span className="block truncate">{practitioner ? copy.kinds[row.kind] : getStaffName(row.doctor, lang)}</span>
+                {practitioner ? null : <span className="block truncate text-xs font-normal text-muted-foreground">{copy.kinds[row.kind]}</span>}
+                <span className="mt-1 flex">{statusBadge(row)}</span>
+              </>}
               actions={<div className="text-end">{period(row)}</div>}
               meta={<div className="col-span-2">{reasonText(row)}</div>}
               footer={actions(row)}
