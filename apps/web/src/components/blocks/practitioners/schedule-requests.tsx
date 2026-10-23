@@ -114,11 +114,13 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
   const body = query.isLoading ? (
     <TableSkeleton className="page-fill" rows={10} cols={columns.length} hasHeader={false} />
   ) : query.isError ? (
-    <TableFrame className="page-fill"><ErrorState onRetry={() => void query.refetch()} /></TableFrame>
+    <ErrorState className="page-fill" onRetry={() => void query.refetch()} />
   ) : rows.length === 0 ? (
-    <TableFrame className="page-fill">
-      <EmptyState icon={IconCalendarClock} title={view.group === 'pending' ? copy.empty : copy.emptyHistory} />
-    </TableFrame>
+    <EmptyState
+      className="page-fill"
+      icon={IconCalendarClock}
+      title={view.group === 'pending' ? copy.empty : copy.emptyHistory}
+    />
   ) : (
     <>
       <DirectoryTable rows={rows} columns={columns} rowKey={(row) => row.id} className="hidden md:flex" tableClassName="min-w-[46rem]" />
@@ -185,3 +187,4 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
     </div>
   );
 }
+
