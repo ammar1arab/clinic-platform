@@ -21,11 +21,22 @@ export function formatDisplayDateTime(
   date: Date | string,
   timeZone = "UTC",
 ): string {
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("en-US", {
     timeZone,
     dateStyle: "medium",
     timeStyle: "short",
+    hour12: true,
   }).format(new Date(date));
+}
+
+/** Same clock format as the web app: "9 AM", "2:45 PM". Input is "HH:mm". */
+export function formatClockAmPm(value: string): string {
+  const [hours, minutes] = value.split(":").map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return value;
+  const hour12 = hours % 12 || 12;
+  const period = hours < 12 ? "AM" : "PM";
+  if (minutes === 0) return `${hour12} ${period}`;
+  return `${hour12}:${String(minutes).padStart(2, "0")} ${period}`;
 }
 
 export const WEEKDAY_NAMES = [

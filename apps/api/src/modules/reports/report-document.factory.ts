@@ -22,6 +22,7 @@ import {
   blank,
   cell,
   formatDisplayDate,
+  formatClockAmPm,
   formatDisplayDateTime,
   patientName,
   sortHourSlots,
@@ -479,7 +480,7 @@ export class ReportDocumentFactory {
     const hours = sortHourSlots(practitioner.availabilities ?? [])
       .map(
         (slot) =>
-          `${weekdayName(slot.dayOfWeek)} ${slot.startTime}-${slot.endTime}`,
+          `${weekdayName(slot.dayOfWeek)} ${formatClockAmPm(slot.startTime)}-${formatClockAmPm(slot.endTime)}`,
       )
       .join(" · ");
 
@@ -543,8 +544,8 @@ export class ReportDocumentFactory {
   }): ReportDocument {
     const rows = sortHourSlots(input.availabilities).map((slot) => ({
       day: weekdayName(slot.dayOfWeek),
-      start: slot.startTime,
-      end: slot.endTime,
+      start: formatClockAmPm(slot.startTime),
+      end: formatClockAmPm(slot.endTime),
     }));
 
     return reportDocument({

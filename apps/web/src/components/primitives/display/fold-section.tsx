@@ -30,7 +30,7 @@ export function FoldSection({
         onClick={onToggle}
         aria-expanded={open}
         aria-label={`${open ? t.layout.sidebar.collapse : t.layout.sidebar.expand} ${label}`}
-        className="flex w-full items-center gap-1.5 border-b border-border/60 pb-1.5 text-start"
+        className="flex w-full items-center gap-1.5 text-start"
       >
         <IconChevronDown
           aria-hidden
