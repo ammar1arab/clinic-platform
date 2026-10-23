@@ -2020,6 +2020,12 @@ html[data-view-focus='true'] main > * > *:not([data-view-focus='true']) {
     [data-slot='input'],
     [data-slot='textarea'] {
       font-size: 16px !important;
+      font-weight: 400 !important;
+    }
+
+    textarea,
+    [data-slot='textarea'] {
+      line-height: 1.6 !important;
     }
   }
 }

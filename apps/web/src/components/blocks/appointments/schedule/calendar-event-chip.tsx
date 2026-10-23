@@ -59,7 +59,7 @@ export function CalendarEventChip({ arg }: { arg: EventContentArg }) {
       <SoftTip label={tip} className="flex w-full min-w-0">
         <div className="fc-event-chip fc-event-chip--month">
           <span className="fc-event-chip__time">{startLabel}</span>
-          <span className="fc-event-chip__name">{fullName}</span>
+          <span className="fc-event-chip__name max-sm:hidden">{fullName}</span>
         </div>
       </SoftTip>
     );

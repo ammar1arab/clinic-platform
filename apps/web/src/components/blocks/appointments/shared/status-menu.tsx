@@ -49,7 +49,7 @@ export function StatusMenuItems({
           style={{ animationDelay: `${index * 30}ms` }}
           className="cursor-pointer rounded-md px-2 py-1.5"
         >
-          <StatusBadgeBlock status={status} tip={false} />
+          <StatusBadgeBlock status={status} tip={false} className="text-control font-medium" />
         </DropdownMenuRadioItem>
       ))}
     </DropdownMenuRadioGroup>
@@ -74,7 +74,7 @@ export function StatusFilterItems({
       onSelect={(event) => event.preventDefault()}
       className="gap-2 rounded-md px-2 py-1.5"
     >
-      <Badge variant={STATUS_GROUP_BADGE_VARIANT[group as keyof typeof APPOINTMENT_STATUS_GROUPS]}>{t.appointments.statusGroups[group as keyof typeof APPOINTMENT_STATUS_GROUPS]}</Badge>
+      <Badge variant={STATUS_GROUP_BADGE_VARIANT[group as keyof typeof APPOINTMENT_STATUS_GROUPS]} className="text-control font-medium">{t.appointments.statusGroups[group as keyof typeof APPOINTMENT_STATUS_GROUPS]}</Badge>
     </DropdownMenuCheckboxItem>;
   });
 }
@@ -110,7 +110,7 @@ export function StatusPickerTrigger({
         status={status}
         compact={compact}
         tip={false}
-        className="shrink-0"
+        className={cn('shrink-0', !compact && 'text-control font-medium')}
         trailing={pending ? (
           <IconSpinner aria-hidden className="size-3.5 shrink-0 animate-spin" />
         ) : disabled ? null : (
