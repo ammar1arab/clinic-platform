@@ -47,7 +47,6 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
   };
   if (role === ROLE.PRACTITIONER) {
     return [
-      profile,
       { label: t.layout.titles.home, href: ROUTES.HOME, icon: IconDashboard },
       { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule },
       { label: t.queue.waitingQueue, href: ROUTES.HOME_QUEUE, icon: IconTimer },
@@ -56,10 +55,10 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
       { label: t.layout.sidebar.reports, href: ROUTES.REPORTS, icon: IconReports },
       { label: t.notifications.title, href: ROUTES.NOTIFICATIONS, icon: IconBell },
       { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings },
+      profile,
     ];
   }
   const items: NavItem[] = [
-    profile,
     { label: t.layout.sidebar.dashboard, href: ROUTES.DASHBOARD, icon: IconDashboard },
     { label: t.appointments.calendar, href: schedulePath('month'), icon: IconSchedule },
     { label: t.queue.waitingQueue, href: schedulePath('queue'), icon: IconTimer },
@@ -73,7 +72,7 @@ function getNavItems(t: Translations, user?: Pick<AuthMe, 'role' | 'imageUrl' | 
     { label: t.notifications.title, href: ROUTES.NOTIFICATIONS, icon: IconBell },
     { label: t.layout.sidebar.settings, href: ROUTES.SETTINGS, icon: IconSettings },
   ];
-  return items.filter((item) => canSeeNavHref(item.href, role));
+  return [...items.filter((item) => canSeeNavHref(item.href, role)), profile];
 }
 
 function isActivePath(pathname: string, href: string, scheduleView: string | null) {

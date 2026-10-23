@@ -8,24 +8,35 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { IconLanguage, IconCheck, IconGlobe } from '@/constants/icons';
+import { IconLanguage, IconCheck } from '@/constants/icons';
 import { SoftTip } from '@/components/primitives';
+
+function LanguageMark({ language }: { language: 'en' | 'ar' }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-flex size-5 items-center justify-center rounded-md bg-primary/10 text-[0.65rem] font-bold leading-none text-primary ring-1 ring-inset ring-primary/20"
+    >
+      {language === 'en' ? 'EN' : 'ع'}
+    </span>
+  );
+}
 
 export function LanguageOptions() {
   const { language, setLanguage, t } = useLanguage();
   const options = [
-    { value: 'en' as const, label: t.layout.english, icon: IconGlobe },
-    { value: 'ar' as const, label: t.layout.arabic, icon: IconLanguage },
+    { value: 'en' as const, label: t.layout.english },
+    { value: 'ar' as const, label: t.layout.arabic },
   ];
 
-  return options.map(({ value, label, icon: OptionIcon }) => (
+  return options.map(({ value, label }) => (
     <DropdownMenuItem
       key={value}
       onClick={() => setLanguage(value)}
       className="flex items-center justify-between"
     >
       <span className="flex items-center gap-2">
-        <OptionIcon className="size-4 text-muted-foreground" aria-hidden="true" />
+        <LanguageMark language={value} />
         <span>{label}</span>
       </span>
       {language === value && <IconCheck className="size-4 ms-2" />}
