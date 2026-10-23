@@ -1,6 +1,6 @@
 import type { CreateScheduleRequestInput, ReviewScheduleRequestInput, ScheduleRequestPage } from "@clinic/types";
 import type { Translations } from '@/i18n';
-import { practitionersService } from '@/services/practitioners.service';
+import { practitionersService, type ScheduleRequestListFilters } from '@/services/practitioners.service';
 import type {
   CreatePractitionerInput,
   CreatePractitionerResult,
@@ -96,10 +96,10 @@ export {
   useReactivatePractitioner,
 };
 
-export function useScheduleRequests(clinicId: string, doctorId?: string, group = 'pending', page = 1, connected = false) {
+export function useScheduleRequests(clinicId: string, doctorId: string | undefined, filters: ScheduleRequestListFilters, connected = false) {
   return useFetchData<ScheduleRequestPage>({
-    queryKey: QUERY_KEYS.practitioners.requests(clinicId, doctorId, group, page),
-    request: () => practitionersService.scheduleRequests(doctorId, group, page),
+    queryKey: QUERY_KEYS.practitioners.requests(clinicId, doctorId, filters),
+    request: () => practitionersService.scheduleRequests(doctorId, filters),
     options: { enabled: !!clinicId, refetchInterval: connected ? false : 30_000, refetchOnWindowFocus: true },
   });
 }

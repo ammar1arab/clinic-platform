@@ -683,6 +683,8 @@ export const ar: Translations = {
     saved: "تم حفظ الطلب", all: "جميع الأطباء",
     kinds: { extra: "دوام إضافي", leave: "إجازة", vacation: "عطلة" },
     statuses: { pending: "بانتظار المراجعة", approved: "موافق عليه", declined: "مرفوض", withdrawn: "مسحوب" },
+    allRequests: "كل الطلبات", current: "الطلبات الحالية", sort: "الترتيب", newest: "الأحدث أولاً", oldest: "الأقدم أولاً",
+    allDepartments: "كل الأقسام", emptyAll: "لا توجد طلبات",
   },
   practitioner: {
     addPractitioner: "إضافة طبيب",

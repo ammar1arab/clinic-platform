@@ -43,11 +43,20 @@ const include = {
 export class PractitionersRepository {
   constructor(private prisma: PrismaService) {}
 
-  async scheduleRequests(clinicId: string, doctorId?: string, group: 'pending' | 'history' = 'pending', page = 1) {
-    const where = { clinicId, ...(doctorId ? { doctorId } : {}), status: group === 'pending' ? 'pending' : { not: 'pending' } };
+  async scheduleRequests(
+    clinicId: string,
+    filters: { doctorId?: string; departmentId?: string; group: 'all' | 'pending' | 'history'; sort: 'newest' | 'oldest'; page: number },
+  ) {
+    const { doctorId, departmentId, group, sort, page } = filters;
+    const where = {
+      clinicId,
+      ...(doctorId ? { doctorId } : {}),
+      ...(departmentId ? { doctor: { departmentId } } : {}),
+      ...(group === 'all' ? {} : { status: group === 'pending' ? 'pending' : { not: 'pending' } }),
+    };
     const pageSize = 20;
     const [items, total] = await this.prisma.$transaction([
-      this.prisma.practitionerScheduleRequest.findMany({ where, include: { doctor: { select: { name: true, nameAr: true, imageUrl: true } } }, orderBy: { createdAt: group === 'pending' ? 'asc' : 'desc' }, skip: (page - 1) * pageSize, take: pageSize }),
+      this.prisma.practitionerScheduleRequest.findMany({ where, include: { doctor: { select: { name: true, nameAr: true, imageUrl: true } } }, orderBy: { createdAt: sort === 'oldest' ? 'asc' : 'desc' }, skip: (page - 1) * pageSize, take: pageSize }),
       this.prisma.practitionerScheduleRequest.count({ where }),
     ]);
     return { items, total, page, pageSize };

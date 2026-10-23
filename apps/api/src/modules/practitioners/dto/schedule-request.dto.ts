@@ -49,8 +49,15 @@ export class ScheduleRequestFiltersDto {
   @IsUUID()
   doctorId?: string;
 
-  @IsIn(["pending", "history"])
-  group: "pending" | "history" = "pending";
+  @IsOptional()
+  @IsUUID()
+  departmentId?: string;
+
+  @IsIn(["all", "pending", "history"])
+  group: "all" | "pending" | "history" = "all";
+
+  @IsIn(["newest", "oldest"])
+  sort: "newest" | "oldest" = "newest";
 
   @Type(() => Number)
   @IsInt()

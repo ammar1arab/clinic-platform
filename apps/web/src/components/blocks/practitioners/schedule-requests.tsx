@@ -24,15 +24,15 @@ import { SettingsPageBack } from '@/components/blocks/settings/settings-navigati
 import { IconAdd, IconCalendarClock } from '@/constants/icons';
 import { useClinicRealtime } from '@/hooks/api/use-clinic-realtime';
 import { useScheduleRequestMutation, useScheduleRequests } from '@/hooks/api/use-practitioners';
+import { useDepartments } from '@/hooks/api/use-departments';
+import type { ScheduleRequestGroup, ScheduleRequestListFilters, ScheduleRequestSort } from '@/services/practitioners.service';
 import { formatDateTime } from '@/lib/datetime';
 import { getStaffName } from '@/i18n';
 import { useAuth, useLanguage } from '@/providers';
 import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
 import { DeclineRequestDialog, ScheduleRequestDialog } from './schedule-request-dialogs';
 
-type Group = 'pending' | 'history';
-
-export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { doctorId?: string; initialGroup?: Group }) {
+export function ScheduleRequestsPage({ doctorId, initialGroup = 'all' }: { doctorId?: string; initialGroup?: ScheduleRequestGroup }) {
   const { user } = useAuth();
   const { t, lang } = useLanguage();
   const copy = t.scheduleRequests;
@@ -40,11 +40,19 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
   const clinicId = user?.clinic.id ?? '';
   const { connected } = useClinicRealtime(clinicId);
   const scope = `${clinicId || 'none'}:schedule-requests:${practitioner ? 'self' : doctorId || 'all'}`;
-  const [view, setView] = useSessionStorageState(`${scope}:view`, { group: initialGroup as Group, kind: '', page: 1 });
+  const [view, setView] = useSessionStorageState(`${scope}:requests-view`, {
+    group: initialGroup,
+    kind: '',
+    departmentId: '',
+    sort: 'newest' as ScheduleRequestSort,
+    page: 1,
+  });
   const [search, setSearch] = useSessionStorageState(`${scope}:search`, '');
   const [creating, setCreating] = useState(false);
   const [declining, setDeclining] = useState<ScheduleRequest | null>(null);
-  const query = useScheduleRequests(clinicId, practitioner ? user?.clinicUserId : doctorId, view.group, view.page, connected);
+  const { data: departments } = useDepartments(clinicId);
+  const listFilters: ScheduleRequestListFilters = { group: view.group, departmentId: view.departmentId || undefined, sort: view.sort, page: view.page };
+  const query = useScheduleRequests(clinicId, practitioner ? user?.clinicUserId : doctorId, listFilters, connected);
   const mutation = useScheduleRequestMutation(clinicId);
 
   const term = search.trim().toLowerCase();
@@ -53,7 +61,7 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
       (!view.kind || row.kind === view.kind) &&
       (!term || row.reason.toLowerCase().includes(term) || getStaffName(row.doctor, lang).toLowerCase().includes(term)),
   );
-  const activeFilters = (view.group !== 'pending' ? 1 : 0) + (view.kind ? 1 : 0);
+  const activeFilters = (view.group !== 'all' ? 1 : 0) + (view.kind ? 1 : 0) + (view.departmentId ? 1 : 0) + (view.sort !== 'newest' ? 1 : 0);
   const pageCount = query.data ? Math.ceil(query.data.total / query.data.pageSize) : 1;
 
   const review = (row: ScheduleRequest, decision: 'approved' | 'declined' | 'withdrawn', reviewNote?: string) =>
@@ -126,7 +134,7 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
       <EmptyState
         className="page-fill-always"
         icon={IconCalendarClock}
-        title={view.group === 'pending' ? copy.empty : copy.emptyHistory}
+        title={view.group === 'pending' ? copy.empty : view.group === 'history' ? copy.emptyHistory : copy.emptyAll}
       />
     </TableFrame>
   ) : (
@@ -165,14 +173,27 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
           <div className="flex items-center gap-1.5">
             <Popover>
               <FilterTrigger count={activeFilters} />
-              <FilterPanel count={activeFilters} onClear={() => setView({ group: 'pending', kind: '', page: 1 })}>
-                <FilterSelect label={t.common.status} value={view.group === 'history' ? 'history' : ''} placeholder={copy.statuses.pending} onChange={(value) => setView({ ...view, group: value === 'history' ? 'history' : 'pending', page: 1 })}>
+              <FilterPanel count={activeFilters} onClear={() => setView({ group: 'all', kind: '', departmentId: '', sort: 'newest', page: 1 })}>
+                <FilterSelect label={t.common.status} value={view.group} onChange={(group) => setView({ ...view, group: group as ScheduleRequestGroup, page: 1 })}>
+                  <SelectItem value="all">{copy.allRequests}</SelectItem>
+                  <SelectItem value="pending">{copy.current}</SelectItem>
                   <SelectItem value="history">{copy.history}</SelectItem>
                 </FilterSelect>
+                {practitioner ? null : (
+                  <FilterSelect label={t.practitioner.department} value={view.departmentId} placeholder={copy.allDepartments} onChange={(departmentId) => setView({ ...view, departmentId, page: 1 })}>
+                    {(departments ?? []).map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </FilterSelect>
+                )}
                 <FilterSelect label={copy.type} value={view.kind} onChange={(kind) => setView({ ...view, kind, page: 1 })}>
                   <SelectItem value="leave">{copy.kinds.leave}</SelectItem>
                   <SelectItem value="vacation">{copy.kinds.vacation}</SelectItem>
                   <SelectItem value="extra">{copy.kinds.extra}</SelectItem>
+                </FilterSelect>
+                <FilterSelect label={copy.sort} value={view.sort} onChange={(sort) => setView({ ...view, sort: sort as ScheduleRequestSort, page: 1 })}>
+                  <SelectItem value="newest">{copy.newest}</SelectItem>
+                  <SelectItem value="oldest">{copy.oldest}</SelectItem>
                 </FilterSelect>
               </FilterPanel>
             </Popover>
@@ -193,7 +214,7 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
         <ScheduleRequestDialog
           pending={mutation.isPending}
           onClose={() => setCreating(false)}
-          onSubmit={(input) => mutation.mutate(input, { onSuccess: () => { setCreating(false); setView({ ...view, group: 'pending', page: 1 }); } })}
+          onSubmit={(input) => mutation.mutate(input, { onSuccess: () => { setCreating(false); setView({ ...view, page: 1 }); } })}
         />
       ) : null}
       {declining ? (

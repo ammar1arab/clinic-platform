@@ -27,8 +27,22 @@ export type {
   PractitionerSelfProfileInput,
 };
 
+export type ScheduleRequestGroup = 'all' | 'pending' | 'history';
+export type ScheduleRequestSort = 'newest' | 'oldest';
+export type ScheduleRequestListFilters = {
+  group: ScheduleRequestGroup;
+  departmentId?: string;
+  sort: ScheduleRequestSort;
+  page: number;
+};
+
 export const practitionersService = {
-  scheduleRequests: (doctorId?: string, group = 'pending', page = 1) => api.get<ScheduleRequestPage>(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUESTS, { params: { doctorId, group, page } }).then((r) => r.data),
+  scheduleRequests: (doctorId: string | undefined, filters: ScheduleRequestListFilters) =>
+    api
+      .get<ScheduleRequestPage>(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUESTS, {
+        params: { doctorId, departmentId: filters.departmentId, group: filters.group, sort: filters.sort, page: filters.page },
+      })
+      .then((r) => r.data),
   requestSchedule: (data: CreateScheduleRequestInput) => api.post(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUESTS, data).then((r) => r.data),
   reviewSchedule: (id: string, data: ReviewScheduleRequestInput) => api.patch(ENDPOINTS.PRACTITIONERS.SCHEDULE_REQUEST(id), data).then((r) => r.data),
 

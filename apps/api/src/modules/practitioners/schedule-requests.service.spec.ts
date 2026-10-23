@@ -85,14 +85,16 @@ describe("Schedule requests", () => {
     service.list(practitioner, {
       doctorId: "other",
       group: "pending",
+      sort: "newest",
       page: 1,
     });
-    expect(repo.scheduleRequests).toHaveBeenCalledWith(
-      "clinic",
-      "doctor",
-      "pending",
-      1,
-    );
+    expect(repo.scheduleRequests).toHaveBeenCalledWith("clinic", {
+      doctorId: "doctor",
+      departmentId: undefined,
+      group: "pending",
+      sort: "newest",
+      page: 1,
+    });
   });
   it("scopes review reads to the authenticated clinic", async () => {
     tx.practitionerScheduleRequest.findFirst.mockResolvedValue(null);

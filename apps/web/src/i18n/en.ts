@@ -677,6 +677,8 @@ export const en = {
     saved: "Schedule request updated", all: "All practitioners",
     kinds: { extra: "Extra availability", leave: "Leave", vacation: "Vacation" },
     statuses: { pending: "Awaiting review", approved: "Approved", declined: "Declined", withdrawn: "Withdrawn" },
+    allRequests: "All requests", current: "Current requests", sort: "Sort", newest: "Newest first", oldest: "Oldest first",
+    allDepartments: "All departments", emptyAll: "No schedule requests",
   },
   practitioner: {
     addPractitioner: "Add practitioner",

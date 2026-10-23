@@ -28,12 +28,13 @@ export class ScheduleRequestsService {
   ) {}
 
   list(actor: AuthUser, filters: ScheduleRequestFiltersDto) {
-    return this.repo.scheduleRequests(
-      actor.clinicId,
-      actor.role === Role.practitioner ? actor.clinicUserId : filters.doctorId,
-      filters.group,
-      filters.page,
-    );
+    return this.repo.scheduleRequests(actor.clinicId, {
+      doctorId: actor.role === Role.practitioner ? actor.clinicUserId : filters.doctorId,
+      departmentId: filters.departmentId,
+      group: filters.group,
+      sort: filters.sort,
+      page: filters.page,
+    });
   }
 
   async create(actor: AuthUser, dto: CreateScheduleRequestDto) {

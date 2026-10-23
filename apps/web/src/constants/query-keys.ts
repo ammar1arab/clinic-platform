@@ -27,7 +27,8 @@ export const QUERY_KEYS = {
     list: (clinicId: string) => ['services', clinicId] as const,
   },
   practitioners: {
-    requests: (clinicId: string, doctorId?: string, group = 'pending', page = 1) => ['practitioners', 'schedule-requests', clinicId, doctorId ?? null, group, page] as const,
+    requests: (clinicId: string, doctorId: string | undefined, filters: { group: string; departmentId?: string; sort: string; page: number }) =>
+      ['practitioners', 'schedule-requests', clinicId, doctorId ?? null, filters] as const,
     all: ['practitioners'] as const,
     list: (clinicId: string) => ['practitioners', clinicId] as const,
     directory: (filters: object) => ['practitioners', 'directory', filters] as const,
