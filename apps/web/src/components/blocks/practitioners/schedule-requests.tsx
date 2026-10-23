@@ -24,7 +24,7 @@ import { SettingsPageBack } from '@/components/blocks/settings/settings-navigati
 import { IconAdd, IconCalendarClock } from '@/constants/icons';
 import { useClinicRealtime } from '@/hooks/api/use-clinic-realtime';
 import { useScheduleRequestMutation, useScheduleRequests } from '@/hooks/api/use-practitioners';
-import { formatDateTime } from '@/lib/datetime';
+import { formatDateTimeRange } from '@/lib/datetime';
 import { getStaffName } from '@/i18n';
 import { useAuth, useLanguage } from '@/providers';
 import { useSessionStorageState } from '@/hooks/shared/use-session-storage-state';
@@ -65,10 +65,9 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
     </Badge>
   );
   const period = (row: ScheduleRequest) => (
-    <div className="space-y-0.5 text-xs tabular-nums">
-      <time dateTime={row.startAt} className="block">{formatDateTime(row.startAt, undefined, lang)}</time>
-      <time dateTime={row.endAt} className="block text-muted-foreground">{formatDateTime(row.endAt, undefined, lang)}</time>
-    </div>
+    <time dateTime={row.startAt} className="block text-xs tabular-nums">
+      {formatDateTimeRange(row.startAt, row.endAt, undefined, lang)}
+    </time>
   );
   const person = (row: ScheduleRequest) => (
     <div className="flex min-w-0 items-center gap-2">
@@ -136,7 +135,7 @@ export function ScheduleRequestsPage({ doctorId, initialGroup = 'pending' }: { d
               avatar={practitioner ? undefined : <PreviewableAvatar src={row.doctor.imageUrl} seed={row.doctorId} />}
               title={practitioner ? copy.kinds[row.kind] : getStaffName(row.doctor, lang)}
               subtitle={practitioner ? undefined : copy.kinds[row.kind]}
-              tags={statusBadge(row)}
+              actions={statusBadge(row)}
               meta={<div className="col-span-2 space-y-2">{period(row)}{reasonText(row)}</div>}
               footer={actions(row)}
             />
