@@ -52,6 +52,7 @@ export function OtpInput({
           autoFocus={autoFocus}
           disabled={disabled}
           readOnly={readOnly}
+          tabIndex={readOnly ? -1 : undefined}
           aria-label={ariaLabel}
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}
@@ -63,7 +64,7 @@ export function OtpInput({
             if (readOnly) return;
             onChange(normalizeCode(event.clipboardData.getData('text'), length));
           }}
-          className="absolute inset-0 z-10 size-full cursor-text border-0 bg-transparent p-0 text-transparent opacity-0 shadow-none outline-none"
+          className="absolute inset-0 z-10 size-full cursor-text select-none border-0 bg-transparent p-0 text-transparent opacity-0 shadow-none outline-none selection:bg-transparent selection:text-transparent"
         />
         <div aria-hidden className="pointer-events-none mx-auto grid w-full max-w-[20.5rem] grid-cols-6 gap-2">
           {Array.from({ length }, (_, index) => (
@@ -91,3 +92,4 @@ export function OtpInput({
     </div>
   );
 }
+
