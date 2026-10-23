@@ -1,7 +1,7 @@
 "use client";
 
 import { AccountProfile } from "@/components/blocks/auth/account-profile";
-import { PractitionerSelfProfile } from "@/components/blocks/practitioners";
+import { PractitionerSelfProfile, PractitionerSelfProfileSkeleton } from "@/components/blocks/practitioners";
 import { EmptyState, ErrorState, FormPageSkeleton } from "@/components/primitives";
 import { IconPractitioner } from "@/constants/icons";
 import { usePractitioner } from "@/hooks/api/use-practitioners";
@@ -9,8 +9,10 @@ import { ROLE } from "@clinic/types";
 import { useAuth, useLanguage } from "@/providers";
 
 export default function ProfilePage() {
-  const { user, isLoading } = useAuth();
-  if (isLoading || !user) return <FormPageSkeleton />;
+  const { user, isLoading, isSessionError, retrySession } = useAuth();
+  if (isLoading) return <FormPageSkeleton />;
+  if (isSessionError) return <ErrorState onRetry={retrySession} />;
+  if (!user) return null;
   if (user.role === ROLE.PRACTITIONER) return <PractitionerProfilePage id={user.clinicUserId} />;
   return (
     <div className="page-stack space-y-4">
@@ -21,11 +23,11 @@ export default function ProfilePage() {
 
 function PractitionerProfilePage({ id }: { id: string }) {
   const { t } = useLanguage();
-  const { data: practitioner, isLoading, isError, refetch } = usePractitioner(id);
+  const { data: practitioner, isLoading, isError, isNotFound, refetch } = usePractitioner(id);
 
-  if (isLoading) return <FormPageSkeleton />;
-  if (isError) return <ErrorState onRetry={() => void refetch()} />;
-  if (!practitioner) {
+  if (isLoading) return <PractitionerSelfProfileSkeleton />;
+  if (isError && !isNotFound) return <ErrorState onRetry={() => void refetch()} />;
+  if (isNotFound || !practitioner) {
     return <EmptyState icon={IconPractitioner} title={t.practitioner.practitionerNotFound} description={t.practitioner.practitionerNotFoundDesc} />;
   }
   return <PractitionerSelfProfile practitioner={practitioner} />;

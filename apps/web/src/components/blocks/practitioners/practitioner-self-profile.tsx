@@ -4,14 +4,14 @@ import { PractitionerEmploymentBadge } from './practitioner-employment-badge';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { can, PROFILE_PERMISSIONS } from '@clinic/types';
-import { Badge, Button, Card, CardContent, Input, Textarea } from '@/components/ui';
+import { Badge, Button, Card, CardContent, Input, Skeleton, Textarea } from '@/components/ui';
 import {
   ContactLine,
-  EmptyState, FormActions, FormField, PreviewableAvatar, ProfileInfoField,
-  ProfileInfoGrid, ProfileSection, ProfileShell, ReadOnlyMark,
+  FormActions, FormField, PreviewableAvatar, ProfileEmpty, ProfileHero,
+  ProfileInfoField, ProfileInfoGrid, ProfileSection, ProfileShell, ReadOnlyMark,
 } from '@/components/primitives';
 import { useUpdatePractitionerSelfProfile } from '@/hooks/api/use-practitioners';
-import { IconCalendarClock, IconEdit, IconService } from '@/constants/icons';
+import { IconEdit } from '@/constants/icons';
 import { getBilingualName } from '@/i18n';
 import { formatDate } from '@/lib/datetime';
 import type { PractitionerDetail, PractitionerSelfProfileInput } from '@/services/practitioners.service';
@@ -23,6 +23,77 @@ import { ScheduleEntryList } from './practitioner-hours-summary';
 const WEEKDAY_KEYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
 
 const display = (value: string | null | undefined) => value?.trim() || null;
+
+function ProfileInfoSkeleton() {
+  return (
+    <div className="-my-2.5 divide-y divide-border/70 sm:my-0 sm:grid sm:grid-cols-3 sm:gap-x-6 sm:gap-y-4 sm:divide-y-0">
+      {Array.from({ length: 9 }, (_, index) => (
+        <div key={index} className="flex items-center justify-between gap-3 py-2.5 sm:flex-col sm:items-stretch sm:gap-1 sm:py-0">
+          <Skeleton className="h-3.5 w-24" />
+          <Skeleton className="h-4 w-32 max-w-[58%] sm:w-36 sm:max-w-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProfileSectionSkeleton({ rows = 3, serviceBadges = false }: { rows?: number; serviceBadges?: boolean }) {
+  return (
+    <Card className="card-aura flex h-full flex-col gap-0 py-0 ring-0">
+      <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
+        <Skeleton className="h-5 w-32" />
+      </div>
+      <CardContent className="px-4 pb-4 sm:px-5 sm:pb-5">
+        {serviceBadges ? (
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: rows }, (_, index) => <Skeleton key={index} className="h-7 w-24 rounded-full" />)}
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {Array.from({ length: rows }, (_, index) => <Skeleton key={index} className="h-10 w-full rounded-lg" />)}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function PractitionerSelfProfileSkeleton() {
+  return (
+    <div className="page-stack space-y-4" aria-busy="true">
+      <div className="flex items-center justify-between gap-2">
+        <Skeleton className="h-8 w-16 rounded-lg" />
+        <Skeleton className="h-9 w-20 rounded-lg" />
+      </div>
+      <Card className="card-aura overflow-hidden ring-0">
+        <CardContent className="flex flex-row items-center gap-3 p-4 sm:gap-5 sm:p-5">
+          <Skeleton className="size-20 shrink-0 rounded-full" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-5 w-40 max-w-full sm:h-6" />
+            <Skeleton className="h-4 w-32 max-w-full" />
+            <Skeleton className="h-4 w-56 max-w-full" />
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="card-aura flex flex-col gap-0 py-0 ring-0">
+        <div className="px-4 pb-3 pt-4 sm:px-5 sm:pt-5"><Skeleton className="h-5 w-32" /></div>
+        <CardContent className="px-4 pb-4 sm:px-5 sm:pb-5"><ProfileInfoSkeleton /></CardContent>
+      </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ProfileSectionSkeleton rows={4} serviceBadges />
+        <ProfileSectionSkeleton />
+        <ProfileSectionSkeleton />
+        <ProfileSectionSkeleton rows={2} />
+      </div>
+      <Card className="card-aura gap-0 py-0 ring-0">
+        <CardContent className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5">
+          <Skeleton className="h-5 w-36" />
+          <Skeleton className="h-9 w-full rounded-lg sm:w-64" />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export function PractitionerSelfProfile({ practitioner }: { practitioner: PractitionerDetail }) {
   const { lang, t } = useLanguage();
@@ -71,16 +142,13 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
         </Button>
       ) : undefined}
     >
-      <Card className="card-aura overflow-hidden ring-0">
-        <CardContent className="flex flex-row items-center gap-3 p-4 sm:gap-5 sm:p-5">
-          <PreviewableAvatar src={practitioner.imageUrl} seed={practitioner.id} size="xl" priority />
-          <div className="min-w-0 flex-1 space-y-1">
-            <h1 className="truncate font-heading text-base font-semibold tracking-tight sm:text-lg">{name}</h1>
-            <p className="truncate text-xs text-muted-foreground sm:text-sm">{specialty || t.practitioner.practitioner}</p>
-            <ContactLine phone={practitioner.phone} email={practitioner.email} className="text-xs sm:text-sm" />
-          </div>
-        </CardContent>
-      </Card>
+      <ProfileHero
+        avatar={<PreviewableAvatar src={practitioner.imageUrl} seed={practitioner.id} size="xl" priority />}
+        title={name}
+        subtitle={specialty || t.practitioner.practitioner}
+        meta={<ContactLine phone={practitioner.phone} email={practitioner.email} className="text-xs sm:text-sm" />}
+        stats={[]}
+      />
 
       {editing ? (
         <form onSubmit={handleSubmit(save)}>
@@ -139,16 +207,16 @@ export function PractitionerSelfProfile({ practitioner }: { practitioner: Practi
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ProfileSection title={t.practitioner.services} action={editing && lockServices ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
-          {practitioner.services.length ? <div className="flex flex-wrap gap-2">{practitioner.services.map((service) => <Badge key={service.id} variant="secondary">{getBilingualName(service.name, service.nameAr, lang)}</Badge>)}</div> : <EmptyState size="compact" icon={IconService} title={t.practitioner.noServicesAssigned} />}
+          {practitioner.services.length ? <div className="flex flex-wrap gap-2">{practitioner.services.map((service) => <Badge key={service.id} variant="secondary">{getBilingualName(service.name, service.nameAr, lang)}</Badge>)}</div> : <ProfileEmpty>{t.practitioner.noServicesAssigned}</ProfileEmpty>}
         </ProfileSection>
         <ProfileSection title={t.practitioner.weeklyAvailability} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
-          {practitioner.availabilities.length ? <div className="space-y-2">{practitioner.availabilities.map((slot) => <div key={slot.id ?? `${slot.dayOfWeek}-${slot.startTime}`} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{t.constants.weekdays[WEEKDAY_KEYS[slot.dayOfWeek]]}</span><span className="font-medium">{slot.startTime} - {slot.endTime}</span></div>)}</div> : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noWeeklyPatterns} />}
+          {practitioner.availabilities.length ? <div className="space-y-2">{practitioner.availabilities.map((slot) => <div key={slot.id ?? `${slot.dayOfWeek}-${slot.startTime}`} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm"><span>{t.constants.weekdays[WEEKDAY_KEYS[slot.dayOfWeek]]}</span><span className="font-medium">{slot.startTime} - {slot.endTime}</span></div>)}</div> : <ProfileEmpty>{t.practitioner.noWeeklyPatterns}</ProfileEmpty>}
         </ProfileSection>
         <ProfileSection title={t.practitioner.extraAvailability} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
-          {practitioner.availabilityOverrides.length ? <ScheduleEntryList entries={practitioner.availabilityOverrides.map((entry) => ({ title: entry.reason, start: entry.startAt, end: entry.endAt }))} fallback={t.practitioner.extraAvailability} /> : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noExtraAvailability} />}
+          {practitioner.availabilityOverrides.length ? <ScheduleEntryList entries={practitioner.availabilityOverrides.map((entry) => ({ title: entry.reason, start: entry.startAt, end: entry.endAt }))} fallback={t.practitioner.extraAvailability} /> : <ProfileEmpty>{t.practitioner.noExtraAvailability}</ProfileEmpty>}
         </ProfileSection>
         <ProfileSection title={t.practitioner.leave} action={editing && lockAvailability ? <ReadOnlyMark label={t.common.readOnly} size="md" /> : undefined}>
-          {practitioner.timeOffs.length ? <ScheduleEntryList entries={practitioner.timeOffs.map((entry) => ({ title: entry.reason, start: entry.startDate, end: entry.endDate }))} fallback={t.practitioner.leave} /> : <EmptyState size="compact" icon={IconCalendarClock} title={t.practitioner.noLeaveBlocks} />}
+          {practitioner.timeOffs.length ? <ScheduleEntryList entries={practitioner.timeOffs.map((entry) => ({ title: entry.reason, start: entry.startDate, end: entry.endDate }))} fallback={t.practitioner.leave} /> : <ProfileEmpty>{t.practitioner.noLeaveBlocks}</ProfileEmpty>}
         </ProfileSection>
       </div>
       <Card className="card-aura gap-0 py-0 ring-0">
