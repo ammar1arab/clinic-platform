@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { SoftTip } from '@/components/primitives';
+import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { useKeyboardShortcut } from '@/hooks/shared/use-keyboard-shortcut';
 import { IconMaximize, IconMinimize } from '@/constants/icons';
@@ -35,6 +36,7 @@ type FocusRender = (focused: boolean) => ReactNode;
 interface ViewFocusProps {
   label: string;
   storageKey: string;
+  toolbar?: ReactNode;
   children: ReactNode | FocusRender;
   className?: string;
 }
@@ -70,24 +72,22 @@ function ViewFocusHandle() {
 
   return (
     <SoftTip label={label} side="left">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-xs"
         onClick={api.focused ? api.exit : api.enter}
         aria-label={label}
         aria-pressed={api.focused}
-        className={cn(
-          'absolute end-0 top-0 z-30 grid h-10 w-3.5 cursor-pointer place-items-center rounded-s-lg border border-e-0 border-border/60 bg-card/80 text-muted-foreground/80 sm:w-4',
-          'transition-[width,color,background-color] duration-(--overlay-duration) ease-(--overlay-ease) hover:w-6 hover:bg-card hover:text-foreground focus-visible:w-6 focus-visible:outline-none motion-reduce:transition-none',
-          api.focused && 'text-foreground',
-        )}
+        className={cn('text-muted-foreground hover:text-primary', api.focused && 'text-primary')}
       >
         {api.focused ? <IconMinimize className="size-3" /> : <IconMaximize className="size-3" />}
-      </button>
+      </Button>
     </SoftTip>
   );
 }
 
-export function ViewFocus({ label, storageKey, children, className }: ViewFocusProps) {
+export function ViewFocus({ label, storageKey, toolbar, children, className }: ViewFocusProps) {
   const [focused, setFocused] = useSessionStorageState(`view-focus:${storageKey}`, false);
 
   const enter = useCallback(() => {
@@ -135,9 +135,12 @@ export function ViewFocus({ label, storageKey, children, className }: ViewFocusP
         )}
       >
         <div className={cn('page-fill flex-1 min-h-0 gap-2.5', focused && 'h-0')}>
-          {content}
+          {toolbar}
+          <div className="page-fill flex-1 min-h-0 gap-1">
+            <div className="flex shrink-0 justify-end"><ViewFocusHandle /></div>
+            {content}
+          </div>
         </div>
-        <ViewFocusHandle />
       </div>
     </ViewFocusContext.Provider>
   );

@@ -76,10 +76,9 @@ export default function PractitionerQueuePage() {
 
   return (
     <div className="page-fill-always">
-      <ViewFocus label={t.queue.waitingQueue} storageKey={`${clinicId || 'none'}:practitioner-queue`}>
+      <ViewFocus label={t.queue.waitingQueue} toolbar={toolbar} storageKey={`${clinicId || 'none'}:practitioner-queue`}>
         {(focused) => (
           <>
-            {toolbar}
             <WaitingQueueBoard
               appointments={filtered}
               isLoading={appointments.isLoading}

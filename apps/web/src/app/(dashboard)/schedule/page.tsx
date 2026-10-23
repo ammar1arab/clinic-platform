@@ -189,10 +189,9 @@ function SchedulePageInner() {
 
   return (
     <div className="page-fill h-0 min-h-0 flex-1 overflow-hidden">
-      <ViewFocus label={focusLabel} storageKey={`${clinicId || "none"}:schedule-${activeView === 'doctors' || activeView === 'queue' ? activeView : 'calendar'}`}>
+      <ViewFocus label={focusLabel} toolbar={toolbar} storageKey={`${clinicId || "none"}:schedule-${activeView === 'doctors' || activeView === 'queue' ? activeView : 'calendar'}`}>
         {(focused) => (
           <>
-            {toolbar}
             {isError && !appointments ? (
               <ErrorState onRetry={() => void refetch()} className="page-fill" />
             ) : activeView === "doctors" ? (
