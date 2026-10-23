@@ -89,6 +89,7 @@ export class OtpService {
         if (!member || !brand) securityError("emailUnavailable", 503);
         const result = await this.email.send({
           to: email,
+          idempotencyKey: `otp:${id}`,
           ...otpEmail(code, brand, member.name),
         });
         if (result.skipped) throw new Error("Email unavailable");
@@ -196,6 +197,7 @@ export class OtpService {
         securityError("emailUnavailable", 503);
       const result = await this.email.send({
         to: recipientEmail,
+        idempotencyKey: `otp:${id}`,
         ...otpEmail(code, brand, recipientName),
       });
       if (result.skipped) throw new Error("Email unavailable");
@@ -319,3 +321,4 @@ export class OtpService {
     };
   }
 }
+
